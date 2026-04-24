@@ -57,24 +57,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 .sync.load{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
 
 /* NAV */
+/* Masaüstü: sol sidebar */
 .nav{width:150px;background:var(--beyaz);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;z-index:100;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding:.5rem 0}
 .nav::-webkit-scrollbar{display:none}
 .nav button{width:100%;padding:.7rem 1rem;border:none;background:transparent;color:var(--yazi2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;white-space:nowrap;text-align:left}
 .nav button.active{color:var(--yesil);border-left-color:var(--yesil);background:var(--yesil-cok-ac);font-weight:500}
 .nav button:hover:not(.active){background:var(--krem2)}
-@media(max-width:480px){
-  .nav{width:110px}
-  .nav button{font-size:12px;padding:.65rem .75rem}
+/* Telefon: üstte yatay */
+@media(max-width:768px){
+  .nav{width:100%;height:auto;flex-direction:row;border-right:none;border-bottom:1px solid var(--border);position:sticky;top:54px;overflow-x:auto;overflow-y:visible;padding:0;bottom:auto}
+  .nav button{width:auto;flex:1;min-width:60px;padding:.65rem .4rem;border-left:none;border-bottom:2px solid transparent;text-align:center;font-size:11px;white-space:nowrap}
+  .nav button.active{border-left:none;border-bottom-color:var(--yesil);background:transparent;color:var(--yesil)}
+  .nav button:hover:not(.active){background:var(--krem2)}
 }
 
 /* UYARI */
 .uyari-bant{background:var(--sari-ac);border-bottom:1px solid #ffd60a33;padding:.45rem 1.25rem;display:none;cursor:pointer;margin-left:150px}
-@media(max-width:480px){.uyari-bant{margin-left:110px}}
+@media(max-width:768px){.uyari-bant{margin-left:0}}
 .uyari-bant .ub-ic{font-size:12px;color:var(--sari)}
 
 /* PAGES */
 .page{display:none;padding:1rem 1.5rem;max-width:920px;margin:0 auto;padding-bottom:2rem;margin-left:150px}
-@media(max-width:480px){.page{margin-left:110px;padding:.75rem}}
+@media(max-width:768px){.page{margin-left:0;padding:.85rem}}
 .page.active{display:block}
 
 /* CARD */
@@ -260,7 +264,7 @@ tr:hover td{background:var(--krem)}
   <button onclick="gp('islem')">İşlem</button>
   <button onclick="gp('stok')">Stoklar</button>
   <button onclick="gp('urunler')">Ürünler</button>
-  <button onclick="gp('tanimlar')">Tanımlar</button>
+  <button id="nav-tanimlar" onclick="gp('tanimlar')" style="display:none">Tanımlar</button>
   <button onclick="gp('rapor')">Rapor</button>
   <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
 </nav>
@@ -691,6 +695,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('kullanici-chip').textContent = aktifKullanici.ad+' '+aktifKullanici.soyad;
     if(aktifKullanici.rol==='admin'){
       document.getElementById('nav-kullanicilar').style.display='';
+      document.getElementById('nav-tanimlar').style.display='';
     }
     baslat();
   } else {
