@@ -302,8 +302,8 @@ tr:hover td{background:var(--krem)}
     <div class="card">
       <div class="card-title">Hammadde / Stok Girişi</div>
       <div class="fgrid c2"><div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div><div class="fg"><label>Stok Kartı</label><select id="hm-stok" onchange="hm_birim_guncelle()"><option value="">Seçin...</option></select></div></div>
-      <div class="fgrid c3"><div class="fg"><label>Miktar</label><input type="number" id="hm-miktar" placeholder="0" min="0" step="any"></div><div class="fg"><label>Birim</label><select id="hm-birim"></select></div><div class="fg"><label>Birim Fiyat (₺)</label><input type="number" id="hm-fiyat" placeholder="0.00" min="0" step="0.01"></div></div>
-      <div class="fgrid c1"><div class="fg"><label>Not</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div></div>
+      <div class="fgrid c3"><div class="fg"><label>Miktar</label><input type="number" id="hm-miktar" placeholder="0" min="0" step="any" oninput="hmHesapla('miktar')"></div><div class="fg"><label>Birim</label><select id="hm-birim"></select></div><div class="fg"><label>Birim Fiyat (₺)</label><input type="number" id="hm-fiyat" placeholder="0.00" min="0" step="0.01" oninput="hmHesapla('fiyat')"></div></div>
+      <div class="fgrid c2"><div class="fg"><label>Toplam Tutar (₺)</label><input type="number" id="hm-tutar" placeholder="0.00" min="0" step="0.01" oninput="hmHesapla('tutar')" style="font-weight:500;background:#fff"></div><div class="fg"><label>Not</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div></div>
       <div class="btn-row"><button class="btn pri" onclick="kaydetHammadde()">Girişi Kaydet</button></div>
     </div>
   </div>
@@ -951,18 +951,36 @@ window.hm_birim_guncelle=function(){
   if(kart?.maliyet) document.getElementById('hm-fiyat').value=kart.maliyet;
 };
 
+window.hmHesapla=function(kaynak){
+  const miktar=parseFloat(document.getElementById('hm-miktar').value)||0;
+  const fiyat=parseFloat(document.getElementById('hm-fiyat').value)||0;
+  const tutar=parseFloat(document.getElementById('hm-tutar').value)||0;
+  if(kaynak==='miktar'||kaynak==='fiyat'){
+    if(miktar>0&&fiyat>0) document.getElementById('hm-tutar').value=(miktar*fiyat).toFixed(2);
+    else if(miktar>0&&tutar>0) document.getElementById('hm-fiyat').value=(tutar/miktar).toFixed(4);
+  } else if(kaynak==='tutar'){
+    if(miktar>0&&tutar>0) document.getElementById('hm-fiyat').value=(tutar/miktar).toFixed(4);
+  }
+};
+
 window.kaydetHammadde=async function(){
   const tarih=document.getElementById('hm-tarih').value;
   const stokId=document.getElementById('hm-stok').value;
   const miktar=parseFloat(document.getElementById('hm-miktar').value);
   const birimId=document.getElementById('hm-birim').value;
-  const fiyat=parseFloat(document.getElementById('hm-fiyat').value)||0;
+  const fiyatGirilen=parseFloat(document.getElementById('hm-fiyat').value)||0;
+  const tutarGirilen=parseFloat(document.getElementById('hm-tutar').value)||0;
   const not=document.getElementById('hm-not').value;
   if(!tarih||!stokId||isNaN(miktar)||miktar<=0){bil('Eksik bilgi!','err');return;}
+  // Tutar ve fiyatı doğru hesapla
+  let tutar=0, fiyat=0;
+  if(tutarGirilen>0){ tutar=tutarGirilen; fiyat=miktar>0?tutarGirilen/miktar:0; }
+  else if(fiyatGirilen>0){ fiyat=fiyatGirilen; tutar=miktar*fiyatGirilen; }
   const kart=stokKartlar.find(x=>x.id===stokId);
-  await addDoc(collection(db,'islemler'),{tur:'giris',tarih,stokId,birimId,miktar,fiyat,tutar:miktar*fiyat,aciklama:`${kart?.ad||''} girişi`,kat:'Hammadde alımı',not,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
+  await addDoc(collection(db,'islemler'),{tur:'giris',tarih,stokId,birimId,miktar,fiyat,tutar,aciklama:`${kart?.ad||''} girişi`,kat:'Hammadde alımı',not,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
   if(fiyat>0){const yeni=fiyat/birimTemelCarp(birimId);const eski=parseFloat(kart?.maliyet||0);await setDoc(doc(db,'stok_kartlar',stokId),{...kart,maliyet:(eski+yeni)/2},{merge:true});}
   document.getElementById('hm-miktar').value='';document.getElementById('hm-not').value='';
+  document.getElementById('hm-fiyat').value='';document.getElementById('hm-tutar').value='';
   bil(`${kart?.ad||'Stok'} girişi kaydedildi ✓`);
 };
 
