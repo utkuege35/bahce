@@ -214,6 +214,29 @@ tr:hover td{background:var(--krem)}
       <input type="checkbox" id="giris-hatirla" checked> Beni hatırla
     </label>
     <button class="giris-btn" id="giris-btn" onclick="girisYap()">Giriş Yap</button>
+    <div style="text-align:center;margin-top:.9rem">
+      <button onclick="sifrePaneliAc()" style="background:none;border:none;color:var(--yesil);font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;text-decoration:underline">Şifremi değiştirmek istiyorum</button>
+    </div>
+  </div>
+</div>
+
+<!-- GİRİŞ EKRANI ŞİFRE DEĞİŞTİR PANELİ -->
+<div id="giris-sifre-panel" style="display:none;position:fixed;inset:0;background:var(--yesil);z-index:2001;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:var(--beyaz);border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:1.5rem">🔐</div>
+      <h2 style="font-family:Lora,serif;font-size:1.1rem;color:var(--yesil);margin-top:.4rem">Şifre Değiştir</h2>
+    </div>
+    <div id="gsifre-hata" style="color:#c62828;font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:#fde8db;border-radius:6px;display:none"></div>
+    <div id="gsifre-ok" style="color:var(--yesil);font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:var(--yesil-cok-ac);border-radius:6px;display:none"></div>
+    <div class="giris-fg"><label>Kullanıcı Adı</label><input type="text" id="gsifre-kullanici" placeholder="Kullanıcı adınız"></div>
+    <div class="giris-fg"><label>Mevcut Şifre</label><input type="password" id="gsifre-eski" placeholder="Mevcut şifreniz"></div>
+    <div class="giris-fg"><label>Yeni Şifre</label><input type="password" id="gsifre-yeni" placeholder="En az 6 karakter"></div>
+    <div class="giris-fg"><label>Yeni Şifre (Tekrar)</label><input type="password" id="gsifre-yeni2" placeholder="Yeni şifreyi tekrar girin"></div>
+    <button class="giris-btn" onclick="girisEkraniSifreDegistir()">Şifreyi Değiştir</button>
+    <div style="text-align:center;margin-top:.9rem">
+      <button onclick="sifrePaneliniKapat()" style="background:none;border:none;color:var(--yazi3);font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">← Giriş ekranına dön</button>
+    </div>
   </div>
 </div>
 
@@ -547,8 +570,14 @@ window.girisYap = async function(){
       btn.disabled=false;btn.textContent='Giriş Yap';return;
     }
     const kullanici = snap.docs[0].data();
-    await setPersistence(auth, hatirla ? browserLocalPersistence : browserSessionPersistence);
+    await setPersistence(auth, browserSessionPersistence);
     await signInWithEmailAndPassword(auth, kullanici.email, sifre);
+    // Beni hatırla seçildiyse kullanıcı adını kaydet
+    if(hatirla){
+      localStorage.setItem('bahce_hatirla_kullanici', kullaniciAdi);
+    } else {
+      localStorage.removeItem('bahce_hatirla_kullanici');
+    }
     hata.style.display='none';
   } catch(e) {
     hata.textContent = (e.code==='auth/invalid-credential'||e.code==='auth/wrong-password')
@@ -560,6 +589,55 @@ window.girisYap = async function(){
 
 document.getElementById('giris-sifre').addEventListener('keydown', e=>{if(e.key==='Enter') window.girisYap();});
 document.getElementById('giris-kullanici-adi').addEventListener('keydown', e=>{if(e.key==='Enter') document.getElementById('giris-sifre').focus();});
+
+window.sifrePaneliAc = function(){
+  document.getElementById('giris-sifre-panel').style.display='flex';
+  ['gsifre-kullanici','gsifre-eski','gsifre-yeni','gsifre-yeni2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('gsifre-hata').style.display='none';
+  document.getElementById('gsifre-ok').style.display='none';
+  // Kullanıcı adı zaten yazılıysa oraya kopyala
+  const mevcut = document.getElementById('giris-kullanici-adi').value;
+  if(mevcut) document.getElementById('gsifre-kullanici').value = mevcut;
+};
+
+window.sifrePaneliniKapat = function(){
+  document.getElementById('giris-sifre-panel').style.display='none';
+};
+
+window.girisEkraniSifreDegistir = async function(){
+  const kullaniciAdi = document.getElementById('gsifre-kullanici').value.trim();
+  const eskiSifre = document.getElementById('gsifre-eski').value;
+  const yeniSifre = document.getElementById('gsifre-yeni').value;
+  const yeniSifre2 = document.getElementById('gsifre-yeni2').value;
+  const hataEl = document.getElementById('gsifre-hata');
+  const okEl = document.getElementById('gsifre-ok');
+  hataEl.style.display='none'; okEl.style.display='none';
+  if(!kullaniciAdi||!eskiSifre||!yeniSifre||!yeniSifre2){
+    hataEl.textContent='Tüm alanları doldurun.'; hataEl.style.display='block'; return;
+  }
+  if(yeniSifre.length < 6){
+    hataEl.textContent='Yeni şifre en az 6 karakter olmalı.'; hataEl.style.display='block'; return;
+  }
+  if(yeniSifre !== yeniSifre2){
+    hataEl.textContent='Yeni şifreler eşleşmiyor.'; hataEl.style.display='block'; return;
+  }
+  try {
+    const { getDocs, query: fsQuery, where } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const snap = await getDocs(fsQuery(collection(db,'kullanicilar'), where('kullaniciAdi','==',kullaniciAdi)));
+    if(snap.empty){ hataEl.textContent='Kullanıcı adı bulunamadı.'; hataEl.style.display='block'; return; }
+    const kullanici = snap.docs[0].data();
+    const uc = await signInWithEmailAndPassword(auth, kullanici.email, eskiSifre);
+    await updatePassword(uc.user, yeniSifre);
+    await auth.signOut();
+    okEl.textContent='Şifreniz başarıyla değiştirildi! Giriş yapabilirsiniz ✓';
+    okEl.style.display='block';
+    ['gsifre-eski','gsifre-yeni','gsifre-yeni2'].forEach(id=>document.getElementById(id).value='');
+  } catch(e) {
+    hataEl.textContent = (e.code==='auth/invalid-credential'||e.code==='auth/wrong-password')
+      ? 'Mevcut şifre hatalı.' : 'Hata: '+e.message;
+    hataEl.style.display='block';
+  }
+};
 
 window.sifreDegistir = async function(){
   const eskiSifre = document.getElementById('eski-sifre').value;
@@ -597,9 +675,11 @@ window.cikisYap = async function(){
 };
 
 // Auth durumu takip
+// Sayfa yüklenince önce çıkış yap - her zaman login ekranı göster
+auth.signOut().catch(()=>{});
+
 onAuthStateChanged(auth, async (user) => {
   if(user) {
-    // Kullanıcı profilini Firestore'dan çek
     const profil = await getDoc(doc(db,'kullanicilar',user.uid));
     if(profil.exists()) {
       aktifKullanici = {uid:user.uid, email:user.email, ...profil.data()};
@@ -617,6 +697,13 @@ onAuthStateChanged(auth, async (user) => {
     aktifKullanici = null;
     document.getElementById('giris-wrap').style.display='flex';
     document.getElementById('uygulama').style.display='none';
+    // Beni hatırla varsa kullanıcı adını doldur
+    const hatirlaKullanici = localStorage.getItem('bahce_hatirla_kullanici');
+    if(hatirlaKullanici){
+      document.getElementById('giris-kullanici-adi').value = hatirlaKullanici;
+      document.getElementById('giris-hatirla').checked = true;
+      document.getElementById('giris-sifre').focus();
+    }
   }
 });
 
