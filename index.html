@@ -25,22 +25,27 @@
 body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);min-height:100vh;font-size:14px}
 
 /* GİRİŞ EKRANI */
-#giris-wrap{position:fixed;inset:0;background:var(--yesil);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1.5rem}
-#giris-kart{background:var(--beyaz);border-radius:16px;padding:2rem 2rem 1.75rem;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+#giris-wrap{position:fixed;inset:0;background:var(--yesil);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1.5rem;overflow-y:auto}
+#giris-kart{background:var(--beyaz);border-radius:16px;padding:2rem 2rem 1.75rem;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
 #giris-kart .logo{text-align:center;margin-bottom:1.5rem}
-#giris-kart .logo .ikon{font-size:2.5rem}
-#giris-kart .logo h1{font-family:'Lora',serif;font-size:1.3rem;color:var(--yesil);margin-top:.4rem}
-#giris-kart .logo p{font-size:12px;color:var(--yazi3);margin-top:2px}
-.giris-fg{margin-bottom:.9rem}
-.giris-fg label{display:block;font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
-.giris-fg input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--yazi);background:var(--krem);transition:border .15s}
+#giris-kart .logo .ikon{font-size:3rem}
+#giris-kart .logo h1{font-family:'Lora',serif;font-size:1.5rem;color:var(--yesil);margin-top:.5rem}
+#giris-kart .logo p{font-size:13px;color:var(--yazi3);margin-top:3px}
+.giris-fg{margin-bottom:1rem}
+.giris-fg label{display:block;font-size:12px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.giris-fg input{width:100%;padding:13px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--yazi);background:var(--krem);transition:border .15s}
 .giris-fg input:focus{outline:none;border-color:var(--yesil-ac);background:#fff}
-.giris-hata{color:#c62828;font-size:12px;margin-bottom:.8rem;display:none;padding:8px 10px;background:#fde8db;border-radius:6px}
-.giris-btn{width:100%;padding:11px;background:var(--yesil);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:.3rem}
+.giris-hata{color:#c62828;font-size:13px;margin-bottom:.8rem;display:none;padding:10px 12px;background:#fde8db;border-radius:8px}
+.giris-btn{width:100%;padding:14px;background:var(--yesil);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:.5rem}
 .giris-btn:hover{background:#245a42}
 .giris-btn:disabled{background:var(--yazi3);cursor:not-allowed}
-.hatirla-row{display:flex;align-items:center;gap:8px;margin-bottom:.5rem;font-size:12px;color:var(--yazi2)}
-.hatirla-row input{width:auto;margin:0}
+.hatirla-row{display:flex;align-items:center;gap:10px;margin-bottom:.6rem;font-size:14px;color:var(--yazi2)}
+.hatirla-row input{width:18px;height:18px;margin:0;cursor:pointer}
+@media(max-width:480px){
+  #giris-kart{padding:1.75rem 1.5rem;border-radius:14px}
+  #giris-kart .logo .ikon{font-size:2.5rem}
+  #giris-kart .logo h1{font-size:1.3rem}
+}
 
 /* HEADER */
 .hdr{background:var(--yesil);padding:.8rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.18)}
@@ -225,7 +230,7 @@ tr:hover td{background:var(--krem)}
 </div>
 
 <!-- GİRİŞ EKRANI ŞİFRE DEĞİŞTİR PANELİ -->
-<div id="giris-sifre-panel" style="display:none;position:fixed;inset:0;background:var(--yesil);z-index:2001;align-items:center;justify-content:center;padding:1.5rem">
+<div id="giris-sifre-panel" style="display:none;position:fixed;inset:0;background:var(--yesil);z-index:2001;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto">
   <div style="background:var(--beyaz);border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
     <div style="text-align:center;margin-bottom:1.5rem">
       <div style="font-size:1.5rem">🔐</div>
