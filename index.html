@@ -217,7 +217,7 @@ tr:hover td{background:var(--krem)}
     </div>
     <div class="giris-fg">
       <label>Şifre</label>
-      <input type="password" id="giris-sifre" placeholder="••••••••" autocomplete="current-password">
+      <input type="password" id="giris-sifre" placeholder="••••••••" autocomplete="new-password">
     </div>
     <label class="hatirla-row">
       <input type="checkbox" id="giris-hatirla" checked> Beni hatırla
@@ -376,11 +376,27 @@ tr:hover td{background:var(--krem)}
   </div>
   <div id="tt-gruplar" class="tab-panel">
     <div class="card">
-      <div class="card-title">Stok Grubu Ekle</div>
-      <div class="fgrid c3"><div class="fg"><label>Grup Adı</label><input type="text" id="grp-ad" placeholder="Yiyecekler..."></div><div class="fg"><label>İkon</label><input type="text" id="grp-ikon" placeholder="🥗" maxlength="2"></div><div class="fg"><label>Renk</label><select id="grp-renk"><option value="yesil">Yeşil</option><option value="turuncu">Turuncu</option><option value="mavi">Mavi</option><option value="mor">Mor</option></select></div></div>
-      <div class="btn-row"><button class="btn pri" onclick="kaydetGrup()">Ekle</button></div>
+      <div class="card-title">Ana Grup Ekle</div>
+      <div class="fgrid c3">
+        <div class="fg"><label>Ana Grup Adı</label><input type="text" id="grp-ad" placeholder="Yiyecekler..."></div>
+        <div class="fg"><label>İkon</label><input type="text" id="grp-ikon" placeholder="🥗" maxlength="2"></div>
+        <div class="fg"><label>Renk</label><select id="grp-renk"><option value="yesil">Yeşil</option><option value="turuncu">Turuncu</option><option value="mavi">Mavi</option><option value="mor">Mor</option></select></div>
+      </div>
+      <div class="btn-row"><button class="btn pri" onclick="kaydetGrup('ana')">Ana Grup Ekle</button></div>
     </div>
-    <div class="card"><div class="card-title">Gruplar</div><div id="grup-liste"></div></div>
+    <div class="card">
+      <div class="card-title">Alt Grup Ekle</div>
+      <div class="fgrid c2">
+        <div class="fg"><label>Alt Grup Adı</label><input type="text" id="altgrp-ad" placeholder="Et Ürünleri..."></div>
+        <div class="fg"><label>Ana Grup</label><select id="altgrp-ust"><option value="">Seçin...</option></select></div>
+      </div>
+      <div class="fgrid c2">
+        <div class="fg"><label>İkon</label><input type="text" id="altgrp-ikon" placeholder="🥩" maxlength="2"></div>
+        <div class="fg"><label>Renk</label><select id="altgrp-renk"><option value="yesil">Yeşil</option><option value="turuncu">Turuncu</option><option value="mavi">Mavi</option><option value="mor">Mor</option></select></div>
+      </div>
+      <div class="btn-row"><button class="btn sec" onclick="kaydetGrup('alt')">Alt Grup Ekle</button></div>
+    </div>
+    <div class="card"><div class="card-title">Grup Yapısı</div><div id="grup-liste"></div></div>
   </div>
 </div>
 
@@ -417,7 +433,7 @@ tr:hover td{background:var(--krem)}
     <div class="modal-hdr"><h3 id="skm-title">Yeni Stok Kartı</h3><button class="btn sm" onclick="modalKapat('modal-stok-kart')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="skm-id">
-      <div class="fgrid c2"><div class="fg"><label>Stok Adı</label><input type="text" id="skm-ad"></div><div class="fg"><label>Grup</label><select id="skm-grup"><option value="">Seçin...</option></select></div></div>
+      <div class="fgrid c2"><div class="fg"><label>Stok Adı</label><input type="text" id="skm-ad"></div><div class="fg"><label>Alt Grup</label><select id="skm-grup"><option value="">Seçin...</option></select></div></div>
       <div class="fgrid c2"><div class="fg"><label>Temel Birim</label><select id="skm-birim"><option value="">Seçin...</option></select></div><div class="fg"><label>Başlangıç Stok</label><input type="number" id="skm-baslangic" placeholder="0" min="0" step="any"></div></div>
       <div class="fgrid c2"><div class="fg"><label>Min. Stok Uyarı</label><input type="number" id="skm-min" placeholder="0" min="0" step="any"></div><div class="fg"><label>Ort. Birim Maliyet (₺)</label><input type="number" id="skm-maliyet" placeholder="0.00" min="0" step="0.01"></div></div>
       <div class="fgrid c1"><div class="fg"><label>Açıklama</label><input type="text" id="skm-aciklama"></div></div>
@@ -554,11 +570,25 @@ const VARSAYILAN_BIRIMLER=[
   {id:'b11',ad:'Porsiyon',kisaltma:'por',tur:'adet',temel:true},
 ];
 const VARSAYILAN_GRUPLAR=[
-  {id:'g1',ad:'Yiyecek & İçecek',ikon:'🥗',renk:'yesil'},
-  {id:'g2',ad:'Temizlik Malzemeleri',ikon:'🧹',renk:'mavi'},
-  {id:'g3',ad:'Tarım & Sera',ikon:'🌱',renk:'yesil'},
-  {id:'g4',ad:'Hayvansal Üretim',ikon:'🐓',renk:'turuncu'},
-  {id:'g5',ad:'Ambalaj & Sarf',ikon:'📦',renk:'mor'},
+  {id:'g1',ad:'Yiyecekler',ikon:'🥗',renk:'yesil',tip:'ana',ustId:null},
+  {id:'g1a',ad:'Et & Tavuk',ikon:'🥩',renk:'turuncu',tip:'alt',ustId:'g1'},
+  {id:'g1b',ad:'Süt & Peynir',ikon:'🥛',renk:'yesil',tip:'alt',ustId:'g1'},
+  {id:'g1c',ad:'Tahıl & Bakliyat',ikon:'🌾',renk:'yesil',tip:'alt',ustId:'g1'},
+  {id:'g1d',ad:'Sebze & Meyve',ikon:'🥬',renk:'yesil',tip:'alt',ustId:'g1'},
+  {id:'g1e',ad:'Yağ & Baharat',ikon:'🫙',renk:'turuncu',tip:'alt',ustId:'g1'},
+  {id:'g2',ad:'İçecekler',ikon:'🥤',renk:'mavi',tip:'ana',ustId:null},
+  {id:'g2a',ad:'Sıcak İçecekler',ikon:'☕',renk:'turuncu',tip:'alt',ustId:'g2'},
+  {id:'g2b',ad:'Soğuk İçecekler',ikon:'🧃',renk:'mavi',tip:'alt',ustId:'g2'},
+  {id:'g3',ad:'Temizlik',ikon:'🧹',renk:'mavi',tip:'ana',ustId:null},
+  {id:'g3a',ad:'Temizlik Malzemeleri',ikon:'🧴',renk:'mavi',tip:'alt',ustId:'g3'},
+  {id:'g4',ad:'Tarım & Sera',ikon:'🌱',renk:'yesil',tip:'ana',ustId:null},
+  {id:'g4a',ad:'Çiçek & Fide',ikon:'🌸',renk:'yesil',tip:'alt',ustId:'g4'},
+  {id:'g4b',ad:'Gübre & İlaç',ikon:'💊',renk:'turuncu',tip:'alt',ustId:'g4'},
+  {id:'g5',ad:'Hayvansal Üretim',ikon:'🐓',renk:'turuncu',tip:'ana',ustId:null},
+  {id:'g5a',ad:'Yumurta',ikon:'🥚',renk:'sari',tip:'alt',ustId:'g5'},
+  {id:'g5b',ad:'Yem & Bakım',ikon:'🌽',renk:'turuncu',tip:'alt',ustId:'g5'},
+  {id:'g6',ad:'Ambalaj & Sarf',ikon:'📦',renk:'mor',tip:'ana',ustId:null},
+  {id:'g6a',ad:'Ambalaj',ikon:'🗃️',renk:'mor',tip:'alt',ustId:'g6'},
 ];
 
 // ===== GİRİŞ =====
@@ -874,8 +904,34 @@ function doldurBirimSecleri(){
 }
 function doldurGrupSecleri(){
   const el=document.getElementById('skm-grup');if(!el)return;
-  const cur=el.value;el.innerHTML='<option value="">Seçin...</option>'+gruplar.map(g=>`<option value="${g.id}">${g.ikon||''} ${g.ad}</option>`).join('');if(cur)el.value=cur;
-  const fil=document.getElementById('stok-grup-fil');if(fil)fil.innerHTML='<option value="">Tüm gruplar</option>'+gruplar.map(g=>`<option value="${g.id}">${g.ikon||''} ${g.ad}</option>`).join('');
+  const anaGruplar=gruplar.filter(g=>g.tip==='ana'||!g.tip);
+  const altGruplar=gruplar.filter(g=>g.tip==='alt');
+  // Stok kartı modalı: alt grupları ana grup başlıklarıyla göster
+  const cur=el.value;
+  let opts='<option value="">Seçin...</option>';
+  anaGruplar.forEach(ag=>{
+    const altlar=altGruplar.filter(g=>g.ustId===ag.id);
+    if(altlar.length){
+      opts+=`<optgroup label="${ag.ikon||''} ${ag.ad}">`;
+      altlar.forEach(alt=>{ opts+=`<option value="${alt.id}">${alt.ikon||''} ${alt.ad}</option>`; });
+      opts+=`</optgroup>`;
+    } else {
+      opts+=`<option value="${ag.id}">${ag.ikon||''} ${ag.ad}</option>`;
+    }
+  });
+  el.innerHTML=opts; if(cur)el.value=cur;
+  // Filtre: hem ana hem alt grupları göster
+  const fil=document.getElementById('stok-grup-fil');
+  if(fil){
+    let filOpts='<option value="">Tüm gruplar</option>';
+    anaGruplar.forEach(ag=>{
+      filOpts+=`<option value="${ag.id}" style="font-weight:600">${ag.ikon||''} ${ag.ad}</option>`;
+      altGruplar.filter(g=>g.ustId===ag.id).forEach(alt=>{
+        filOpts+=`<option value="${alt.id}">&nbsp;&nbsp;↳ ${alt.ikon||''} ${alt.ad}</option>`;
+      });
+    });
+    fil.innerHTML=filOpts;
+  }
 }
 function doldurStokSecleri(){
   const el=document.getElementById('hm-stok');if(el){const cur=el.value;el.innerHTML='<option value="">Seçin...</option>'+stokKartlar.map(s=>`<option value="${s.id}">${s.ad}</option>`).join('');if(cur)el.value=cur;hm_birim_guncelle();}
@@ -1033,17 +1089,29 @@ function renderPanel(){
 
 function renderStoklar(){
   const grupFil=document.getElementById('stok-grup-fil')?.value||'';
-  let liste=grupFil?stokKartlar.filter(s=>s.grupId===grupFil):stokKartlar;
+  let liste=stokKartlar;
+  if(grupFil){
+    const secGrup=gruplar.find(g=>g.id===grupFil);
+    if(secGrup?.tip==='ana'||!secGrup?.tip){
+      // Ana grup seçildi - alt gruplarını da dahil et
+      const altIds=gruplar.filter(g=>g.ustId===grupFil).map(g=>g.id);
+      liste=stokKartlar.filter(s=>s.grupId===grupFil||altIds.includes(s.grupId));
+    } else {
+      liste=stokKartlar.filter(s=>s.grupId===grupFil);
+    }
+  }
   if(!liste.length){document.getElementById('stok-grid').innerHTML=`<div class="bos" style="grid-column:1/-1">Henüz stok kartı yok.</div>`;return;}
   document.getElementById('stok-grid').innerHTML=liste.map(s=>{
-    const grup=gruplar.find(g=>g.id===s.grupId);
+    const altGrup=gruplar.find(g=>g.id===s.grupId);
+    const anaGrup=altGrup?.ustId?gruplar.find(g=>g.id===altGrup.ustId):null;
+    const grup=altGrup;
     const mik=stokMiktar(s.id);
     const tb=birimler.find(b=>b.id===s.birimId);
     const dusuk=s.min>0&&mik<=s.min;
     return `<div class="sk${dusuk?' dusuk':''}" onclick="stokDetay('${s.id}')">
       <button class="btn sm ghost edit-btn" onclick="event.stopPropagation();stokDuzenle('${s.id}')">✏</button>
       <div class="sn">${s.ad}</div>
-      <div class="sg">${grup?grup.ikon+' '+grup.ad:''}</div>
+      <div class="sg">${anaGrup?anaGrup.ikon+' '+anaGrup.ad+' / ':''} ${grup?grup.ikon+' '+grup.ad:''}</div>
       <div class="sm2">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})} <span style="font-size:12px">${tb?.kisaltma||''}</span></div>
       ${dusuk?`<div class="uyari-chip" style="margin-top:4px">⚠ Min: ${s.min} ${tb?.kisaltma||''}</div>`:''}
       ${s.maliyet?`<div class="sb">Maliyet: ${para(s.maliyet)}/${tb?.kisaltma||''}</div>`:''}
@@ -1185,12 +1253,21 @@ window.kaydetAltBirim=async function(){
   document.getElementById('ab-ad').value='';document.getElementById('ab-kisaltma').value='';document.getElementById('ab-carpan').value='';
   bil('Alt birim eklendi ✓');
 };
-window.kaydetGrup=async function(){
-  const ad=document.getElementById('grp-ad').value.trim();
-  if(!ad){bil('Grup adı zorunlu!','err');return;}
-  await setDoc(doc(db,'gruplar',uid()),{ad,ikon:document.getElementById('grp-ikon').value.trim(),renk:document.getElementById('grp-renk').value});
-  document.getElementById('grp-ad').value='';document.getElementById('grp-ikon').value='';
-  bil('Grup eklendi ✓');
+window.kaydetGrup=async function(tip){
+  if(tip==='ana'){
+    const ad=document.getElementById('grp-ad').value.trim();
+    if(!ad){bil('Grup adı zorunlu!','err');return;}
+    await setDoc(doc(db,'gruplar',uid()),{ad,ikon:document.getElementById('grp-ikon').value.trim(),renk:document.getElementById('grp-renk').value,tip:'ana',ustId:null});
+    document.getElementById('grp-ad').value='';document.getElementById('grp-ikon').value='';
+    bil('Ana grup eklendi ✓');
+  } else {
+    const ad=document.getElementById('altgrp-ad').value.trim();
+    const ustId=document.getElementById('altgrp-ust').value;
+    if(!ad||!ustId){bil('Ad ve ana grup zorunlu!','err');return;}
+    await setDoc(doc(db,'gruplar',uid()),{ad,ikon:document.getElementById('altgrp-ikon').value.trim(),renk:document.getElementById('altgrp-renk').value,tip:'alt',ustId});
+    document.getElementById('altgrp-ad').value='';document.getElementById('altgrp-ikon').value='';
+    bil('Alt grup eklendi ✓');
+  }
 };
 
 function renderBirimler(){
@@ -1215,11 +1292,33 @@ function renderBirimler(){
 window.birimSil=async function(id){if(!confirm('Silmek istiyor musunuz?'))return;await deleteDoc(doc(db,'birimler',id));};
 
 function renderGruplar(){
-  document.getElementById('grup-liste').innerHTML=gruplar.map(g=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--krem2);font-size:13px">
-      <span>${g.ikon||''} ${g.ad}</span>
-      <button class="btn ghost sm" onclick="grupSil('${g.id}')">Sil</button>
-    </div>`).join('')||`<div class="bos">Henüz grup yok</div>`;
+  // Ana grupları ve alt seçiciyi güncelle
+  const anaGruplar=gruplar.filter(g=>g.tip==='ana'||!g.tip);
+  const altGruplar=gruplar.filter(g=>g.tip==='alt');
+  // Alt grup seçicisini doldur
+  const ustEl=document.getElementById('altgrp-ust');
+  if(ustEl){
+    const cur=ustEl.value;
+    ustEl.innerHTML='<option value="">Seçin...</option>'+anaGruplar.map(g=>`<option value="${g.id}">${g.ikon||''} ${g.ad}</option>`).join('');
+    if(cur) ustEl.value=cur;
+  }
+  // Hiyerarşik liste
+  if(!anaGruplar.length){document.getElementById('grup-liste').innerHTML='<div class="bos">Henüz grup yok</div>';return;}
+  let html='';
+  anaGruplar.forEach(ag=>{
+    const altlar=altGruplar.filter(g=>g.ustId===ag.id);
+    html+=`<div style="margin-bottom:.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--krem2);border-radius:8px;font-size:13px;font-weight:500">
+        <span>${ag.ikon||''} ${ag.ad}</span>
+        <button class="btn ghost sm" onclick="grupSil('${ag.id}')">Sil</button>
+      </div>
+      ${altlar.map(alt=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px 6px 24px;font-size:12px;color:var(--yazi2);border-bottom:1px solid var(--krem2)">
+        <span>↳ ${alt.ikon||''} ${alt.ad}</span>
+        <button class="btn ghost sm" onclick="grupSil('${alt.id}')">Sil</button>
+      </div>`).join('')}
+    </div>`;
+  });
+  document.getElementById('grup-liste').innerHTML=html;
 }
 window.grupSil=async function(id){if(!confirm('Silmek istiyor musunuz?'))return;await deleteDoc(doc(db,'gruplar',id));};
 
