@@ -312,6 +312,10 @@ tr:hover td{background:var(--krem)}
 <div id="bil" class="bil"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+window.modalAc=function(id){document.getElementById(id)?.classList.add("open");};
+window.modalKapat=function(id){document.getElementById(id)?.classList.remove("open");};
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -664,7 +668,7 @@ window.stokDetay=function(id){
   const rows=hareketler.map(i=>`<tr>
     <td>${i.tarih}</td>
     <td><span class="badge ${i.tur==='giris'?'g':'d'}">${{giris:'Giriş',satis:'Satış',uretim_sarfiyat:'Sarfiyat'}[i.tur]||i.tur}</span></td>
-    <td style="color:${i.tur==='giris'?'var(--yesil)':'var(--turuncu)';}">${i.tur==='giris'?'+':'-'}${parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+    <td style="color:${i.tur==='giris'?'var(--yesil)':'var(--turuncu)'}">${i.tur==='giris'?'+':'-'}${parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
     <td>${birimAd(i.birimId)}</td>
     <td>${i.tutar?para(i.tutar):''}</td>
     <td style="font-size:11px;color:var(--yazi3)">${i.not||'—'}</td>
