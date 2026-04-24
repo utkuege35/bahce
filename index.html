@@ -126,7 +126,7 @@ tr:hover td{background:var(--krem)}
 
 <div class="hdr">
   <div><h1>🌿 Sever Bahçesi</h1><div class="sub">Stok · Üretim · Gelir/Gider</div></div>
-  <div id="sync" class="sync load">Bağlanıyor...</div>
+  <div style="display:flex;align-items:center;gap:8px"><div id="sync" class="sync load">Bağlanıyor...</div><button onclick="window.cikisYap()" style="background:rgba(255,255,255,.15);border:none;color:rgba(255,255,255,.8);font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer">Çıkış</button></div>
 </div>
 
 <nav class="nav">
@@ -308,6 +308,19 @@ tr:hover td{background:var(--krem)}
   </div>
 </div>
 
+<div id="giris-ekrani" style="display:none;position:fixed;inset:0;background:var(--krem);z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem">
+  <div style="text-align:center;margin-bottom:1rem">
+    <div style="font-size:3rem;margin-bottom:.5rem">🌿</div>
+    <h1 style="font-family:Lora,serif;font-size:1.5rem;color:var(--yesil);margin-bottom:.3rem">Sever Bahçesi</h1>
+    <p style="color:var(--yazi3);font-size:13px">Stok · Üretim · Gelir/Gider</p>
+  </div>
+  <button id="google-giris-btn" style="display:flex;align-items:center;gap:10px;padding:12px 24px;background:#fff;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20">
+    Google ile Giriş Yap
+  </button>
+  <p id="giris-hata" style="color:#c62828;font-size:12px;display:none">Bu hesabın erişim izni yok.</p>
+</div>
+<div id="uygulama" style="display:none">
 <button id="pwa-yukle">📲 Uygulamayı Yükle</button>
 <div id="bil" class="bil"></div>
 
@@ -319,6 +332,10 @@ window.modalKapat=function(id){document.getElementById(id)?.classList.remove("op
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// İzin verilen e-postalar
+const IZINLI_MAILLER = ['utku1ege1@gmail.com'];
 
 const fb = initializeApp({
   apiKey:"AIzaSyATgeWw_qohVvkWsdj1nuIrCg148UJDmwM",
@@ -329,6 +346,37 @@ const fb = initializeApp({
   appId:"1:848333565567:web:7822102a01cfb7bc1f594a"
 });
 const db = getFirestore(fb);
+const auth = getAuth(fb);
+const provider = new GoogleAuthProvider();
+
+// Giriş ekranı kontrolü
+const girisEkrani = document.getElementById('giris-ekrani');
+const uygulama = document.getElementById('uygulama');
+
+onAuthStateChanged(auth, (user) => {
+  if (user && IZINLI_MAILLER.includes(user.email)) {
+    girisEkrani.style.display = 'none';
+    uygulama.style.display = 'block';
+    document.getElementById('sync').textContent = '● ' + user.displayName?.split(' ')[0];
+  } else if (user) {
+    // Hesap izinli değil
+    signOut(auth);
+    girisEkrani.style.display = 'flex';
+    uygulama.style.display = 'none';
+    document.getElementById('giris-hata').style.display = 'block';
+  } else {
+    girisEkrani.style.display = 'flex';
+    uygulama.style.display = 'none';
+  }
+});
+
+document.getElementById('google-giris-btn').addEventListener('click', async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    console.error(e);
+  }
+});
 
 let stokKartlar=[], urunler=[], islemler=[], birimler=[], gruplar=[];
 const AYLAR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -885,10 +933,17 @@ document.getElementById('pwa-yukle').addEventListener('click',async()=>{
   document.getElementById('pwa-yukle').style.display='none';
 });
 
+// Uygulama div kapat
+document.getElementById("uygulama") && (document.getElementById("uygulama").outerHTML = document.getElementById("uygulama").innerHTML);
+
+// Çıkış
+window.cikisYap = async function(){ await signOut(auth); };
+
 // Service Worker kayıt
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 </script>
+</div><!-- /uygulama -->
 </body>
 </html>
