@@ -57,25 +57,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 .sync.load{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
 
 /* NAV */
-.nav{width:180px;background:var(--beyaz);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;z-index:100;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding:.5rem 0}
+.nav{width:150px;background:var(--beyaz);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;z-index:100;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding:.5rem 0}
 .nav::-webkit-scrollbar{display:none}
-.nav button{width:100%;padding:.7rem 1.25rem;border:none;background:transparent;color:var(--yazi2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;white-space:nowrap;text-align:left}
+.nav button{width:100%;padding:.7rem 1rem;border:none;background:transparent;color:var(--yazi2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;white-space:nowrap;text-align:left}
 .nav button.active{color:var(--yesil);border-left-color:var(--yesil);background:var(--yesil-cok-ac);font-weight:500}
 .nav button:hover:not(.active){background:var(--krem2)}
-@media(max-width:600px){
-  .nav{width:100%;height:auto;flex-direction:row;border-right:none;border-bottom:1px solid var(--border);position:sticky;top:54px;overflow-x:auto;overflow-y:visible;padding:0}
-  .nav button{padding:.65rem .5rem;border-left:none;border-bottom:2px solid transparent;text-align:center;font-size:11px;min-width:65px}
-  .nav button.active{border-left:none;border-bottom-color:var(--yesil);background:transparent}
+@media(max-width:480px){
+  .nav{width:110px}
+  .nav button{font-size:12px;padding:.65rem .75rem}
 }
 
 /* UYARI */
-.uyari-bant{background:var(--sari-ac);border-bottom:1px solid #ffd60a33;padding:.45rem 1.25rem;display:none;cursor:pointer;margin-left:180px}
-@media(max-width:600px){.uyari-bant{margin-left:0}}
+.uyari-bant{background:var(--sari-ac);border-bottom:1px solid #ffd60a33;padding:.45rem 1.25rem;display:none;cursor:pointer;margin-left:150px}
+@media(max-width:480px){.uyari-bant{margin-left:110px}}
 .uyari-bant .ub-ic{font-size:12px;color:var(--sari)}
 
 /* PAGES */
-.page{display:none;padding:1rem 1.5rem;max-width:920px;margin:0 auto;padding-bottom:2rem;margin-left:180px}
-@media(max-width:600px){.page{margin-left:0}}
+.page{display:none;padding:1rem 1.5rem;max-width:920px;margin:0 auto;padding-bottom:2rem;margin-left:150px}
+@media(max-width:480px){.page{margin-left:110px;padding:.75rem}}
 .page.active{display:block}
 
 /* CARD */
@@ -434,6 +433,39 @@ tr:hover td{background:var(--krem)}
   </div>
 </div>
 
+<div id="modal-profil" class="overlay">
+  <div class="modal">
+    <div class="modal-hdr"><h3>Profilim & Şifre Değiştir</h3><button class="btn sm" onclick="modalKapat('modal-profil')">✕</button></div>
+    <div class="modal-body">
+      <div id="profil-bilgi" style="background:var(--krem);border-radius:10px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem">
+        <div id="profil-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--yesil);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;font-family:Lora,serif;flex-shrink:0"></div>
+        <div>
+          <div id="profil-ad" style="font-size:15px;font-weight:500"></div>
+          <div id="profil-email" style="font-size:12px;color:var(--yazi3);margin-top:2px"></div>
+          <div id="profil-rol" style="font-size:11px;margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:.8rem;color:var(--yazi)">Şifre Değiştir</div>
+      <div id="sifre-hata" style="color:#c62828;font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:#fde8db;border-radius:6px;display:none"></div>
+      <div id="sifre-ok" style="color:var(--yesil);font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:var(--yesil-cok-ac);border-radius:6px;display:none"></div>
+      <div class="fgrid c1">
+        <div class="fg"><label>Mevcut Şifre</label><input type="password" id="eski-sifre" placeholder="Mevcut şifreniz"></div>
+      </div>
+      <div class="fgrid c1">
+        <div class="fg"><label>Yeni Şifre</label><input type="password" id="yeni-sifre" placeholder="En az 6 karakter"></div>
+      </div>
+      <div class="fgrid c1">
+        <div class="fg"><label>Yeni Şifre (Tekrar)</label><input type="password" id="yeni-sifre2" placeholder="Yeni şifreyi tekrar girin"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="modalKapat('modal-profil')">Kapat</button>
+      <button class="btn pri" onclick="sifreDegistir()">Şifreyi Değiştir</button>
+    </div>
+  </div>
+</div>
+
 <button id="pwa-yukle">📲 Uygulamayı Yükle</button>
 <div id="bil" class="bil"></div>
 
@@ -441,13 +473,25 @@ tr:hover td{background:var(--krem)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-window.modalAc=function(id){document.getElementById(id)?.classList.add('open');};
+window.modalAc=function(id){
+  document.getElementById(id)?.classList.add('open');
+  if(id==='modal-profil' && aktifKullanici){
+    const initials=(aktifKullanici.ad||'?')[0].toUpperCase()+(aktifKullanici.soyad||'')[0]?.toUpperCase()||'';
+    document.getElementById('profil-avatar').textContent=initials;
+    document.getElementById('profil-ad').textContent=(aktifKullanici.ad||'')+' '+(aktifKullanici.soyad||'');
+    document.getElementById('profil-email').textContent=aktifKullanici.email||'';
+    document.getElementById('profil-rol').innerHTML=`<span class="kk-rol ${aktifKullanici.rol==='admin'?'admin':''}">${aktifKullanici.rol==='admin'?'Admin':'Kullanıcı'}</span>`;
+    ['eski-sifre','yeni-sifre','yeni-sifre2'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('sifre-hata').style.display='none';
+    document.getElementById('sifre-ok').style.display='none';
+  }
+};
 window.modalKapat=function(id){document.getElementById(id)?.classList.remove('open');};
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const fb = initializeApp({
   apiKey:"AIzaSyATgeWw_qohVvkWsdj1nuIrCg148UJDmwM",
@@ -516,6 +560,37 @@ window.girisYap = async function(){
 
 document.getElementById('giris-sifre').addEventListener('keydown', e=>{if(e.key==='Enter') window.girisYap();});
 document.getElementById('giris-kullanici-adi').addEventListener('keydown', e=>{if(e.key==='Enter') document.getElementById('giris-sifre').focus();});
+
+window.sifreDegistir = async function(){
+  const eskiSifre = document.getElementById('eski-sifre').value;
+  const yeniSifre = document.getElementById('yeni-sifre').value;
+  const yeniSifre2 = document.getElementById('yeni-sifre2').value;
+  const hataEl = document.getElementById('sifre-hata');
+  const okEl = document.getElementById('sifre-ok');
+  hataEl.style.display='none'; okEl.style.display='none';
+  if(!eskiSifre||!yeniSifre||!yeniSifre2){
+    hataEl.textContent='Tüm alanları doldurun.'; hataEl.style.display='block'; return;
+  }
+  if(yeniSifre.length < 6){
+    hataEl.textContent='Yeni şifre en az 6 karakter olmalı.'; hataEl.style.display='block'; return;
+  }
+  if(yeniSifre !== yeniSifre2){
+    hataEl.textContent='Yeni şifreler eşleşmiyor.'; hataEl.style.display='block'; return;
+  }
+  try {
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(user.email, eskiSifre);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, yeniSifre);
+    okEl.textContent='Şifreniz başarıyla değiştirildi! ✓';
+    okEl.style.display='block';
+    ['eski-sifre','yeni-sifre','yeni-sifre2'].forEach(id=>document.getElementById(id).value='');
+  } catch(e) {
+    hataEl.textContent = (e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')
+      ? 'Mevcut şifre hatalı.' : 'Hata: '+e.message;
+    hataEl.style.display='block';
+  }
+};
 
 window.cikisYap = async function(){
   await signOut(auth);
