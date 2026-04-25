@@ -1003,6 +1003,7 @@ function hmSatirRender(){
       <td><button onclick="hmSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0 4px">×</button></td>
     </tr>`).join('');
   hmToplamGuncelle();
+  hmDegerleriDoldur();
 }
 
 function hmBirimOpts(stokId, seciliId){
@@ -1014,32 +1015,42 @@ function hmBirimOpts(stokId, seciliId){
 window.hmSatirGuncelle = function(i, alan, deger){
   hmSatirListesi[i][alan] = deger;
   if(alan==='stokId'){
-    // Birim güncelle
     const kart = stokKartlar.find(x=>x.id===deger);
     if(kart?.birimId) hmSatirListesi[i].birimId = kart.birimId;
     if(kart?.maliyet) hmSatirListesi[i].fiyat = kart.maliyet.toFixed(2);
-    hmSatirRender();
+    // Sadece birim select'i güncelle
+    const row = document.querySelectorAll('#hm-satirlar tr')[i];
+    if(row){
+      const birimSel = row.querySelector('select:nth-child(1)') || row.querySelectorAll('select')[1];
+      if(birimSel) birimSel.innerHTML = hmBirimOpts(deger, hmSatirListesi[i].birimId);
+      const fiyatEl = row.querySelectorAll('input')[1];
+      if(fiyatEl && kart?.maliyet) fiyatEl.value = kart.maliyet.toFixed(2);
+    }
+  } else if(alan==='birimId'){
+    hmSatirListesi[i].birimId = deger;
   }
 };
 
 window.hmSatirHesapla = function(i, kaynak, val){
-  const s = hmSatirListesi[i];
   hmSatirListesi[i][kaynak] = val;
   const miktar = parseFloat(hmSatirListesi[i].miktar)||0;
   const fiyat  = parseFloat(hmSatirListesi[i].fiyat)||0;
   const tutar  = parseFloat(hmSatirListesi[i].tutar)||0;
+  const row = document.querySelectorAll('#hm-satirlar tr')[i];
+  if(!row) return;
+  const inputs = row.querySelectorAll('input');
+  // inputs[0]=miktar, inputs[1]=fiyat, inputs[2]=tutar
   if(kaynak==='miktar'||kaynak==='fiyat'){
     if(miktar>0&&fiyat>0){
-      hmSatirListesi[i].tutar=(miktar*fiyat).toFixed(2);
-      // Sadece tutar alanını güncelle, re-render yok
-      const tutarEl = document.querySelectorAll('#hm-satirlar tr')[i]?.querySelectorAll('input')[2];
-      if(tutarEl) tutarEl.value = hmSatirListesi[i].tutar;
+      const yeniTutar=(miktar*fiyat).toFixed(2);
+      hmSatirListesi[i].tutar=yeniTutar;
+      if(inputs[2]) inputs[2].value=yeniTutar;
     }
   } else if(kaynak==='tutar'){
     if(miktar>0&&tutar>0){
-      hmSatirListesi[i].fiyat=(tutar/miktar).toFixed(4);
-      const fiyatEl = document.querySelectorAll('#hm-satirlar tr')[i]?.querySelectorAll('input')[1];
-      if(fiyatEl) fiyatEl.value = hmSatirListesi[i].fiyat;
+      const yeniFiyat=(tutar/miktar).toFixed(2);
+      hmSatirListesi[i].fiyat=yeniFiyat;
+      if(inputs[1]) inputs[1].value=yeniFiyat;
     }
   }
   hmToplamGuncelle();
@@ -1047,9 +1058,22 @@ window.hmSatirHesapla = function(i, kaynak, val){
 
 window.hmSatirSil = function(i){ hmSatirListesi.splice(i,1); hmSatirRender(); };
 
+function hmDegerleriDoldur(){
+  // Re-render sonrası mevcut değerleri input'lara yaz
+  document.querySelectorAll('#hm-satirlar tr').forEach((row, i)=>{
+    const s = hmSatirListesi[i];
+    if(!s) return;
+    const inputs = row.querySelectorAll('input');
+    if(inputs[0] && s.miktar) inputs[0].value = s.miktar;
+    if(inputs[1] && s.fiyat) inputs[1].value = s.fiyat;
+    if(inputs[2] && s.tutar) inputs[2].value = s.tutar;
+  });
+}
+
 function hmToplamGuncelle(){
   const toplam = hmSatirListesi.reduce((s,r)=>s+parseFloat(r.tutar||0),0);
-  document.getElementById('hm-toplam').textContent = '₺'+toplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const el = document.getElementById('hm-toplam');
+  if(el) el.textContent = '₺'+toplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 window.kaydetHammadde=async function(){
