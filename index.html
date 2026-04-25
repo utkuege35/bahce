@@ -1024,16 +1024,25 @@ window.hmSatirGuncelle = function(i, alan, deger){
 
 window.hmSatirHesapla = function(i, kaynak, val){
   const s = hmSatirListesi[i];
-  const miktar = kaynak==='miktar' ? parseFloat(val)||0 : parseFloat(s.miktar)||0;
-  const fiyat  = kaynak==='fiyat'  ? parseFloat(val)||0 : parseFloat(s.fiyat)||0;
-  const tutar  = kaynak==='tutar'  ? parseFloat(val)||0 : parseFloat(s.tutar)||0;
   hmSatirListesi[i][kaynak] = val;
+  const miktar = parseFloat(hmSatirListesi[i].miktar)||0;
+  const fiyat  = parseFloat(hmSatirListesi[i].fiyat)||0;
+  const tutar  = parseFloat(hmSatirListesi[i].tutar)||0;
   if(kaynak==='miktar'||kaynak==='fiyat'){
-    if(miktar>0&&fiyat>0){ hmSatirListesi[i].tutar=(miktar*fiyat).toFixed(2); }
+    if(miktar>0&&fiyat>0){
+      hmSatirListesi[i].tutar=(miktar*fiyat).toFixed(2);
+      // Sadece tutar alanını güncelle, re-render yok
+      const tutarEl = document.querySelectorAll('#hm-satirlar tr')[i]?.querySelectorAll('input')[2];
+      if(tutarEl) tutarEl.value = hmSatirListesi[i].tutar;
+    }
   } else if(kaynak==='tutar'){
-    if(miktar>0&&tutar>0){ hmSatirListesi[i].fiyat=(tutar/miktar).toFixed(4); }
+    if(miktar>0&&tutar>0){
+      hmSatirListesi[i].fiyat=(tutar/miktar).toFixed(4);
+      const fiyatEl = document.querySelectorAll('#hm-satirlar tr')[i]?.querySelectorAll('input')[1];
+      if(fiyatEl) fiyatEl.value = hmSatirListesi[i].fiyat;
+    }
   }
-  hmSatirRender();
+  hmToplamGuncelle();
 };
 
 window.hmSatirSil = function(i){ hmSatirListesi.splice(i,1); hmSatirRender(); };
