@@ -301,17 +301,33 @@ tr:hover td{background:var(--krem)}
   <div id="tp-hammadde" class="tab-panel active">
     <div class="card">
       <div class="card-title">Hammadde / Stok Girişi</div>
-      <div class="fgrid c2"><div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div><div class="fg"><label>Stok Kartı</label><select id="hm-stok" onchange="hm_birim_guncelle()"><option value="">Seçin...</option></select></div></div>
-      <div class="fgrid c2">
-        <div class="fg"><label>Miktar</label><input type="number" id="hm-miktar" placeholder="0" min="0" step="any" oninput="hmHesapla('miktar')"></div>
-        <div class="fg"><label>Birim</label><select id="hm-birim"></select></div>
+      <div class="fgrid c2" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
+        <div class="fg"><label>Not / Fatura No</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div>
       </div>
-      <div class="fgrid c2">
-        <div class="fg"><label>Birim Fiyat (₺)</label><input type="number" id="hm-fiyat" placeholder="0.00" min="0" step="0.01" oninput="hmHesapla('fiyat')"></div>
-        <div class="fg"><label>Toplam Tutar (₺)</label><input type="number" id="hm-tutar" placeholder="0.00" min="0" step="0.01" oninput="hmHesapla('tutar')" style="font-weight:500;color:var(--yesil)"></div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:150px">Stok Adı</th>
+            <th style="min-width:100px">Birim</th>
+            <th style="min-width:80px">Miktar</th>
+            <th style="min-width:100px">Birim Fiyat (₺)</th>
+            <th style="min-width:100px">Tutar (₺)</th>
+            <th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="hm-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM TUTAR</td>
+            <td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
       </div>
-      <div class="fgrid c1"><div class="fg"><label>Not</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div></div>
-      <div class="btn-row"><button class="btn pri" onclick="kaydetHammadde()">Girişi Kaydet</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn sm sec" onclick="hmSatirEkle()">+ Satır Ekle</button>
+        <button class="btn pri" onclick="kaydetHammadde()">Tümünü Kaydet</button>
+      </div>
+      
     </div>
   </div>
   <div id="tp-uretim" class="tab-panel">
