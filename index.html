@@ -62,13 +62,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 .sync.load{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
 
 /* NAV */
-/* Masaüstü: sol sidebar */
 .nav{width:150px;background:var(--beyaz);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;z-index:100;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding:.5rem 0}
 .nav::-webkit-scrollbar{display:none}
 .nav button{width:100%;padding:.7rem 1rem;border:none;background:transparent;color:var(--yazi2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;white-space:nowrap;text-align:left}
 .nav button.active{color:var(--yesil);border-left-color:var(--yesil);background:var(--yesil-cok-ac);font-weight:500}
 .nav button:hover:not(.active){background:var(--krem2)}
-/* Telefon: üstte yatay */
 @media(max-width:768px){
   .nav{width:100%;height:auto;flex-direction:row;border-right:none;border-bottom:1px solid var(--border);position:sticky;top:54px;overflow-x:auto;overflow-y:visible;padding:0;bottom:auto}
   .nav button{width:auto;flex:1;min-width:60px;padding:.65rem .4rem;border-left:none;border-bottom:2px solid transparent;text-align:center;font-size:11px;white-space:nowrap}
@@ -674,10 +672,8 @@ window.girisYap = async function(){
   if(!kullaniciAdi||!sifre){hataEl.textContent='Kullanıcı adı ve şifre gerekli.';hataEl.style.display='block';return;}
   btn.disabled=true;btn.textContent='Giriş yapılıyor...';
   try {
-    // Kullanıcı adından email bul
     const {data:kData,error:kErr} = await sb.from('kullanicilar').select('*').eq('kullanici_adi',kullaniciAdi).single();
     if(kErr||!kData){hataEl.textContent='Kullanıcı adı bulunamadı.';hataEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
-    // Supabase Auth ile giriş
     const {data,error} = await sb.auth.signInWithPassword({email:kData.email,password:sifre});
     if(error){hataEl.textContent='Şifre hatalı.';hataEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
     if(hatirla) localStorage.setItem('bahce_hatirla',kullaniciAdi);
@@ -694,7 +690,6 @@ window.girisYap = async function(){
 document.getElementById('giris-sifre').addEventListener('keydown',e=>{if(e.key==='Enter')window.girisYap();});
 document.getElementById('giris-kullanici-adi').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('giris-sifre').focus();});
 
-// Beni hatırla
 const hatirla = localStorage.getItem('bahce_hatirla');
 if(hatirla){
   document.getElementById('giris-kullanici-adi').value=hatirla;
@@ -705,7 +700,6 @@ if(hatirla){
 window.cikisYap = async function(){
   await sb.auth.signOut();
   aktifKullanici=null;
-  // Realtime kanalları temizle
   realtimeKanallar.forEach(k=>sb.removeChannel(k));
   realtimeKanallar=[];
   document.getElementById('giris-wrap').style.display='flex';
@@ -794,11 +788,11 @@ async function baslat(){
   document.getElementById('sync').textContent='⟳';
   document.getElementById('sync').className='sync load';
   
-  await yukle('birimler',d=>{birimler=d;},{});
-  await yukle('stok_gruplari',d=>{gruplar=d;},{});
-  await yukle('stok_kartlar',d=>{stokKartlar=d;},{});
-  await yukle('urunler',d=>{urunler=d;},{});
-  await yukle('kullanicilar',d=>{kullanicilar=d;},{});
+  await yukle('birimler',d=>{birimler=d;});
+  await yukle('stok_gruplari',d=>{gruplar=d;});
+  await yukle('stok_kartlar',d=>{stokKartlar=d;});
+  await yukle('urunler',d=>{urunler=d;});
+  await yukle('kullanicilar',d=>{kullanicilar=d;});
   
   // İşlemleri tarih sırasına göre yükle
   const {data:iData}=await sb.from('islemler').select('*').order('ts',{ascending:false});
@@ -856,7 +850,6 @@ async function ilkBirimleriYukle(){
   if(!error){const {data}=await sb.from('birimler').select('*');if(data)birimler=data;}
 }
 async function ilkGruplariYukle(){
-  // Önce ana grupları ekle, sonra alt grupları
   const anaGruplar=VARSAYILAN_GRUPLAR.filter(g=>g.tip==='ana');
   const altGruplar=VARSAYILAN_GRUPLAR.filter(g=>g.tip==='alt');
   await sb.from('stok_gruplari').insert(anaGruplar);
@@ -916,7 +909,6 @@ function doldurGrupSecleri(){
   el.innerHTML=opts;if(cur)el.value=cur;
   const fil=document.getElementById('stok-grup-fil');
   if(fil){let fo='<option value="">Tüm gruplar</option>';anaGruplar.forEach(ag=>{fo+=`<option value="${ag.id}" style="font-weight:600">${ag.ikon||''} ${ag.ad}</option>`;altGruplar.filter(g=>g.ust_id===ag.id).forEach(alt=>{fo+=`<option value="${alt.id}">&nbsp;&nbsp;↳ ${alt.ikon||''} ${alt.ad}</option>`;});});fil.innerHTML=fo;}
-  // Alt grup seçicisi (tanımlar)
   const ustEl=document.getElementById('altgrp-ust');
   if(ustEl){const c=ustEl.value;ustEl.innerHTML='<option value="">Seçin...</option>'+anaGruplar.map(g=>`<option value="${g.id}">${g.ikon||''} ${g.ad}</option>`).join('');if(c)ustEl.value=c;}
 }
@@ -1004,7 +996,6 @@ window.kaydetHammadde=async function(){
     }
     kaydedilen++;
   }
-  // Verileri yenile
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data;
   const {data:sk}=await sb.from('stok_kartlar').select('*');if(sk)stokKartlar=sk;
   hmSatirListesi=[];hmSatirRender();document.getElementById('hm-not').value='';
@@ -1436,16 +1427,13 @@ window.kullaniciyiKaydet=async function(){
   try {
     if(!mevcutUid){
       if(!sifre||sifre.length<6){bil('Şifre en az 6 karakter olmalı!','err');return;}
-      // Supabase Auth ile kullanıcı oluştur
       const {data:authData,error:authErr}=await sb.auth.admin?.createUser({email,password:sifre,email_confirm:true});
-      // Admin API yoksa signup kullan
       const {data:signData,error:signErr}=await sb.auth.signUp({email,password:sifre});
-      if(signErr&&authErr){bil('Kullanıcı oluşturma hatası: '+( signErr?.message||authErr?.message),'err');return;}
+      if(signErr&&authErr){bil('Kullanıcı oluşturma hatası: '+(signErr?.message||authErr?.message),'err');return;}
       const uid_yeni=(authData?.user?.id||signData?.user?.id);
       if(uid_yeni){
         await sb.from('kullanicilar').insert({id:uid_yeni,ad,soyad,email,kullanici_adi:kullaniciAdi,rol});
       } else {
-        // UID olmadan da kaydet
         await sb.from('kullanicilar').insert({id:uid(),ad,soyad,email,kullanici_adi:kullaniciAdi,rol});
       }
       bil(`${ad} ${soyad} eklendi ✓`);
