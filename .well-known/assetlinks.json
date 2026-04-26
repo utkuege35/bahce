@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.severbahcesi.app",
+    "sha256_cert_fingerprints": ["7A:B9:EA:CC:B2:AB:5D:88:BF:75:81:FA:12:63:3A:C8:BF:78:85:C6:D2:D6:ED:27:6A:3E:C7:60:F8:62:8E:19"]
+  }
+}]
