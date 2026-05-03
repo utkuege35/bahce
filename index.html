@@ -221,8 +221,27 @@ tr:hover td{background:var(--krem)}
       <input type="checkbox" id="giris-hatirla" checked> Beni hatırla
     </label>
     <button class="giris-btn" id="giris-btn" onclick="girisYap()">Giriş Yap</button>
-    <div style="text-align:center;margin-top:.9rem">
+    <div style="text-align:center;margin-top:.9rem;display:flex;flex-direction:column;gap:6px">
+      <button onclick="sifreUnuttumAc()" style="background:none;border:none;color:var(--turuncu);font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;text-decoration:underline">Şifremi unuttum</button>
       <button onclick="sifrePaneliAc()" style="background:none;border:none;color:var(--yesil);font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif;text-decoration:underline">Şifremi değiştirmek istiyorum</button>
+    </div>
+  </div>
+</div>
+
+<!-- ŞİFREMİ UNUTTUM PANELİ -->
+<div id="sifre-unuttum-panel" style="display:none;position:fixed;inset:0;background:var(--yesil);z-index:2001;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto">
+  <div style="background:var(--beyaz);border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:1.5rem">🔑</div>
+      <h2 style="font-family:Lora,serif;font-size:1.1rem;color:var(--yesil);margin-top:.4rem">Şifremi Unuttum</h2>
+      <p style="font-size:12px;color:var(--yazi3);margin-top:6px">E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.</p>
+    </div>
+    <div id="unuttum-hata" style="color:#c62828;font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:#fde8db;border-radius:6px;display:none"></div>
+    <div id="unuttum-ok" style="color:var(--yesil);font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:var(--yesil-cok-ac);border-radius:6px;display:none"></div>
+    <div class="giris-fg"><label>E-posta</label><input type="email" id="unuttum-email" placeholder="E-posta adresiniz"></div>
+    <button class="giris-btn" onclick="sifreSifirlamaGonder()">Sıfırlama Maili Gönder</button>
+    <div style="text-align:center;margin-top:.9rem">
+      <button onclick="sifreUnuttumKapat()" style="background:none;border:none;color:var(--yazi3);font-size:12px;cursor:pointer;font-family:DM Sans,sans-serif">← Giriş ekranına dön</button>
     </div>
   </div>
 </div>
@@ -707,6 +726,28 @@ window.cikisYap = async function(){
 };
 
 // ===== ŞİFRE DEĞİŞTİR =====
+window.sifreUnuttumAc=function(){
+  document.getElementById('sifre-unuttum-panel').style.display='flex';
+  document.getElementById('unuttum-email').value='';
+  document.getElementById('unuttum-hata').style.display='none';
+  document.getElementById('unuttum-ok').style.display='none';
+};
+window.sifreUnuttumKapat=function(){document.getElementById('sifre-unuttum-panel').style.display='none';};
+
+window.sifreSifirlamaGonder=async function(){
+  const email=document.getElementById('unuttum-email').value.trim();
+  const hataEl=document.getElementById('unuttum-hata');
+  const okEl=document.getElementById('unuttum-ok');
+  hataEl.style.display='none';okEl.style.display='none';
+  if(!email){hataEl.textContent='E-posta adresi gerekli.';hataEl.style.display='block';return;}
+  try {
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://utkuege35.github.io/bahce/'});
+    if(error){hataEl.textContent='Hata: '+error.message;hataEl.style.display='block';return;}
+    okEl.textContent='Sıfırlama bağlantısı e-postanıza gönderildi ✓';okEl.style.display='block';
+    document.getElementById('unuttum-email').value='';
+  } catch(e){hataEl.textContent='Hata: '+e.message;hataEl.style.display='block';}
+};
+
 window.sifrePaneliAc=function(){
   document.getElementById('giris-sifre-panel').style.display='flex';
   ['gsifre-kullanici','gsifre-eski','gsifre-yeni','gsifre-yeni2'].forEach(id=>document.getElementById(id).value='');
