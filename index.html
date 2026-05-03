@@ -266,6 +266,21 @@ tr:hover td{background:var(--krem)}
   </div>
 </div>
 
+<!-- YENİ ŞİFRE BELİRLE PANELİ -->
+<div id="yeni-sifre-panel" style="display:none;position:fixed;inset:0;background:var(--yesil);z-index:2002;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto">
+  <div style="background:var(--beyaz);border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-size:1.5rem">🔐</div>
+      <h2 style="font-family:Lora,serif;font-size:1.1rem;color:var(--yesil);margin-top:.4rem">Yeni Şifre Belirle</h2>
+    </div>
+    <div id="yenisifre-hata" style="color:#c62828;font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:#fde8db;border-radius:6px;display:none"></div>
+    <div id="yenisifre-ok" style="color:var(--yesil);font-size:12px;margin-bottom:.8rem;padding:8px 10px;background:var(--yesil-cok-ac);border-radius:6px;display:none"></div>
+    <div class="giris-fg"><label>Yeni Şifre</label><input type="password" id="yenisifre1" placeholder="En az 6 karakter"></div>
+    <div class="giris-fg"><label>Yeni Şifre (Tekrar)</label><input type="password" id="yenisifre2" placeholder="Tekrar girin"></div>
+    <button class="giris-btn" onclick="yeniSifreKaydet()">Şifremi Güncelle</button>
+  </div>
+</div>
+
 <!-- ANA UYGULAMA -->
 <div id="uygulama" style="display:none">
 
@@ -1579,6 +1594,39 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('pwa-yukle').style.display='block';});
 document.getElementById('pwa-yukle').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const r=await deferredPrompt.userChoice;if(r.outcome==='accepted')bil('Uygulama yüklendi! ✓');deferredPrompt=null;document.getElementById('pwa-yukle').style.display='none';});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+
+// ŞİFRE SIFIRLAMA LİNKİ KONTROLÜ
+window.yeniSifreKaydet=async function(){
+  const s1=document.getElementById('yenisifre1').value;
+  const s2=document.getElementById('yenisifre2').value;
+  const hataEl=document.getElementById('yenisifre-hata');
+  const okEl=document.getElementById('yenisifre-ok');
+  hataEl.style.display='none';okEl.style.display='none';
+  if(!s1||!s2){hataEl.textContent='Her iki alanı da doldurun.';hataEl.style.display='block';return;}
+  if(s1.length<6){hataEl.textContent='Şifre en az 6 karakter olmalı.';hataEl.style.display='block';return;}
+  if(s1!==s2){hataEl.textContent='Şifreler eşleşmiyor.';hataEl.style.display='block';return;}
+  const {error}=await sb.auth.updateUser({password:s1});
+  if(error){hataEl.textContent='Hata: '+error.message;hataEl.style.display='block';return;}
+  okEl.textContent='Şifreniz güncellendi! Giriş yapabilirsiniz ✓';okEl.style.display='block';
+  setTimeout(()=>{
+    document.getElementById('yeni-sifre-panel').style.display='none';
+    document.getElementById('giris-wrap').style.display='flex';
+  },2000);
+};
+
+// URL'de reset token varsa yeni şifre panelini göster
+(async()=>{
+  const hash=window.location.hash;
+  if(hash.includes('type=recovery')){
+    const params=new URLSearchParams(hash.substring(1));
+    const accessToken=params.get('access_token');
+    if(accessToken){
+      await sb.auth.setSession({access_token:accessToken,refresh_token:params.get('refresh_token')||''});
+      document.getElementById('giris-wrap').style.display='none';
+      document.getElementById('yeni-sifre-panel').style.display='flex';
+    }
+  }
+})();
 </script>
 </body>
 </html>
