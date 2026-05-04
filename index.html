@@ -764,6 +764,7 @@ function doldurMerkezSecleri(){
   if(gkEl){const c=gkEl.value;gkEl.innerHTML='<option value="">—</option>'+merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}">${m.ad}</option>`).join('');if(c)gkEl.value=c;}
 }
 window.gp=function(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
   document.querySelector(`.nav button[onclick="gp('${id}')"]`)?.classList.add('active');
