@@ -231,7 +231,7 @@ tr:hover td{background:var(--krem)}
         <div class="fg"><label>Not / Fatura No</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Stok</th><th style="min-width:90px">Birim</th><th style="min-width:75px">Miktar</th><th style="min-width:90px">B.Fiyat (₺)</th><th style="min-width:90px">Tutar (₺)</th><th style="min-width:140px">Açıklama</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:180px">Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
           <tbody id="hm-satirlar"></tbody>
           <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
         </table>
@@ -259,7 +259,7 @@ tr:hover td{background:var(--krem)}
         <div class="fg"><label>Not / Müşteri</label><input type="text" id="st-not" placeholder="Müşteri adı..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="min-width:90px">Birim</th><th style="min-width:75px">Miktar</th><th style="min-width:90px">B.Fiyat (₺)</th><th style="min-width:90px">Tutar (₺)</th><th style="min-width:140px">Açıklama</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:180px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
           <tbody id="st-satirlar"></tbody>
           <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
         </table>
@@ -277,9 +277,9 @@ tr:hover td{background:var(--krem)}
         <div class="fg"><label>Not</label><input type="text" id="gd-genel-not" placeholder="Genel açıklama..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Gider Kalemi</th><th style="min-width:90px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:180px">Gider Kalemi</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
           <tbody id="gd-satirlar"></tbody>
-          <tfoot><tr><td style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="gd-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--turuncu);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="gd-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--turuncu);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1206,15 +1206,15 @@ window.kaydetUretim=async function(){
 // ===== HAMMADDE =====
 let hmSatirListesi=[];
 window.hmSatirEkle=function(){hmSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',merkez_id:''});hmSatirRender();};
-function hmBirimOpts(stokId,seciliId){const s=stoklar.find(x=>x.id===stokId);const list=s?.birim_id?birimler.filter(b=>b.id===s.birim_id||b.temel_id===s.birim_id):birimler;return list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.ad} (${b.kisaltma})</option>`).join('');}
+function hmBirimOpts(stokId,seciliId){const s=stoklar.find(x=>x.id===stokId);const list=s?.birim_id?birimler.filter(b=>b.id===s.birim_id||b.temel_id===s.birim_id):birimler;return list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');}
 function hmSatirRender(){
   const el=document.getElementById('hm-satirlar');if(!el)return;
   el.innerHTML=hmSatirListesi.map((s,i)=>`<tr>
     <td><select onchange="hmSatirGuncelle(${i},'stokId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Stok seçin...</option>${stoklar.filter(x=>x.tip==='stok'&&x.aktif!==false).map(k=>`<option value="${k.id}"${k.id===s.stokId?' selected':''}>[${k.kod}] ${k.ad}</option>`).join('')}</select></td>
-    <td><select onchange="hmSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${hmBirimOpts(s.stokId,s.birimId)}</select></td>
-    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td><select onchange="hmSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${hmBirimOpts(s.stokId,s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
     <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><button onclick="hmSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
@@ -1261,16 +1261,17 @@ function stBirimOpts(secimId,seciliId){
   let tbId=null;
   if(tip==='urun'){const u=urunler.find(x=>x.id===secimId);tbId=u?.birim_id;}
   else{const s=stoklar.find(x=>x.id===secimId);tbId=s?.birim_id;}
-  return birimSecenekleri(tbId).replace(`value="${seciliId}"`,`value="${seciliId}" selected`);
+  const list=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
+  return '<option value="">-</option>'+list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');
 }
 function stSatirRender(){
   const el=document.getElementById('st-satirlar');if(!el)return;
   el.innerHTML=stSatirListesi.map((s,i)=>`<tr>
     <td><select onchange="stSatirGuncelle(${i},'secimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Seçin...</option>${stUrunOpts(s.secimId)}</select></td>
-    <td><select onchange="stSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${stBirimOpts(s.secimId,s.birimId)}</select></td>
-    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td><select onchange="stSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${stBirimOpts(s.secimId,s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
     <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><button onclick="stSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
@@ -1316,7 +1317,8 @@ window.kaydetSatis=async function(){
 // ===== GİDER =====
 const GD_KATLAR=['Elektrik & su','Genel giderler','Personel','Kira','Diğer gider'];
 let gdSatirListesi=[];
-window.gdSatirEkle=function(){gdSatirListesi.push({kalemId:'',tutar:'',satir_not:''});gdSatirRender();};
+window.gdSatirEkle=function(){gdSatirListesi.push({kalemId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:''});gdSatirRender();};
+function gdBirimOpts(seciliId){return '<option value="">-</option>'+birimler.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');}
 function gdSatirRender(){
   const el=document.getElementById('gd-satirlar');if(!el)return;
   const kalemler=giderKalemleri.filter(g=>g.tip==='kalem'&&g.aktif!==false);
@@ -1325,7 +1327,10 @@ function gdSatirRender(){
       <option value="">Kalem seçin...</option>
       ${kalemler.map(k=>`<option value="${k.id}"${k.id===s.kalemId?' selected':''}>[${k.kod}] ${k.ad}</option>`).join('')}
     </select></td>
-    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="gdSatirGuncelle(${i},'tutar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--turuncu)"></td>
+    <td><select onchange="gdSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${gdBirimOpts(s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="gdSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="gdSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="gdSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--turuncu)"></td>
     <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="gdSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><button onclick="gdSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
@@ -1333,18 +1338,28 @@ function gdSatirRender(){
 }
 function gdToplamGuncelle(){const t=gdSatirListesi.reduce((s,r)=>s+parseFloat(r.tutar||0),0);const el=document.getElementById('gd-toplam');if(el)el.textContent='₺'+t.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 window.gdSatirGuncelle=function(i,alan,deger){gdSatirListesi[i][alan]=deger;if(alan==='tutar')gdToplamGuncelle();};
+window.gdSatirHesapla=function(i,kaynak,val){
+  gdSatirListesi[i][kaynak]=val;
+  const mik=parseFloat(gdSatirListesi[i].miktar)||0;const fiy=parseFloat(gdSatirListesi[i].fiyat)||0;const tut=parseFloat(gdSatirListesi[i].tutar)||0;
+  const row=document.querySelectorAll('#gd-satirlar tr')[i];if(!row)return;const inputs=row.querySelectorAll('input[type="number"]');
+  if(kaynak==='miktar'||kaynak==='fiyat'){if(mik>0&&fiy>0){const y=(mik*fiy).toFixed(2);gdSatirListesi[i].tutar=y;if(inputs[2])inputs[2].value=y;}}
+  else if(kaynak==='tutar'){if(mik>0&&tut>0){const y=(tut/mik).toFixed(2);gdSatirListesi[i].fiyat=y;if(inputs[1])inputs[1].value=y;}}
+  gdToplamGuncelle();
+};
 window.gdSatirSil=function(i){gdSatirListesi.splice(i,1);gdSatirRender();};
 window.kaydetGider=async function(){
   const tarih=document.getElementById('gd-tarih').value;const an=document.getElementById('gd-genel-not').value;
   if(!tarih){bil('Tarih zorunlu!','err');return;}
-  const gecerli=gdSatirListesi.filter(s=>parseFloat(s.tutar)>0);if(!gecerli.length){bil('En az bir tutar girin!','err');return;}
+  const gecerli=gdSatirListesi.filter(s=>parseFloat(s.tutar)>0||( parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0));
+  if(!gecerli.length){bil('En az bir satır!','err');return;}
   let n=0;
   for(const s of gecerli){
-    const tutar=parseFloat(s.tutar);
+    const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;
+    const tutar=parseFloat(s.tutar)||(mik&&fiy?mik*fiy:0);
+    if(!tutar){bil('Tutar sıfır olan satır var!','err');return;}
     const kalem=giderKalemleri.find(k=>k.id===s.kalemId);
-    const merkez_id=kalem?.merkez_id||null;
-    const kat=kalem?.ad||'Gider';
-    await sb.from('islemler').insert({tur:'gider',tarih,tutar,kat,gider_kalem_id:s.kalemId||null,aciklama:kat,aciklama_not:an,satir_not:s.satir_not||null,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
+    const merkez_id=kalem?.merkez_id||null;const kat=kalem?.ad||'Gider';
+    await sb.from('islemler').insert({tur:'gider',tarih,tutar,miktar:mik||null,birim_id:s.birimId||null,fiyat:fiy||null,kat,gider_kalem_id:s.kalemId||null,aciklama:kat,aciklama_not:an,satir_not:s.satir_not||null,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
     n++;
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data;
