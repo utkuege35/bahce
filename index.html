@@ -231,9 +231,9 @@ tr:hover td{background:var(--krem)}
         <div class="fg"><label>Not / Fatura No</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Stok</th><th style="min-width:100px">Birim</th><th style="min-width:80px">Miktar</th><th style="min-width:100px">Birim Fiyat (₺)</th><th style="min-width:100px">Tutar (₺)</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Stok</th><th style="min-width:90px">Birim</th><th style="min-width:75px">Miktar</th><th style="min-width:90px">B.Fiyat (₺)</th><th style="min-width:90px">Tutar (₺)</th><th style="min-width:120px">Açıklama</th><th style="min-width:110px">Masraf Merkezi</th><th style="width:36px"></th></tr></thead>
           <tbody id="hm-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -259,9 +259,9 @@ tr:hover td{background:var(--krem)}
         <div class="fg"><label>Not / Müşteri</label><input type="text" id="st-not" placeholder="Müşteri adı..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="min-width:120px">Gelir Kategorisi</th><th style="min-width:100px">Birim</th><th style="min-width:80px">Miktar</th><th style="min-width:100px">Birim Fiyat (₺)</th><th style="min-width:100px">Tutar (₺)</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="min-width:90px">Birim</th><th style="min-width:75px">Miktar</th><th style="min-width:90px">B.Fiyat (₺)</th><th style="min-width:90px">Tutar (₺)</th><th style="min-width:120px">Açıklama</th><th style="min-width:110px">Gelir Merkezi</th><th style="width:36px"></th></tr></thead>
           <tbody id="st-satirlar"></tbody>
-          <tfoot><tr><td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -272,9 +272,20 @@ tr:hover td{background:var(--krem)}
   </div>
   <div id="tp-gider" class="tab-panel">
     <div class="card"><div class="card-title">Genel Gider</div>
-      <div class="fgrid c2"><div class="fg"><label>Tarih</label><input type="date" id="gd-tarih"></div><div class="fg"><label>Kategori</label><select id="gd-kat"><option>Elektrik &amp; su</option><option>Genel giderler</option><option>Personel</option><option>Kira</option><option>Diğer gider</option></select></div></div>
-      <div class="fgrid c2"><div class="fg"><label>Tutar (₺)</label><input type="number" id="gd-tutar" placeholder="0.00" min="0" step="0.01"></div><div class="fg"><label>Not</label><input type="text" id="gd-not" placeholder="Açıklama..."></div></div>
-      <div class="btn-row"><button class="btn pri" onclick="kaydetGider()">Gideri Kaydet</button></div>
+      <div class="fgrid c2" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="gd-tarih"></div>
+        <div class="fg"><label>Not</label><input type="text" id="gd-genel-not" placeholder="Genel açıklama..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table style="font-size:13px"><thead><tr><th style="min-width:130px">Kategori</th><th style="min-width:90px">Tutar (₺)</th><th style="min-width:140px">Açıklama</th><th style="min-width:110px">Masraf Merkezi</th><th style="width:36px"></th></tr></thead>
+          <tbody id="gd-satirlar"></tbody>
+          <tfoot><tr><td style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="gd-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--turuncu);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn sm sec" onclick="gdSatirEkle()">+ Satır Ekle</button>
+        <button class="btn pri" onclick="kaydetGider()">Tümünü Kaydet</button>
+      </div>
     </div>
   </div>
 </div>
@@ -300,6 +311,11 @@ tr:hover td{background:var(--krem)}
   <div id="urun-tree"></div>
 </div>
 <div id="tanimlar" class="page">
+  <div class="tabs">
+    <button class="tab active" onclick="tanimTab('birimler',this)">Birimler</button>
+    <button class="tab" onclick="tanimTab('merkezler',this)">Gelir / Masraf Merkezleri</button>
+  </div>
+  <div id="tt-birimler" class="tab-panel active">
   <div class="card"><div class="card-title">Birimler</div>
     <div class="fgrid c3"><div class="fg"><label>Birim Adı</label><input type="text" id="tb-ad" placeholder="kg, adet..."></div><div class="fg"><label>Kısaltma</label><input type="text" id="tb-kisaltma" placeholder="kg, ad..."></div><div class="fg"><label>Tür</label><select id="tb-tur"><option value="agirlik">Ağırlık</option><option value="hacim">Hacim</option><option value="adet">Adet</option><option value="diger">Diğer</option></select></div></div>
     <div class="btn-row"><button class="btn pri" onclick="kaydetTemelBirim()">Temel Birim Ekle</button></div>
@@ -309,6 +325,18 @@ tr:hover td{background:var(--krem)}
     <div class="btn-row"><button class="btn sec" onclick="kaydetAltBirim()">Alt Birim Ekle</button></div>
     <div class="sep"></div>
     <div id="birim-liste"></div>
+  </div>
+  </div>
+  <div id="tt-merkezler" class="tab-panel">
+  <div class="card"><div class="card-title">Yeni Merkez Ekle</div>
+    <div class="fgrid c3">
+      <div class="fg"><label>Merkez Adı</label><input type="text" id="mz-ad" placeholder="Kafe, Bahçe, Personel..."></div>
+      <div class="fg"><label>Kod</label><input type="text" id="mz-kod" placeholder="KAF, BAH..."></div>
+      <div class="fg"><label>Tip</label><select id="mz-tip"><option value="gelir">Gelir Merkezi</option><option value="masraf">Masraf Merkezi</option></select></div>
+    </div>
+    <div class="btn-row"><button class="btn pri" onclick="kaydetMerkez()">Ekle</button></div>
+  </div>
+  <div class="card"><div class="card-title">Tanımlı Merkezler</div><div id="merkez-liste"></div></div>
   </div>
 </div>
 <div id="rapor" class="page">
@@ -461,7 +489,7 @@ tr:hover td{background:var(--krem)}
 const SUPABASE_URL='https://juzsbljyuqdcxarpkfxr.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1enNibGp5dXFkY3hhcnBrZnhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxODUxNzAsImV4cCI6MjA5Mjc2MTE3MH0.wffGb_TKfUvgRKtZX5q2Z02x-1MOoGQWNa2FyzsOXEY';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let aktifKullanici=null,stoklar=[],urunler=[],urunBilesenleri=[],islemler=[],birimler=[],kullanicilar=[],isimLoglari=[],realtimeKanallar=[];
+let aktifKullanici=null,stoklar=[],urunler=[],urunBilesenleri=[],islemler=[],birimler=[],merkezler=[],kullanicilar=[],isimLoglari=[],realtimeKanallar=[];
 const AYLAR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const para=n=>'₺'+Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const bugun=()=>new Date().toISOString().split('T')[0];
@@ -472,6 +500,9 @@ function birimTemelCarp(id){const b=birimler.find(x=>x.id===id);if(!b)return 1;r
 function birimSecenekleri(temelId){
   if(!temelId)return birimler.map(b=>`<option value="${b.id}">${b.ad} (${b.kisaltma})</option>`).join('');
   return birimler.filter(b=>b.id===temelId||b.temel_id===temelId).map(b=>`<option value="${b.id}">${b.ad} (${b.kisaltma})</option>`).join('');
+}
+function merkezOpts(tip,seciliId=''){
+  return '<option value="">—</option>'+merkezler.filter(m=>m.tip===tip&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===seciliId?' selected':''}>[${m.kod}] ${m.ad}</option>`).join('');
 }
 function tumAltlar(liste,ustId){const a=liste.filter(x=>x.ust_id===ustId);let s=[...a];a.forEach(x=>{s=[...s,...tumAltlar(liste,x.id)];});return s;}
 const renkMap={turuncu:'var(--turuncu)',mavi:'var(--mavi)',mor:'var(--mor)',sari:'var(--sari)',yesil:'var(--yesil)'};
@@ -623,16 +654,18 @@ function uygulamaAc(){
 
 async function baslat(){
   document.getElementById('sync').textContent='⟳';document.getElementById('sync').className='sync load';
-  const [b,s,u,ub,k,il]=await Promise.all([
+  const [b,s,u,ub,k,il,mz]=await Promise.all([
     sb.from('birimler').select('*'),
     sb.from('stoklar').select('*').order('kod'),
     sb.from('urunler').select('*').order('kod'),
     sb.from('urun_bilesenleri').select('*'),
     sb.from('kullanicilar').select('*'),
-    sb.from('isim_loglari').select('*').order('tarih',{ascending:false})
+    sb.from('isim_loglari').select('*').order('tarih',{ascending:false}),
+    sb.from('merkezler').select('*').order('kod')
   ]);
   if(b.data)birimler=b.data;if(s.data)stoklar=s.data;if(u.data)urunler=u.data;
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)isimLoglari=il.data;
+  if(mz.data)merkezler=mz.data;
   const {data:iData}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(iData)islemler=iData;
   document.getElementById('sync').textContent='● Canlı';document.getElementById('sync').className='sync ok';
   const stokK=sb.channel('stoklar-ch').on('postgres_changes',{event:'*',schema:'public',table:'stoklar'},async()=>{
@@ -646,10 +679,11 @@ async function baslat(){
   }).subscribe();
   realtimeKanallar=[stokK,urunK,islemK];
   doldurBirimSecleri();doldurStokFil();doldurUrunFil();doldurIslemSecleri();
-  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderKullanicilar();kontolUyari();
+  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderKullanicilar();kontolUyari();
   ['hm-tarih','ur-tarih','st-tarih','gd-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=bugun();});
   if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),200);
   if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),250);
+  if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),300);
 }
 
 function doldurBirimSecleri(){
@@ -684,10 +718,11 @@ window.gp=function(id){
   document.getElementById(id)?.classList.add('active');
   document.querySelector(`.nav button[onclick="gp('${id}')"]`)?.classList.add('active');
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
-  if(id==='rapor')renderRapor();if(id==='tanimlar')renderBirimler();if(id==='kullanicilar')renderKullanicilar();
-  if(id==='islem'){if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);}
+  if(id==='rapor')renderRapor();if(id==='tanimlar'){renderBirimler();renderMerkezler();}if(id==='kullanicilar')renderKullanicilar();
+  if(id==='islem'){if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),200);}
 };
 window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');};
+window.tanimTab=function(id,btn){document.querySelectorAll('#tanimlar .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#tanimlar .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tt-'+id)?.classList.add('active');btn.classList.add('active');};
 
 // ===== STOK MİKTAR =====
 function stokMiktar(stokId){
@@ -1111,16 +1146,18 @@ window.kaydetUretim=async function(){
 
 // ===== HAMMADDE =====
 let hmSatirListesi=[];
-window.hmSatirEkle=function(){hmSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:''});hmSatirRender();};
+window.hmSatirEkle=function(){hmSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',merkez_id:''});hmSatirRender();};
 function hmBirimOpts(stokId,seciliId){const s=stoklar.find(x=>x.id===stokId);const list=s?.birim_id?birimler.filter(b=>b.id===s.birim_id||b.temel_id===s.birim_id):birimler;return list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.ad} (${b.kisaltma})</option>`).join('');}
 function hmSatirRender(){
   const el=document.getElementById('hm-satirlar');if(!el)return;
   el.innerHTML=hmSatirListesi.map((s,i)=>`<tr>
-    <td><select onchange="hmSatirGuncelle(${i},'stokId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Stok seçin...</option>${stoklar.filter(x=>x.tip==='stok').map(k=>`<option value="${k.id}"${k.id===s.stokId?' selected':''}>[${k.kod}] ${k.ad}</option>`).join('')}</select></td>
+    <td><select onchange="hmSatirGuncelle(${i},'stokId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Stok seçin...</option>${stoklar.filter(x=>x.tip==='stok'&&x.aktif!==false).map(k=>`<option value="${k.id}"${k.id===s.stokId?' selected':''}>[${k.kod}] ${k.ad}</option>`).join('')}</select></td>
     <td><select onchange="hmSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${hmBirimOpts(s.stokId,s.birimId)}</select></td>
     <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><select onchange="hmSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${merkezOpts('masraf',s.merkez_id)}</select></td>
     <td><button onclick="hmSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
   hmToplamGuncelle();
@@ -1143,7 +1180,7 @@ window.kaydetHammadde=async function(){
   for(const s of gecerli){
     const mik=parseFloat(s.miktar);const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy);const hFiy=tut>0&&mik>0?tut/mik:fiy;
     const kart=stoklar.find(x=>x.id===s.stokId);
-    await sb.from('islemler').insert({tur:'giris',tarih,stok_id:s.stokId,birim_id:s.birimId,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:`${kart?.ad||''} girişi`,kat:'Hammadde alımı',aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
+    await sb.from('islemler').insert({tur:'giris',tarih,stok_id:s.stokId,birim_id:s.birimId,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:`${kart?.ad||''} girişi`,kat:'Hammadde alımı',aciklama_not:an,satir_not:s.satir_not||null,merkez_id:s.merkez_id||null,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
     if(hFiy>0){const yeni=hFiy/birimTemelCarp(s.birimId);const eski=parseFloat(kart?.maliyet||0);await sb.from('stoklar').update({maliyet:eski>0?(eski+yeni)/2:yeni}).eq('id',s.stokId);}
     n++;
   }
@@ -1154,7 +1191,7 @@ window.kaydetHammadde=async function(){
 
 // ===== SATIŞ =====
 let stSatirListesi=[];
-window.stSatirEkle=function(){stSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kat:'Diğer gelir'});stSatirRender();};
+window.stSatirEkle=function(){stSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',merkez_id:''});stSatirRender();};
 const ST_KATLAR=['Yumurta satışı','Çiçek satışı','Kahvaltı & gözleme geliri','Diğer gelir'];
 function stUrunOpts(seciliId){
   const tip=document.getElementById('st-tip')?.value||'urun';
@@ -1172,11 +1209,12 @@ function stSatirRender(){
   const el=document.getElementById('st-satirlar');if(!el)return;
   el.innerHTML=stSatirListesi.map((s,i)=>`<tr>
     <td><select onchange="stSatirGuncelle(${i},'secimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Seçin...</option>${stUrunOpts(s.secimId)}</select></td>
-    <td><select onchange="stSatirGuncelle(${i},'kat',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${ST_KATLAR.map(k=>`<option value="${k}"${k===s.kat?' selected':''}>${k}</option>`).join('')}</select></td>
     <td><select onchange="stSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${stBirimOpts(s.secimId,s.birimId)}</select></td>
     <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><select onchange="stSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${merkezOpts('gelir',s.merkez_id)}</select></td>
     <td><button onclick="stSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
   stToplamGuncelle();
@@ -1200,16 +1238,16 @@ window.kaydetSatis=async function(){
   const gecerli=stSatirListesi.filter(s=>s.secimId&&parseFloat(s.miktar)>0);if(!gecerli.length){bil('En az bir satır!','err');return;}
   let n=0;
   for(const s of gecerli){
-    const mik=parseFloat(s.miktar);const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy);const bId=s.birimId||'';const kat=s.kat||'Diğer gelir';
+    const mik=parseFloat(s.miktar);const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy);const bId=s.birimId||'';
     if(tip==='urun'){
       const u=urunler.find(x=>x.id===s.secimId);
       if((u?.stok||0)<mik){if(!confirm(`${u?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`))return;}
       await sb.from('urunler').update({stok:(u.stok||0)-mik}).eq('id',s.secimId);
-      await sb.from('islemler').insert({tur:'satis',tarih,urun_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${u?.ad||''} satışı`,kat,aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
+      await sb.from('islemler').insert({tur:'satis',tarih,urun_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${u?.ad||''} satışı`,kat:'Satış',aciklama_not:an,satir_not:s.satir_not||null,merkez_id:s.merkez_id||null,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
     }else{
       const sk=stoklar.find(x=>x.id===s.secimId);
       if(stokMiktar(s.secimId)<mik*birimTemelCarp(bId)){if(!confirm(`${sk?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`))return;}
-      await sb.from('islemler').insert({tur:'satis',tarih,stok_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${sk?.ad||''} satışı`,kat,aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
+      await sb.from('islemler').insert({tur:'satis',tarih,stok_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${sk?.ad||''} satışı`,kat:'Satış',aciklama_not:an,satir_not:s.satir_not||null,merkez_id:s.merkez_id||null,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
     }
     n++;
   }
@@ -1219,12 +1257,35 @@ window.kaydetSatis=async function(){
 };
 
 // ===== GİDER =====
+const GD_KATLAR=['Elektrik & su','Genel giderler','Personel','Kira','Diğer gider'];
+let gdSatirListesi=[];
+window.gdSatirEkle=function(){gdSatirListesi.push({kat:'Diğer gider',tutar:'',satir_not:'',merkez_id:''});gdSatirRender();};
+function gdSatirRender(){
+  const el=document.getElementById('gd-satirlar');if(!el)return;
+  el.innerHTML=gdSatirListesi.map((s,i)=>`<tr>
+    <td><select onchange="gdSatirGuncelle(${i},'kat',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${GD_KATLAR.map(k=>`<option value="${k}"${k===s.kat?' selected':''}>${k}</option>`).join('')}</select></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="gdSatirGuncelle(${i},'tutar',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--turuncu)"></td>
+    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="gdSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><select onchange="gdSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${merkezOpts('masraf',s.merkez_id)}</select></td>
+    <td><button onclick="gdSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
+  </tr>`).join('');
+  gdToplamGuncelle();
+}
+function gdToplamGuncelle(){const t=gdSatirListesi.reduce((s,r)=>s+parseFloat(r.tutar||0),0);const el=document.getElementById('gd-toplam');if(el)el.textContent='₺'+t.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+window.gdSatirGuncelle=function(i,alan,deger){gdSatirListesi[i][alan]=deger;if(alan==='tutar')gdToplamGuncelle();};
+window.gdSatirSil=function(i){gdSatirListesi.splice(i,1);gdSatirRender();};
 window.kaydetGider=async function(){
-  const tarih=document.getElementById('gd-tarih').value;const kat=document.getElementById('gd-kat').value;const tutar=parseFloat(document.getElementById('gd-tutar').value);const an=document.getElementById('gd-not').value;
-  if(!tarih||isNaN(tutar)||tutar<=0){bil('Eksik bilgi!','err');return;}
-  await sb.from('islemler').insert({tur:'gider',tarih,tutar,kat,aciklama:kat,aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
+  const tarih=document.getElementById('gd-tarih').value;const an=document.getElementById('gd-genel-not').value;
+  if(!tarih){bil('Tarih zorunlu!','err');return;}
+  const gecerli=gdSatirListesi.filter(s=>parseFloat(s.tutar)>0);if(!gecerli.length){bil('En az bir tutar girin!','err');return;}
+  let n=0;
+  for(const s of gecerli){
+    const tutar=parseFloat(s.tutar);
+    await sb.from('islemler').insert({tur:'gider',tarih,tutar,kat:s.kat,aciklama:s.kat,aciklama_not:an,satir_not:s.satir_not||null,merkez_id:s.merkez_id||null,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
+    n++;
+  }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data;
-  document.getElementById('gd-tutar').value='';document.getElementById('gd-not').value='';bil('Gider kaydedildi ✓');
+  gdSatirListesi=[];gdSatirRender();document.getElementById('gd-genel-not').value='';bil(`${n} gider kaydedildi ✓`);
 };
 
 // ===== PANEL =====
@@ -1291,6 +1352,51 @@ window.kullaniciDuzenle=function(id){
 function renderKullanicilar(){
   if(!kullanicilar.length){document.getElementById('kullanici-liste').innerHTML='<div class="bos">Henüz kullanıcı yok.</div>';return;}
   document.getElementById('kullanici-liste').innerHTML=kullanicilar.map(k=>{const ini=(k.ad||'?')[0].toUpperCase()+(k.soyad||'')[0]?.toUpperCase()||'';return `<div class="kullanici-kart"><div class="kk-avatar">${ini}</div><div class="kk-bilgi"><div class="kk-ad">${k.ad||''} ${k.soyad||''}</div><div class="kk-email">${k.email||''} ${k.kullanici_adi?'· @'+k.kullanici_adi:''}</div><span class="kk-rol ${k.rol==='admin'?'admin':''}">${k.rol==='admin'?'Admin':'Kullanıcı'}</span></div><button class="btn sm" onclick="kullaniciDuzenle('${k.id}')">Düzenle</button></div>`;}).join('');
+}
+
+// ===== MERKEZLER =====
+window.kaydetMerkez=async function(){
+  const ad=document.getElementById('mz-ad').value.trim();
+  const kod=document.getElementById('mz-kod').value.trim().toUpperCase();
+  const tip=document.getElementById('mz-tip').value;
+  if(!ad||!kod){bil('Ad ve kod zorunlu!','err');return;}
+  const dupKod=merkezler.find(m=>m.kod===kod);if(dupKod){bil(`"${kod}" kodu zaten var!`,'err');return;}
+  const dupAd=merkezler.find(m=>m.ad.toLowerCase()===ad.toLowerCase());if(dupAd){bil(`"${ad}" adında merkez zaten var!`,'err');return;}
+  await sb.from('merkezler').insert({id:uid(),kod,ad,tip,aktif:true});
+  const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
+  document.getElementById('mz-ad').value='';document.getElementById('mz-kod').value='';
+  renderMerkezler();hmSatirRender();stSatirRender();gdSatirRender();bil('Merkez eklendi ✓');
+};
+window.merkezSil=async function(id){
+  if(islemler.some(i=>i.merkez_id===id)){bil('Bu merkeze bağlı işlem var, silinemez!','err');return;}
+  if(!confirm('Silmek istiyor musunuz?'))return;
+  await sb.from('merkezler').delete().eq('id',id);
+  const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
+  renderMerkezler();bil('Silindi ✓');
+};
+window.merkezPasif=async function(id){
+  const m=merkezler.find(x=>x.id===id);if(!m)return;
+  await sb.from('merkezler').update({aktif:!m.aktif}).eq('id',id);
+  const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
+  renderMerkezler();bil((m.aktif?'Pasife alındı':'Aktife alındı')+' ✓');
+};
+function renderMerkezler(){
+  const el=document.getElementById('merkez-liste');if(!el)return;
+  if(!merkezler.length){el.innerHTML='<div class="bos">Henüz merkez yok.</div>';return;}
+  const gelir=merkezler.filter(m=>m.tip==='gelir');
+  const masraf=merkezler.filter(m=>m.tip==='masraf');
+  function satir(m){
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--krem2);${m.aktif===false?'opacity:0.5':''}">
+      <span style="font-size:12px"><span class="tree-kod">${m.kod}</span> <strong>${m.ad}</strong>${m.aktif===false?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="merkezPasif('${m.id}')">${m.aktif===false?'Aktif Et':'Pasif'}</button>
+        <button class="btn sm ghost" onclick="merkezSil('${m.id}')">Sil</button>
+      </div>
+    </div>`;
+  }
+  el.innerHTML=
+    (gelir.length?`<div style="font-size:11px;font-weight:600;color:var(--yesil);padding:8px 10px 4px;text-transform:uppercase;letter-spacing:.05em">GELİR MERKEZLERİ</div>${gelir.map(satir).join('')}`:'')
+    +(masraf.length?`<div style="font-size:11px;font-weight:600;color:var(--turuncu);padding:8px 10px 4px;text-transform:uppercase;letter-spacing:.05em">MASRAF MERKEZLERİ</div>${masraf.map(satir).join('')}`:'');
 }
 
 // ===== RAPOR =====
