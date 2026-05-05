@@ -14,6 +14,23 @@ function cariOpts(tip, seciliId = '') {
   ).join('');
 }
 
+function cariOptsGider(seciliId = '') {
+  const personeller = cariListesi.filter(c => c.tip === 'personel' && c.aktif !== false);
+  const saticilar = cariListesi.filter(c => c.tip === 'satici' && c.aktif !== false);
+  let html = '<option value="">—</option>';
+  if (personeller.length) {
+    html += '<optgroup label="Personel">' + personeller.map(c =>
+      `<option value="${c.id}"${c.id === seciliId ? ' selected' : ''}>[${c.kod}] ${c.ad}</option>`
+    ).join('') + '</optgroup>';
+  }
+  if (saticilar.length) {
+    html += '<optgroup label="Satıcı">' + saticilar.map(c =>
+      `<option value="${c.id}"${c.id === seciliId ? ' selected' : ''}>[${c.kod}] ${c.ad}</option>`
+    ).join('') + '</optgroup>';
+  }
+  return html;
+}
+
 function kodOlusturCari(tip) {
   const prefix = { alici: 'A', satici: 'S', personel: 'P' }[tip] || 'C';
   const mevcutlar = cariListesi.filter(c => c.tip === tip && c.kod.startsWith(prefix))
