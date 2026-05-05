@@ -42,6 +42,10 @@ async function baslat(){
   doldurBirimSecleri();doldurStokFil();doldurUrunFil();doldurIslemSecleri();doldurMerkezSecleri();
   await cariYukle();
   renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();kontolUyari();
+  // Satır listelerini cari yüklendikten sonra yenile
+  if(hmSatirListesi.length)hmSatirRender();
+  if(stSatirListesi.length)stSatirRender();
+  if(gdSatirListesi.length)gdSatirRender();
   ['hm-tarih','ur-tarih','st-tarih','gd-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=bugun();});
   if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),200);
   if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),250);
