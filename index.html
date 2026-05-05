@@ -73,6 +73,7 @@
   <button onclick="gp('stok')">Stoklar</button>
   <button onclick="gp('urunler')">Ürünler</button>
   <button id="nav-tanimlar" onclick="gp('tanimlar')" style="display:none">Tanımlar</button>
+  <button id="nav-cari" onclick="gp('cari')" style="display:none">Cari</button>
   <button onclick="gp('rapor')">Rapor</button>
   <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
 </nav>
@@ -97,9 +98,9 @@
         <div class="fg"><label>Not / Fatura No</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:180px">Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Satıcı</th><th style="width:36px"></th></tr></thead>
           <tbody id="hm-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -125,9 +126,9 @@
         <div class="fg"><label>Not / Müşteri</label><input type="text" id="st-not" placeholder="Müşteri adı..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:180px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Alıcı</th><th style="width:36px"></th></tr></thead>
           <tbody id="st-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -143,9 +144,9 @@
         <div class="fg"><label>Not</label><input type="text" id="gd-genel-not" placeholder="Genel açıklama..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:180px">Gider Kalemi</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:160px">Açıklama</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Gider Kalemi</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:120px">Açıklama</th><th style="min-width:110px">Personel/Satıcı</th><th style="width:36px"></th></tr></thead>
           <tbody id="gd-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="gd-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--turuncu);padding:10px 9px">₺0,00</td><td colspan="2"></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="gd-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--turuncu);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -230,6 +231,11 @@
     </div>
   </div>
   <div class="card"><div class="card-title">Aylık detay</div><div id="aylar-detay" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div></div>
+</div>
+<div id="cari" class="page">
+  <div class="card">
+    <div id="cari-liste"></div>
+  </div>
 </div>
 <div id="kullanicilar" class="page">
   <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem"><button class="btn pri sm" onclick="modalAc('modal-kullanici')">+ Yeni Kullanıcı</button></div>
@@ -331,6 +337,45 @@
   <div class="modal" style="max-width:700px">
     <div class="modal-hdr"><h3 id="sd-title">Stok Hareketleri</h3><button class="btn sm" onclick="modalKapat('modal-stok-detay')">✕</button></div>
     <div class="modal-body"><div id="sd-ozet" style="margin-bottom:1rem"></div><div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Miktar</th><th>Birim</th><th>Tutar</th><th>Not</th><th id="sd-islem-th" style="display:none">İşlem</th></tr></thead><tbody id="sd-tb"></tbody></table></div></div>
+  </div>
+</div>
+<!-- MODAL: CARİ -->
+<div id="modal-cari" class="overlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr"><h3 id="cm-title">Yeni Cari</h3><button class="btn sm" onclick="modalKapat('modal-cari')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="cm-id">
+      <input type="hidden" id="cm-tip">
+      <div class="fgrid c2">
+        <div class="fg"><label>Ad Soyad / Firma Adı</label><input type="text" id="cm-ad" placeholder="Ad..."></div>
+        <div class="fg"><label>Kod (Otomatik)</label><input type="text" id="cm-kod" placeholder="A001"></div>
+      </div>
+      <div class="fgrid c2">
+        <div class="fg"><label>Telefon</label><input type="text" id="cm-telefon" placeholder="05xx xxx xx xx"></div>
+        <div class="fg"><label>E-posta</label><input type="email" id="cm-email" placeholder="ornek@mail.com"></div>
+      </div>
+      <div class="fgrid c1">
+        <div class="fg"><label>Adres</label><input type="text" id="cm-adres" placeholder="Adres..."></div>
+      </div>
+      <div id="cm-vergi-grup">
+        <div class="fgrid c2">
+          <div class="fg"><label>Vergi No / TC</label><input type="text" id="cm-vergi-no" placeholder="..."></div>
+          <div class="fg"><label>Vergi Dairesi</label><input type="text" id="cm-vergi-dairesi" placeholder="..."></div>
+        </div>
+      </div>
+      <div class="fgrid c1">
+        <div class="fg"><label>Notlar</label><input type="text" id="cm-notlar" placeholder="Açıklama, hatırlatma..."></div>
+      </div>
+      <div id="cm-aktif-satir" style="display:none;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="cm-aktif" style="width:16px;height:16px;cursor:pointer"> <span>Aktif</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="modalKapat('modal-cari')">İptal</button>
+      <button class="btn pri" onclick="kaydetCari()">Kaydet</button>
+    </div>
   </div>
 </div>
 <!-- MODAL: GİDER KALEMİ -->
@@ -463,6 +508,7 @@
 <script src="js/kullanicilar.js"></script>
 <script src="js/giderkalemler.js"></script>
 <script src="js/merkezler.js"></script>
+<script src="js/cari.js"></script>
 <script src="js/rapor.js"></script>
 </body>
 </html>
