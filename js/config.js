@@ -20,7 +20,11 @@ function tumAltlar(liste,ustId){const a=liste.filter(x=>x.ust_id===ustId);let s=
 const renkMap={turuncu:'var(--turuncu)',mavi:'var(--mavi)',mor:'var(--mor)',sari:'var(--sari)',yesil:'var(--yesil)'};
 
 window.modalAc=function(id){
-  document.getElementById(id)?.classList.add('open');
+  const el=document.getElementById(id);if(!el)return;
+  // Açık modal sayısına göre z-index ver
+  const acikSayisi=document.querySelectorAll('.overlay.open').length;
+  el.style.zIndex=300+(acikSayisi*100);
+  el.classList.add('open');
   if(id==='modal-profil'&&aktifKullanici){
     const ini=(aktifKullanici.ad||'?')[0].toUpperCase()+(aktifKullanici.soyad||'')[0]?.toUpperCase()||'';
     document.getElementById('profil-avatar').textContent=ini;
@@ -31,7 +35,11 @@ window.modalAc=function(id){
     document.getElementById('psifre-hata').style.display='none';document.getElementById('psifre-ok').style.display='none';
   }
 };
-window.modalKapat=function(id){document.getElementById(id)?.classList.remove('open');};
+window.modalKapat=function(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.classList.remove('open');
+  el.style.zIndex='';
+};
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 window.panelAc=function(id){document.getElementById(id)?.classList.add('open');};
 window.panelKapat=function(id){document.getElementById(id)?.classList.remove('open');};
