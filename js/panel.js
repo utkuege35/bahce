@@ -1,4 +1,15 @@
 // ===== PANEL =====
+window.idHesapla=function(kaynak){
+  const mik=parseFloat(document.getElementById('id-miktar').value)||0;
+  const fiy=parseFloat(document.getElementById('id-fiyat').value)||0;
+  const tut=parseFloat(document.getElementById('id-tutar').value)||0;
+  if(kaynak==='miktar'||kaynak==='fiyat'){
+    if(mik>0&&fiy>0)document.getElementById('id-tutar').value=(mik*fiy).toFixed(2);
+  }else if(kaynak==='tutar'){
+    if(mik>0&&tut>0)document.getElementById('id-fiyat').value=(tut/mik).toFixed(2);
+    else if(fiy>0&&tut>0)document.getElementById('id-miktar').value=(tut/fiy).toFixed(4);
+  }
+};
 function renderPanel(){
   const gun=bugun();const gv=islemler.filter(i=>i.tarih===gun);
   const gelirB=gv.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
