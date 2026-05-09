@@ -105,6 +105,7 @@ tr:hover td{background:var(--krem)}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:flex-end;justify-content:center}
 @media(min-width:600px){.overlay{align-items:center;padding:1rem}}
 .overlay.open{display:flex}
+.overlay.open~.overlay.open{z-index:400;background:rgba(0,0,0,.3)}
 .modal{background:var(--beyaz);border-radius:14px 14px 0 0;width:100%;max-width:580px;max-height:92vh;overflow-y:auto}
 @media(min-width:600px){.modal{border-radius:14px;max-height:88vh}}
 .modal-hdr{padding:1rem 1.25rem .75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--beyaz);z-index:1}
