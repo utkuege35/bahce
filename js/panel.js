@@ -84,8 +84,9 @@ window.renderPanelIslemler=function(){
     <td style="font-size:11px">${i.aciklama||i.kat||''}</td>
     <td style="font-size:11px">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+birimAd(i.birim_id):''}</td>
     <td style="font-weight:500;color:${i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)'}">${i.tutar?para(i.tutar):''}</td>
-    <td style="font-size:11px;color:var(--yazi3);max-width:150px;overflow:hidden;text-overflow:ellipsis">${i.satir_not||i.aciklama_not||''}</td>
+    <td style="font-size:11px;color:var(--yazi3);max-width:130px;overflow:hidden;text-overflow:ellipsis">${i.satir_not||i.aciklama_not||''}</td>
+    <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${i.kullanici||''}</td>
     ${isAdmin?`<td style="white-space:nowrap"><button class="btn sm" onclick="islemDuzenleAc('${i.id}')">✏</button> <button class="btn sm ghost" onclick="islemSil('${i.id}')">✕</button></td>`:'<td></td>'}
   </tr>`).join('');
-  document.getElementById('pi-tb').innerHTML=rows||'<tr><td colspan="7" class="bos">İşlem yok</td></tr>';
+  document.getElementById('pi-tb').innerHTML=rows||'<tr><td colspan="8" class="bos">İşlem yok</td></tr>';
 };
