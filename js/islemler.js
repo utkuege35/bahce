@@ -211,18 +211,19 @@ window.gdSatirSil=function(i){gdSatirListesi.splice(i,1);gdSatirRender();};
 window.kaydetGider=async function(){
   const tarih=document.getElementById('gd-tarih').value;const an=document.getElementById('gd-genel-not').value;
   if(!tarih){bil('Tarih zorunlu!','err');return;}
-  const gecerli=gdSatirListesi.filter(s=>parseFloat(s.tutar)>0||( parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0));
-  if(!gecerli.length){bil('En az bir satır!','err');return;}
+  const gecerli=gdSatirListesi.filter(s=>s.kalemId||parseFloat(s.tutar)>0||parseFloat(s.miktar)>0);
+  if(!gecerli.length){bil('En az bir satır ekleyin!','err');return;}
+  const sifirVar=gecerli.some(s=>!(parseFloat(s.tutar)>0)&&!(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0));
+  if(sifirVar&&!confirm('Tutarı 0 olan satır var. Yine de kaydetmek istiyor musunuz?'))return;
   let n=0;
   for(const s of gecerli){
     const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;
     const tutar=parseFloat(s.tutar)||(mik&&fiy?mik*fiy:0);
-    if(!tutar){bil('Tutar sıfır olan satır var!','err');return;}
     const kalem=giderKalemleri.find(k=>k.id===s.kalemId);
     const merkez_id=kalem?.merkez_id||null;const kat=kalem?.ad||'Gider';
     await sb.from('islemler').insert({tur:'gider',tarih,tutar,miktar:mik||null,birim_id:s.birimId||null,fiyat:fiy||null,kat,gider_kalem_id:s.kalemId||null,aciklama:kat,aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n});
     n++;
   }
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data;
+  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   gdSatirListesi=[];gdSatirRender();document.getElementById('gd-genel-not').value='';bil(`${n} gider kaydedildi ✓`);
 };
