@@ -443,6 +443,13 @@
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-gider-kalem')">İptal</button><button class="btn pri" onclick="kaydetGiderKalem()">Kaydet</button></div>
   </div>
 </div>
+<!-- MODAL: İŞLEM GEÇMİŞİ -->
+<div id="modal-islem-gecmis" class="overlay">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-hdr"><h3 id="ig-title">İşlem Geçmişi</h3><button class="btn sm" onclick="modalKapat('modal-islem-gecmis')">✕</button></div>
+    <div class="modal-body"><div id="ig-icerik"></div></div>
+  </div>
+</div>
 <!-- MODAL: İŞLEM DÜZENLE -->
 <div id="modal-islem-duzenle" class="overlay">
   <div class="modal">
@@ -501,7 +508,7 @@
         <input type="date" id="pi-fil-bas" onchange="renderPanelIslemler()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
         <input type="date" id="pi-fil-bit" onchange="renderPanelIslemler()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
       </div>
-      <div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Miktar</th><th>Tutar</th><th>Not</th><th>Kullancı</th><th id="pi-islem-th">İşlem</th></tr></thead><tbody id="pi-tb"></tbody></table></div>
+      <div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Miktar</th><th>Tutar</th><th>Not</th><th>Kullanıcı</th><th>Geçmiş</th><th id="pi-islem-th">İşlem</th></tr></thead><tbody id="pi-tb"></tbody></table></div>
     </div>
   </div>
 </div>
