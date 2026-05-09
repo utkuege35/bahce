@@ -218,19 +218,64 @@
   </div>
 </div>
 <div id="rapor" class="page">
-  <div class="fr"><label style="font-size:12px;color:var(--yazi2)">Yıl:</label><select id="rapor-yil" onchange="renderRapor()"></select></div>
-  <div class="mg" id="rapor-met"></div>
-  <div class="card"><div class="card-title">Aylık gelir &amp; gider</div>
-    <div class="legend"><div class="li2"><div class="lb" style="background:#52b788"></div>Gelir</div><div class="li2"><div class="lb" style="background:#f4a261"></div>Gider</div></div>
-    <div class="cw"><canvas id="aylik-chart"></canvas></div>
+  <div class="tabs">
+    <button class="tab active" onclick="raporTab('genel',this)">Gelir / Gider</button>
+    <button class="tab" onclick="raporTab('kasa',this)">Kasa</button>
+    <button class="tab" onclick="raporTab('personel',this)">Personel</button>
   </div>
-  <div class="card"><div class="card-title">Kategori dağılımı</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-      <div><div style="font-size:11px;color:var(--yazi3);margin-bottom:6px">Gelir</div><div class="cw" style="height:180px"><canvas id="gelir-pie"></canvas></div></div>
-      <div><div style="font-size:11px;color:var(--yazi3);margin-bottom:6px">Gider</div><div class="cw" style="height:180px"><canvas id="gider-pie"></canvas></div></div>
+
+  <!-- GENEL -->
+  <div id="rt-genel" class="tab-panel active">
+    <div class="fr"><label style="font-size:12px;color:var(--yazi2)">Yıl:</label><select id="rapor-yil" onchange="renderRaporGenel()"></select></div>
+    <div class="mg" id="rapor-met"></div>
+    <div class="card"><div class="card-title">Aylık gelir &amp; gider</div>
+      <div class="legend"><div class="li2"><div class="lb" style="background:#52b788"></div>Gelir</div><div class="li2"><div class="lb" style="background:#f4a261"></div>Gider</div></div>
+      <div class="cw"><canvas id="aylik-chart"></canvas></div>
+    </div>
+    <div class="card"><div class="card-title">Kategori dağılımı</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div><div style="font-size:11px;color:var(--yazi3);margin-bottom:6px">Gelir</div><div class="cw" style="height:180px"><canvas id="gelir-pie"></canvas></div></div>
+        <div><div style="font-size:11px;color:var(--yazi3);margin-bottom:6px">Gider</div><div class="cw" style="height:180px"><canvas id="gider-pie"></canvas></div></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Aylık detay</div><div id="aylar-detay" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div></div>
+  </div>
+
+  <!-- KASA -->
+  <div id="rt-kasa" class="tab-panel">
+    <div class="fr">
+      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+      <input type="date" id="kasa-bas" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+      <input type="date" id="kasa-bit" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    </div>
+    <div class="mg" id="kasa-met"></div>
+    <div class="card"><div class="card-title">Kasa hareketi</div>
+      <div class="legend"><div class="li2"><div class="lb" style="background:#52b788"></div>Gelir</div><div class="li2"><div class="lb" style="background:#f4a261"></div>Gider</div><div class="li2"><div class="lb" style="background:#1d4e89"></div>Bakiye</div></div>
+      <div class="cw" style="height:280px"><canvas id="kasa-chart"></canvas></div>
+    </div>
+    <div class="card"><div class="card-title">Günlük kasa hareketleri</div>
+      <div class="tw"><table><thead><tr><th>Tarih</th><th>Gelir</th><th>Gider</th><th>Günlük Net</th><th>Kümülatif Bakiye</th></tr></thead><tbody id="kasa-tb"></tbody></table></div>
     </div>
   </div>
-  <div class="card"><div class="card-title">Aylık detay</div><div id="aylar-detay" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div></div>
+
+  <!-- PERSONEL -->
+  <div id="rt-personel" class="tab-panel">
+    <div class="fr">
+      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+      <input type="date" id="per-bas" onchange="renderPersonelRapor()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+      <input type="date" id="per-bit" onchange="renderPersonelRapor()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <select id="per-personel" onchange="renderPersonelRapor()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tüm personel</option>
+      </select>
+    </div>
+    <div class="mg" id="per-met"></div>
+    <div id="per-kartlar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:1rem"></div>
+    <div class="card"><div class="card-title">Personel işlem detayı</div>
+      <div class="tw"><table><thead><tr><th>Tarih</th><th>Personel</th><th>İş / Kalem</th><th>Birim</th><th>Miktar</th><th>Tutar</th><th>Not</th></tr></thead><tbody id="per-tb"></tbody></table></div>
+    </div>
+  </div>
 </div>
 <div id="cari" class="page">
   <div class="card">
