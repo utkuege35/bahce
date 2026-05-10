@@ -39,6 +39,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 .nav button{width:100%;padding:.7rem 1rem;border:none;background:transparent;color:var(--yazi2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;white-space:nowrap;text-align:left}
 .nav button.active{color:var(--yesil);border-left-color:var(--yesil);background:var(--yesil-cok-ac);font-weight:500}
 .nav button:hover:not(.active){background:var(--krem2)}
+.nav-grup{width:100%;}
+.nav-grup-baslik{width:100%;text-align:left;background:none;border:none;border-left:3px solid transparent;padding:.6rem 1rem;font-size:13px;font-weight:500;color:var(--yazi2);cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;justify-content:space-between;}
+.nav-grup-baslik:hover{background:var(--krem2);color:var(--yesil);}
+.nav-grup-baslik.acik{color:var(--yesil);background:var(--yesil-cok-ac);border-left-color:var(--yesil);}
+.nav-grup-icerik{display:none;background:var(--krem);}
+.nav-grup-icerik.acik{display:block;}
+.nav-grup-icerik button{padding:.5rem 1rem .5rem 1.4rem;font-size:12px;border-left:3px solid transparent;}
 @media(max-width:768px){
   .nav{width:100%;height:auto;flex-direction:row;border-right:none;border-bottom:1px solid var(--border);position:sticky;top:54px;overflow-x:auto;overflow-y:visible;padding:0;bottom:auto}
   .nav button{width:auto;flex:1;min-width:60px;padding:.65rem .4rem;border-left:none;border-bottom:2px solid transparent;text-align:center;font-size:11px}
