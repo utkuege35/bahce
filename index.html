@@ -70,10 +70,15 @@
 <nav class="nav">
   <button class="active" onclick="gp('panel')">Panel</button>
   <button onclick="gp('islem')">İşlem</button>
-  <button onclick="gp('stok')">Stoklar</button>
-  <button onclick="gp('urunler')">Ürünler</button>
-  <button id="nav-tanimlar" onclick="gp('tanimlar')" style="display:none">Tanımlar</button>
-  <button id="nav-cari" onclick="gp('cari')" style="display:none">Cari</button>
+  <div class="nav-grup">
+    <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Tanımlar ▾</button>
+    <div class="nav-grup-icerik">
+      <button onclick="gp('stok')">Stoklar</button>
+      <button onclick="gp('urunler')">Ürünler</button>
+      <button id="nav-cari" onclick="gp('cari')">Cari</button>
+      <button id="nav-tanimlar" onclick="gp('tanimlar')">Ayarlar</button>
+    </div>
+  </div>
   <button onclick="gp('rapor')">Rapor</button>
   <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
 </nav>
@@ -87,9 +92,9 @@
 <div id="islem" class="page">
   <div class="tabs">
     <button class="tab active" onclick="islemTab('hammadde',this)">Alış</button>
-    <button class="tab" onclick="islemTab('uretim',this)">Üretim</button>
     <button class="tab" onclick="islemTab('satis',this)">Satış</button>
     <button class="tab" onclick="islemTab('kasa',this)">Kasa</button>
+    <button class="tab" onclick="islemTab('uretim',this)">Üretim</button>
   </div>
 
   <!-- ALIŞ -->
@@ -115,7 +120,7 @@
             <th style="width:85px">B.Fiyat (₺)</th>
             <th style="width:85px">Tutar (₺)</th>
             <th style="min-width:130px">Açıklama</th>
-            <th style="min-width:110px">Satıcı</th>
+            <th style="min-width:110px">Cari</th>
             <th style="min-width:120px">Ödeme</th>
             <th style="width:36px"></th>
           </tr></thead>
