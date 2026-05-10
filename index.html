@@ -86,21 +86,21 @@
 </div>
 <div id="islem" class="page">
   <div class="tabs">
-    <button class="tab active" onclick="islemTab('hammadde',this)">Hammadde Girişi</button>
+    <button class="tab active" onclick="islemTab('hammadde',this)">Alış</button>
     <button class="tab" onclick="islemTab('uretim',this)">Üretim</button>
     <button class="tab" onclick="islemTab('satis',this)">Satış</button>
     <button class="tab" onclick="islemTab('gider',this)">Gider</button>
   </div>
   <div id="tp-hammadde" class="tab-panel active">
-    <div class="card"><div class="card-title">Hammadde / Stok Girişi</div>
+    <div class="card"><div class="card-title">Alış / Stok Girişi</div>
       <div class="fgrid c2" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
         <div class="fg"><label>Not / Fatura No</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Satıcı</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Satıcı</th><th style="min-width:120px">Ödeme</th><th style="width:36px"></th></tr></thead>
           <tbody id="hm-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="4"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -126,9 +126,9 @@
         <div class="fg"><label>Not / Müşteri</label><input type="text" id="st-not" placeholder="Müşteri adı..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
-        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Alıcı</th><th style="width:36px"></th></tr></thead>
+        <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Alıcı</th><th style="min-width:120px">Ödeme</th><th style="width:36px"></th></tr></thead>
           <tbody id="st-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="3"></td></tr></tfoot>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td colspan="4"></td></tr></tfoot>
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -221,6 +221,7 @@
   <div class="tabs">
     <button class="tab active" onclick="raporTab('genel',this)">Gelir / Gider</button>
     <button class="tab" onclick="raporTab('kasa',this)">Kasa</button>
+    <button class="tab" onclick="raporTab('cari',this)">Cari Hesap</button>
     <button class="tab" onclick="raporTab('personel',this)">Personel</button>
   </div>
 
@@ -256,6 +257,26 @@
     </div>
     <div class="card"><div class="card-title">Günlük kasa hareketleri</div>
       <div class="tw"><table><thead><tr><th>Tarih</th><th>Gelir</th><th>Gider</th><th>Günlük Net</th><th>Kümülatif Bakiye</th></tr></thead><tbody id="kasa-tb"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- CARİ HESAP -->
+  <div id="rt-cari" class="tab-panel">
+    <div class="fr">
+      <select id="cari-rap-tip" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tüm cariler</option>
+        <option value="alici">Alıcılar</option>
+        <option value="satici">Satıcılar</option>
+      </select>
+      <select id="cari-rap-id" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tüm</option>
+      </select>
+      <input type="date" id="cari-rap-bas" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <input type="date" id="cari-rap-bit" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    </div>
+    <div id="cari-ozet-kartlar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:1rem"></div>
+    <div class="card"><div class="card-title">Cari Hareketler</div>
+      <div class="tw"><table><thead><tr><th>Tarih</th><th>Cari</th><th>Tip</th><th>Hareket</th><th>Tutar</th><th>Açıklama</th><th>Bakiye</th></tr></thead><tbody id="cari-rap-tb"></tbody></table></div>
     </div>
   </div>
 
