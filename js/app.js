@@ -77,8 +77,14 @@ function doldurIslemSecleri(){
   if(stSatirListesi.length)stSatirRender();
 }
 
-function doldurMerkezSecleri(){
-  // Stok modalı masraf merkezi
+// Temel birim seçilince alt birimlerini de içeren varsayılan birim listesini doldurur
+window._doldurVarsayilanBirim=function(elId,temelBirimId,seciliId){
+  const el=document.getElementById(elId);if(!el)return;
+  const list=temelBirimId?birimler.filter(b=>b.id===temelBirimId||b.temel_id===temelBirimId):birimler;
+  el.innerHTML='<option value="">— Temel birim —</option>'+list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.ad} (${b.kisaltma})</option>`).join('');
+  if(seciliId)el.value=seciliId;
+};
+function doldurMerkezSecleri(){  // Stok modalı masraf merkezi
   const smEl=document.getElementById('sm-merkez');
   if(smEl){const c=smEl.value;smEl.innerHTML='<option value="">—</option>'+merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}">${m.ad}</option>`).join('');if(c)smEl.value=c;}
   // Ürün modalı gelir merkezi
