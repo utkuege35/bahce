@@ -68,31 +68,17 @@ let _hmTur='malzeme'; // malzeme | hizmet | diger
 window.hmTurDegis=function(){
   _hmTur=document.getElementById('hm-tur').value;
   hmSatirListesi=[];
-  const th=document.getElementById('hm-th-secim');
-  if(th)th.textContent=_hmTur==='malzeme'?'Stok':_hmTur==='hizmet'?'Hizmet Kalemi':'Açıklama (Manuel)';
-  // Diğer seçilince masraf merkezi göster
-  const digerMerkez=document.getElementById('hm-diger-merkez');
-  if(digerMerkez){
-    digerMerkez.style.display=_hmTur==='diger'?'block':'none';
-    if(_hmTur==='diger'){
-      const sel=document.getElementById('hm-masraf-merkez');
-      if(sel)sel.innerHTML='<option value="">— Seçin —</option>'+merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}">${m.ad}</option>`).join('');
-    }
-  }
+  const thSecim=document.getElementById('hm-th-secim');
+  if(thSecim)thSecim.textContent=_hmTur==='malzeme'?'Stok':_hmTur==='hizmet'?'Hizmet Kalemi':'Açıklama (Manuel)';
+  const thAlt=document.getElementById('hm-th-alt');
+  if(thAlt)thAlt.textContent=_hmTur==='diger'?'Masraf Merkezi':'Açıklama';
   hmSatirRender();
   setTimeout(()=>hmSatirEkle(),50);
 };
 window.stTurDegis=function(){
   const tip=document.getElementById('st-tip').value;
-  // Diğer seçilince gelir merkezi göster
-  const digerMerkez=document.getElementById('st-diger-merkez');
-  if(digerMerkez){
-    digerMerkez.style.display=tip==='diger'?'block':'none';
-    if(tip==='diger'){
-      const sel=document.getElementById('st-gelir-merkez');
-      if(sel)sel.innerHTML='<option value="">— Seçin —</option>'+merkezler.filter(m=>m.tip==='gelir'&&m.aktif!==false).map(m=>`<option value="${m.id}">${m.ad}</option>`).join('');
-    }
-  }
+  const thAlt=document.getElementById('st-th-alt');
+  if(thAlt)thAlt.textContent=tip==='diger'?'Gelir Merkezi':'Açıklama';
   stSatirRender();
 };
 
@@ -126,7 +112,10 @@ function hmSatirRender(){
     <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
-    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td>${_hmTur==='diger'
+      ?`<select onchange="hmSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">— Masraf Merkezi —</option>${merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
+      :`<input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
+    }</td>
     <td><select onchange="hmSatirGuncelle(${i},'cari_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('',s.cari_id):'')}</select></td>
     <td><select onchange="hmSatirGuncelle(${i},'odeme_tipi',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
     <td><button onclick="hmSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
@@ -185,7 +174,7 @@ window.kaydetHammadde=async function(){
       const {data:id}=await sb.from('islemler').insert({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:kalem?.ad||'Hizmet alımı',kat:kalem?.ad||'Hizmet',gider_kalem_id:s.secimId||null,aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
     }else{
-      const merkez_id=document.getElementById('hm-masraf-merkez')?.value||null;
+      const merkez_id=s.merkez_id||null;
       const {data:id}=await sb.from('islemler').insert({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:s.manuel||'Diğer alım',kat:'Diğer',aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
     }
@@ -284,9 +273,11 @@ function stSatirRender(){
     <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
     <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
-    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><select onchange="stSatirGuncelle(${i},'cari_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('alici',s.cari_id):'')}</select></td>
-    <td><select onchange="stSatirGuncelle(${i},'odeme_tipi',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
+    <td>${tip==='diger'
+      ?`<select onchange="stSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">— Gelir Merkezi —</option>${merkezler.filter(m=>m.tip==='gelir'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
+      :`<input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
+    }</td>
+    <td><select onchange="stSatirGuncelle(${i},'cari_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('alici',s.cari_id):'')}</select></td> style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
     <td><button onclick="stSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
   stToplamGuncelle();
@@ -348,9 +339,9 @@ window.kaydetSatis=async function(){
       islemData=id;
       if(s.birimId)birimHafizaYaz(s.secimId,s.birimId);
     }else{
-      // Diğer — serbest metin
-      const merkez_id=document.getElementById('st-gelir-merkez')?.value||null;
-      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:s.manuel||'Satış',kat:'Satış',aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      // Diğer — serbest metin, merkez satırdan gelir
+      const merkez_id=s.merkez_id||null;
+      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:s.manuel||'Satış',kat:'Satış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
     }
     if(odeme==='cari'&&s.cari_id&&tut>0){
