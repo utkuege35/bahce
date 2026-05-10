@@ -8,6 +8,7 @@ window.raporTab=function(id,btn){
   btn.classList.add('active');
   if(id==='genel')renderRaporGenel();
   if(id==='kasa')renderKasa();
+  if(id==='cari')renderCariHesap();
   if(id==='personel')renderPersonelRapor();
 };
 
@@ -63,8 +64,11 @@ window.renderKasa=function(){
   aralik.forEach(i=>{
     const t=i.tarih;if(!t)return;
     if(!gunMap[t])gunMap[t]={gelir:0,gider:0};
-    if(i.tur==='satis')gunMap[t].gelir+=parseFloat(i.tutar||0);
-    else if(['gider','giris'].includes(i.tur))gunMap[t].gider+=parseFloat(i.tutar||0);
+    // Peşin işlemler kasayı etkiler
+    const odeme=i.odeme_tipi||'pesin';
+    if(i.tur==='satis'&&odeme==='pesin')gunMap[t].gelir+=parseFloat(i.tutar||0);
+    else if(i.tur==='giris'&&odeme==='pesin')gunMap[t].gider+=parseFloat(i.tutar||0);
+    else if(i.tur==='gider')gunMap[t].gider+=parseFloat(i.tutar||0);
   });
   const gunler=Object.keys(gunMap).sort();
   let bakiye=0;
@@ -81,11 +85,11 @@ window.renderKasa=function(){
     </tr>`;
   }).join('');
   document.getElementById('kasa-tb').innerHTML=rows||'<tr><td colspan="5" class="bos">Bu aralıkta işlem yok</td></tr>';
-  const topGelir=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
-  const topGider=aralik.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const topGelir=aralik.filter(i=>i.tur==='satis'&&(i.odeme_tipi||'pesin')==='pesin').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const topGider=aralik.filter(i=>(i.tur==='giris'&&(i.odeme_tipi||'pesin')==='pesin')||i.tur==='gider').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
   document.getElementById('kasa-met').innerHTML=`
-    <div class="met"><div class="ml">Toplam Gelir</div><div class="mv g">${para(topGelir)}</div></div>
-    <div class="met"><div class="ml">Toplam Gider</div><div class="mv d">${para(topGider)}</div></div>
+    <div class="met"><div class="ml">Peşin Tahsilat</div><div class="mv g">${para(topGelir)}</div></div>
+    <div class="met"><div class="ml">Peşin Ödeme</div><div class="mv d">${para(topGider)}</div></div>
     <div class="met"><div class="ml">Net</div><div class="mv ${topGelir-topGider>=0?'k':'z'}">${para(topGelir-topGider)}</div></div>
     <div class="met"><div class="ml">Kasa Bakiyesi</div><div class="mv ${bakiye>=0?'k':'z'}">${para(bakiye)}</div></div>`;
   if(kasaC)kasaC.destroy();
@@ -94,8 +98,8 @@ window.renderKasa=function(){
   kasaC=new Chart(document.getElementById('kasa-chart'),{
     type:'bar',
     data:{labels,datasets:[
-      {label:'Gelir',data:gelirList,backgroundColor:'rgba(82,183,136,.7)',borderRadius:3,order:2},
-      {label:'Gider',data:giderList,backgroundColor:'rgba(244,162,97,.7)',borderRadius:3,order:2},
+      {label:'Peşin Tahsilat',data:gelirList,backgroundColor:'rgba(82,183,136,.7)',borderRadius:3,order:2},
+      {label:'Peşin Ödeme',data:giderList,backgroundColor:'rgba(244,162,97,.7)',borderRadius:3,order:2},
       {label:'Bakiye',data:bakiyeList,type:'line',borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:3,fill:true,order:1,yAxisID:'y1'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
@@ -105,6 +109,82 @@ window.renderKasa=function(){
         y1:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:10}},position:'right',grid:{drawOnChartArea:false}}
       }}
   });
+};
+
+// ===== CARİ HESAP =====
+let cariHareketler=[];
+async function cariHareketYukle(){
+  const {data}=await sb.from('cari_hareketler').select('*').order('ts',{ascending:false});
+  if(data)cariHareketler=data;
+}
+window.renderCariHesap=async function(){
+  if(!cariHareketler.length)await cariHareketYukle();
+  const tipFil=document.getElementById('cari-rap-tip')?.value||'';
+  const cariId=document.getElementById('cari-rap-id')?.value||'';
+  const bas=document.getElementById('cari-rap-bas')?.value||'';
+  const bit=document.getElementById('cari-rap-bit')?.value||'';
+  // Cari select'i doldur
+  const cariSel=document.getElementById('cari-rap-id');
+  const curId=cariSel.value;
+  const filtreliCari=tipFil?cariListesi.filter(c=>c.tip===tipFil&&c.aktif!==false):cariListesi.filter(c=>c.aktif!==false);
+  cariSel.innerHTML='<option value="">Tüm</option>'+filtreliCari.map(c=>`<option value="${c.id}"${c.id===curId?' selected':''}>${c.ad}</option>`).join('');
+  // Hareketleri filtrele
+  let hareketler=cariHareketler;
+  if(tipFil){const ids=new Set(cariListesi.filter(c=>c.tip===tipFil).map(c=>c.id));hareketler=hareketler.filter(h=>ids.has(h.cari_id));}
+  if(cariId)hareketler=hareketler.filter(h=>h.cari_id===cariId);
+  if(bas)hareketler=hareketler.filter(h=>h.tarih>=bas);
+  if(bit)hareketler=hareketler.filter(h=>h.tarih<=bit);
+  // Cari bazında özet
+  const cariMap={};
+  hareketler.forEach(h=>{
+    if(!cariMap[h.cari_id])cariMap[h.cari_id]={toplam_borc:0,toplam_alacak:0};
+    if(h.tip==='borc')cariMap[h.cari_id].toplam_borc+=parseFloat(h.tutar||0);
+    else cariMap[h.cari_id].toplam_alacak+=parseFloat(h.tutar||0);
+  });
+  // Özet kartlar
+  document.getElementById('cari-ozet-kartlar').innerHTML=Object.entries(cariMap).map(([cId,v])=>{
+    const c=cariListesi.find(x=>x.id===cId);if(!c)return '';
+    const bakiye=v.toplam_alacak-v.toplam_borc; // + bize borcu, - bizim borcumuz
+    const tipRenk=c.tip==='alici'?'var(--yesil)':'var(--mavi)';
+    return `<div class="card" style="margin-bottom:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:34px;height:34px;border-radius:50%;background:${tipRenk};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0">${(c.ad||'?')[0].toUpperCase()}</div>
+        <div><div style="font-size:13px;font-weight:500">${c.ad}</div><div style="font-size:10px;color:var(--yazi3)">${c.kod} · ${c.tip==='alici'?'Alıcı':'Satıcı'}</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid var(--krem2)">
+        <span style="color:var(--yazi2)">${c.tip==='alici'?'Toplam Satış':'Toplam Alış'}</span>
+        <span style="color:var(--turuncu);font-weight:500">${para(v.toplam_borc+v.toplam_alacak)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid var(--krem2)">
+        <span style="color:var(--yazi2)">${c.tip==='alici'?'Ödenen':'Ödediğimiz'}</span>
+        <span style="color:var(--yesil);font-weight:500">${para(c.tip==='alici'?v.toplam_borc:v.toplam_alacak)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:2px solid var(--border);margin-top:2px">
+        <span style="font-weight:600">${c.tip==='alici'?'Alıcının Borcu':'Bizim Borcumuz'}</span>
+        <span style="font-weight:700;color:${Math.abs(bakiye)>0?'#c62828':'var(--yazi3)'}">${para(Math.abs(bakiye))}</span>
+      </div>
+    </div>`;
+  }).join('')||'<div class="bos">Cari hareket yok.</div>';
+  // Detay tablo
+  const sorted=hareketler.sort((a,b)=>a.tarih>b.tarih?1:-1);
+  const bakiyeMap={};
+  const rows=sorted.map(h=>{
+    const c=cariListesi.find(x=>x.id===h.cari_id);
+    if(!bakiyeMap[h.cari_id])bakiyeMap[h.cari_id]=0;
+    if(h.tip==='alacak')bakiyeMap[h.cari_id]+=parseFloat(h.tutar||0);
+    else bakiyeMap[h.cari_id]-=parseFloat(h.tutar||0);
+    const bak=bakiyeMap[h.cari_id];
+    return `<tr>
+      <td style="white-space:nowrap">${h.tarih}</td>
+      <td><span style="font-size:11px;font-weight:500">${c?.ad||'—'}</span></td>
+      <td><span style="font-size:10px;color:${c?.tip==='alici'?'var(--yesil)':'var(--mavi)'};background:${c?.tip==='alici'?'var(--yesil-cok-ac)':'var(--mavi-ac)'};padding:1px 6px;border-radius:10px">${c?.tip==='alici'?'Alıcı':'Satıcı'}</span></td>
+      <td><span class="badge ${h.tip==='alacak'?'g':'d'}">${h.tip==='alacak'?'Alacak':'Borç'}</span></td>
+      <td style="font-weight:500;color:${h.tip==='alacak'?'var(--yesil)':'var(--turuncu)'}">${h.tip==='alacak'?'+':'-'}${para(h.tutar)}</td>
+      <td style="font-size:11px;color:var(--yazi3)">${h.aciklama||''}</td>
+      <td style="font-weight:600;color:${bak>=0?'var(--yesil)':'#c62828'}">${para(Math.abs(bak))} ${bak>0?'alacak':bak<0?'borç':''}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('cari-rap-tb').innerHTML=rows||'<tr><td colspan="7" class="bos">Hareket yok</td></tr>';
 };
 
 // ===== PERSONEL =====
