@@ -30,15 +30,23 @@ function renderMerkezler(){
   const gelir=merkezler.filter(m=>m.tip==='gelir');
   const masraf=merkezler.filter(m=>m.tip==='masraf');
   function satir(m){
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--krem2);${m.aktif===false?'opacity:0.5':''}">
-      <span style="font-size:12px"><span class="tree-kod">${m.kod}</span> <strong>${m.ad}</strong>${m.aktif===false?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</span>
-      <div style="display:flex;gap:6px">
-        <button class="btn sm" onclick="merkezPasif('${m.id}')">${m.aktif===false?'Aktif Et':'Pasif'}</button>
-        <button class="btn sm ghost" onclick="merkezSil('${m.id}')">Sil</button>
-      </div>
+    const aktif=m.aktif!==false;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--krem2);${!aktif?'opacity:0.5':''}">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1">
+        <input type="checkbox" ${aktif?'checked':''} onchange="merkezAktifToggle('${m.id}',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--yesil)">
+        <span style="font-size:12px"><span class="tree-kod">${m.kod}</span> <strong>${m.ad}</strong></span>
+        <span style="font-size:10px;color:var(--yazi3)">Kullanımda</span>
+      </label>
+      <button class="btn sm ghost" onclick="merkezSil('${m.id}')">Sil</button>
     </div>`;
   }
   el.innerHTML=
     (gelir.length?`<div style="font-size:11px;font-weight:600;color:var(--yesil);padding:8px 10px 4px;text-transform:uppercase;letter-spacing:.05em">GELİR MERKEZLERİ</div>${gelir.map(satir).join('')}`:'')
     +(masraf.length?`<div style="font-size:11px;font-weight:600;color:var(--turuncu);padding:8px 10px 4px;text-transform:uppercase;letter-spacing:.05em">MASRAF MERKEZLERİ</div>${masraf.map(satir).join('')}`:'');
 }
+
+window.merkezAktifToggle=async function(id,aktif){
+  await sb.from('merkezler').update({aktif}).eq('id',id);
+  const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
+  renderMerkezler();bil((aktif?'Kullanıma alındı':'Kullanım dışı bırakıldı')+' ✓');
+};
