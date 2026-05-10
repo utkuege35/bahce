@@ -3,8 +3,8 @@ function uygulamaAc(){
   document.getElementById('giris-wrap').style.display='none';document.getElementById('uygulama').style.display='block';
   document.getElementById('kullanici-chip').textContent=(aktifKullanici.ad||'')+' '+(aktifKullanici.soyad||'');
   if(aktifKullanici.rol==='admin'){
-    ['nav-kullanicilar','nav-tanimlar','nav-cari'].forEach(id=>document.getElementById(id).style.display='');
-    ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>document.getElementById(id).style.display='');
+    document.getElementById('nav-kullanicilar').style.display='';
+    ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }
   baslat();
 }
@@ -88,19 +88,28 @@ function doldurMerkezSecleri(){
   const gkEl=document.getElementById('gk-merkez');
   if(gkEl){const c=gkEl.value;gkEl.innerHTML='<option value="">—</option>'+merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}">${m.ad}</option>`).join('');if(c)gkEl.value=c;}
 }
+window.navGrupToggle=function(btn){
+  const icerik=btn.nextElementSibling;
+  const acik=icerik.classList.toggle('acik');
+  btn.classList.toggle('acik',acik);
+};
 window.gp=function(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
-  document.querySelector(`.nav button[onclick="gp('${id}')"]`)?.classList.add('active');
+  const navBtn=document.querySelector(`.nav button[onclick="gp('${id}')"]`);
+  if(navBtn){
+    navBtn.classList.add('active');
+    const icerik=navBtn.closest('.nav-grup-icerik');
+    if(icerik){icerik.classList.add('acik');icerik.previousElementSibling?.classList.add('acik');}
+  }
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
   if(id==='cari'){renderCari();}
   if(id==='rapor')renderRapor();if(id==='tanimlar'){renderBirimler();renderMerkezler();renderGiderKalemTree();}if(id==='kullanicilar')renderKullanicilar();
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
-    // Kasa tür init
-    setTimeout(()=>{ksTurDegis&&ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();},200);
+    setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();},200);
   }
 };
 window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');};
