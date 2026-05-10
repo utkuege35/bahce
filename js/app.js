@@ -110,9 +110,9 @@ window.gp=function(id){
     if(icerik){icerik.classList.add('acik');icerik.previousElementSibling?.classList.add('acik');}
   }
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
-  if(id==='cari')renderCari();
-  if(id==='islem-liste')renderIslemListe();
-  if(id==='rapor')renderRapor();if(id==='tanimlar'){renderBirimler();renderMerkezler();renderGiderKalemTree();}if(id==='kullanicilar')renderKullanicilar();
+  if(id==='hizmetler')renderGiderKalemTree();
+  if(id==='cari')renderCari();if(id==='islem-liste')renderIslemListe();
+  if(id==='rapor')renderRapor();if(id==='tanimlar'){renderBirimler();renderMerkezler();}if(id==='kullanicilar')renderKullanicilar();
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
