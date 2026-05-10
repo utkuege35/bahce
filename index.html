@@ -69,25 +69,93 @@
 </div>
 <nav class="nav">
   <button class="active" onclick="gp('panel')">Panel</button>
-  <button onclick="gp('islem')">İşlem</button>
+  <div class="nav-grup">
+    <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlem ▾</button>
+    <div class="nav-grup-icerik">
+      <button onclick="gp('islem')">Yeni İşlem</button>
+      <button onclick="gp('islem-liste')">İşlem Listesi</button>
+    </div>
+  </div>
   <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Tanımlar ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
       <button onclick="gp('urunler')">Ürünler</button>
-      <button id="nav-cari" onclick="gp('cari')">Cari</button>
-      <button id="nav-tanimlar" onclick="gp('tanimlar')">Ayarlar</button>
+      <button onclick="gp('cari')">Cari</button>
+      <button onclick="gp('tanimlar')">Birimler & Merkezler</button>
     </div>
   </div>
   <button onclick="gp('rapor')">Rapor</button>
   <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
 </nav>
 <div id="uyari-bant" class="uyari-bant" onclick="gp('stok')"><div class="ub-ic">⚠ <span id="uyari-txt"></span> — Stoklar →</div></div>
+
+<!-- PANEL / DASHBOARD -->
 <div id="panel" class="page active">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+    <div style="font-size:13px;font-weight:600;color:var(--yazi1)">Dashboard</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+      <button class="btn sm active" id="pf-bugun" onclick="panelFiltre('bugun',this)">Bugün</button>
+      <button class="btn sm" id="pf-hafta" onclick="panelFiltre('hafta',this)">Bu Hafta</button>
+      <button class="btn sm" id="pf-ay" onclick="panelFiltre('ay',this)">Bu Ay</button>
+      <button class="btn sm" id="pf-yil" onclick="panelFiltre('yil',this)">Bu Yıl</button>
+      <button class="btn sm" id="pf-ozel" onclick="panelFiltre('ozel',this)">Özel</button>
+      <span id="pf-ozel-alan" style="display:none;gap:4px">
+        <input type="date" id="pf-bas" onchange="renderPanel()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:6px">
+        <input type="date" id="pf-bit" onchange="renderPanel()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:6px">
+      </span>
+    </div>
+  </div>
   <div class="mg" id="panel-met"></div>
-  <div class="card"><div class="card-title"><span>Son işlemler</span><button class="btn sm" onclick="modalAc('modal-panel-islemler');renderPanelIslemler()">Tümünü Gör / Düzenle</button></div>
+  <div id="panel-grafikler" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div class="card" style="margin-bottom:0"><div class="card-title" style="font-size:12px">Gelir / Gider</div>
+      <div style="height:200px"><canvas id="panel-chart"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="card-title" style="font-size:12px">Kasa Akışı</div>
+      <div style="height:200px"><canvas id="panel-kasa-chart"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>Son İşlemler</span>
+      <button class="btn sm" onclick="gp('islem-liste')">Tümünü Gör →</button>
+    </div>
     <div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Tutar</th><th>Miktar</th></tr></thead><tbody id="son-tb"></tbody></table></div>
   </div>
+</div>
+
+<!-- İŞLEM LİSTESİ -->
+<div id="islem-liste" class="page">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+    <input type="text" id="il-ara" oninput="renderIslemListe()" placeholder="🔍 Ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:140px">
+    <select id="il-tur" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+      <option value="">Tüm türler</option>
+      <option value="giris">Alış (Malzeme)</option>
+      <option value="gider">Gider / Hizmet</option>
+      <option value="satis">Satış</option>
+      <option value="uretim">Üretim</option>
+      <option value="kasa">Kasa</option>
+    </select>
+    <input type="date" id="il-bas" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+    <input type="date" id="il-bit" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+    <button class="btn sm ghost" onclick="ilFiltreTemizle()">✕ Temizle</button>
+    <div id="il-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+  </div>
+  <div class="tw">
+    <table><thead><tr>
+      <th style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tarih')">Tarih ↕</th>
+      <th>Tür</th>
+      <th>Açıklama</th>
+      <th>Cari</th>
+      <th style="text-align:right">Miktar</th>
+      <th style="text-align:right">Tutar</th>
+      <th>Ödeme</th>
+      <th>Kullanıcı</th>
+      <th>Geçmiş</th>
+      <th id="il-islem-th">İşlem</th>
+    </tr></thead>
+    <tbody id="il-tb"></tbody></table>
+  </div>
+  <div id="il-sayfalama" style="display:flex;justify-content:center;gap:6px;margin-top:.75rem;flex-wrap:wrap"></div>
 </div>
 <div id="islem" class="page">
   <div class="tabs">
