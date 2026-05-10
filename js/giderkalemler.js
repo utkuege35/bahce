@@ -18,7 +18,7 @@ window.giderKalemModalAc=function(ustId,tip){
   document.getElementById('gk-birim-fg').style.display=tip==='kalem'?'':'none';
   document.getElementById('gk-merkez').value='';
   document.getElementById('gk-varsayilan-birim').value='';
-  const tipAd=tip==='grup'?'Grup':'Gider Kalemi';
+  const tipAd=tip==='grup'?'Grup':'Hizmet Kalemi';
   document.getElementById('gk-title').textContent=ustId?`Alt ${tipAd} Ekle`:`Yeni ${tipAd}`;
   if(ustId){const ust=giderKalemleri.find(g=>g.id===ustId);document.getElementById('gk-ust-bilgi').textContent=`Üst: ${ust?.ikon||''} ${ust?.ad||''} [${ust?.kod||''}]`;}
   else document.getElementById('gk-ust-bilgi').textContent=tip==='grup'?'Ana gider grubu':'Grupsuz kalem';
