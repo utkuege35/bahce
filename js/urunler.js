@@ -11,6 +11,7 @@ window.urunModalAc=function(ustId,tip){
   document.getElementById('um-aktif-satir').style.display='none';
   document.getElementById('um-fiyat').value=0;document.getElementById('um-min').value=0;
   document.getElementById('um-merkez').value='';
+  document.getElementById('um-varsayilan-birim').value='';
   const tipAd={grup:'Grup',ara_urun:'Ara Ürün',urun:'Ürün'}[tip]||tip;
   document.getElementById('um-title').textContent=`Yeni ${tipAd}`;
   if(ustId){const ust=urunler.find(u=>u.id===ustId);document.getElementById('um-ust-bilgi').textContent=`Üst: ${ust?.ikon||''} ${ust?.ad||''} [${ust?.kod||''}]`;}
@@ -34,7 +35,11 @@ window.urunDuzenle=function(id){
     document.getElementById('um-aktif-satir').style.display='';
     document.getElementById('um-aktif').checked=u.aktif!==false;
     doldurBirimSecleri();doldurMerkezSecleri();
-    setTimeout(()=>{document.getElementById('um-birim').value=u.birim_id||'';document.getElementById('um-merkez').value=u.merkez_id||'';},100);
+    setTimeout(()=>{
+      document.getElementById('um-birim').value=u.birim_id||'';
+      document.getElementById('um-merkez').value=u.merkez_id||'';
+      _doldurVarsayilanBirim('um-varsayilan-birim',u.birim_id,u.varsayilan_birim_id);
+    },100);
     bilesenler=urunBilesenleri.filter(b=>b.urun_id===id).map(b=>({...b}));renderBilesenler();
   }else{
     document.getElementById('um-aktif-satir').style.display='none';
@@ -102,6 +107,7 @@ window.kaydetUrun=async function(){
     data.fiyat=parseFloat(document.getElementById('um-fiyat').value)||0;
     data.min_stok=parseFloat(document.getElementById('um-min').value)||0;
     data.stok=mevcut?.stok||0;
+    data.varsayilan_birim_id=document.getElementById('um-varsayilan-birim').value||null;
     data.merkez_id=document.getElementById('um-merkez').value||null;
     data.aktif=document.getElementById('um-aktif').checked;
   }
