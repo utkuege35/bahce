@@ -262,21 +262,37 @@
 
   <!-- CARİ HESAP -->
   <div id="rt-cari" class="tab-panel">
-    <div class="fr">
-      <select id="cari-rap-tip" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="">Tüm cariler</option>
+    <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+      <input type="text" id="cari-rap-ara" oninput="renderCariHesap()" placeholder="🔍 Cari ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px">
+      <select id="cari-rap-tip" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tüm tipler</option>
         <option value="alici">Alıcılar</option>
         <option value="satici">Satıcılar</option>
       </select>
-      <select id="cari-rap-id" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="">Tüm</option>
+      <select id="cari-rap-bakiye" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tüm bakiyeler</option>
+        <option value="borc">Borçlular</option>
+        <option value="alacak">Alacaklılar</option>
+        <option value="sifir">Bakiyesiz</option>
       </select>
-      <input type="date" id="cari-rap-bas" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-      <input type="date" id="cari-rap-bit" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <input type="date" id="cari-rap-bas" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+      <input type="date" id="cari-rap-bit" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
     </div>
-    <div id="cari-ozet-kartlar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:1rem"></div>
-    <div class="card"><div class="card-title">Cari Hareketler</div>
-      <div class="tw"><table><thead><tr><th>Tarih</th><th>Cari</th><th>Tip</th><th>Hareket</th><th>Tutar</th><th>Açıklama</th><th>Bakiye</th></tr></thead><tbody id="cari-rap-tb"></tbody></table></div>
+    <div class="mg" id="cari-rap-met"></div>
+    <div class="tw">
+      <table id="cari-ozet-tablo">
+        <thead>
+          <tr>
+            <th style="min-width:180px">Cari</th>
+            <th>Tip</th>
+            <th style="text-align:right">Toplam İşlem</th>
+            <th style="text-align:right">Ödenen / Tahsil</th>
+            <th style="text-align:right">Bakiye</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="cari-rap-tbody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -403,6 +419,34 @@
   <div class="modal" style="max-width:700px">
     <div class="modal-hdr"><h3 id="sd-title">Stok Hareketleri</h3><button class="btn sm" onclick="modalKapat('modal-stok-detay')">✕</button></div>
     <div class="modal-body"><div id="sd-ozet" style="margin-bottom:1rem"></div><div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Miktar</th><th>Birim</th><th>Tutar</th><th>Not</th><th id="sd-islem-th" style="display:none">İşlem</th></tr></thead><tbody id="sd-tb"></tbody></table></div></div>
+  </div>
+</div>
+<!-- MODAL: CARİ DETAY -->
+<div id="modal-cari-detay" class="overlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-hdr">
+      <div>
+        <h3 id="cd-title">Cari Hareketler</h3>
+        <div id="cd-ozet" style="font-size:11px;color:var(--yazi3);margin-top:2px"></div>
+      </div>
+      <button class="btn sm" onclick="modalKapat('modal-cari-detay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="mg" style="grid-template-columns:repeat(3,1fr);margin-bottom:1rem" id="cd-met"></div>
+      <div class="tw">
+        <table><thead><tr><th>Tarih</th><th>Hareket</th><th>Tutar</th><th>Açıklama</th><th>Bakiye</th></tr></thead>
+        <tbody id="cd-tb"></tbody></table>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:500;margin-bottom:8px">Ödeme / Tahsilat Ekle</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="cd-odeme-tarih" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+          <input type="number" id="cd-odeme-tutar" placeholder="Tutar (₺)" min="0" step="0.01" style="width:120px;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+          <input type="text" id="cd-odeme-not" placeholder="Açıklama..." style="flex:1;min-width:120px;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+          <button class="btn pri sm" onclick="cariOdemeEkle()">Kaydet</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <!-- MODAL: CARİ -->
