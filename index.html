@@ -81,6 +81,7 @@
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
       <button onclick="gp('urunler')">Ürünler</button>
+      <button onclick="gp('hizmetler')">Hizmetler</button>
       <button onclick="gp('cari')">Cari</button>
       <button onclick="gp('tanimlar')">Birimler & Merkezler</button>
     </div>
@@ -168,16 +169,23 @@
   <!-- ALIŞ -->
   <div id="tp-hammadde" class="tab-panel active">
     <div class="card"><div class="card-title">Alış Kaydı</div>
-      <div class="fgrid c3" style="margin-bottom:1rem">
+      <div class="fgrid c4" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
         <div class="fg"><label>Tür</label>
           <select id="hm-tur" onchange="hmTurDegis()">
             <option value="malzeme">🧱 Malzeme (Stok)</option>
-            <option value="hizmet">🔧 Hizmet (Gider Kalemi)</option>
+            <option value="hizmet">🔧 Hizmet</option>
             <option value="diger">📝 Diğer</option>
           </select>
         </div>
-        <div class="fg"><label>Not / Fatura No</label><input type="text" id="hm-not" placeholder="Tedarikçi, fatura no..."></div>
+        <div class="fg"><label>Belge / Fatura No</label><input type="text" id="hm-belge" placeholder="FAT-001..."></div>
+        <div class="fg"><label>Not</label><input type="text" id="hm-not" placeholder="Açıklama..."></div>
+      </div>
+      <div id="hm-diger-merkez" style="display:none;margin-bottom:.75rem">
+        <div class="fgrid c3">
+          <div class="fg"><label>Masraf Merkezi</label><select id="hm-masraf-merkez"><option value="">— Seçin —</option></select></div>
+          <div></div><div></div>
+        </div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
         <table style="font-size:13px">
@@ -221,10 +229,17 @@
   <!-- SATIŞ -->
   <div id="tp-satis" class="tab-panel">
     <div class="card"><div class="card-title">Satış Kaydı</div>
-      <div class="fgrid c3" style="margin-bottom:1rem">
+      <div class="fgrid c4" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="st-tarih"></div>
-        <div class="fg"><label>Satış Tipi</label><select id="st-tip" onchange="stSatirRender()"><option value="urun">Ürün</option><option value="stok">Hammadde / Stok</option><option value="diger">📝 Diğer</option></select></div>
-        <div class="fg"><label>Not / Müşteri</label><input type="text" id="st-not" placeholder="Müşteri adı..."></div>
+        <div class="fg"><label>Satış Tipi</label><select id="st-tip" onchange="stTurDegis()"><option value="urun">Ürün</option><option value="stok">Hammadde / Stok</option><option value="diger">📝 Diğer</option></select></div>
+        <div class="fg"><label>Belge / Fatura No</label><input type="text" id="st-belge" placeholder="FAT-001..."></div>
+        <div class="fg"><label>Not</label><input type="text" id="st-not" placeholder="Açıklama..."></div>
+      </div>
+      <div id="st-diger-merkez" style="display:none;margin-bottom:.75rem">
+        <div class="fgrid c3">
+          <div class="fg"><label>Gelir Merkezi</label><select id="st-gelir-merkez"><option value="">— Seçin —</option></select></div>
+          <div></div><div></div>
+        </div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
         <table style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:75px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:85px">Tutar (₺)</th><th style="min-width:130px">Açıklama</th><th style="min-width:110px">Alıcı</th><th style="min-width:120px">Ödeme</th><th style="width:36px"></th></tr></thead>
@@ -290,7 +305,6 @@
   <div class="tabs">
     <button class="tab active" onclick="tanimTab('birimler',this)">Birimler</button>
     <button class="tab" onclick="tanimTab('merkezler',this)">Gelir / Masraf Merkezleri</button>
-    <button class="tab" onclick="tanimTab('giderkalemler',this)">Gider Kalemleri</button>
   </div>
   <div id="tt-birimler" class="tab-panel active">
   <div class="card"><div class="card-title">Birimler</div>
@@ -315,15 +329,19 @@
   </div>
   <div class="card"><div class="card-title">Tanımlı Merkezler</div><div id="merkez-liste"></div></div>
   </div>
-  <div id="tt-giderkalemler" class="tab-panel">
-  <div class="card"><div class="card-title"><span>Gider Kalemi Hiyerarşisi</span>
-    <div style="display:flex;gap:6px">
-      <button class="btn sm" onclick="giderKalemModalAc(null,'grup')">+ Grup</button>
-      <button class="btn sm pri" onclick="giderKalemModalAc(null,'kalem')">+ Kalem</button>
+</div>
+
+<!-- HİZMETLER -->
+<div id="hizmetler" class="page">
+  <div class="card">
+    <div class="card-title">
+      <span>Hizmet Grupları & Kalemleri</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" onclick="giderKalemModalAc(null,'grup')">+ Grup</button>
+        <button class="btn sm pri" onclick="giderKalemModalAc(null,'kalem')">+ Kalem</button>
+      </div>
     </div>
-  </div>
-  <div id="gider-kalem-tree"></div>
-  </div>
+    <div id="gider-kalem-tree"></div>
   </div>
 </div>
 <div id="rapor" class="page">
