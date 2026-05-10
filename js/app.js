@@ -45,8 +45,7 @@ async function baslat(){
   // Satır listelerini cari yüklendikten sonra yenile
   if(hmSatirListesi.length)hmSatirRender();
   if(stSatirListesi.length)stSatirRender();
-  if(gdSatirListesi.length)gdSatirRender();
-  ['hm-tarih','ur-tarih','st-tarih','gd-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=bugun();});
+  ['hm-tarih','ur-tarih','st-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=bugun();});
   if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),200);
   if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),250);
   if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),300);
@@ -97,7 +96,12 @@ window.gp=function(id){
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
   if(id==='cari'){renderCari();}
   if(id==='rapor')renderRapor();if(id==='tanimlar'){renderBirimler();renderMerkezler();renderGiderKalemTree();}if(id==='kullanicilar')renderKullanicilar();
-  if(id==='islem'){if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),200);}
+  if(id==='islem'){
+    if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
+    if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
+    // Kasa tür init
+    setTimeout(()=>{ksTurDegis&&ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();},200);
+  }
 };
 window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');};
 window.tanimTab=function(id,btn){document.querySelectorAll('#tanimlar .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#tanimlar .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tt-'+id)?.classList.add('active');btn.classList.add('active');};
