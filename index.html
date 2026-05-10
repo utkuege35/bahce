@@ -223,7 +223,7 @@
     <div class="card"><div class="card-title">Satış Kaydı</div>
       <div class="fgrid c3" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="st-tarih"></div>
-        <div class="fg"><label>Satış Tipi</label><select id="st-tip" onchange="stSatirRender()"><option value="urun">Ürün</option><option value="stok">Hammadde / Stok</option></select></div>
+        <div class="fg"><label>Satış Tipi</label><select id="st-tip" onchange="stSatirRender()"><option value="urun">Ürün</option><option value="stok">Hammadde / Stok</option><option value="diger">📝 Diğer</option></select></div>
         <div class="fg"><label>Not / Müşteri</label><input type="text" id="st-not" placeholder="Müşteri adı..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
@@ -446,7 +446,7 @@
       <div class="fgrid c3">
         <div class="fg"><label>İkon</label><input type="text" id="sm-ikon" placeholder="🌿" maxlength="2"></div>
         <div class="fg"><label>Renk</label><select id="sm-renk"><option value="yesil">Yeşil</option><option value="turuncu">Turuncu</option><option value="mavi">Mavi</option><option value="mor">Mor</option><option value="sari">Sarı</option></select></div>
-        <div class="fg" id="sm-birim-fg"><label>Temel Birim</label><select id="sm-birim"><option value="">Seçin...</option></select></div>
+        <div class="fg" id="sm-birim-fg"><label>Temel Birim</label><select id="sm-birim" onchange="_doldurVarsayilanBirim('sm-varsayilan-birim',this.value,null)"><option value="">Seçin...</option></select></div>
       </div>
       <div id="sm-stok-alanlar">
         <div class="fgrid c2">
@@ -458,8 +458,8 @@
           <div class="fg"><label>Açıklama</label><input type="text" id="sm-aciklama"></div>
         </div>
         <div class="fgrid c2">
+          <div class="fg"><label>Varsayılan İşlem Birimi</label><select id="sm-varsayilan-birim"><option value="">— Temel birim —</option></select></div>
           <div class="fg"><label>Masraf Merkezi</label><select id="sm-merkez"><option value="">—</option></select></div>
-          <div></div>
         </div>
         <div id="sm-aktif-satir" style="display:none;margin-top:4px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
@@ -489,7 +489,7 @@
       <div class="fgrid c3">
         <div class="fg"><label>İkon</label><input type="text" id="um-ikon" placeholder="🍕" maxlength="2"></div>
         <div class="fg"><label>Renk</label><select id="um-renk"><option value="yesil">Yeşil</option><option value="turuncu">Turuncu</option><option value="mavi">Mavi</option><option value="mor">Mor</option><option value="sari">Sarı</option></select></div>
-        <div class="fg" id="um-birim-fg"><label>Birim</label><select id="um-birim"><option value="">Seçin...</option></select></div>
+        <div class="fg" id="um-birim-fg"><label>Birim</label><select id="um-birim" onchange="_doldurVarsayilanBirim('um-varsayilan-birim',this.value,null)"><option value="">Seçin...</option></select></div>
       </div>
       <div id="um-urun-alanlar">
         <div class="fgrid c2">
@@ -497,8 +497,8 @@
           <div class="fg"><label>Min. Stok Uyarı</label><input type="number" id="um-min" placeholder="0" min="0" step="any"></div>
         </div>
         <div class="fgrid c2">
+          <div class="fg"><label>Varsayılan İşlem Birimi</label><select id="um-varsayilan-birim"><option value="">— Temel birim —</option></select></div>
           <div class="fg"><label>Gelir Merkezi</label><select id="um-merkez"><option value="">—</option></select></div>
-          <div></div>
         </div>
         <div id="um-aktif-satir" style="display:none;margin-bottom:6px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
@@ -612,6 +612,10 @@
         <div class="fg"><label>İkon</label><input type="text" id="gk-ikon" placeholder="💸" maxlength="2"></div>
         <div class="fg"><label>Renk</label><select id="gk-renk"><option value="turuncu">Turuncu</option><option value="yesil">Yeşil</option><option value="mavi">Mavi</option><option value="mor">Mor</option><option value="sari">Sarı</option></select></div>
         <div class="fg" id="gk-merkez-fg"><label>Masraf Merkezi</label><select id="gk-merkez"><option value="">—</option></select></div>
+      </div>
+      <div class="fgrid c2" id="gk-birim-fg">
+        <div class="fg"><label>Varsayılan İşlem Birimi</label><select id="gk-varsayilan-birim"><option value="">— Seçin —</option></select></div>
+        <div></div>
       </div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-gider-kalem')">İptal</button><button class="btn pri" onclick="kaydetGiderKalem()">Kaydet</button></div>
