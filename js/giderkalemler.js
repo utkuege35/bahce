@@ -15,7 +15,9 @@ window.giderKalemModalAc=function(ustId,tip){
   document.getElementById('gk-ad').value='';document.getElementById('gk-ikon').value='';
   document.getElementById('gk-kod').value=kodOlusturGiderKalem(ustId);
   document.getElementById('gk-merkez-fg').style.display=tip==='kalem'?'':'none';
+  document.getElementById('gk-birim-fg').style.display=tip==='kalem'?'':'none';
   document.getElementById('gk-merkez').value='';
+  document.getElementById('gk-varsayilan-birim').value='';
   const tipAd=tip==='grup'?'Grup':'Gider Kalemi';
   document.getElementById('gk-title').textContent=ustId?`Alt ${tipAd} Ekle`:`Yeni ${tipAd}`;
   if(ustId){const ust=giderKalemleri.find(g=>g.id===ustId);document.getElementById('gk-ust-bilgi').textContent=`Üst: ${ust?.ikon||''} ${ust?.ad||''} [${ust?.kod||''}]`;}
@@ -29,7 +31,12 @@ window.giderKalemDuzenle=function(id){
   document.getElementById('gk-ad').value=g.ad;document.getElementById('gk-kod').value=g.kod;
   document.getElementById('gk-ikon').value=g.ikon||'';document.getElementById('gk-renk').value=g.renk||'turuncu';
   document.getElementById('gk-merkez-fg').style.display=g.tip==='kalem'?'':'none';
-  doldurMerkezSecleri();setTimeout(()=>document.getElementById('gk-merkez').value=g.merkez_id||'',100);
+  document.getElementById('gk-birim-fg').style.display=g.tip==='kalem'?'':'none';
+  doldurMerkezSecleri();
+  // Varsayılan birim listesini doldur
+  const vbEl=document.getElementById('gk-varsayilan-birim');
+  if(vbEl){vbEl.innerHTML='<option value="">— Seçin —</option>'+birimler.map(b=>`<option value="${b.id}"${b.id===g.varsayilan_birim_id?' selected':''}>${b.ad} (${b.kisaltma})</option>`).join('');}
+  setTimeout(()=>document.getElementById('gk-merkez').value=g.merkez_id||'',100);
   const ust=giderKalemleri.find(x=>x.id===g.ust_id);
   document.getElementById('gk-ust-bilgi').textContent=ust?`Üst: ${ust.ikon||''} ${ust.ad} [${ust.kod}]`:(g.tip==='grup'?'Ana gider grubu':'Grupsuz');
   modalAc('modal-gider-kalem');
@@ -46,7 +53,10 @@ window.kaydetGiderKalem=async function(){
   if(dupKod){bil(`"${kod}" kodu zaten kullanımda!`,'err');return;}
   const mevcut=giderKalemleri.find(x=>x.id===id);
   const data={id,ad,tip,kod,ikon:document.getElementById('gk-ikon').value.trim()||'💸',renk:document.getElementById('gk-renk').value};
-  if(tip==='kalem')data.merkez_id=document.getElementById('gk-merkez').value||null;
+  if(tip==='kalem'){
+    data.merkez_id=document.getElementById('gk-merkez').value||null;
+    data.varsayilan_birim_id=document.getElementById('gk-varsayilan-birim').value||null;
+  }
   if(!mevcut){
     const ustBilgi=document.getElementById('gk-ust-bilgi').textContent;
     const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
