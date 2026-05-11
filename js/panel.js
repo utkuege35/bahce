@@ -1,6 +1,32 @@
 // ===== PANEL / DASHBOARD =====
 let _panelFiltre='bugun';
 let _panelChart=null,_panelGrafikler={};
+
+function _doughnut(canvasId,dataMap,renkler,bosYazi){
+  const el=document.getElementById(canvasId);if(!el)return;
+  if(_panelGrafikler[canvasId]){try{_panelGrafikler[canvasId].destroy();}catch(e){} _panelGrafikler[canvasId]=null;}
+  const entries=Object.entries(dataMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const toplam=entries.reduce((s,[,v])=>s+v,0);
+  if(!entries.length||toplam<=0){
+    const c=el.getContext('2d');c.clearRect(0,0,el.width,el.height);
+    c.fillStyle='#bbb';c.font='12px sans-serif';c.textAlign='center';c.fillText(bosYazi,el.width/2,el.height/2);
+    return;
+  }
+  _panelGrafikler[canvasId]=new Chart(el,{
+    type:'doughnut',
+    data:{
+      labels:entries.map(([k])=>k),
+      datasets:[{data:entries.map(([,v])=>Math.round(v)),backgroundColor:renkler,borderWidth:2,borderColor:'#fff'}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:5}},
+        tooltip:{callbacks:{label:ctx=>{const pct=Math.round(ctx.raw/toplam*100);return ` ${ctx.label}: ₺${ctx.raw.toLocaleString('tr-TR')} (%${pct})`;}}}
+      }
+    }
+  });
+}
 let _ilSira='tarih-azalan',_ilSayfa=1;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
@@ -81,24 +107,7 @@ function renderPanel(){
 
   if(_panelKasaChart)_panelKasaChart.destroy();_panelKasaChart=null;
 
-  // Yardımcı: pasta grafik oluştur
-  function _doughnut(canvasId,dataMap,renkler,topBosTxt){
-    const el=document.getElementById(canvasId);if(!el)return;
-    const entries=Object.entries(dataMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const toplam=entries.reduce((s,[,v])=>s+v,0);
-    if(entries.length&&toplam>0){
-      if(_panelGrafikler[canvasId])_panelGrafikler[canvasId].destroy();
-      _panelGrafikler[canvasId]=new Chart(el,{type:'doughnut',
-        data:{labels:entries.map(([k])=>k),datasets:[{data:entries.map(([,v])=>Math.round(v)),backgroundColor:renkler,borderWidth:1}]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:6}},
-            tooltip:{callbacks:{label:ctx=>{const pct=Math.round(ctx.raw/toplam*100);return ` ${ctx.label}: ${para(ctx.raw)} (%${pct})`;}}}}}});
-    }else{
-      if(_panelGrafikler[canvasId])_panelGrafikler[canvasId].destroy();
-      const c=el.getContext('2d');c.clearRect(0,0,el.width,el.height);
-      c.fillStyle='#bbb';c.font='12px sans-serif';c.textAlign='center';c.fillText(topBosTxt,el.width/2,el.height/2);
-    }
-  }
+  // Yardımcı pasta grafik fonksiyon yukarıda tanımlı (_doughnut)
 
   // En çok satılan (ürün/stok bazında)
   const satisMap={};
