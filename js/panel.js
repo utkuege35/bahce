@@ -87,14 +87,37 @@ function renderPanel(){
       scales:{x:{ticks:{font:{size:9},maxTicksLimit:14}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
   }
 
-  const rows=islemler.slice(0,8).map(i=>`<tr>
-    <td style="white-space:nowrap;font-size:12px">${i.tarih||''}</td>
-    <td><span class="badge ${i.tur==='satis'?'g':['gider','giris'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u'}">${{satis:'Satış',gider:'Gider',giris:'Giriş',uretim:'Üretim',kasa:'Kasa',uretim_sarfiyat:'Sarfiyat'}[i.tur]||i.tur}</span></td>
-    <td style="font-size:11px">${i.aciklama||i.kat||''}</td>
-    <td style="font-weight:500;color:${i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)'}">${i.tutar?para(i.tutar):''}</td>
-    <td style="font-size:11px;color:var(--yazi3)">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+birimAd(i.birim_id):''}</td>
-  </tr>`).join('');
-  document.getElementById('son-tb').innerHTML=rows||'<tr><td colspan="5" class="bos">Henüz işlem yok</td></tr>';
+const alisCount=aralik.filter(i=>i.tur==='giris').length;
+  const satisCount=aralik.filter(i=>i.tur==='satis').length;
+  const giderCount=aralik.filter(i=>i.tur==='gider').length;
+  const marj=gelir>0?Math.round(net/gelir*100):0;
+  const dusukStoklar=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
+  const urunMap={};
+  aralik.filter(i=>i.tur==='satis'&&i.urun_id).forEach(i=>{const u=urunler.find(x=>x.id===i.urun_id);const ad=u?.ad||'?';urunMap[ad]=(urunMap[ad]||0)+parseFloat(i.tutar||0);});
+  const topSatis=Object.entries(urunMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const altEl=document.getElementById('panel-alt');
+  if(altEl){
+    let html=`<div class="card" style="margin-bottom:0">
+      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">İşlem Özeti</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--yazi2)">Alış</span><span style="font-size:13px;font-weight:600;color:var(--mavi)">${alisCount}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--yazi2)">Satış</span><span style="font-size:13px;font-weight:600;color:var(--yesil)">${satisCount}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--yazi2)">Gider</span><span style="font-size:13px;font-weight:600;color:var(--turuncu)">${giderCount}</span></div>
+        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--krem2)"><span style="font-size:12px;color:var(--yazi2)">Kar Marjı</span><span style="font-size:13px;font-weight:600;color:${marj>=0?'var(--yesil)':'#c62828'}">${gelir>0?marj+'%':'—'}</span></div>
+      </div>
+    </div>`;
+    if(topSatis.length)html+=`<div class="card" style="margin-bottom:0">
+      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">En Çok Satan</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${topSatis.map(([ad,tutar],idx)=>`<div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:6px"><span style="width:18px;height:18px;border-radius:50%;background:${['var(--yesil)','var(--mavi)','var(--turuncu)'][idx]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">${idx+1}</span><span style="font-size:12px">${ad}</span></div><span style="font-size:12px;font-weight:500;color:var(--yesil)">${para(tutar)}</span></div>`).join('')}
+      </div>
+    </div>`;
+    html+=`<div class="card" style="margin-bottom:0">
+      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Stok Durumu</div>
+      ${dusukStoklar.length?dusukStoklar.slice(0,5).map(s=>{const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:12px">${s.ad}</span><span style="font-size:11px;font-weight:500;color:${mik<=0?'#c62828':'var(--sari)'};background:${mik<=0?'#fdecea':'var(--sari-ac)'};padding:2px 8px;border-radius:10px">${mik<=0?'Tükendi':'⚠ '+mik.toLocaleString('tr-TR',{maximumFractionDigits:1})+' '+(tb?.kisaltma||'')}</span></div>`;}).join(''):`<div style="font-size:12px;color:var(--yesil)">✓ Tüm stoklar yeterli</div>`}
+    </div>`;
+    altEl.innerHTML=html;
+  }
 }
 
 // ===== İŞLEM LİSTESİ =====
