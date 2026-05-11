@@ -94,9 +94,9 @@
 
 <!-- PANEL / DASHBOARD -->
 <div id="panel" class="page active">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
-    <div style="font-size:13px;font-weight:600;color:var(--yazi1)">Dashboard</div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Sever Bahçesi</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
       <button class="btn sm active" id="pf-bugun" onclick="panelFiltre('bugun',this)">Bugün</button>
       <button class="btn sm" id="pf-hafta" onclick="panelFiltre('hafta',this)">Bu Hafta</button>
       <button class="btn sm" id="pf-ay" onclick="panelFiltre('ay',this)">Bu Ay</button>
@@ -108,21 +108,18 @@
       </span>
     </div>
   </div>
-  <div class="mg" id="panel-met"></div>
-  <div id="panel-grafikler" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-    <div class="card" style="margin-bottom:0"><div class="card-title" style="font-size:12px">Gelir / Gider</div>
-      <div style="height:200px"><canvas id="panel-chart"></canvas></div>
+  <div class="mg" id="panel-met" style="margin-bottom:1.25rem"></div>
+  <div id="panel-grafikler" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title" style="font-size:12px">Gelir / Gider</div>
+      <div style="height:220px"><canvas id="panel-chart"></canvas></div>
     </div>
-    <div class="card" style="margin-bottom:0"><div class="card-title" style="font-size:12px">Kasa Akışı</div>
-      <div style="height:200px"><canvas id="panel-kasa-chart"></canvas></div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title" style="font-size:12px">Kasa Akışı</div>
+      <div style="height:220px"><canvas id="panel-kasa-chart"></canvas></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-title"><span>Son İşlemler</span>
-      <button class="btn sm" onclick="gp('islem-liste')">Tümünü Gör →</button>
-    </div>
-    <div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Tutar</th><th>Miktar</th></tr></thead><tbody id="son-tb"></tbody></table></div>
-  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem" id="panel-alt"></div>
 </div>
 
 <!-- İŞLEM LİSTESİ -->
