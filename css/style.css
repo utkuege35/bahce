@@ -140,3 +140,5 @@ tr:hover td{background:var(--krem)}
 .kk-rol.admin{background:var(--yesil-cok-ac);color:var(--yesil)}
 #pwa-yukle{display:none;position:fixed;bottom:1rem;right:1rem;z-index:500;background:var(--yesil);color:#fff;border:none;border-radius:50px;padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(45,106,79,.4)}@media(max-width:768px){#panel-grafikler{grid-template-columns:1fr!important}}
 .btn.sm.active{background:var(--yesil);color:#fff;border-color:var(--yesil)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#yenile-btn:hover{color:var(--yesil)!important;transform:rotate(30deg);transition:transform .2s}
