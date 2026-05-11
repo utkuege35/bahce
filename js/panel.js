@@ -1,6 +1,6 @@
 // ===== PANEL / DASHBOARD =====
 let _panelFiltre='bugun';
-let _panelChart=null,_panelKasaChart=null;
+let _panelChart=null,_panelGrafikler={};
 let _ilSira='tarih-azalan',_ilSayfa=1;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
@@ -80,25 +80,56 @@ function renderPanel(){
   }
 
   if(_panelKasaChart)_panelKasaChart.destroy();_panelKasaChart=null;
-  const ctx2=document.getElementById('panel-kasa-chart');
-  if(ctx2){
-    // Kasa grafiği — dönem içi günlük kümülatif
-    const kasaMap={};
-    aralik.forEach(i=>{const t=i.tarih;if(!t)return;kasaMap[t]=(kasaMap[t]||0)+parseFloat(i.kasa_etkisi||0);});
-    const kasaLabels=Object.keys(kasaMap).sort();
-    if(kasaLabels.length){
-      let kum=0;const kasaKum=kasaLabels.map(k=>{kum+=kasaMap[k];return Math.round(kum);});
-      _panelKasaChart=new Chart(ctx2,{type:'line',data:{labels:kasaLabels,datasets:[
-        {label:'Kasa',data:kasaKum,borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:3,fill:true}
-      ]},options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
-        scales:{x:{ticks:{font:{size:9},maxTicksLimit:14}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
+
+  // Yardımcı: pasta grafik oluştur
+  function _doughnut(canvasId,dataMap,renkler,topBosTxt){
+    const el=document.getElementById(canvasId);if(!el)return;
+    const entries=Object.entries(dataMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const toplam=entries.reduce((s,[,v])=>s+v,0);
+    if(entries.length&&toplam>0){
+      if(_panelGrafikler[canvasId])_panelGrafikler[canvasId].destroy();
+      _panelGrafikler[canvasId]=new Chart(el,{type:'doughnut',
+        data:{labels:entries.map(([k])=>k),datasets:[{data:entries.map(([,v])=>Math.round(v)),backgroundColor:renkler,borderWidth:1}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:6}},
+            tooltip:{callbacks:{label:ctx=>{const pct=Math.round(ctx.raw/toplam*100);return ` ${ctx.label}: ${para(ctx.raw)} (%${pct})`;}}}}}});
     }else{
-      const c=ctx2.getContext('2d');c.clearRect(0,0,ctx2.width,ctx2.height);
-      c.fillStyle='#bbb';c.font='13px sans-serif';c.textAlign='center';
-      c.fillText('Bu dönemde kasa hareketi yok',ctx2.width/2,ctx2.height/2);
+      if(_panelGrafikler[canvasId])_panelGrafikler[canvasId].destroy();
+      const c=el.getContext('2d');c.clearRect(0,0,el.width,el.height);
+      c.fillStyle='#bbb';c.font='12px sans-serif';c.textAlign='center';c.fillText(topBosTxt,el.width/2,el.height/2);
     }
   }
+
+  // En çok satılan (ürün/stok bazında)
+  const satisMap={};
+  aralik.filter(i=>i.tur==='satis').forEach(i=>{
+    let ad='Diğer';
+    if(i.urun_id){const u=urunler.find(x=>x.id===i.urun_id);ad=u?.ad||'Ürün';}
+    else if(i.stok_id){const s=stoklar.find(x=>x.id===i.stok_id);ad=s?.ad||'Stok';}
+    else ad=i.aciklama||'Diğer';
+    satisMap[ad]=(satisMap[ad]||0)+parseFloat(i.tutar||0);
+  });
+  _doughnut('panel-satis-chart',satisMap,['#2d6a4f','#52b788','#95d5b2','#b7e4c7','#1b4332'],'Bu dönem satış yok');
+
+  // En çok alınan (stok bazında)
+  const alisMap={};
+  aralik.filter(i=>i.tur==='giris').forEach(i=>{
+    let ad='Diğer';
+    if(i.stok_id){const s=stoklar.find(x=>x.id===i.stok_id);ad=s?.ad||'Stok';}
+    else ad=i.aciklama||'Diğer';
+    alisMap[ad]=(alisMap[ad]||0)+parseFloat(i.tutar||0);
+  });
+  _doughnut('panel-alis-chart',alisMap,['#1d4e89','#4a90d9','#74b9ff','#a8d8ff','#d0ecff'],'Bu dönem alış yok');
+
+  // En çok gider (gider kalemi bazında)
+  const giderMap={};
+  aralik.filter(i=>i.tur==='gider').forEach(i=>{
+    let ad='Diğer';
+    if(i.gider_kalem_id){const k=giderKalemleri.find(x=>x.id===i.gider_kalem_id);ad=k?.ad||'Gider';}
+    else ad=i.aciklama||i.kat||'Diğer';
+    giderMap[ad]=(giderMap[ad]||0)+parseFloat(i.tutar||0);
+  });
+  _doughnut('panel-gider-chart',giderMap,['#bc4a0e','#f4a261','#ffc8a0','#e76f51','#ffe0cc'],'Bu dönem gider yok');
 
   // Alt bilgi kartları — stok uyarıları, işlem sayıları, en çok satan
   const dusukStoklar=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
