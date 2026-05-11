@@ -67,3 +67,17 @@ function kodOlusturUrun(ustId){
   if(!altlar.length)return ust.kod+'01';
   return String(Math.max(...altlar)+1);
 }
+
+window.uygulamaYenile=async function(){
+  const btn=document.getElementById('yenile-btn');
+  if(btn){btn.style.animation='spin 0.8s linear infinite';btn.disabled=true;}
+  try{
+    // Service Worker cache'ini temizle
+    if('serviceWorker' in navigator){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  // Sayfayı yeniden yükle (cache bypass)
+  window.location.reload(true);
+};
