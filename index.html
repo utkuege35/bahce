@@ -83,7 +83,8 @@
       <button onclick="gp('urunler')">Ürünler</button>
       <button onclick="gp('hizmetler')">Hizmetler</button>
       <button onclick="gp('cari')">Cari</button>
-      <button onclick="gp('tanimlar')">Birimler & Merkezler</button>
+      <button onclick="gp('birimler')">Birimler</button>
+      <button onclick="gp('merkezler')">Merkezler</button>
     </div>
   </div>
   <button onclick="gp('rapor')">Rapor</button>
@@ -289,24 +290,24 @@
   </div>
   <div id="urun-tree"></div>
 </div>
-<div id="tanimlar" class="page">
-  <div class="tabs">
-    <button class="tab active" onclick="tanimTab('birimler',this)">Birimler</button>
-    <button class="tab" onclick="tanimTab('merkezler',this)">Gelir / Masraf Merkezleri</button>
-  </div>
-  <div id="tt-birimler" class="tab-panel active">
-  <div class="card"><div class="card-title">Birimler</div>
+<!-- BİRİMLER -->
+<div id="birimler" class="page">
+  <div class="card"><div class="card-title">Temel Birim Ekle</div>
     <div class="fgrid c3"><div class="fg"><label>Birim Adı</label><input type="text" id="tb-ad" placeholder="kg, adet..."></div><div class="fg"><label>Kısaltma</label><input type="text" id="tb-kisaltma" placeholder="kg, ad..."></div><div class="fg"><label>Tür</label><select id="tb-tur"><option value="agirlik">Ağırlık</option><option value="hacim">Hacim</option><option value="adet">Adet</option><option value="diger">Diğer</option></select></div></div>
     <div class="btn-row"><button class="btn pri" onclick="kaydetTemelBirim()">Temel Birim Ekle</button></div>
-    <div class="sep"></div>
+  </div>
+  <div class="card"><div class="card-title">Alt Birim Ekle</div>
     <div class="fgrid c2"><div class="fg"><label>Alt Birim Adı</label><input type="text" id="ab-ad" placeholder="koli, demet..."></div><div class="fg"><label>Temel Birim</label><select id="ab-temel"><option value="">Seçin...</option></select></div></div>
     <div class="fgrid c2"><div class="fg"><label>1 alt birim = kaç temel?</label><input type="number" id="ab-carpan" placeholder="30" min="0" step="any"></div><div class="fg"><label>Kısaltma</label><input type="text" id="ab-kisaltma" placeholder="koli..."></div></div>
     <div class="btn-row"><button class="btn sec" onclick="kaydetAltBirim()">Alt Birim Ekle</button></div>
-    <div class="sep"></div>
+  </div>
+  <div class="card"><div class="card-title">Tanımlı Birimler</div>
     <div id="birim-liste"></div>
   </div>
-  </div>
-  <div id="tt-merkezler" class="tab-panel">
+</div>
+
+<!-- MERKEZLER -->
+<div id="merkezler" class="page">
   <div class="card"><div class="card-title">Yeni Merkez Ekle</div>
     <div class="fgrid c3">
       <div class="fg"><label>Merkez Adı</label><input type="text" id="mz-ad" placeholder="Kafe, Bahçe, Personel..."></div>
@@ -316,7 +317,6 @@
     <div class="btn-row"><button class="btn pri" onclick="kaydetMerkez()">Ekle</button></div>
   </div>
   <div class="card"><div class="card-title">Tanımlı Merkezler</div><div id="merkez-liste"></div></div>
-  </div>
 </div>
 
 <!-- HİZMETLER -->
