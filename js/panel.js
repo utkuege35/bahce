@@ -112,8 +112,6 @@ function renderPanel(){
     }
   }
 
-  if(_panelKasaChart)_panelKasaChart.destroy();_panelKasaChart=null;
-
   // Yardımcı pasta grafik fonksiyon yukarıda tanımlı (_doughnut)
 
   // En çok satılan, alınan, gider — canvas render sonrası çiz
