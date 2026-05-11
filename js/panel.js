@@ -40,6 +40,15 @@ function renderPanel(){
   const gider=aralik.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
   const net=gelir-gider;
   const topKasa=islemler.reduce((s,i)=>s+parseFloat(i.kasa_etkisi||0),0);
+  const alisCount=aralik.filter(i=>i.tur==='giris').length;
+  const satisCount=aralik.filter(i=>i.tur==='satis').length;
+  const giderCount=aralik.filter(i=>i.tur==='gider').length;
+  const alisTutar=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const satisTutar=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const giderTutar=aralik.filter(i=>i.tur==='gider').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+
+  // Kar marjı
+  const marj=gelir>0?Math.round(net/gelir*100):0;
 
   document.getElementById('panel-met').innerHTML=`
     <div class="met"><div class="ml">Gelir</div><div class="mv g">${para(gelir)}</div></div>
@@ -47,75 +56,120 @@ function renderPanel(){
     <div class="met"><div class="ml">Net Kar/Zarar</div><div class="mv ${net>=0?'k':'z'}">${para(net)}</div></div>
     <div class="met"><div class="ml">Kasa Bakiyesi</div><div class="mv ${topKasa>=0?'k':'z'}">${para(topKasa)}</div></div>`;
 
-  const gunlukMu=_panelFiltre!=='yil'&&_panelFiltre!=='ozel';
-  const veriMap={};
-  aralik.forEach(i=>{
-    const key=gunlukMu?i.tarih:i.tarih?.substring(0,7);
-    if(!key)return;
-    if(!veriMap[key])veriMap[key]={gelir:0,gider:0,kasa:0};
-    if(i.tur==='satis')veriMap[key].gelir+=parseFloat(i.tutar||0);
-    else if(['gider','giris'].includes(i.tur))veriMap[key].gider+=parseFloat(i.tutar||0);
-    veriMap[key].kasa+=parseFloat(i.kasa_etkisi||0);
-  });
-  const labels=Object.keys(veriMap).sort();
-  const gelirData=labels.map(k=>Math.round(veriMap[k].gelir));
-  const giderData=labels.map(k=>Math.round(veriMap[k].gider));
-
+  // Grafik verisi
+  // Grafik — tek gelir / tek gider kolonu (seçilen dönem toplamı)
   if(_panelChart)_panelChart.destroy();_panelChart=null;
   const ctx1=document.getElementById('panel-chart');
   if(ctx1){
-    if(labels.length){
-      _panelChart=new Chart(ctx1,{type:'bar',data:{labels,datasets:[
-        {label:'Gelir',data:gelirData,backgroundColor:'rgba(82,183,136,.75)',borderRadius:3},
-        {label:'Gider',data:giderData,backgroundColor:'rgba(244,162,97,.75)',borderRadius:3}
-      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
-        scales:{x:{ticks:{font:{size:9},maxTicksLimit:14}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
+    if(gelir>0||gider>0){
+      _panelChart=new Chart(ctx1,{type:'bar',data:{
+        labels:['Gelir','Gider'],
+        datasets:[{
+          data:[Math.round(gelir),Math.round(gider)],
+          backgroundColor:['rgba(82,183,136,.8)','rgba(244,162,97,.8)'],
+          borderRadius:6,barThickness:60
+        }]
+      },options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
+        scales:{x:{ticks:{font:{size:12}}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
     }else{
       const c=ctx1.getContext('2d');c.clearRect(0,0,ctx1.width,ctx1.height);
-      c.fillStyle='var(--yazi3)';c.font='12px sans-serif';c.textAlign='center';
-      c.fillText('Bu dönem işlem yok',ctx1.width/2,100);
+      c.fillStyle='#bbb';c.font='13px sans-serif';c.textAlign='center';
+      c.fillText('Bu dönemde işlem yok',ctx1.width/2,ctx1.height/2);
     }
   }
 
   if(_panelKasaChart)_panelKasaChart.destroy();_panelKasaChart=null;
   const ctx2=document.getElementById('panel-kasa-chart');
-  if(ctx2&&labels.length){
-    let kum=0;const kasaKum=labels.map(k=>{kum+=veriMap[k].kasa;return Math.round(kum);});
-    _panelKasaChart=new Chart(ctx2,{type:'line',data:{labels,datasets:[
-      {label:'Kasa',data:kasaKum,borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:2,fill:true}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
-      scales:{x:{ticks:{font:{size:9},maxTicksLimit:14}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
+  if(ctx2){
+    // Kasa grafiği — dönem içi günlük kümülatif
+    const kasaMap={};
+    aralik.forEach(i=>{const t=i.tarih;if(!t)return;kasaMap[t]=(kasaMap[t]||0)+parseFloat(i.kasa_etkisi||0);});
+    const kasaLabels=Object.keys(kasaMap).sort();
+    if(kasaLabels.length){
+      let kum=0;const kasaKum=kasaLabels.map(k=>{kum+=kasaMap[k];return Math.round(kum);});
+      _panelKasaChart=new Chart(ctx2,{type:'line',data:{labels:kasaLabels,datasets:[
+        {label:'Kasa',data:kasaKum,borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:3,fill:true}
+      ]},options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
+        scales:{x:{ticks:{font:{size:9},maxTicksLimit:14}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
+    }else{
+      const c=ctx2.getContext('2d');c.clearRect(0,0,ctx2.width,ctx2.height);
+      c.fillStyle='#bbb';c.font='13px sans-serif';c.textAlign='center';
+      c.fillText('Bu dönemde kasa hareketi yok',ctx2.width/2,ctx2.height/2);
+    }
   }
 
-const alisCount=aralik.filter(i=>i.tur==='giris').length;
-  const satisCount=aralik.filter(i=>i.tur==='satis').length;
-  const giderCount=aralik.filter(i=>i.tur==='gider').length;
-  const marj=gelir>0?Math.round(net/gelir*100):0;
+  // Alt bilgi kartları — stok uyarıları, işlem sayıları, en çok satan
   const dusukStoklar=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
-  const urunMap={};
-  aralik.filter(i=>i.tur==='satis'&&i.urun_id).forEach(i=>{const u=urunler.find(x=>x.id===i.urun_id);const ad=u?.ad||'?';urunMap[ad]=(urunMap[ad]||0)+parseFloat(i.tutar||0);});
-  const topSatis=Object.entries(urunMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const topSatisUrun=(() => {
+    const urunMap={};
+    aralik.filter(i=>i.tur==='satis'&&i.urun_id).forEach(i=>{
+      const u=urunler.find(x=>x.id===i.urun_id);const ad=u?.ad||i.urun_id;
+      urunMap[ad]=(urunMap[ad]||0)+parseFloat(i.tutar||0);
+    });
+    const sirali=Object.entries(urunMap).sort((a,b)=>b[1]-a[1]);
+    return sirali.slice(0,3);
+  })();
+
   const altEl=document.getElementById('panel-alt');
   if(altEl){
-    let html=`<div class="card" style="margin-bottom:0">
+    let html='';
+    // İşlem özeti
+    html+=`<div class="card" style="margin-bottom:0">
       <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">İşlem Özeti</div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--yazi2)">Alış</span><span style="font-size:13px;font-weight:600;color:var(--mavi)">${alisCount}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--yazi2)">Satış</span><span style="font-size:13px;font-weight:600;color:var(--yesil)">${satisCount}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--yazi2)">Gider</span><span style="font-size:13px;font-weight:600;color:var(--turuncu)">${giderCount}</span></div>
-        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--krem2)"><span style="font-size:12px;color:var(--yazi2)">Kar Marjı</span><span style="font-size:13px;font-weight:600;color:${marj>=0?'var(--yesil)':'#c62828'}">${gelir>0?marj+'%':'—'}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:12px;color:var(--yazi2)">Alış</span> <span style="font-size:10px;color:var(--yazi3)">(${alisCount} işlem)</span></div>
+          <span style="font-size:13px;font-weight:600;color:var(--turuncu)">${alisTutar>0?para(alisTutar):'—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:12px;color:var(--yazi2)">Satış</span> <span style="font-size:10px;color:var(--yazi3)">(${satisCount} işlem)</span></div>
+          <span style="font-size:13px;font-weight:600;color:var(--yesil)">${satisTutar>0?para(satisTutar):'—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:12px;color:var(--yazi2)">Gider</span> <span style="font-size:10px;color:var(--yazi3)">(${giderCount} işlem)</span></div>
+          <span style="font-size:13px;font-weight:600;color:var(--turuncu)">${giderTutar>0?para(giderTutar):'—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--krem2)">
+          <span style="font-size:12px;color:var(--yazi2)">Kar Marjı</span>
+          <span style="font-size:13px;font-weight:600;color:${marj>=0?'var(--yesil)':'#c62828'}">${gelir>0?marj+'%':'—'}</span>
+        </div>
       </div>
     </div>`;
-    if(topSatis.length)html+=`<div class="card" style="margin-bottom:0">
-      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">En Çok Satan</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${topSatis.map(([ad,tutar],idx)=>`<div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:6px"><span style="width:18px;height:18px;border-radius:50%;background:${['var(--yesil)','var(--mavi)','var(--turuncu)'][idx]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">${idx+1}</span><span style="font-size:12px">${ad}</span></div><span style="font-size:12px;font-weight:500;color:var(--yesil)">${para(tutar)}</span></div>`).join('')}
-      </div>
-    </div>`;
+
+    // En çok satan
+    if(topSatisUrun.length){
+      html+=`<div class="card" style="margin-bottom:0">
+        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">En Çok Satan</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${topSatisUrun.map(([ad,tutar],idx)=>`
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="width:18px;height:18px;border-radius:50%;background:${['var(--yesil)','var(--mavi)','var(--turuncu)'][idx]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${idx+1}</span>
+                <span style="font-size:12px;color:var(--yazi1)">${ad}</span>
+              </div>
+              <span style="font-size:12px;font-weight:500;color:var(--yesil)">${para(tutar)}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // Stok uyarıları
     html+=`<div class="card" style="margin-bottom:0">
       <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Stok Durumu</div>
-      ${dusukStoklar.length?dusukStoklar.slice(0,5).map(s=>{const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:12px">${s.ad}</span><span style="font-size:11px;font-weight:500;color:${mik<=0?'#c62828':'var(--sari)'};background:${mik<=0?'#fdecea':'var(--sari-ac)'};padding:2px 8px;border-radius:10px">${mik<=0?'Tükendi':'⚠ '+mik.toLocaleString('tr-TR',{maximumFractionDigits:1})+' '+(tb?.kisaltma||'')}</span></div>`;}).join(''):`<div style="font-size:12px;color:var(--yesil)">✓ Tüm stoklar yeterli</div>`}
+      ${dusukStoklar.length
+        ?dusukStoklar.slice(0,5).map(s=>{
+            const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);
+            return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:12px;color:var(--yazi1)">${s.ad}</span>
+              <span style="font-size:11px;font-weight:500;color:${mik<=0?'#c62828':'var(--sari)'};background:${mik<=0?'#fdecea':'var(--sari-ac)'};padding:2px 8px;border-radius:10px">${mik<=0?'Tükendi':'⚠ '+mik.toLocaleString('tr-TR',{maximumFractionDigits:1})+' '+(tb?.kisaltma||'')}</span>
+            </div>`;
+          }).join('')
+        :`<div style="font-size:12px;color:var(--yesil);display:flex;align-items:center;gap:6px"><span>✓</span> Tüm stoklar yeterli</div>`}
+      ${dusukStoklar.length>5?`<div style="font-size:11px;color:var(--yazi3);margin-top:6px">+${dusukStoklar.length-5} daha... <span style="cursor:pointer;color:var(--yesil)" onclick="gp('stok')">Stoklar →</span></div>`:''}
     </div>`;
+
     altEl.innerHTML=html;
   }
 }
