@@ -321,6 +321,7 @@ window.renderIslemListe=function(){
       <td style="text-align:right;font-weight:500;white-space:nowrap;color:${i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)'}">${i.tutar?para(i.tutar):''}</td>
       <td style="font-size:10px;white-space:nowrap">${i.odeme_tipi==='cari'?'📋 Cari':i.odeme_tipi==='pesin'?'💵 Peşin':''}</td>
       <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${i.kullanici||''}</td>
+      <td><button class="btn sm" onclick="islemDetayAc('${i.id}')" title="Detay">🔍</button></td>
       <td><button class="btn sm" onclick="islemGecmisAc('${i.id}')">📋${logSayisi>0?` <span style="background:var(--sari-ac);color:var(--sari);border-radius:10px;padding:0 4px;font-size:10px">${logSayisi}</span>`:''}</button></td>
       ${isAdmin?`<td style="white-space:nowrap"><button class="btn sm" onclick="islemDuzenleAc('${i.id}')">✏</button> <button class="btn sm ghost" onclick="islemSilListe('${i.id}')">✕</button></td>`:'<td></td>'}
     </tr>`;
@@ -446,4 +447,39 @@ window.islemSil=async function(id){
   renderPanel();if(document.getElementById('islem-liste')?.classList.contains('active'))renderIslemListe();kontolUyari();bil('İşlem silindi ✓');
 };
 
-window.renderPanelIslemler=function(){gp('islem-liste');};
+window.islemDetayAc=function(id){
+  const i=islemler.find(x=>x.id===id);if(!i)return;
+  const turAd={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',gider:'Gider',kasa:'Kasa'}[i.tur]||i.tur;
+  document.getElementById('idet-title').textContent=`${turAd} — ${i.tarih||''}`;
+  document.getElementById('idet-alt').textContent=`${i.aciklama||i.kat||''} · ${i.kullanici||''}`;
+  const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===i.cari_id):null;
+  const stok=stoklar.find(s=>s.id===i.stok_id);
+  const urun=urunler.find(u=>u.id===i.urun_id);
+  const kalem=typeof giderKalemleri!=='undefined'?giderKalemleri.find(k=>k.id===i.gider_kalem_id):null;
+  const birimAdi=birimAd(i.birim_id);
+  function satir(label,val,renk){
+    if(!val&&val!==0)return '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--krem2)">
+      <span style="font-size:12px;color:var(--yazi3);min-width:120px">${label}</span>
+      <span style="font-size:13px;font-weight:500;text-align:right;${renk?'color:'+renk:''}">${val}</span>
+    </div>`;
+  }
+  document.getElementById('idet-icerik').innerHTML=`
+    <div style="background:var(--krem);border-radius:8px;padding:.75rem 1rem">
+      ${satir('Tarih',i.tarih)}
+      ${satir('Tür',`<span class="badge ${i.tur==='satis'?'g':['gider','giris'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u'}">${turAd}</span>`)}
+      ${stok?satir('Stok',`[${stok.kod}] ${stok.ad}`):''}
+      ${urun?satir('Ürün',`[${urun.kod}] ${urun.ad}`):''}
+      ${kalem?satir('Gider Kalemi',kalem.ad):''}
+      ${i.miktar?satir('Miktar',`${parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4})} ${birimAdi}`):''}
+      ${i.fiyat?satir('Birim Fiyat',para(i.fiyat)):''}
+      ${i.tutar?satir('Tutar',para(i.tutar),i.tur==='satis'?'var(--yesil)':'var(--turuncu)'):''}
+      ${i.odeme_tipi?satir('Ödeme Tipi',i.odeme_tipi==='pesin'?'💵 Peşin':'📋 Cari'):''}
+      ${cari?satir('Cari',`${cari.ad} (${cari.kod})`):''}
+      ${i.belge_no?satir('Belge / Fatura No',i.belge_no):''}
+      ${i.satir_not?satir('Satır Notu',i.satir_not):''}
+      ${i.aciklama_not?satir('Genel Not',i.aciklama_not):''}
+      ${satir('Oluşturan',i.kullanici||'—')}
+    </div>`;
+  modalAc('modal-islem-detay');
+};
