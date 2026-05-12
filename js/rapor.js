@@ -212,11 +212,7 @@ window.cariDetayAc=async function(cariId){
   if(!cariHareketler.length)await cariHareketYukle();
   const c=cariListesi.find(x=>x.id===cariId);if(!c)return;
   document.getElementById('cd-title').textContent=c.ad;
-  document.getElementById('cd-ozet').textContent=`${c.kod} · ${c.tip==='alici'?'Alıcı':'Satıcı'}${c.telefon?' · '+c.telefon:''}`;
-  document.getElementById('cd-odeme-tarih').value=bugun();
-  document.getElementById('cd-odeme-tutar').value='';
-  document.getElementById('cd-odeme-not').value='';
-  document.getElementById('cd-odeme-tarih').dataset.cariId=cariId;
+  document.getElementById('cd-ozet').textContent=`${c.kod} · ${c.tip==='alici'?'Alıcı':c.tip==='satici'?'Satıcı':'Personel'}${c.telefon?' · '+c.telefon:''}`;
   _cariDetayRender(cariId);
   modalAc('modal-cari-detay');
 };
