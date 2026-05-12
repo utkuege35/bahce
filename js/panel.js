@@ -58,12 +58,12 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
           const pos=arc.tooltipPosition();
           ctx.save();
           ctx.fillStyle='#fff';
-          ctx.font='bold 10px sans-serif';
+          ctx.font='bold 12px sans-serif';
           ctx.textAlign='center';
           ctx.textBaseline='middle';
-          ctx.fillText(`%${pct}`,pos.x,pos.y-6);
-          ctx.font='9px sans-serif';
-          ctx.fillText(`₺${val.toLocaleString('tr-TR')}`,pos.x,pos.y+7);
+          ctx.fillText(`%${pct}`,pos.x,pos.y-7);
+          ctx.font='11px sans-serif';
+          ctx.fillText(`₺${val.toLocaleString('tr-TR')}`,pos.x,pos.y+8);
           ctx.restore();
         });
       }
@@ -139,8 +139,30 @@ function renderPanel(){
           borderRadius:6,barThickness:60
         }]
       },options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
-        scales:{x:{ticks:{font:{size:12}}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}}}});
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
+        scales:{
+          x:{ticks:{font:{size:12}}},
+          y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}
+        }
+      },
+      plugins:[{
+        id:'barLabels',
+        afterDatasetsDraw(chart){
+          const {ctx,data}=chart;
+          chart.getDatasetMeta(0).data.forEach((bar,i)=>{
+            const val=data.datasets[0].data[i];
+            ctx.save();
+            ctx.fillStyle='#444';
+            ctx.font='bold 13px sans-serif';
+            ctx.textAlign='center';
+            ctx.textBaseline='bottom';
+            ctx.fillText('₺'+val.toLocaleString('tr-TR'),bar.x,bar.y-4);
+            ctx.restore();
+          });
+        }
+      }]
+      });
     }else{
       const c=ctx1.getContext('2d');c.clearRect(0,0,ctx1.width,ctx1.height);
       c.fillStyle='#bbb';c.font='13px sans-serif';c.textAlign='center';
