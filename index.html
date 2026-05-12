@@ -60,7 +60,10 @@
 </div>
 <div id="uygulama" style="display:none">
 <div class="hdr">
-  <div class="hdr-sol"><h1>🌿 Sever Bahçesi</h1><div class="sub">Stok · Üretim · Gelir/Gider</div></div>
+  <div class="hdr-sol">
+    <button class="hamburger" onclick="navToggle()" style="display:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;color:#fff;font-size:18px;padding:4px 10px;cursor:pointer;margin-right:8px">☰</button>
+    <h1>🌿 Sever Bahçesi</h1><div class="sub">Stok · Üretim · Gelir/Gider</div>
+  </div>
   <div class="hdr-sag">
     <span class="kullanici-chip" id="kullanici-chip" onclick="modalAc('modal-profil')">—</span>
     <div id="sync" class="sync load">●</div>
@@ -68,7 +71,8 @@
     <button class="cikis-btn" onclick="cikisYap()">Çıkış</button>
   </div>
 </div>
-<nav class="nav">
+<div class="nav-overlay" id="nav-overlay" onclick="navKapat()"></div>
+<nav class="nav" id="ana-nav">
   <button class="active" onclick="gp('panel')">Panel</button>
   <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlem ▾</button>
