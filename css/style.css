@@ -47,9 +47,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 .nav-grup-icerik.acik{display:block;}
 .nav-grup-icerik button{padding:.5rem 1rem .5rem 1.4rem;font-size:12px;border-left:3px solid transparent;}
 @media(max-width:768px){
-  .nav{width:100%;height:auto;flex-direction:row;border-right:none;border-bottom:1px solid var(--border);position:sticky;top:54px;overflow-x:auto;overflow-y:visible;padding:0;bottom:auto}
-  .nav button{width:auto;flex:1;min-width:60px;padding:.65rem .4rem;border-left:none;border-bottom:2px solid transparent;text-align:center;font-size:11px}
-  .nav button.active{border-left:none;border-bottom-color:var(--yesil);background:transparent;color:var(--yesil)}
+  .nav{
+    position:fixed;top:0;left:-220px;width:220px;height:100%;
+    flex-direction:column;border-right:1px solid var(--border);
+    padding:.5rem 0;padding-top:60px;
+    transition:left .25s ease;z-index:500;
+    box-shadow:none;
+    overflow-y:auto;overflow-x:hidden;
+  }
+  .nav.nav-acik{left:0;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+  .nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:499}
+  .nav-overlay.acik{display:block}
+  .nav button{width:100%;text-align:left;padding:.65rem 1.1rem;font-size:13px;border-left:3px solid transparent;}
+  .hamburger{display:flex!important}
+}
+@media(min-width:769px){
+  .hamburger{display:none!important}
+  .nav-overlay{display:none!important}
 }
 .page{display:none;padding:1rem 1.5rem;max-width:980px;margin:0 auto;padding-bottom:2rem;margin-left:150px}
 @media(max-width:768px){.page{margin-left:0;padding:.85rem}}
