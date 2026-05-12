@@ -171,6 +171,7 @@
       <th style="text-align:right">Tutar</th>
       <th>Ödeme</th>
       <th>Kullanıcı</th>
+      <th>Detay</th>
       <th>Geçmiş</th>
       <th id="il-islem-th">İşlem</th>
     </tr></thead>
@@ -635,6 +636,19 @@
       </div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-gider-kalem')">İptal</button><button class="btn pri" onclick="kaydetGiderKalem()">Kaydet</button></div>
+  </div>
+</div>
+<!-- MODAL: İŞLEM DETAY -->
+<div id="modal-islem-detay" class="overlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div>
+        <h3 id="idet-title">İşlem Detayı</h3>
+        <div id="idet-alt" style="font-size:11px;color:var(--yazi3);margin-top:2px"></div>
+      </div>
+      <button class="btn sm" onclick="modalKapat('modal-islem-detay')">✕</button>
+    </div>
+    <div class="modal-body" id="idet-icerik"></div>
   </div>
 </div>
 <!-- MODAL: İŞLEM GEÇMİŞİ -->
