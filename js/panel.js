@@ -9,29 +9,65 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
   const entries=Object.entries(dataMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const toplam=entries.reduce((s,[,v])=>s+v,0);
   if(!entries.length||toplam<=0){
-    // Metin göster
     el.style.display='none';
     let msg=el.parentNode.querySelector('.bos-mesaj');
     if(!msg){msg=document.createElement('div');msg.className='bos-mesaj';msg.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:#bbb';el.parentNode.appendChild(msg);}
     msg.textContent=bosYazi;
     return;
   }
-  // Canvas'ı göster, eski mesajı kaldır
   el.style.display='';
   const msg=el.parentNode.querySelector('.bos-mesaj');if(msg)msg.remove();
   _panelGrafikler[canvasId]=new Chart(el,{
     type:'doughnut',
     data:{
       labels:entries.map(([k])=>k),
-      datasets:[{data:entries.map(([,v])=>Math.round(v)),backgroundColor:renkler,borderWidth:2,borderColor:'#fff'}]
+      datasets:[{
+        data:entries.map(([,v])=>Math.round(v)),
+        backgroundColor:renkler,
+        borderWidth:2,
+        borderColor:'#fff'
+      }]
     },
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,
+      maintainAspectRatio:false,
       plugins:{
         legend:{position:'right',labels:{font:{size:10},boxWidth:10,padding:5}},
-        tooltip:{callbacks:{label:ctx=>{const pct=Math.round(ctx.raw/toplam*100);return ` ${ctx.label}: ₺${ctx.raw.toLocaleString('tr-TR')} (%${pct})`;}}}
+        tooltip:{callbacks:{label:ctx=>{const pct=Math.round(ctx.raw/toplam*100);return ` ${ctx.label}: ₺${ctx.raw.toLocaleString('tr-TR')} (%${pct})`;}}},
+        datalabels:{
+          display:ctx=>ctx.dataset.data[ctx.dataIndex]/toplam>0.05,
+          color:'#fff',
+          font:{size:10,weight:'bold'},
+          formatter:(val)=>{
+            const pct=Math.round(val/toplam*100);
+            return `%${pct}\n₺${val.toLocaleString('tr-TR')}`;
+          },
+          textAlign:'center'
+        }
       }
-    }
+    },
+    plugins:[{
+      id:'customDatalabels',
+      afterDatasetsDraw(chart){
+        const {ctx,data}=chart;
+        const meta=chart.getDatasetMeta(0);
+        meta.data.forEach((arc,i)=>{
+          const val=data.datasets[0].data[i];
+          const pct=Math.round(val/toplam*100);
+          if(pct<6)return;
+          const pos=arc.tooltipPosition();
+          ctx.save();
+          ctx.fillStyle='#fff';
+          ctx.font='bold 10px sans-serif';
+          ctx.textAlign='center';
+          ctx.textBaseline='middle';
+          ctx.fillText(`%${pct}`,pos.x,pos.y-6);
+          ctx.font='9px sans-serif';
+          ctx.fillText(`₺${val.toLocaleString('tr-TR')}`,pos.x,pos.y+7);
+          ctx.restore();
+        });
+      }
+    }]
   });
 }
 let _ilSira='tarih-azalan',_ilSayfa=1;
