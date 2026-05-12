@@ -139,6 +139,7 @@ function renderPanel(){
           borderRadius:6,barThickness:60
         }]
       },options:{responsive:true,maintainAspectRatio:false,
+        layout:{padding:{top:30}},
         plugins:{legend:{display:false},
           tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
         scales:{
