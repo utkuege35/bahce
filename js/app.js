@@ -94,12 +94,23 @@ function doldurMerkezSecleri(){  // Stok modalı masraf merkezi
   const gkEl=document.getElementById('gk-merkez');
   if(gkEl){const c=gkEl.value;gkEl.innerHTML='<option value="">—</option>'+merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}">${m.ad}</option>`).join('');if(c)gkEl.value=c;}
 }
+window.navToggle=function(){
+  const nav=document.getElementById('ana-nav');
+  const overlay=document.getElementById('nav-overlay');
+  nav.classList.toggle('nav-acik');
+  overlay.classList.toggle('acik');
+};
+window.navKapat=function(){
+  document.getElementById('ana-nav')?.classList.remove('nav-acik');
+  document.getElementById('nav-overlay')?.classList.remove('acik');
+};
 window.navGrupToggle=function(btn){
   const icerik=btn.nextElementSibling;
   const acik=icerik.classList.toggle('acik');
   btn.classList.toggle('acik',acik);
 };
 window.gp=function(id){
+  navKapat();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
