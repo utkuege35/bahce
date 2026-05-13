@@ -156,3 +156,12 @@ tr:hover td{background:var(--krem)}
 .btn.sm.active{background:var(--yesil);color:#fff;border-color:var(--yesil)}
 @keyframes spin{to{transform:rotate(360deg)}}
 #yenile-btn:hover{color:var(--yesil)!important;transform:rotate(30deg);transition:transform .2s}
+.kasa-kart{background:var(--beyaz);border:1px solid var(--border);border-radius:12px;padding:1rem;transition:box-shadow .2s}
+.kasa-kart:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.kasa-kart.pasif{opacity:.55}
+.kasa-kart-ust{display:flex;justify-content:space-between;align-items:flex-start}
+.kasa-kart-ad{font-size:14px;font-weight:600;color:var(--yazi1)}
+.kasa-kart-kod{font-size:11px;color:var(--yazi3);margin-top:2px}
+.kasa-kart-bakiye{font-size:18px;font-weight:700;font-family:'Lora',serif}
+.kasa-kart-bakiye.poz{color:var(--yesil)}
+.kasa-kart-bakiye.neg{color:#c62828}
