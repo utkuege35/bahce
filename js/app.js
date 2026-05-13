@@ -11,7 +11,7 @@ function uygulamaAc(){
 
 async function baslat(){
   document.getElementById('sync').textContent='⟳';document.getElementById('sync').className='sync load';
-  const [b,s,u,ub,k,il,mz,gk,ilog]=await Promise.all([
+  const [b,s,u,ub,k,il,mz,gk,ilog,ks]=await Promise.all([
     sb.from('birimler').select('*'),
     sb.from('stoklar').select('*').order('kod'),
     sb.from('urunler').select('*').order('kod'),
@@ -20,11 +20,13 @@ async function baslat(){
     sb.from('isim_loglari').select('*').order('tarih',{ascending:false}),
     sb.from('merkezler').select('*').order('kod'),
     sb.from('gider_kalemleri').select('*').order('kod'),
-    sb.from('islem_loglari').select('*').order('tarih',{ascending:false})
+    sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
+    sb.from('kasalar').select('*').order('kod')
   ]);
   if(b.data)birimler=b.data;if(s.data)stoklar=s.data;if(u.data)urunler=u.data;
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)isimLoglari=il.data;
   if(mz.data)merkezler=mz.data;if(gk.data)giderKalemleri=gk.data;if(ilog.data)islemLoglari=ilog.data;
+  if(ks.data)kasalar_list=ks.data;
   const {data:iData}=await sb.from('islemler').select('*').order('ts',{ascending:false});
   if(iData)islemler=iData.filter(i=>!i.silindi);
   document.getElementById('sync').textContent='● Canlı';document.getElementById('sync').className='sync ok';
@@ -121,7 +123,7 @@ window.gp=function(id){
     if(icerik){icerik.classList.add('acik');icerik.previousElementSibling?.classList.add('acik');}
   }
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
-  if(id==='birimler')renderBirimler();
+  if(id==='kasalar')renderKasalar();
   if(id==='merkezler')renderMerkezler();
   if(id==='hizmetler')renderGiderKalemTree();
   if(id==='cari')renderCari();if(id==='islem-liste')renderIslemListe();
