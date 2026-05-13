@@ -208,6 +208,8 @@ window.ksTurDegis=function(){
   }else{
     cariFg.style.display='none';
   }
+  // Kasa select doldur
+  if(typeof kasaSelectDoldur==='function')kasaSelectDoldur('ks-kasa',true);
 };
 window.kaydetKasa=async function(){
   const tarih=document.getElementById('ks-tarih').value;
@@ -215,21 +217,21 @@ window.kaydetKasa=async function(){
   const tutar=parseFloat(document.getElementById('ks-tutar').value)||0;
   const aciklama=document.getElementById('ks-aciklama').value;
   const cariId=document.getElementById('ks-cari')?.value||'';
+  const kasaId=document.getElementById('ks-kasa')?.value||null;
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   if(tutar<=0){bil('Tutar zorunlu!','err');return;}
   if((tur==='odeme'||tur==='tahsilat')&&!cariId){bil('Cari seçin!','err');return;}
+  if(!kasaId){bil('Kasa seçin!','err');return;}
   if(tur==='odeme'){
-    // Satıcıya ödeme — cari hareket: alacak (borcumuzu kapattık)
     await sb.from('cari_hareketler').insert({cari_id:cariId,tarih,tip:'alacak',tutar,aciklama:aciklama||'Ödeme yapıldı',kullanici:aktifKullanici?.ad||'',ts:Date.now()});
-    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Satıcı ödemesi',kat:'Kasa',kasa_etkisi:-tutar,cari_id:cariId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
+    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Satıcı ödemesi',kat:'Kasa',kasa_etkisi:-tutar,kasa_id:kasaId,cari_id:cariId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
   }else if(tur==='tahsilat'){
-    // Alıcıdan tahsilat — cari hareket: borc (alıcının borcunu kapattı)
     await sb.from('cari_hareketler').insert({cari_id:cariId,tarih,tip:'borc',tutar,aciklama:aciklama||'Tahsilat yapıldı',kullanici:aktifKullanici?.ad||'',ts:Date.now()});
-    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Alıcı tahsilatı',kat:'Kasa',kasa_etkisi:tutar,cari_id:cariId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
+    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Alıcı tahsilatı',kat:'Kasa',kasa_etkisi:tutar,kasa_id:kasaId,cari_id:cariId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
   }else if(tur==='kasa-giris'){
-    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Kasa girişi',kat:'Kasa',kasa_etkisi:tutar,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
+    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Kasa girişi',kat:'Kasa',kasa_etkisi:tutar,kasa_id:kasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
   }else{
-    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Kasa çıkışı',kat:'Kasa',kasa_etkisi:-tutar,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
+    await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Kasa çıkışı',kat:'Kasa',kasa_etkisi:-tutar,kasa_id:kasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   document.getElementById('ks-tutar').value='';document.getElementById('ks-aciklama').value='';
