@@ -87,6 +87,7 @@
       <button onclick="gp('stok')">Stoklar</button>
       <button onclick="gp('urunler')">Ürünler</button>
       <button onclick="gp('hizmetler')">Hizmetler</button>
+      <button onclick="gp('kasalar')">Kasalar</button>
       <button onclick="gp('cari')">Cari & Personel Kartları</button>
       <button onclick="gp('birimler')">Birimler</button>
       <button onclick="gp('merkezler')">Masraf & Gelir Merkezleri</button>
@@ -269,6 +270,9 @@
       <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Borç ödemesi veya alacak tahsilatı için cari seçip işlem girin. Doğrudan kasa girişi/çıkışı için cari seçmeden de ekleyebilirsiniz.</div>
       <div class="fgrid c2">
         <div class="fg"><label>Tarih</label><input type="date" id="ks-tarih"></div>
+        <div class="fg"><label>Kasa</label><select id="ks-kasa"><option value="">— Kasa seçin —</option></select></div>
+      </div>
+      <div class="fgrid c2">
         <div class="fg"><label>İşlem Türü</label>
           <select id="ks-tur" onchange="ksTurDegis()">
             <option value="odeme">💸 Borç Ödemesi (Satıcıya ödedik)</option>
@@ -339,6 +343,18 @@
   <div class="card"><div class="card-title">Tanımlı Merkezler</div><div id="merkez-liste"></div></div>
 </div>
 
+<!-- KASALAR -->
+<div id="kasalar" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Kasalar</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="kasalar-toplam" style="font-size:12px;color:var(--yazi3)"></div>
+      <button id="btn-yeni-kasa" class="btn pri sm" onclick="kasaModalAc()">+ Yeni Kasa</button>
+    </div>
+  </div>
+  <div id="kasalar-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem"></div>
+</div>
+
 <!-- HİZMETLER -->
 <div id="hizmetler" class="page">
   <div class="card">
@@ -379,7 +395,10 @@
 
   <!-- KASA -->
   <div id="rt-kasa" class="tab-panel">
-    <div class="fr">
+    <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+      <select id="kasa-filtre-id" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">🏦 Tüm Kasalar (Birleşik)</option>
+      </select>
       <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
       <input type="date" id="kasa-bas" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
       <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
@@ -391,7 +410,7 @@
       <div class="cw" style="height:280px"><canvas id="kasa-chart"></canvas></div>
     </div>
     <div class="card"><div class="card-title">Günlük kasa hareketleri</div>
-      <div class="tw"><table><thead><tr><th>Tarih</th><th>Gelir</th><th>Gider</th><th>Günlük Net</th><th>Kümülatif Bakiye</th></tr></thead><tbody id="kasa-tb"></tbody></table></div>
+      <div class="tw"><table><thead><tr><th>Tarih</th><th>Kasa</th><th>Gelir</th><th>Gider</th><th>Günlük Net</th><th>Kümülatif Bakiye</th></tr></thead><tbody id="kasa-tb"></tbody></table></div>
     </div>
   </div>
 
@@ -638,6 +657,65 @@
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-gider-kalem')">İptal</button><button class="btn pri" onclick="kaydetGiderKalem()">Kaydet</button></div>
   </div>
 </div>
+<!-- MODAL: KASA -->
+<div id="modal-kasa" class="overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <h3 id="km-title">Yeni Kasa</h3>
+      <button class="btn sm" onclick="modalKapat('modal-kasa')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="km-id">
+      <div class="fgrid c2">
+        <div class="fg"><label>Kasa Adı</label><input type="text" id="km-ad" placeholder="Ana Kasa..."></div>
+        <div class="fg"><label>Kod</label><input type="text" id="km-kod" placeholder="ANA" style="text-transform:uppercase"></div>
+      </div>
+      <div class="fgrid c2">
+        <div class="fg"><label>Tip</label>
+          <select id="km-tip">
+            <option value="nakit">💵 Nakit</option>
+            <option value="banka">🏦 Banka</option>
+            <option value="pos">💳 POS</option>
+          </select>
+        </div>
+        <div class="fg"><label>Başlangıç Bakiyesi (₺)</label><input type="number" id="km-baslangic" value="0" step="0.01"></div>
+      </div>
+      <div class="fgrid c1">
+        <div class="fg"><label>Açıklama</label><input type="text" id="km-aciklama" placeholder="İsteğe bağlı..."></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:4px">
+        <input type="checkbox" id="km-aktif" checked style="width:15px;height:15px;accent-color:var(--yesil)">
+        Aktif
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="modalKapat('modal-kasa')">İptal</button>
+      <button class="btn pri" onclick="kaydetKasa_kart()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: KASA YETKİ -->
+<div id="modal-kasa-yetki" class="overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <div>
+        <h3>Kasa Yetkileri</h3>
+        <div id="ky-kasa-adi" style="font-size:12px;color:var(--yazi3)"></div>
+      </div>
+      <button class="btn sm" onclick="modalKapat('modal-kasa-yetki')">✕</button>
+    </div>
+    <input type="hidden" id="ky-kasa-id">
+    <div class="modal-body">
+      <div style="font-size:11px;color:var(--yazi3);margin-bottom:10px">Admin kullanıcılar tüm kasalara otomatik erişir.</div>
+      <div id="ky-kullanicilar"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn pri" onclick="modalKapat('modal-kasa-yetki')">Tamam</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: İŞLEM DETAY -->
 <div id="modal-islem-detay" class="overlay">
   <div class="modal" style="max-width:520px">
@@ -763,6 +841,7 @@
 <script src="js/stoklar.js"></script>
 <script src="js/urunler.js"></script>
 <script src="js/islemler.js"></script>
+<script src="js/kasalar.js"></script>
 <script src="js/panel.js"></script>
 <script src="js/birimler.js"></script>
 <script src="js/kullanicilar.js"></script>
