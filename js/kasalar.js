@@ -170,7 +170,7 @@ window.getYetkiliKasalar = async function(sadece_islem = false) {
   return kasalar_list.filter(k => ids.includes(k.id) && k.aktif !== false);
 };
 
-// Kasa select option'larını doldur
+// Kasa select option'larını doldur — varsayılan kasayı otomatik seç
 window.kasaSelectDoldur = async function(elId, sadece_islem = true) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -180,6 +180,15 @@ window.kasaSelectDoldur = async function(elId, sadece_islem = true) {
       const tipIkon = { nakit: '💵', banka: '🏦', pos: '💳' }[k.tip] || '💵';
       return `<option value="${k.id}">${tipIkon} ${k.ad}</option>`;
     }).join('');
-  // Tek kasa varsa otomatik seç
-  if (liste.length === 1) el.value = liste[0].id;
+
+  // Otomatik seçim mantığı:
+  // 1) Tek kasa varsa onu seç
+  if (liste.length === 1) { el.value = liste[0].id; return; }
+  // 2) Birden fazlaysa kullanıcının varsayılan kasasını seç
+  if (liste.length > 1) {
+    const varsKasaId = aktifKullanici?.varsayilan_kasa_id;
+    if (varsKasaId && liste.find(k => k.id === varsKasaId)) {
+      el.value = varsKasaId;
+    }
+  }
 };
