@@ -5,6 +5,31 @@ function uygulamaAc(){
   if(aktifKullanici.rol==='admin'){
     document.getElementById('nav-kullanicilar').style.display='';
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
+  }else{
+    // Yetki bazlı nav butonlarını göster/gizle
+    const yetkiler=aktifKullanici.yetkiler||{};
+    const navMap={
+      'islem':'gp(\'islem\')', 'islem-liste':'gp(\'islem-liste\')',
+      'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
+      'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
+      'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
+      'merkezler':'gp(\'merkezler\')', 'rapor':'gp(\'rapor\')'
+    };
+    document.querySelectorAll('.nav button,.nav-grup-icerik button').forEach(btn=>{
+      const oc=btn.getAttribute('onclick')||'';
+      for(const [alan,gpc] of Object.entries(navMap)){
+        if(oc.includes(gpc)){
+          btn.style.display=yetkiler[alan]?'':'none';
+          break;
+        }
+      }
+    });
+    // Tanımlar grubunu — içinde hiç yetkili alan yoksa gizle
+    document.querySelectorAll('.nav-grup').forEach(grup=>{
+      const gorunenBtnSayisi=grup.querySelectorAll('.nav-grup-icerik button:not([style*="none"])').length;
+      const baslik=grup.querySelector('.nav-grup-baslik');
+      if(baslik)baslik.style.display=gorunenBtnSayisi>0?'':'none';
+    });
   }
   baslat();
 }
