@@ -127,10 +127,24 @@ function hmSatirRender(){
 function hmToplamGuncelle(){const t=hmSatirListesi.reduce((s,r)=>s+parseFloat(r.tutar||0),0);const el=document.getElementById('hm-toplam');if(el)el.textContent='₺'+t.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 // Satır render sonrası kasa select'lerini doldur
 async function _doldurSatirKasalari(prefix, liste_len) {
+  const satirListesi = prefix==='hm' ? hmSatirListesi : stSatirListesi;
   for(let i=0;i<liste_len;i++){
     const el=document.getElementById(`${prefix}-kasa-${i}`);
     if(el && typeof kasaSelectDoldur==='function') {
       await kasaSelectDoldur(`${prefix}-kasa-${i}`, true);
+      // Mevcut kasa_id varsa seç, yoksa seçilen değeri satıra yaz
+      if(satirListesi[i]?.kasa_id) {
+        el.value = satirListesi[i].kasa_id;
+      } else if(el.value) {
+        satirListesi[i].kasa_id = el.value;
+      }
+      // Select değişince satır verisini güncelle
+      el.onchange = (function(idx, pref){
+        return function(){
+          const lst = pref==='hm' ? hmSatirListesi : stSatirListesi;
+          if(lst[idx]) lst[idx].kasa_id = this.value;
+        };
+      })(i, prefix);
     }
   }
 }
