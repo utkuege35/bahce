@@ -179,6 +179,12 @@ window.kaydetHammadde=async function(){
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=hmSatirListesi.filter(s=>(s.secimId||s.manuel)&&parseFloat(s.tutar)>0||(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0));
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  // Peşin satırlarda kasa zorunlu
+  for(const s of gecerli){
+    if((s.odeme_tipi||'pesin')==='pesin'&&!s.kasa_id){
+      bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;
+    }
+  }
   let n=0;
   for(const s of gecerli){
     const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy)||0;const hFiy=tut>0&&mik>0?tut/mik:fiy;
@@ -348,6 +354,12 @@ window.kaydetSatis=async function(){
     ?stSatirListesi.filter(s=>s.manuel&&parseFloat(s.tutar)>0||(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0))
     :stSatirListesi.filter(s=>s.secimId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  // Peşin satırlarda kasa zorunlu
+  for(const s of gecerli){
+    if((s.odeme_tipi||'pesin')==='pesin'&&!s.kasa_id){
+      bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;
+    }
+  }
   let n=0;
   for(const s of gecerli){
     const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy)||0;const bId=s.birimId||'';
