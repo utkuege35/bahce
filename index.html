@@ -665,26 +665,26 @@
       <button class="btn sm" onclick="modalKapat('modal-kasa')">✕</button>
     </div>
     <div class="modal-body">
-      <input type="hidden" id="km-id">
+      <input type="hidden" id="kasa-km-id">
       <div class="fgrid c2">
-        <div class="fg"><label>Kasa Adı</label><input type="text" id="km-ad" placeholder="Ana Kasa..."></div>
-        <div class="fg"><label>Kod</label><input type="text" id="km-kod" placeholder="ANA" style="text-transform:uppercase"></div>
+        <div class="fg"><label>Kasa Adı</label><input type="text" id="kasa-km-ad" placeholder="Ana Kasa..."></div>
+        <div class="fg"><label>Kod</label><input type="text" id="kasa-km-kod" placeholder="ANA" style="text-transform:uppercase"></div>
       </div>
       <div class="fgrid c2">
         <div class="fg"><label>Tip</label>
-          <select id="km-tip">
+          <select id="kasa-km-tip">
             <option value="nakit">💵 Nakit</option>
             <option value="banka">🏦 Banka</option>
             <option value="pos">💳 POS</option>
           </select>
         </div>
-        <div class="fg"><label>Başlangıç Bakiyesi (₺)</label><input type="number" id="km-baslangic" value="0" step="0.01"></div>
+        <div class="fg"><label>Başlangıç Bakiyesi (₺)</label><input type="number" id="kasa-km-baslangic" value="0" step="0.01"></div>
       </div>
       <div class="fgrid c1">
-        <div class="fg"><label>Açıklama</label><input type="text" id="km-aciklama" placeholder="İsteğe bağlı..."></div>
+        <div class="fg"><label>Açıklama</label><input type="text" id="kasa-km-aciklama" placeholder="İsteğe bağlı..."></div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:4px">
-        <input type="checkbox" id="km-aktif" checked style="width:15px;height:15px;accent-color:var(--yesil)">
+        <input type="checkbox" id="kasa-km-aktif" checked style="width:15px;height:15px;accent-color:var(--yesil)">
         Aktif
       </label>
     </div>
