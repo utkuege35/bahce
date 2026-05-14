@@ -161,9 +161,12 @@ window.kasaYetkiGuncelle = async function(kullaniciId, kasaId, yetki) {
 
 // Aktif kullanıcının işlem yapabileceği kasaları döndür
 window.getYetkiliKasalar = async function(sadece_islem = false) {
-  if (aktifKullanici?.rol === 'admin') return kasalar_list.filter(k => k.aktif !== false);
+  // Admin tüm kasalara erişir
+  if (!aktifKullanici || aktifKullanici.rol === 'admin') {
+    return kasalar_list.filter(k => k.aktif !== false);
+  }
   const { data: yk } = await sb.from('kullanici_kasalar')
-    .select('*').eq('kullanici_id', aktifKullanici?.id);
+    .select('*').eq('kullanici_id', aktifKullanici.id);
   const liste = yk || [];
   const filtreli = sadece_islem ? liste.filter(y => y.yetki === 'islem') : liste;
   const ids = filtreli.map(y => y.kasa_id);
@@ -175,20 +178,22 @@ window.kasaSelectDoldur = async function(elId, sadece_islem = true) {
   const el = document.getElementById(elId);
   if (!el) return;
   const liste = await getYetkiliKasalar(sadece_islem);
+  if (!liste.length) {
+    el.innerHTML = '<option value="">— Yetkili kasa yok —</option>';
+    el.style.borderColor = '#e53935';
+    return;
+  }
+  el.style.borderColor = '';
   el.innerHTML = '<option value="">— Kasa seçin —</option>' +
     liste.map(k => {
       const tipIkon = { nakit: '💵', banka: '🏦', pos: '💳' }[k.tip] || '💵';
       return `<option value="${k.id}">${tipIkon} ${k.ad}</option>`;
     }).join('');
-
-  // Otomatik seçim mantığı:
-  // 1) Tek kasa varsa onu seç
+  // Tek kasa varsa otomatik seç
   if (liste.length === 1) { el.value = liste[0].id; return; }
-  // 2) Birden fazlaysa kullanıcının varsayılan kasasını seç
-  if (liste.length > 1) {
-    const varsKasaId = aktifKullanici?.varsayilan_kasa_id;
-    if (varsKasaId && liste.find(k => k.id === varsKasaId)) {
-      el.value = varsKasaId;
-    }
+  // Birden fazlaysa varsayılan kasayı seç
+  const varsKasaId = aktifKullanici?.varsayilan_kasa_id;
+  if (varsKasaId && liste.find(k => k.id === varsKasaId)) {
+    el.value = varsKasaId;
   }
 };
