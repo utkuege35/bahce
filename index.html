@@ -808,6 +808,21 @@
       <div class="fgrid c2"><div class="fg"><label>E-posta</label><input type="email" id="km-email"></div><div class="fg"><label>Kullanıcı Adı</label><input type="text" id="km-kullanici-adi"></div></div>
       <div class="fgrid c2"><div class="fg"><label>Şifre</label><input type="password" id="km-sifre" placeholder="Min. 6 karakter"></div><div class="fg"><label>Rol</label><select id="km-rol"><option value="kullanici">Kullanıcı</option><option value="admin">Admin</option></select></div></div>
       <div class="fgrid c2"><div class="fg"><label>Varsayılan Kasa</label><select id="km-varsayilan-kasa"><option value="">— Seçin —</option></select></div><div></div></div>
+      <div id="km-yetki-wrap" style="margin-top:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Sayfa Yetkileri <span style="font-weight:400;color:var(--yazi3)">(Admin değilse geçerli)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <label class="yetki-chk"><input type="checkbox" id="yk-islem"> Yeni İşlem</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-islem-liste"> İşlem Listesi</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-stok"> Stoklar</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-urunler"> Ürünler</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-hizmetler"> Hizmetler</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-kasalar"> Kasalar</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-cari"> Cari & Personel</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-birimler"> Birimler</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-merkezler"> Merkezler</label>
+          <label class="yetki-chk"><input type="checkbox" id="yk-rapor"> Rapor</label>
+        </div>
+      </div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-kullanici')">İptal</button><button class="btn pri" onclick="kullaniciyiKaydet()">Kaydet</button></div>
   </div>
