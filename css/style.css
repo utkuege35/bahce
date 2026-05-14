@@ -165,3 +165,6 @@ tr:hover td{background:var(--krem)}
 .kasa-kart-bakiye{font-size:18px;font-weight:700;font-family:'Lora',serif}
 .kasa-kart-bakiye.poz{color:var(--yesil)}
 .kasa-kart-bakiye.neg{color:#c62828}
+.yetki-chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--yazi2);cursor:pointer;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--beyaz)}
+.yetki-chk:hover{background:var(--krem)}
+.yetki-chk input{width:14px;height:14px;accent-color:var(--yesil);cursor:pointer}
