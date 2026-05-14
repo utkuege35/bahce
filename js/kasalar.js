@@ -56,13 +56,13 @@ window.renderKasalar = async function() {
 };
 
 window.kasaModalAc = function() {
-  document.getElementById('km-id').value = '';
-  document.getElementById('km-ad').value = '';
-  document.getElementById('km-kod').value = '';
-  document.getElementById('km-tip').value = 'nakit';
-  document.getElementById('km-baslangic').value = '0';
-  document.getElementById('km-aciklama').value = '';
-  document.getElementById('km-aktif').checked = true;
+  document.getElementById('kasa-km-id').value = '';
+  document.getElementById('kasa-km-ad').value = '';
+  document.getElementById('kasa-km-kod').value = '';
+  document.getElementById('kasa-km-tip').value = 'nakit';
+  document.getElementById('kasa-km-baslangic').value = '0';
+  document.getElementById('kasa-km-aciklama').value = '';
+  document.getElementById('kasa-km-aktif').checked = true;
   document.getElementById('km-title').textContent = 'Yeni Kasa';
   modalAc('modal-kasa');
 };
@@ -70,25 +70,25 @@ window.kasaModalAc = function() {
 window.kasaDuzenleAc = function(id) {
   const k = kasalar_list.find(x => x.id === id);
   if (!k) return;
-  document.getElementById('km-id').value = k.id;
-  document.getElementById('km-ad').value = k.ad || '';
-  document.getElementById('km-kod').value = k.kod || '';
-  document.getElementById('km-tip').value = k.tip || 'nakit';
-  document.getElementById('km-baslangic').value = k.baslangic_bakiye || 0;
-  document.getElementById('km-aciklama').value = k.aciklama || '';
-  document.getElementById('km-aktif').checked = k.aktif !== false;
+  document.getElementById('kasa-km-id').value = k.id;
+  document.getElementById('kasa-km-ad').value = k.ad || '';
+  document.getElementById('kasa-km-kod').value = k.kod || '';
+  document.getElementById('kasa-km-tip').value = k.tip || 'nakit';
+  document.getElementById('kasa-km-baslangic').value = k.baslangic_bakiye || 0;
+  document.getElementById('kasa-km-aciklama').value = k.aciklama || '';
+  document.getElementById('kasa-km-aktif').checked = k.aktif !== false;
   document.getElementById('km-title').textContent = 'Kasa Düzenle';
   modalAc('modal-kasa');
 };
 
 window.kaydetKasa_kart = async function() {
-  const id = document.getElementById('km-id').value;
-  const ad = document.getElementById('km-ad').value.trim();
-  const kod = document.getElementById('km-kod').value.trim().toUpperCase();
-  const tip = document.getElementById('km-tip').value;
-  const baslangic = parseFloat(document.getElementById('km-baslangic').value) || 0;
-  const aciklama = document.getElementById('km-aciklama').value.trim();
-  const aktif = document.getElementById('km-aktif').checked;
+  const id = document.getElementById('kasa-km-id').value;
+  const ad = document.getElementById('kasa-km-ad').value.trim();
+  const kod = document.getElementById('kasa-km-kod').value.trim().toUpperCase();
+  const tip = document.getElementById('kasa-km-tip').value;
+  const baslangic = parseFloat(document.getElementById('kasa-km-baslangic').value) || 0;
+  const aciklama = document.getElementById('kasa-km-aciklama').value.trim();
+  const aktif = document.getElementById('kasa-km-aktif').checked;
 
   if (!ad || !kod) { bil('Ad ve Kod zorunlu!', 'err'); return; }
 
