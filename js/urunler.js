@@ -60,11 +60,16 @@ window.bilesenEkle=function(kaynak_tip){
 };
 function renderBilesenler(){
   const el=document.getElementById('bilesen-listesi');if(!el)return;
-  if(!bilesenler.length){el.innerHTML='<div style="font-size:12px;color:var(--yazi3);padding:8px 0">Henüz bileşen eklenmedi.</div>';return;}
+  // Reçete sayfasındaysak kaydet butonu göster
+  const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
+  if(!bilesenler.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--yazi3);padding:8px 0">Henüz bileşen eklenmedi.</div>';
+    if(receteSayfasi&&_receteSeciliId)el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
+    return;
+  }
   el.innerHTML=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
-    const kaynakAd=isStok?stoklar.find(s=>s.id===b.kaynak_id)?.ad||'':urunler.find(u=>u.id===b.kaynak_id)?.ad||'';
     return `<div class="bilesen-item ${isStok?'bi-stok':'bi-ara'}">
       <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}">${isStok?'HAM':'ARA'}</span>
       <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value)" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
@@ -79,6 +84,9 @@ function renderBilesenler(){
       <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button>
     </div>`;
   }).join('');
+  if(receteSayfasi&&_receteSeciliId){
+    el.innerHTML+=`<div style="margin-top:10px"><button class="btn pri" onclick="receteKaydet()">💾 Reçeteyi Kaydet</button></div>`;
+  }
 }
 window.bilesenGuncelle=function(i,alan,deger){bilesenler[i][alan]=deger;};
 window.bilesenSil=function(i){bilesenler.splice(i,1);renderBilesenler();};
@@ -162,8 +170,8 @@ function renderUrunler(){
     const merkezAd=!isGrup&&u.merkez_id?merkezler.find(m=>m.id===u.merkez_id)?.ad:'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'3'}px solid ${renk};${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${u.ikon||'🍽️'}</span>
+      <span class="tree-kod" style="min-width:52px">${u.kod}</span>
       <span style="flex:1;font-size:${isGrup?13:12}px">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
-      <span class="tree-kod">${u.kod}</span>
       ${merkezAd?`<span style="font-size:10px;color:var(--mor);background:var(--mor-ac);padding:1px 6px;border-radius:10px">${merkezAd}</span>`:''}
       ${!isGrup?`<span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--mavi)'}">${stokAdet.toLocaleString('tr-TR',{maximumFractionDigits:2})} ${tb?.kisaltma||''}</span>`:''}
       ${!isGrup&&bilesenSayisi?`<span style="font-size:10px;color:var(--yazi3)">${bilesenSayisi} bil.</span>`:''}
@@ -188,3 +196,72 @@ function renderUrunler(){
   }
   el.innerHTML=html||'<div class="bos">Henüz ürün yok. "Grup", "Ara Ürün" veya "Ürün" ekleyin.</div>';
 }
+
+// ===== ÜRÜN REÇETELERİ SAYFASI =====
+let _receteSeciliId = null;
+
+window.renderReceteler = function() {
+  receteAra();
+};
+
+window.receteAra = function() {
+  const ara = (document.getElementById('recete-ara')?.value || '').toLowerCase();
+  const el = document.getElementById('recete-urun-liste'); if (!el) return;
+  // Sadece tip='urun' veya 'ara_urun' olanları göster
+  let liste = urunler.filter(u => u.tip === 'urun' || u.tip === 'ara_urun');
+  if (ara) liste = liste.filter(u => u.ad.toLowerCase().includes(ara) || u.kod.toLowerCase().includes(ara));
+
+  el.innerHTML = liste.map(u => {
+    const grup = urunler.find(g => g.id === u.ust_id);
+    const bilSayisi = urunBilesenleri.filter(b => b.urun_id === u.id).length;
+    const secili = u.id === _receteSeciliId;
+    return `<div onclick="receteUrunSec('${u.id}')" style="
+      display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;
+      margin-bottom:4px;border:1px solid ${secili ? 'var(--yesil)' : 'var(--border)'};
+      background:${secili ? 'var(--yesil-cok-ac)' : 'var(--beyaz)'};
+    ">
+      <span class="tree-kod" style="min-width:48px;font-size:11px">${u.kod}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:${secili?'600':'400'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${u.ikon||'🍽️'} ${u.ad}</div>
+        <div style="font-size:10px;color:var(--yazi3)">${grup ? grup.ad + ' · ' : ''}${u.tip === 'ara_urun' ? 'Ara Ürün' : 'Ürün'}</div>
+      </div>
+      <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px">${bilSayisi} bileşen</span>
+    </div>`;
+  }).join('') || '<div class="bos">Ürün bulunamadı</div>';
+};
+
+window.receteUrunSec = function(id) {
+  _receteSeciliId = id;
+  const u = urunler.find(x => x.id === id); if (!u) return;
+  const grup = urunler.find(g => g.id === u.ust_id);
+  document.getElementById('recete-detay-bos').style.display = 'none';
+  document.getElementById('recete-detay').style.display = 'block';
+  document.getElementById('recete-urun-ad').textContent = `${u.ikon||'🍽️'} [${u.kod}] ${u.ad}`;
+  document.getElementById('recete-urun-grup').textContent = grup ? `Grup: ${grup.ad}` : '';
+  // Mevcut bileşenleri yükle
+  bilesenler = urunBilesenleri.filter(b => b.urun_id === id).map(b => ({...b}));
+  renderBilesenler();
+  // Ürün id'yi modal'a set et (bilesenEkle için)
+  document.getElementById('um-mevcut-id').value = id;
+  // Listeyi yenile (seçili vurgusu için)
+  receteAra();
+};
+
+window.receteKaydet = async function() {
+  const urunId = _receteSeciliId; if (!urunId) return;
+  const gecerli = bilesenler.filter(b => b.kaynak_id && parseFloat(b.miktar) > 0);
+  if (!gecerli.length && bilesenler.length > 0) { bil('Eksik bileşen var!', 'err'); return; }
+  // Sil ve yeniden ekle
+  await sb.from('urun_bilesenleri').delete().eq('urun_id', urunId);
+  for (const b of gecerli) {
+    await sb.from('urun_bilesenleri').insert({
+      id: b.id && b.id.length > 10 ? b.id : uid(),
+      urun_id: urunId, kaynak_tip: b.kaynak_tip,
+      kaynak_id: b.kaynak_id, miktar: parseFloat(b.miktar), birim_id: b.birim_id || null
+    });
+  }
+  const { data: ub } = await sb.from('urun_bilesenleri').select('*');
+  if (ub) urunBilesenleri = ub;
+  bil('Reçete kaydedildi ✓');
+  receteAra(); // Bileşen sayılarını güncelle
+};
