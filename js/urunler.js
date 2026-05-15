@@ -290,8 +290,10 @@ window.receteKaydet = async function() {
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
   if (ub) urunBilesenleri = ub;
   bil('Reçete kaydedildi ✓');
-  // Listeyi yenile (bileşen sayıları güncellenir)
+  // Seçimi temizle — kayıt tamamlandı
+  _receteSeciliId = null;
+  document.getElementById('recete-detay').style.display = 'none';
+  document.getElementById('recete-detay-bos').style.display = '';
+  bilesenler = [];
   receteAra();
-  // Butonları tekrar aktif et
-  document.querySelectorAll('[onclick="receteKaydet()"]').forEach(b=>{b.disabled=false;b.textContent='💾 Reçeteyi Kaydet';});
 };
