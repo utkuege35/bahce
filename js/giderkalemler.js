@@ -71,7 +71,7 @@ window.kaydetGiderKalem=async function(){
 window.giderKalemSil=async function(id){
   if(islemler.some(i=>i.gider_kalem_id===id)){bil('Hareketi olan kalem silinemez!','err');return;}
   if(tumAltlar(giderKalemleri,id).length){bil('Alt kayıtları silin!','err');return;}
-  if(!confirm('Silmek istiyor musunuz?'))return;
+  if(!(await onay('Silmek istiyor musunuz?','🗑️')))return;
   await sb.from('gider_kalemleri').delete().eq('id',id);
   const {data}=await sb.from('gider_kalemleri').select('*').order('kod');if(data)giderKalemleri=data;
   renderGiderKalemTree();bil('Silindi ✓');
