@@ -657,6 +657,19 @@
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-gider-kalem')">İptal</button><button class="btn pri" onclick="kaydetGiderKalem()">Kaydet</button></div>
   </div>
 </div>
+<!-- MODAL: ONAY -->
+<div id="modal-onay" class="overlay" style="z-index:9999">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div class="modal-body" style="padding:1.5rem 1.5rem .5rem">
+      <div id="onay-ikon" style="font-size:32px;margin-bottom:.5rem">⚠️</div>
+      <div id="onay-mesaj" style="font-size:14px;color:var(--yazi1);line-height:1.5"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:center;gap:10px">
+      <button class="btn" id="onay-iptal-btn" onclick="_onayIptal()">İptal</button>
+      <button class="btn pri" id="onay-tamam-btn" onclick="_onayTamam()">Tamam</button>
+    </div>
+  </div>
+</div>
 <!-- MODAL: KASA -->
 <div id="modal-kasa" class="overlay">
   <div class="modal" style="max-width:420px">
