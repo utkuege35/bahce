@@ -113,11 +113,11 @@ window.kaydetCari = async function () {
 window.cariSil = async function (id) {
   const hv = islemler.some(i => i.cari_id === id);
   if (hv) {
-    if (confirm('Bu cariye bağlı işlem var, silinemez.\n"Tamam"a basarsan pasife alınır.'))
+    if (await onay('Bu cariye bağlı işlem var, silinemez.<br><small>Tamam\'a basarsan pasife alınır.</small>','⚠️'))
       await sb.from('cari').update({ aktif: false }).eq('id', id);
     else return;
   } else {
-    if (!confirm('Kalıcı olarak silmek istiyor musunuz?')) return;
+    if (!(await onay('Kalıcı olarak silmek istiyor musunuz?','🗑️'))) return;
     await sb.from('cari').delete().eq('id', id);
   }
   await cariYukle();
