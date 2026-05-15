@@ -13,7 +13,7 @@ window.kaydetMerkez=async function(){
 };
 window.merkezSil=async function(id){
   if(islemler.some(i=>i.merkez_id===id)){bil('Bu merkeze bağlı işlem var, silinemez!','err');return;}
-  if(!confirm('Silmek istiyor musunuz?'))return;
+  if(!(await onay('Silmek istiyor musunuz?','🗑️')))return;
   await sb.from('merkezler').delete().eq('id',id);
   const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
   renderMerkezler();bil('Silindi ✓');
