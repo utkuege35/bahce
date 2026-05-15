@@ -135,12 +135,12 @@ window.kaydetUrun=async function(){
 window.urunSil=async function(id){
   const hv=islemler.some(i=>i.urun_id===id);
   if(hv){
-    if(confirm('Bu üründe hareket kaydı var, silinemez.\n\n"Tamam" a basarsan pasife alınır (kullanım dışı olur, veritabanında kalır).'))
+    if(await onay('Bu üründe hareket kaydı var, silinemez.<br><small>Tamam\'a basarsan pasife alınır (kullanım dışı olur).</small>','⚠️'))
       await sb.from('urunler').update({aktif:false}).eq('id',id);
     else return;
   }else{
     const alts=tumAltlar(urunler,id);if(alts.length){bil('Alt kayıtları silin!','err');return;}
-    if(!confirm('Kalıcı olarak silmek istiyor musunuz?'))return;
+    if(!(await onay('Kalıcı olarak silmek istiyor musunuz?','🗑️')))return;
     await sb.from('urun_bilesenleri').delete().eq('urun_id',id);
     await sb.from('urunler').delete().eq('id',id);
   }
