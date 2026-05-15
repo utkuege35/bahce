@@ -148,6 +148,7 @@ window.gp=function(id){
     if(icerik){icerik.classList.add('acik');icerik.previousElementSibling?.classList.add('acik');}
   }
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
+  if(id==='receteler')renderReceteler();
   if(id==='kasalar')renderKasalar();
   if(id==='merkezler')renderMerkezler();
   if(id==='hizmetler')renderGiderKalemTree();
