@@ -276,6 +276,8 @@ window.receteKaydet = async function() {
   const urunId = _receteSeciliId; if (!urunId) return;
   const gecerli = bilesenler.filter(b => b.kaynak_id && parseFloat(b.miktar) > 0);
   if (!gecerli.length && bilesenler.length > 0) { bil('Eksik bileşen var!', 'err'); return; }
+  // Butonları devre dışı bırak
+  document.querySelectorAll('[onclick="receteKaydet()"]').forEach(b=>{b.disabled=true;b.textContent='Kaydediliyor...';});
   // Sil ve yeniden ekle
   await sb.from('urun_bilesenleri').delete().eq('urun_id', urunId);
   for (const b of gecerli) {
@@ -288,5 +290,8 @@ window.receteKaydet = async function() {
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
   if (ub) urunBilesenleri = ub;
   bil('Reçete kaydedildi ✓');
-  receteAra(); // Bileşen sayılarını güncelle
+  // Listeyi yenile (bileşen sayıları güncellenir)
+  receteAra();
+  // Butonları tekrar aktif et
+  document.querySelectorAll('[onclick="receteKaydet()"]').forEach(b=>{b.disabled=false;b.textContent='💾 Reçeteyi Kaydet';});
 };
