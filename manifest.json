@@ -4,8 +4,8 @@
   "description": "Stok, Üretim ve Gelir/Gider Yönetimi",
   "start_url": "/bahce/",
   "display": "standalone",
-  "background_color": "#0277bd",
-  "theme_color": "#0277bd",
+  "background_color": "#355f82",
+  "theme_color": "#355f82",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
