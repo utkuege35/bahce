@@ -561,6 +561,26 @@
     <div class="modal-body">
       <input type="hidden" id="um-id"><input type="hidden" id="um-tip-h">
       <div style="background:var(--krem2);padding:8px 10px;border-radius:8px;font-size:12px;color:var(--yazi2);margin-bottom:8px" id="um-ust-bilgi"></div>
+      <!-- Mamul / Yarı Mamul seçimi (sadece ürün tipinde göster) -->
+      <div id="um-tip-secim" style="display:none;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--yazi3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Ürün Tipi</div>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;background:var(--beyaz)" id="um-tip-urun-lbl">
+            <input type="radio" name="um-tip-radio" value="urun" onchange="umTipDegis('urun')" style="accent-color:var(--yesil)">
+            <div>
+              <div style="font-size:13px;font-weight:500">🍽️ Mamul Ürün</div>
+              <div style="font-size:10px;color:var(--yazi3)">Satışa hazır son ürün</div>
+            </div>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;background:var(--beyaz)" id="um-tip-ara-lbl">
+            <input type="radio" name="um-tip-radio" value="ara_urun" onchange="umTipDegis('ara_urun')" style="accent-color:var(--mor)">
+            <div>
+              <div style="font-size:13px;font-weight:500">⚙️ Yarı Mamul</div>
+              <div style="font-size:10px;color:var(--yazi3)">Başka ürünlerde kullanılan ara ürün</div>
+            </div>
+          </label>
+        </div>
+      </div>
       <div class="fgrid c2">
         <div class="fg"><label>Ad</label><input type="text" id="um-ad" placeholder="Ürün / Grup adı..."></div>
         <div class="fg"><label>Kod (Otomatik)</label><input type="text" id="um-kod" readonly></div>
