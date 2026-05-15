@@ -135,7 +135,7 @@ function renderPanel(){
         labels:['Gelir','Gider'],
         datasets:[{
           data:[Math.round(gelir),Math.round(gider)],
-          backgroundColor:['rgba(82,183,136,.8)','rgba(244,162,97,.8)'],
+          backgroundColor:['rgba(46,134,193,.8)','rgba(244,162,97,.8)'],
           borderRadius:6,barThickness:60
         }]
       },options:{responsive:true,maintainAspectRatio:false,
@@ -184,7 +184,7 @@ function renderPanel(){
       else ad=i.aciklama||'Diğer';
       satisMap[ad]=(satisMap[ad]||0)+parseFloat(i.tutar||0);
     });
-    _doughnut('panel-satis-chart',satisMap,['#2d6a4f','#52b788','#95d5b2','#b7e4c7','#1b4332'],'Bu dönem satış yok');
+    _doughnut('panel-satis-chart',satisMap,['#154360','#1a5276','#2e86c1','#85c1e9','#aed6f1'],'Bu dönem satış yok');
 
     // En çok alınan
     const alisMap={};
