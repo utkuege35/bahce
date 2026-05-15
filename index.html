@@ -86,6 +86,7 @@
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
       <button onclick="gp('urunler')">Ürünler</button>
+      <button onclick="gp('receteler')">Ürün Reçeteleri</button>
       <button onclick="gp('hizmetler')">Hizmetler</button>
       <button onclick="gp('kasalar')">Kasalar</button>
       <button onclick="gp('cari')">Cari & Personel Kartları</button>
@@ -355,6 +356,39 @@
   <div id="kasalar-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem"></div>
 </div>
 
+<!-- ÜRÜN REÇETELERİ -->
+<div id="receteler" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ürün Reçeteleri</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <!-- Sol: Ürün seçimi -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title" style="font-size:12px">Ürün Seç</div>
+      <input type="text" id="recete-ara" oninput="receteAra()" placeholder="🔍 Ürün ara..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:.75rem">
+      <div id="recete-urun-liste" style="max-height:420px;overflow-y:auto"></div>
+    </div>
+    <!-- Sağ: Seçilen ürünün reçetesi -->
+    <div class="card" style="margin-bottom:0">
+      <div id="recete-detay-bos" style="text-align:center;padding:2rem;color:var(--yazi3);font-size:13px">← Soldan bir ürün seçin</div>
+      <div id="recete-detay" style="display:none">
+        <div id="recete-urun-baslik" style="margin-bottom:1rem">
+          <div id="recete-urun-ad" style="font-size:15px;font-weight:600;color:var(--yazi1)"></div>
+          <div id="recete-urun-grup" style="font-size:11px;color:var(--yazi3);margin-top:2px"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+          <div style="font-size:12px;font-weight:500;color:var(--yazi2)">Bileşenler</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm sec" onclick="bilesenEkle('stok')">+ Hammadde</button>
+            <button class="btn sm" onclick="bilesenEkle('ara_urun')">+ Ara Ürün</button>
+          </div>
+        </div>
+        <div id="bilesen-listesi"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- HİZMETLER -->
 <div id="hizmetler" class="page">
   <div class="card">
@@ -550,17 +584,7 @@
             <input type="checkbox" id="um-aktif" style="width:16px;height:16px;cursor:pointer"> <span>Aktif (işareti kaldırırsan pasif/kullanım dışı olur)</span>
           </label>
         </div>
-        <div class="sep"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:12px;font-weight:500">Bileşenler (Reçete)</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn sm sec" onclick="bilesenEkle('stok')">+ Hammadde</button>
-            <button class="btn sm ara" onclick="bilesenEkle('ara_urun')">+ Ara Ürün</button>
-          </div>
-        </div>
-        <div id="bilesen-listesi"></div>
-      </div>
-      <div id="um-log" style="display:none;margin-top:8px">
+        <div id="um-log" style="display:none;margin-top:8px">
         <div style="font-size:11px;color:var(--yazi3);margin-bottom:4px;font-weight:500">İSİM DEĞİŞİKLİK GEÇMİŞİ</div>
         <div id="um-log-liste" style="max-height:120px;overflow-y:auto;background:var(--krem);border-radius:8px;padding:.5rem"></div>
       </div>
