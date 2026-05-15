@@ -46,7 +46,7 @@ window.birimSil=async function(id){
   if(stokBagli){bil('Stok veya ürüne bağlı birim silinemez!','err');return;}
   const altBagli=birimler.some(b=>b.temel_id===id);
   if(altBagli){bil('Alt birimi olan temel birim silinemez!','err');return;}
-  if(!confirm('Silmek istiyor musunuz?'))return;
+  if(!(await onay('Silmek istiyor musunuz?','🗑️')))return;
   await sb.from('birimler').delete().eq('id',id);
   const {data}=await sb.from('birimler').select('*');if(data)birimler=data;renderBirimler();doldurBirimSecleri();
 };
