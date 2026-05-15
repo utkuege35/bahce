@@ -41,7 +41,7 @@ window.kaydetUretim=async function(){
     for(const b of bList){
       if(b.kaynak_tip==='stok'){
         const gMik=parseFloat(b.miktar)*carpan;const s=stoklar.find(x=>x.id===b.kaynak_id);const carp=birimTemelCarp(b.birim_id);
-        if(stokMiktar(b.kaynak_id)<gMik*carp){if(!confirm(`${s?.ad||''} stoğu yetersiz! Devam edilsin mi?`))return false;}
+        if(stokMiktar(b.kaynak_id)<gMik*carp){if(!(await onay(`${s?.ad||''} stoğu yetersiz! Devam edilsin mi?`,'⚠️')))return false;}
         topMal+=(s?.maliyet||0)*gMik*carp;
         await sb.from('islemler').insert({tur:'uretim_sarfiyat',tarih,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,urun_id:urunId,aciklama:`${urun.ad} üretimi (sarfiyat)`,kat:'Üretim',aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
       }else{
@@ -382,14 +382,14 @@ window.kaydetSatis=async function(){
     let islemData=null;
     if(tip==='urun'){
       const u=urunler.find(x=>x.id===s.secimId);
-      if((u?.stok||0)<mik){if(!confirm(`${u?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`))return;}
+      if((u?.stok||0)<mik){if(!(await onay(`${u?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`,'⚠️')))return;}
       await sb.from('urunler').update({stok:(u.stok||0)-mik}).eq('id',s.secimId);
       const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,urun_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${u?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
       if(s.birimId)birimHafizaYaz(s.secimId,s.birimId);
     }else if(tip==='stok'){
       const sk=stoklar.find(x=>x.id===s.secimId);
-      if(stokMiktar(s.secimId)<mik*birimTemelCarp(bId)){if(!confirm(`${sk?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`))return;}
+      if(stokMiktar(s.secimId)<mik*birimTemelCarp(bId)){if(!(await onay(`${sk?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`,'⚠️')))return;}
       const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,stok_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${sk?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
       if(s.birimId)birimHafizaYaz(s.secimId,s.birimId);
@@ -451,7 +451,7 @@ window.kaydetGider=async function(){
   const gecerli=gdSatirListesi.filter(s=>s.kalemId||parseFloat(s.tutar)>0||parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır ekleyin!','err');return;}
   const sifirVar=gecerli.some(s=>!(parseFloat(s.tutar)>0)&&!(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0));
-  if(sifirVar&&!confirm('Tutarı 0 olan satır var. Yine de kaydetmek istiyor musunuz?'))return;
+  if(sifirVar&&!(await onay('Tutarı 0 olan satır var. Yine de kaydetmek istiyor musunuz?','❓')))return;
   let n=0;
   for(const s of gecerli){
     const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;
