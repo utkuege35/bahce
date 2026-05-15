@@ -1,5 +1,13 @@
 // ===== ÜRÜN TREE =====
 let bilesenler=[];
+window.umTipDegis=function(yeniTip){
+  document.getElementById('um-tip-h').value=yeniTip;
+  // Seçili radio stilini güncelle
+  document.getElementById('um-tip-urun-lbl').style.borderColor=yeniTip==='urun'?'var(--yesil)':'var(--border)';
+  document.getElementById('um-tip-ara-lbl').style.borderColor=yeniTip==='ara_urun'?'var(--mor)':'var(--border)';
+  const tipAd={urun:'Mamul Ürün',ara_urun:'Yarı Mamul'}[yeniTip]||yeniTip;
+  document.getElementById('um-title').textContent=document.getElementById('um-id').value?`${tipAd} Düzenle`:`Yeni ${tipAd}`;
+};
 window.urunModalAc=function(ustId,tip){
   document.getElementById('um-id').value='';document.getElementById('um-tip-h').value=tip;
   document.getElementById('um-ad').value='';document.getElementById('um-ikon').value='';
@@ -12,7 +20,16 @@ window.urunModalAc=function(ustId,tip){
   document.getElementById('um-fiyat').value=0;document.getElementById('um-min').value=0;
   document.getElementById('um-merkez').value='';
   document.getElementById('um-varsayilan-birim').value='';
-  const tipAd={grup:'Grup',ara_urun:'Ara Ürün',urun:'Ürün'}[tip]||tip;
+  // Tip seçim alanını göster/gizle
+  const tipSecim=document.getElementById('um-tip-secim');
+  if(tipSecim)tipSecim.style.display=isGrup?'none':'block';
+  // Radio'yu seç
+  if(!isGrup){
+    const radio=document.querySelector(`input[name="um-tip-radio"][value="${tip}"]`);
+    if(radio)radio.checked=true;
+    umTipDegis(tip);
+  }
+  const tipAd={grup:'Grup',ara_urun:'Yarı Mamul',urun:'Mamul Ürün'}[tip]||tip;
   document.getElementById('um-title').textContent=`Yeni ${tipAd}`;
   if(ustId){const ust=urunler.find(u=>u.id===ustId);document.getElementById('um-ust-bilgi').textContent=`Üst: ${ust?.ikon||''} ${ust?.ad||''} [${ust?.kod||''}]`;}
   else document.getElementById('um-ust-bilgi').textContent=isGrup?'Ana ürün grubu':'Grup seçilmedi';
@@ -22,12 +39,20 @@ window.urunDuzenle=function(id){
   const u=urunler.find(x=>x.id===id);if(!u)return;
   const hv=islemler.some(i=>i.urun_id===id);
   document.getElementById('um-id').value=u.id;document.getElementById('um-tip-h').value=u.tip;
-  const tipAd={grup:'Grubu',ara_urun:'Ara Ürünü',urun:'Ürünü'}[u.tip]||u.tip;
+  const tipAd={grup:'Grup',ara_urun:'Yarı Mamul',urun:'Mamul Ürün'}[u.tip]||u.tip;
   document.getElementById('um-title').textContent=`${tipAd} Düzenle`;
   document.getElementById('um-ad').value=u.ad;document.getElementById('um-kod').value=u.kod;
   document.getElementById('um-ikon').value=u.ikon||'';document.getElementById('um-renk').value=u.renk||'yesil';
   document.getElementById('um-kod').disabled=hv;
   const isGrup=u.tip==='grup';
+  // Tip seçim
+  const tipSecim=document.getElementById('um-tip-secim');
+  if(tipSecim)tipSecim.style.display=isGrup?'none':'block';
+  if(!isGrup){
+    const radio=document.querySelector(`input[name="um-tip-radio"][value="${u.tip}"]`);
+    if(radio)radio.checked=true;
+    umTipDegis(u.tip);
+  }
   document.getElementById('um-urun-alanlar').style.display=isGrup?'none':'';
   document.getElementById('um-birim-fg').style.display=isGrup?'none':'';
   if(!isGrup){
@@ -176,9 +201,9 @@ function renderUrunler(){
       ${!isGrup?`<span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--mavi)'}">${stokAdet.toLocaleString('tr-TR',{maximumFractionDigits:2})} ${tb?.kisaltma||''}</span>`:''}
       ${!isGrup&&bilesenSayisi?`<span style="font-size:10px;color:var(--yazi3)">${bilesenSayisi} bil.</span>`:''}
       ${dusuk?'<span class="badge sari">⚠</span>':''}
-      <span class="tip-chip ${isGrup?'tip-grup':isAra?'tip-ara':'tip-urun'}">${isGrup?'GRUP':isAra?'ARA':'ÜRÜN'}</span>
+      <span class="tip-chip ${isGrup?'tip-grup':isAra?'tip-ara':'tip-urun'}">${isGrup?'GRUP':isAra?'YARI MAMUL':'MAMUL'}</span>
       ${isAdmin?`<div class="tree-actions">
-        ${isGrup?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')">+G</button><button class="btn sm ara" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')">+A</button><button class="btn sm sec" onclick="event.stopPropagation();urunModalAc('${u.id}','urun')">+Ü</button>`:''}
+        ${isGrup?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')" title="Alt Grup">+G</button><button class="btn sm" style="background:var(--mor-ac);color:var(--mor)" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')" title="Yarı Mamul Ekle">+Y</button><button class="btn sm sec" onclick="event.stopPropagation();urunModalAc('${u.id}','urun')" title="Mamul Ürün Ekle">+Ü</button>`:''}
         <button class="btn sm" onclick="event.stopPropagation();urunDuzenle('${u.id}')">✏</button>
         <button class="btn sm ghost" onclick="event.stopPropagation();urunSil('${u.id}')">✕</button>
       </div>`:''}
@@ -223,7 +248,7 @@ window.receteAra = function() {
       <span class="tree-kod" style="min-width:48px;font-size:11px">${u.kod}</span>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:${secili?'600':'400'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${u.ikon||'🍽️'} ${u.ad}</div>
-        <div style="font-size:10px;color:var(--yazi3)">${grup ? grup.ad + ' · ' : ''}${u.tip === 'ara_urun' ? 'Ara Ürün' : 'Ürün'}</div>
+        <div style="font-size:10px;color:var(--yazi3)">${grup ? grup.ad + ' · ' : ''}${u.tip === 'ara_urun' ? '⚙️ Yarı Mamul' : '🍽️ Mamul Ürün'}</div>
       </div>
       <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px">${bilSayisi} bileşen</span>
     </div>`;
