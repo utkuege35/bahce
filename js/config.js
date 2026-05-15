@@ -81,3 +81,22 @@ window.uygulamaYenile=async function(){
   // Sayfayı yeniden yükle (cache bypass)
   window.location.reload(true);
 };
+
+// Custom confirm — native confirm() yerine kullan
+let _onayResolve=null;
+window.onay=function(mesaj,ikon){
+  return new Promise(res=>{
+    _onayResolve=res;
+    document.getElementById('onay-mesaj').innerHTML=mesaj;
+    document.getElementById('onay-ikon').textContent=ikon||'⚠️';
+    document.getElementById('modal-onay').style.display='flex';
+  });
+};
+window._onayTamam=function(){
+  document.getElementById('modal-onay').style.display='none';
+  if(_onayResolve){_onayResolve(true);_onayResolve=null;}
+};
+window._onayIptal=function(){
+  document.getElementById('modal-onay').style.display='none';
+  if(_onayResolve){_onayResolve(false);_onayResolve=null;}
+};
