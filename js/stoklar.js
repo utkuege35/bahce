@@ -140,8 +140,8 @@ function renderStoklar(){
     const pasif=s.aktif===false;
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'3'}px solid ${renk};${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${s.ikon||'📦'}</span>
+      <span class="tree-kod" style="min-width:52px">${s.kod}</span>
       <span style="flex:1;font-size:${isGrup?13:12}px">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
-      <span class="tree-kod">${s.kod}</span>
       ${s.tip==='stok'?`<span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik?.toLocaleString('tr-TR',{maximumFractionDigits:2})||0} ${tb?.kisaltma||''}</span>`:''}
       ${dusuk?'<span class="badge sari">⚠ Min</span>':''}
       <span class="tip-chip ${isGrup?'tip-grup':'tip-stok'}">${isGrup?'GRUP':'STOK'}</span>
