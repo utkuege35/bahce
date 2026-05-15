@@ -109,7 +109,7 @@ window.kaydetKasa_kart = async function() {
 window.kasaSil = async function(id) {
   const var_mi = islemler.some(i => i.kasa_id === id);
   if (var_mi) { bil('Bu kasaya ait işlemler var, silinemez!', 'err'); return; }
-  if (!confirm('Bu kasayı silmek istiyor musunuz?')) return;
+  if(!(await onay('Bu kasayı silmek istiyor musunuz?','🗑️')))return;
   await sb.from('kasalar').delete().eq('id', id);
   await renderKasalar();
   bil('Kasa silindi ✓');
