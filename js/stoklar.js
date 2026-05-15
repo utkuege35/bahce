@@ -117,12 +117,12 @@ window.kaydetStok=async function(){
 window.stokSil=async function(id){
   const hv=islemler.some(i=>i.stok_id===id);
   if(hv){
-    if(confirm('Bu stokta hareket kaydı var, silinemez.\n\n"Tamam" a basarsan pasife alınır (kullanım dışı olur, veritabanında kalır).'))
+    if(await onay('Bu stokta hareket kaydı var, silinemez.<br><small>Tamam\'a basarsan pasife alınır (kullanım dışı olur).</small>','⚠️'))
       await sb.from('stoklar').update({aktif:false}).eq('id',id);
     else return;
   }else{
     const alts=tumAltlar(stoklar,id);if(alts.length){bil('Alt kayıtları silin!','err');return;}
-    if(!confirm('Kalıcı olarak silmek istiyor musunuz?'))return;
+    if(!(await onay('Kalıcı olarak silmek istiyor musunuz?','🗑️')))return;
     await sb.from('stoklar').delete().eq('id',id);
   }
   const {data}=await sb.from('stoklar').select('*').order('kod');if(data)stoklar=data;
