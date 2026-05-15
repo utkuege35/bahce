@@ -347,7 +347,7 @@ window.ilFiltreTemizle=function(){
   _ilSayfa=1;renderIslemListe();
 };
 window.islemSilListe=async function(id){
-  if(!confirm('Bu işlemi silmek istiyor musunuz?\n(Veritabanında kalır, ekranda görünmez.)'))return;
+  if(!(await onay('Bu işlemi silmek istiyor musunuz?<br><small>Veritabanında kalır, ekranda görünmez.</small>','🗑️')))return;
   await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',id);
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
   if(data)islemler=data.filter(i=>!i.silindi);
@@ -442,7 +442,7 @@ window.islemKaydet=async function(){
 };
 
 window.islemSil=async function(id){
-  if(!confirm('Bu işlemi silmek istiyor musunuz?'))return;
+  if(!(await onay('Bu işlemi silmek istiyor musunuz?','🗑️')))return;
   await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',id);
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   renderPanel();if(document.getElementById('islem-liste')?.classList.contains('active'))renderIslemListe();kontolUyari();bil('İşlem silindi ✓');
