@@ -358,34 +358,17 @@
 
 <!-- ÜRÜN REÇETELERİ -->
 <div id="receteler" class="page">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ürün Reçeteleri</div>
+  <div class="card" style="margin-bottom:.75rem">
+    <input type="text" id="recete-ara" oninput="receteAra()" placeholder="🔍 Ürün ara..." style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px">
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-    <!-- Sol: Ürün seçimi -->
-    <div class="card" style="margin-bottom:0">
-      <div class="card-title" style="font-size:12px">Ürün Seç</div>
-      <input type="text" id="recete-ara" oninput="receteAra()" placeholder="🔍 Ürün ara..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:.75rem">
-      <div id="recete-urun-liste" style="max-height:420px;overflow-y:auto"></div>
-    </div>
-    <!-- Sağ: Seçilen ürünün reçetesi -->
-    <div class="card" style="margin-bottom:0">
-      <div id="recete-detay-bos" style="text-align:center;padding:2rem;color:var(--yazi3);font-size:13px">← Soldan bir ürün seçin</div>
-      <div id="recete-detay" style="display:none">
-        <div id="recete-urun-baslik" style="margin-bottom:1rem">
-          <div id="recete-urun-ad" style="font-size:15px;font-weight:600;color:var(--yazi1)"></div>
-          <div id="recete-urun-grup" style="font-size:11px;color:var(--yazi3);margin-top:2px"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-          <div style="font-size:12px;font-weight:500;color:var(--yazi2)">Bileşenler</div>
-          <div style="display:flex;gap:6px">
-            <button class="btn sm sec" onclick="bilesenEkle('stok')">+ Hammadde</button>
-            <button class="btn sm" onclick="bilesenEkle('ara_urun')">+ Ara Ürün</button>
-          </div>
-        </div>
-        <div id="bilesen-listesi"></div>
-      </div>
-    </div>
+  <div id="recete-urun-liste"></div>
+  <!-- Gizli detay alanı — JS tarafından accordion içine taşınır -->
+  <div id="recete-detay-bos" style="display:none"></div>
+  <div id="recete-detay" style="display:none">
+    <div id="recete-urun-ad"></div>
+    <div id="recete-urun-grup"></div>
+    <div id="recete-urun-baslik"></div>
+    <div id="bilesen-listesi"></div>
   </div>
 </div>
 
