@@ -115,6 +115,15 @@ function renderBilesenler(){
     return;
   }
   let toplamMaliyet=0;
+  const baslik=`<div style="display:flex;gap:6px;align-items:center;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <span style="min-width:38px"></span>
+    <span style="flex:1;font-size:11px;color:var(--yazi3);font-weight:600">MALZEME</span>
+    <span style="width:72px;font-size:11px;color:var(--yazi3);font-weight:600">BİRİM</span>
+    <span style="width:64px;font-size:11px;color:var(--yazi3);font-weight:600">MİKTAR</span>
+    <span style="width:72px;text-align:right;font-size:11px;color:var(--yazi3);font-weight:600">FİYAT</span>
+    <span style="width:80px;text-align:right;font-size:11px;color:var(--yazi3);font-weight:600">MALİYET</span>
+    <span style="width:24px"></span>
+  </div>`;
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
@@ -139,7 +148,7 @@ function renderBilesenler(){
       <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button>
     </div>`;
   }).join('');
-  el.innerHTML=satirlar;
+  el.innerHTML=baslik+satirlar;
   el.innerHTML+=`<div style="margin-top:10px;padding:8px 12px;background:var(--yesil-cok-ac);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
     <span style="font-size:12px;color:var(--yazi2)">Toplam Maliyet</span>
     <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
@@ -328,10 +337,5 @@ window.receteKaydet = async function() {
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
   if (ub) urunBilesenleri = ub;
   bil('Reçete kaydedildi ✓');
-  // Seçimi temizle — kayıt tamamlandı
-  _receteSeciliId = null;
-  document.getElementById('recete-detay').style.display = 'none';
-  document.getElementById('recete-detay-bos').style.display = '';
-  bilesenler = [];
-  receteAra();
+  receteUrunSec(urunId);
 };
