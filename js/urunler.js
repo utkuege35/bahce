@@ -195,7 +195,7 @@ function renderUrunler(){
     const merkezAd=!isGrup&&u.merkez_id?merkezler.find(m=>m.id===u.merkez_id)?.ad:'';
     const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.06)':depth===1?'rgba(77,127,168,.04)':'rgba(169,200,224,.03)'):'';
+    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.13)':depth===1?'rgba(77,127,168,.08)':'rgba(169,200,224,.05)'):'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${u.ikon||'🍽️'}</span>
       <span class="tree-kod" style="min-width:52px">${u.kod}</span>
@@ -293,6 +293,10 @@ window.receteKaydet = async function() {
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
   if (ub) urunBilesenleri = ub;
   bil('Reçete kaydedildi ✓');
-  // Seçimi koru — detay ekranda kalsın
-  receteUrunSec(_receteSeciliId);
+  // Seçimi temizle — kayıt tamamlandı
+  _receteSeciliId = null;
+  document.getElementById('recete-detay').style.display = 'none';
+  document.getElementById('recete-detay-bos').style.display = '';
+  bilesenler = [];
+  receteAra();
 };
