@@ -141,7 +141,7 @@ function renderStoklar(){
     // Seviyeye göre grup rengi — stok/ürün kartları renksiz
     const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.06)':depth===1?'rgba(77,127,168,.04)':'rgba(169,200,224,.03)'):'';
+    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.13)':depth===1?'rgba(77,127,168,.08)':'rgba(169,200,224,.05)'):'';;
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${s.ikon||'📦'}</span>
       <span class="tree-kod" style="min-width:52px">${s.kod}</span>
