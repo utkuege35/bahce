@@ -85,30 +85,44 @@ window.bilesenEkle=function(kaynak_tip){
 };
 function renderBilesenler(){
   const el=document.getElementById('bilesen-listesi');if(!el)return;
-  // Reçete sayfasındaysak kaydet butonu göster
   const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
   if(!bilesenler.length){
     el.innerHTML='<div style="font-size:12px;color:var(--yazi3);padding:8px 0">Henüz bileşen eklenmedi.</div>';
     if(receteSayfasi&&_receteSeciliId)el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
     return;
   }
-  el.innerHTML=bilesenler.map((b,i)=>{
+  let toplamMaliyet=0;
+  const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
+    const kaynak=liste.find(x=>x.id===b.kaynak_id);
+    const birimFiyat=kaynak?.maliyet||0;
+    const miktar=parseFloat(b.miktar)||0;
+    const maliyet=birimFiyat*miktar;
+    toplamMaliyet+=maliyet;
+    const birimAdi=birimler.find(bx=>bx.id===b.birim_id)?.kisaltma||'';
     return `<div class="bilesen-item ${isStok?'bi-stok':'bi-ara'}">
       <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}">${isStok?'HAM':'ARA'}</span>
-      <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value)" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
         <option value="">${isStok?'Stok':'Ara Ürün'} seçin...</option>
         ${liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>[${x.kod}] ${x.ad}</option>`).join('')}
       </select>
-      <input type="number" placeholder="Miktar" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value)" style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
-      <select onchange="bilesenGuncelle(${i},'birim_id',this.value)" style="width:90px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" style="width:72px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
         <option value="">Birim</option>
         ${birimler.map(bx=>`<option value="${bx.id}"${bx.id===b.birim_id?' selected':''}>${bx.kisaltma||bx.ad}</option>`).join('')}
       </select>
+      <input type="number" placeholder="Miktar" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="width:64px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+      <span style="width:72px;text-align:right;font-size:12px;color:var(--yazi2)">${birimFiyat>0?para(birimFiyat):'—'}</span>
+      <span style="width:80px;text-align:right;font-size:12px;font-weight:500;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</span>
       <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button>
     </div>`;
   }).join('');
+  el.innerHTML=satirlar;
+  // Toplam maliyet satırı
+  el.innerHTML+=`<div style="margin-top:10px;padding:8px 12px;background:var(--yesil-cok-ac);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:12px;color:var(--yazi2)">Toplam Maliyet</span>
+    <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
+  </div>`;
   if(receteSayfasi&&_receteSeciliId){
     el.innerHTML+=`<div style="margin-top:10px"><button class="btn pri" onclick="receteKaydet()">💾 Reçeteyi Kaydet</button></div>`;
   }
@@ -195,7 +209,7 @@ function renderUrunler(){
     const merkezAd=!isGrup&&u.merkez_id?merkezler.find(m=>m.id===u.merkez_id)?.ad:'';
     const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.13)':depth===1?'rgba(77,127,168,.08)':'rgba(169,200,224,.05)'):'';
+    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.06)':depth===1?'rgba(77,127,168,.04)':'rgba(169,200,224,.03)'):'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${u.ikon||'🍽️'}</span>
       <span class="tree-kod" style="min-width:52px">${u.kod}</span>
