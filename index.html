@@ -412,9 +412,19 @@
 
   <!-- GENEL -->
   <div id="rt-genel" class="tab-panel active">
-    <div class="fr"><label style="font-size:12px;color:var(--yazi2)">Yıl:</label><select id="rapor-yil" onchange="renderRaporGenel()"></select></div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:.75rem">
+      <button class="btn sm active" id="gf-bugun" onclick="gelirFiltre('bugun',this)">Bugün</button>
+      <button class="btn sm" id="gf-hafta" onclick="gelirFiltre('hafta',this)">Bu Hafta</button>
+      <button class="btn sm" id="gf-ay" onclick="gelirFiltre('ay',this)">Bu Ay</button>
+      <button class="btn sm" id="gf-yil" onclick="gelirFiltre('yil',this)">Bu Yıl</button>
+      <button class="btn sm" id="gf-ozel" onclick="gelirFiltre('ozel',this)">Özel</button>
+      <span id="gf-ozel-alan" style="display:none;gap:4px">
+        <input type="date" id="gf-bas" onchange="renderRaporGenel()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:6px">
+        <input type="date" id="gf-bit" onchange="renderRaporGenel()" style="font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:6px">
+      </span>
+    </div>
     <div class="mg" id="rapor-met"></div>
-    <div class="card"><div class="card-title">Aylık gelir &amp; gider</div>
+    <div class="card"><div class="card-title">Gelir &amp; Gider</div>
       <div class="legend"><div class="li2"><div class="lb" style="background:#52b788"></div>Gelir</div><div class="li2"><div class="lb" style="background:#f4a261"></div>Gider</div></div>
       <div class="cw"><canvas id="aylik-chart"></canvas></div>
     </div>
@@ -424,7 +434,7 @@
         <div><div style="font-size:11px;color:var(--yazi3);margin-bottom:6px">Gider</div><div class="cw" style="height:180px"><canvas id="gider-pie"></canvas></div></div>
       </div>
     </div>
-    <div class="card"><div class="card-title">Aylık detay</div><div id="aylar-detay" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div></div>
+    <div class="card"><div class="card-title">Detay</div><div id="aylar-detay" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div></div>
   </div>
 
   <!-- KASA -->
