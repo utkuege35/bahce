@@ -1,3 +1,10 @@
+// ===== MODALLARı BODY'E TAŞI =====
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.overlay').forEach(function(m){
+    if(m.parentElement!==document.body){document.body.appendChild(m);}
+  });
+});
+
 // ===== YARDIMCI FONKSİYONLAR =====
 window.modalAc=function(id){
   const el=document.getElementById(id);
