@@ -83,6 +83,29 @@ window.bilesenEkle=function(kaynak_tip){
   bilesenler.push({id:'',urun_id:'',kaynak_tip,kaynak_id:'',miktar:1,birim_id:''});
   renderBilesenler();
 };
+// Stok birim maliyeti hesapla
+function stokBirimMaliyet(stokId){
+  const girisler=islemler.filter(i=>i.stok_id===stokId&&i.tur==='giris');
+  if(!girisler.length){const s=stoklar.find(x=>x.id===stokId);return s?.maliyet||0;}
+  const mevcutMiktar=stokMiktar(stokId);
+  if(mevcutMiktar>0){
+    let toplamTutar=0,toplamMiktar=0;
+    girisler.forEach(i=>{
+      const c=birimTemelCarp(i.birim_id);
+      const mik=parseFloat(i.miktar||0)*c;
+      const tut=parseFloat(i.tutar||0);
+      if(mik>0&&tut>0){toplamTutar+=tut;toplamMiktar+=mik;}
+    });
+    if(toplamMiktar>0)return toplamTutar/toplamMiktar;
+  }
+  // Stok sıfır veya negatif → son alım fiyatı
+  const sonGiris=[...girisler].sort((a,b)=>(b.ts||0)-(a.ts||0))[0];
+  const sonFiyat=parseFloat(sonGiris?.fiyat||0);
+  if(sonFiyat>0)return sonFiyat;
+  const s=stoklar.find(x=>x.id===stokId);
+  return s?.maliyet||0;
+}
+
 function renderBilesenler(){
   const el=document.getElementById('bilesen-listesi');if(!el)return;
   const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
@@ -95,12 +118,11 @@ function renderBilesenler(){
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
-    const kaynak=liste.find(x=>x.id===b.kaynak_id);
-    const birimFiyat=kaynak?.maliyet||0;
+    const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):0;
     const miktar=parseFloat(b.miktar)||0;
-    const maliyet=birimFiyat*miktar;
+    const carpan=birimTemelCarp(b.birim_id);
+    const maliyet=birimFiyat*miktar*carpan;
     toplamMaliyet+=maliyet;
-    const birimAdi=birimler.find(bx=>bx.id===b.birim_id)?.kisaltma||'';
     return `<div class="bilesen-item ${isStok?'bi-stok':'bi-ara'}">
       <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}">${isStok?'HAM':'ARA'}</span>
       <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
@@ -118,7 +140,6 @@ function renderBilesenler(){
     </div>`;
   }).join('');
   el.innerHTML=satirlar;
-  // Toplam maliyet satırı
   el.innerHTML+=`<div style="margin-top:10px;padding:8px 12px;background:var(--yesil-cok-ac);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
     <span style="font-size:12px;color:var(--yazi2)">Toplam Maliyet</span>
     <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
