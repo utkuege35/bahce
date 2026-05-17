@@ -111,7 +111,7 @@ function renderBilesenler(){
   const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
   if(!bilesenler.length){
     el.innerHTML='<div style="font-size:12px;color:var(--yazi3);padding:8px 0">Henüz bileşen eklenmedi.</div>';
-    if(receteSayfasi&&_receteSeciliId)el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
+    if(_receteSeciliId)el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
     return;
   }
   let toplamMaliyet=0;
@@ -153,7 +153,7 @@ function renderBilesenler(){
     <span style="font-size:12px;color:var(--yazi2)">Toplam Maliyet</span>
     <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
   </div>`;
-  if(receteSayfasi&&_receteSeciliId){
+  if(_receteSeciliId){
     el.innerHTML+=`<div style="margin-top:10px"><button class="btn pri" onclick="receteKaydet()">💾 Reçeteyi Kaydet</button></div>`;
   }
 }
@@ -276,10 +276,23 @@ window.renderReceteler = function() {
   receteAra();
 };
 
+function _receteDetayHTML(u, grup) {
+  const bilSayisi = urunBilesenleri.filter(b => b.urun_id === u.id).length;
+  return `<div id="recete-detay-${u.id}" style="border-top:1px solid var(--border);padding:12px 4px 4px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:600;color:var(--yazi2)">Bileşenler</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm sec" onclick="event.stopPropagation();bilesenEkle('stok')">+ Hammadde</button>
+        <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('ara_urun')">+ Ara Ürün</button>
+      </div>
+    </div>
+    <div id="bilesen-listesi"></div>
+  </div>`;
+}
+
 window.receteAra = function() {
   const ara = (document.getElementById('recete-ara')?.value || '').toLowerCase();
   const el = document.getElementById('recete-urun-liste'); if (!el) return;
-  // Sadece tip='urun' veya 'ara_urun' olanları göster
   let liste = urunler.filter(u => u.tip === 'urun' || u.tip === 'ara_urun');
   if (ara) liste = liste.filter(u => u.ad.toLowerCase().includes(ara) || u.kod.toLowerCase().includes(ara));
 
@@ -287,35 +300,44 @@ window.receteAra = function() {
     const grup = urunler.find(g => g.id === u.ust_id);
     const bilSayisi = urunBilesenleri.filter(b => b.urun_id === u.id).length;
     const secili = u.id === _receteSeciliId;
-    return `<div onclick="receteUrunSec('${u.id}')" style="
-      display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;
-      margin-bottom:4px;border:1px solid ${secili ? 'var(--yesil)' : 'var(--border)'};
-      background:${secili ? 'var(--yesil-cok-ac)' : 'var(--beyaz)'};
-    ">
-      <span class="tree-kod" style="min-width:48px;font-size:11px">${u.kod}</span>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:${secili?'600':'400'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${u.ikon||'🍽️'} ${u.ad}</div>
-        <div style="font-size:10px;color:var(--yazi3)">${grup ? grup.ad + ' · ' : ''}${u.tip === 'ara_urun' ? '⚙️ Yarı Mamul' : '🍽️ Mamul Ürün'}</div>
+    const detayHTML = secili ? _receteDetayHTML(u, grup) : '';
+    return `<div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
+      <div onclick="receteUrunSec('${u.id}')" style="
+        display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
+        background:${secili?'var(--yesil-cok-ac)':'var(--beyaz)'};
+      ">
+        <span style="font-size:18px">${u.ikon||'🍽️'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:${secili?'var(--yesil)':'var(--yazi1)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[${u.kod}] ${u.ad}</div>
+          <div style="font-size:11px;color:var(--yazi3);margin-top:2px">${grup ? grup.ad + ' · ' : ''}${u.tip==='ara_urun'?'Yarı Mamul':'Mamul Ürün'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px">${bilSayisi} bileşen</span>
+        </div>
+        <span style="font-size:16px;color:var(--yazi3);margin-left:4px">${secili?'▲':'▼'}</span>
       </div>
-      <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px">${bilSayisi} bileşen</span>
+      ${detayHTML}
     </div>`;
   }).join('') || '<div class="bos">Ürün bulunamadı</div>';
+
+  // Seçili ürün açıksa bileşenleri render et
+  if (_receteSeciliId) {
+    bilesenler = urunBilesenleri.filter(b => b.urun_id === _receteSeciliId).map(b => ({...b}));
+    renderBilesenler();
+  }
 };
 
 window.receteUrunSec = function(id) {
+  // Aynıya tıklanınca kapat
+  if (_receteSeciliId === id) {
+    _receteSeciliId = null;
+    bilesenler = [];
+    receteAra();
+    return;
+  }
   _receteSeciliId = id;
-  const u = urunler.find(x => x.id === id); if (!u) return;
-  const grup = urunler.find(g => g.id === u.ust_id);
-  document.getElementById('recete-detay-bos').style.display = 'none';
-  document.getElementById('recete-detay').style.display = 'block';
-  document.getElementById('recete-urun-ad').textContent = `${u.ikon||'🍽️'} [${u.kod}] ${u.ad}`;
-  document.getElementById('recete-urun-grup').textContent = grup ? `Grup: ${grup.ad}` : '';
-  // Mevcut bileşenleri yükle
-  bilesenler = urunBilesenleri.filter(b => b.urun_id === id).map(b => ({...b}));
-  renderBilesenler();
-  // Ürün id'yi modal'a set et (bilesenEkle için)
   document.getElementById('um-mevcut-id').value = id;
-  // Listeyi yenile (seçili vurgusu için)
+  bilesenler = urunBilesenleri.filter(b => b.urun_id === id).map(b => ({...b}));
   receteAra();
 };
 
@@ -337,5 +359,5 @@ window.receteKaydet = async function() {
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
   if (ub) urunBilesenleri = ub;
   bil('Reçete kaydedildi ✓');
-  receteUrunSec(urunId);
+  receteAra();
 };
