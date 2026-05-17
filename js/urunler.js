@@ -106,6 +106,24 @@ function stokBirimMaliyet(stokId){
   return s?.maliyet||0;
 }
 
+// Ara ürün 1 birim maliyeti: kendi bileşenlerinin toplam maliyeti
+function araUrunBirimMaliyet(urunId){
+  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
+  if(!bilesenleri.length)return 0;
+  let toplam=0;
+  bilesenleri.forEach(b=>{
+    const miktar=parseFloat(b.miktar)||0;
+    const carpan=birimTemelCarp(b.birim_id);
+    if(b.kaynak_tip==='stok'){
+      toplam+=stokBirimMaliyet(b.kaynak_id)*miktar*carpan;
+    }else{
+      // Özyinelemeli ara ürün maliyeti
+      toplam+=araUrunBirimMaliyet(b.kaynak_id)*miktar*carpan;
+    }
+  });
+  return toplam;
+}
+
 function renderBilesenler(){
   const el=document.getElementById('bilesen-listesi');if(!el)return;
   const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
@@ -118,7 +136,7 @@ function renderBilesenler(){
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
-    const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):0;
+    const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):araUrunBirimMaliyet(b.kaynak_id);
     const miktar=parseFloat(b.miktar)||0;
     const carpan=birimTemelCarp(b.birim_id);
     const maliyet=birimFiyat*miktar*carpan;
