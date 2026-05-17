@@ -86,7 +86,7 @@ window.bilesenEkle=function(kaynak_tip){
 // Stok birim maliyeti hesapla
 function stokBirimMaliyet(stokId){
   const girisler=islemler.filter(i=>i.stok_id===stokId&&i.tur==='giris');
-  if(!girisler.length){const s=stoklar.find(x=>x.id===stokId);return s?.maliyet||0;}
+  if(!girisler.length)return 0;
   const mevcutMiktar=stokMiktar(stokId);
   if(mevcutMiktar>0){
     let toplamTutar=0,toplamMiktar=0;
