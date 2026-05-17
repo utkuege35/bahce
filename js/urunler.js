@@ -293,10 +293,6 @@ window.receteKaydet = async function() {
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
   if (ub) urunBilesenleri = ub;
   bil('Reçete kaydedildi ✓');
-  // Seçimi temizle — kayıt tamamlandı
-  _receteSeciliId = null;
-  document.getElementById('recete-detay').style.display = 'none';
-  document.getElementById('recete-detay-bos').style.display = '';
-  bilesenler = [];
-  receteAra();
+  // Seçimi koru — detay ekranda kalsın
+  receteUrunSec(_receteSeciliId);
 };
