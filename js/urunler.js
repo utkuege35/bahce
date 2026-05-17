@@ -135,10 +135,10 @@ function renderBilesenler(){
   let toplamMaliyet=0;
   const baslik=`<div style="display:flex;align-items:center;gap:5px;padding:0 0 5px;border-bottom:2px solid var(--border);margin-bottom:2px">
     <span style="flex-shrink:0;width:36px"></span>
-    <span style="flex:1;font-size:10px;color:var(--yazi3);font-weight:600;min-width:0">MALZEME</span>
-    <span style="flex:0 0 58px;font-size:10px;color:var(--yazi3);font-weight:600">BİRİM</span>
-    <span style="flex:0 0 52px;font-size:10px;color:var(--yazi3);font-weight:600">MİKTAR</span>
-    <span style="flex:0 0 90px;text-align:right;font-size:10px;color:var(--yazi3);font-weight:600">FİYAT/MALİYET</span>
+    <span style="width:160px;flex-shrink:1;font-size:10px;color:var(--yazi3);font-weight:600;min-width:0">MALZEME</span>
+    <span style="width:62px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600">BİRİM</span>
+    <span style="width:60px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600">MİKTAR</span>
+    <span style="width:90px;flex-shrink:0;text-align:right;font-size:10px;color:var(--yazi3);font-weight:600">FİYAT/MALİYET</span>
     <span style="width:18px"></span>
   </div>`;
   const satirlar=bilesenler.map((b,i)=>{
@@ -152,16 +152,16 @@ function renderBilesenler(){
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
     return `<div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--krem2)">
       <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}" style="font-size:9px;padding:2px 3px;flex-shrink:0">${isStok?'HAM':'ARA'}</span>
-      <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="flex:1;min-width:0;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="width:160px;flex-shrink:1;min-width:0;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
         <option value="">Seçin...</option>
         ${secenekler}
       </select>
-      <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" style="flex:0 0 58px;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" style="width:62px;flex-shrink:0;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
         <option value="">—</option>
         ${birimler.map(bx=>`<option value="${bx.id}"${bx.id===b.birim_id?' selected':''}>${bx.kisaltma||bx.ad}</option>`).join('')}
       </select>
-      <input type="number" placeholder="Mkt" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="flex:0 0 52px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">
-      <div style="flex:0 0 90px;text-align:right;line-height:1.5">
+      <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="width:60px;flex-shrink:0;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+      <div style="width:90px;flex-shrink:0;text-align:right;line-height:1.5">
         <div style="font-size:10px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</div>
         <div style="font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
       </div>
