@@ -167,11 +167,15 @@ function renderBilesenler(){
       <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0;flex-shrink:0">×</button>
     </div>`;
   }).join('');
-  el.innerHTML=baslik+satirlar;
-  el.innerHTML+=`<div style="margin-top:10px;padding:8px 12px;background:var(--yesil-cok-ac);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+  const toplamHtml=`<div style="margin-top:10px;padding:8px 12px;background:var(--yesil-cok-ac);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
     <span style="font-size:12px;color:var(--yazi2)">Toplam Maliyet</span>
     <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
   </div>`;
+  // Scroll container ile sar — mobilden yatay kaydırma
+  el.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <div style="min-width:520px">${baslik+satirlar}</div>
+  </div>`+toplamHtml;
+
   if(_receteSeciliId){
     el.innerHTML+=`<div style="margin-top:10px"><button class="btn pri" onclick="receteKaydet()">💾 Reçeteyi Kaydet</button></div>`;
   }
