@@ -89,14 +89,14 @@ window.onay=function(mesaj,ikon){
     _onayResolve=res;
     document.getElementById('onay-mesaj').innerHTML=mesaj;
     document.getElementById('onay-ikon').textContent=ikon||'⚠️';
-    document.getElementById('modal-onay').style.display='flex';
+    modalAc('modal-onay');
   });
 };
 window._onayTamam=function(){
-  document.getElementById('modal-onay').style.display='none';
+  modalKapat('modal-onay');
   if(_onayResolve){_onayResolve(true);_onayResolve=null;}
 };
 window._onayIptal=function(){
-  document.getElementById('modal-onay').style.display='none';
+  modalKapat('modal-onay');
   if(_onayResolve){_onayResolve(false);_onayResolve=null;}
 };
