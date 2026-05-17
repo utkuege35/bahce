@@ -336,7 +336,6 @@ window.receteUrunSec = function(id) {
     return;
   }
   _receteSeciliId = id;
-  document.getElementById('um-mevcut-id').value = id;
   bilesenler = urunBilesenleri.filter(b => b.urun_id === id).map(b => ({...b}));
   receteAra();
 };
