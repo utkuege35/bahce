@@ -133,7 +133,15 @@ function renderBilesenler(){
     return;
   }
   let toplamMaliyet=0;
-  const baslik='';
+  const baslik=`<div style="display:flex;align-items:center;border-bottom:2px solid var(--border);padding-bottom:4px;margin-bottom:2px">
+    <div style="width:30px;flex-shrink:0"></div>
+    <div style="width:160px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">MALZEME</div>
+    <div style="width:70px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">BİRİM</div>
+    <div style="width:70px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">MİKTAR</div>
+    <div style="width:80px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px;text-align:right">FİYAT</div>
+    <div style="width:80px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px;text-align:right">MALİYET</div>
+    <div style="width:28px;flex-shrink:0"></div>
+  </div>`;
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
@@ -142,26 +150,30 @@ function renderBilesenler(){
     const carpan=birimTemelCarp(b.birim_id);
     const maliyet=birimFiyat*miktar*carpan;
     toplamMaliyet+=maliyet;
-    const kaynak=liste.find(x=>x.id===b.kaynak_id);
-    const kaynakAd=kaynak?kaynak.ad:(isStok?'Hammadde seçin...':'Ara ürün seçin...');
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
-    return `<div style="display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--krem2)">
-      <div style="display:flex;align-items:center;gap:6px">
-        <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}" style="font-size:9px;padding:2px 3px;flex-shrink:0">${isStok?'HAM':'ARA'}</span>
-        <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="flex:1;min-width:0;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+    return `<div style="display:flex;align-items:center;border-bottom:1px solid var(--krem2)">
+      <div style="width:30px;flex-shrink:0;padding:8px 4px 8px 0">
+        <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':'ARA'}</span>
+      </div>
+      <div style="width:160px;flex-shrink:0;padding:6px 4px">
+        <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">Seçin...</option>
           ${secenekler}
         </select>
-        <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0;flex-shrink:0">×</button>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;padding-left:42px">
-        <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" style="width:80px;flex-shrink:0;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
-          <option value="">Birim</option>
+      <div style="width:70px;flex-shrink:0;padding:6px 4px">
+        <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+          <option value="">—</option>
           ${birimler.map(bx=>`<option value="${bx.id}"${bx.id===b.birim_id?' selected':''}>${bx.kisaltma||bx.ad}</option>`).join('')}
         </select>
-        <input type="number" placeholder="Miktar" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="width:80px;flex-shrink:0;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">
-        <div style="flex:1;text-align:right;font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</div>
-        <div style="width:72px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
+      </div>
+      <div style="width:70px;flex-shrink:0;padding:6px 4px">
+        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+      </div>
+      <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right;font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</div>
+      <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
+      <div style="width:28px;flex-shrink:0;text-align:center">
+        <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0">×</button>
       </div>
     </div>`;
   }).join('');
@@ -170,7 +182,9 @@ function renderBilesenler(){
     <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
   </div>`;
   // Scroll container ile sar — mobilden yatay kaydırma
-  el.innerHTML=baslik+satirlar+toplamHtml;
+  el.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px">
+    <div style="min-width:518px">${baslik+satirlar}</div>
+  </div>`+toplamHtml;
 
   if(_receteSeciliId){
     el.innerHTML+=`<div style="margin-top:10px"><button class="btn pri" onclick="receteKaydet()">💾 Reçeteyi Kaydet</button></div>`;
