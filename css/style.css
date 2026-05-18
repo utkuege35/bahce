@@ -120,6 +120,7 @@ tr:hover td{background:var(--krem)}
 .tip-grup{background:var(--krem2);color:var(--yazi2);border:1px solid var(--border)}
 .tip-urun{background:var(--mavi-ac);color:var(--mavi)}
 .tip-ara{background:var(--mor-ac);color:var(--mor)}
+.tip-hizmet{background:#fff3e0;color:#e65100}
 .bilesen-item{display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:8px 10px;background:var(--krem);border-radius:8px;font-size:12px;border-left:3px solid var(--border)}
 .bilesen-item.bi-stok{border-left-color:var(--yesil-ac)}
 .bilesen-item.bi-ara{border-left-color:#c084fc}
