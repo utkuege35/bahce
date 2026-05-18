@@ -80,7 +80,7 @@ window.urunDuzenle=function(id){
 
 // BİLEŞENLER
 window.bilesenEkle=function(kaynak_tip){
-  bilesenler.push({id:'',urun_id:'',kaynak_tip,kaynak_id:'',miktar:1,birim_id:''});
+  bilesenler.push({id:'',urun_id:'',kaynak_tip,kaynak_id:'',miktar:1,birim_id:'',fiyat:''});
   renderBilesenler();
 };
 // Stok birim maliyeti hesapla
@@ -116,8 +116,9 @@ function araUrunBirimMaliyet(urunId){
     const carpan=birimTemelCarp(b.birim_id);
     if(b.kaynak_tip==='stok'){
       toplam+=stokBirimMaliyet(b.kaynak_id)*miktar*carpan;
+    }else if(b.kaynak_tip==='hizmet'){
+      toplam+=(parseFloat(b.fiyat)||0)*miktar*carpan;
     }else{
-      // Özyinelemeli ara ürün maliyeti
       toplam+=araUrunBirimMaliyet(b.kaynak_id)*miktar*carpan;
     }
   });
@@ -144,20 +145,22 @@ function renderBilesenler(){
   </div>`;
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
-    const liste=isStok?stoklar.filter(s=>s.tip==='stok'):urunler.filter(u=>u.tip==='ara_urun');
-    const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):araUrunBirimMaliyet(b.kaynak_id);
+    const isHizmet=b.kaynak_tip==='hizmet';
+    const liste=isStok?stoklar.filter(s=>s.tip==='stok'):isHizmet?(typeof giderKalemleri!=='undefined'?giderKalemleri.filter(k=>k.aktif!==false):[]):urunler.filter(u=>u.tip==='ara_urun');
+    const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):isHizmet?(parseFloat(b.fiyat)||0):araUrunBirimMaliyet(b.kaynak_id);
     const miktar=parseFloat(b.miktar)||0;
     const carpan=birimTemelCarp(b.birim_id);
     const maliyet=birimFiyat*miktar*carpan;
     toplamMaliyet+=maliyet;
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
+    const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':'Ara ürün seçin...';
     return `<div style="display:flex;align-items:center;border-bottom:1px solid var(--krem2)">
       <div style="width:30px;flex-shrink:0;padding:8px 4px 8px 0">
-        <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':'ARA'}</span>
+        <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':'ARA'}</span>
       </div>
       <div style="flex:1;min-width:120px;padding:6px 4px">
         <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
-          <option value="">Seçin...</option>
+          <option value="">${secPlaceholder}</option>
           ${secenekler}
         </select>
       </div>
@@ -170,7 +173,7 @@ function renderBilesenler(){
       <div style="width:70px;flex-shrink:0;padding:6px 4px">
         <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
       </div>
-      <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right;font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</div>
+      <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" style="width:100%;padding:4px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
       <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
       <div style="width:28px;flex-shrink:0;text-align:center">
         <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0">×</button>
@@ -234,7 +237,7 @@ window.kaydetUrun=async function(){
     await sb.from('urun_bilesenleri').delete().eq('urun_id',id);
     const gecerliBilesenler=bilesenler.filter(b=>b.kaynak_id&&b.miktar>0);
     if(gecerliBilesenler.length){
-      await sb.from('urun_bilesenleri').insert(gecerliBilesenler.map((b,si)=>({urun_id:id,kaynak_tip:b.kaynak_tip,kaynak_id:b.kaynak_id,miktar:parseFloat(b.miktar),birim_id:b.birim_id||null,sira:si})));
+      await sb.from('urun_bilesenleri').insert(gecerliBilesenler.map((b,si)=>({urun_id:id,kaynak_tip:b.kaynak_tip,kaynak_id:b.kaynak_id,miktar:parseFloat(b.miktar),birim_id:b.birim_id||null,fiyat:b.kaynak_tip==='hizmet'?(parseFloat(b.fiyat)||null):null,sira:si})));
     }
   }
   const {data:ud}=await sb.from('urunler').select('*').order('kod');if(ud)urunler=ud;
@@ -317,6 +320,7 @@ function _receteDetayHTML(u, grup) {
       <div style="display:flex;gap:6px">
         <button class="btn sm sec" onclick="event.stopPropagation();bilesenEkle('stok')">+ Hammadde</button>
         <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('ara_urun')">+ Ara Ürün</button>
+        <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('hizmet')">+ Hizmet</button>
       </div>
     </div>
     <div id="bilesen-listesi"></div>
