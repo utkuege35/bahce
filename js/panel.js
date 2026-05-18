@@ -306,47 +306,95 @@ window.renderIslemListe=function(){
   if(_ilSayfa>topSayfa)_ilSayfa=1;
   const pListe=liste.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
 
-  const rows=pListe.map(i=>{
-    const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===i.cari_id):null;
-    const logSayisi=(typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===i.id).length;
-    const acik=_ilAcikId===i.id;
-    const turAd={satis:'Satış',gider:'Gider',giris:'Giriş',uretim:'Üretim',kasa:'Kasa',uretim_sarfiyat:'Sarfiyat'}[i.tur]||i.tur;
-    const badgeCls=i.tur==='satis'?'g':['gider','giris'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u';
-    const stok=stoklar.find(s=>s.id===i.stok_id);
-    const urun=urunler.find(u=>u.id===i.urun_id);
-    const kalem=typeof giderKalemleri!=='undefined'?giderKalemleri.find(k=>k.id===i.gider_kalem_id):null;
-    function satirD(label,val,renk){if(!val&&val!==0)return '';return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--krem2)"><span style="font-size:11px;color:var(--yazi3);min-width:110px">${label}</span><span style="font-size:12px;font-weight:500;text-align:right;${renk?'color:'+renk:''}">${val}</span></div>`;}
-    const detayHTML=acik?`<tr><td colspan="10" style="padding:0"><div style="background:var(--krem);border-radius:0 0 8px 8px;padding:.75rem 1rem;border-top:2px solid var(--yesil-ac)">
-      ${satirD('Tarih',i.tarih)}
-      ${satirD('Tür','<span class="badge '+badgeCls+'">'+turAd+'</span>')}
-      ${stok?satirD('Stok','['+stok.kod+'] '+stok.ad):''}
-      ${urun?satirD('Ürün','['+urun.kod+'] '+urun.ad):''}
-      ${kalem?satirD('Gider Kalemi',kalem.ad):''}
-      ${i.miktar?satirD('Miktar',parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4})+' '+birimAd(i.birim_id)):''}
-      ${i.fiyat?satirD('Birim Fiyat',para(i.fiyat)):''}
-      ${i.tutar?satirD('Tutar',para(i.tutar),i.tur==='satis'?'var(--yesil)':'var(--turuncu)'):''}
-      ${i.odeme_tipi?satirD('Ödeme',i.odeme_tipi==='pesin'?'💵 Peşin':'📋 Cari'):''}
-      ${cari?satirD('Cari',cari.ad):''}
-      ${i.belge_no?satirD('Belge No',i.belge_no):''}
-      ${i.satir_not?satirD('Satır Notu',i.satir_not):''}
-      ${i.aciklama_not?satirD('Genel Not',i.aciklama_not):''}
-      ${satirD('Oluşturan',i.kullanici||'—')}
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${i.id}')">📋 Geçmiş${logSayisi>0?' ('+logSayisi+')':''}</button>
-        ${isAdmin?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏ Düzenle</button><button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕ Sil</button>`:''}
+  // Belge bazlı gruplama
+  // belge_id varsa grupla, yoksa her satır kendi belgesi
+  const belgeler = [];
+  const belgeMap = {};
+  pListe.forEach(i => {
+    const key = i.belge_id || i.id;
+    if (!belgeMap[key]) {
+      belgeMap[key] = {key, satirlar: [], tarih: i.tarih, tur: i.tur, cari_id: i.cari_id, odeme_tipi: i.odeme_tipi, kullanici: i.kullanici, aciklama: i.aciklama, belge_no: i.belge_no, aciklama_not: i.aciklama_not, ts: i.ts};
+      belgeler.push(belgeMap[key]);
+    }
+    belgeMap[key].satirlar.push(i);
+  });
+
+  const rows = belgeler.map(belge => {
+    const acik = _ilAcikId === belge.key;
+    const satirlar = belge.satirlar;
+    const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
+    const topMiktar = satirlar.length === 1 ? (satirlar[0].miktar ? parseFloat(satirlar[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(satirlar[0].birim_id) : '') : satirlar.length + ' kalem';
+    const turler = [...new Set(satirlar.map(i => i.tur))];
+    const turAd = turler.length === 1 ? ({satis:'Satış',gider:'Gider',giris:'Giriş',uretim:'Üretim',kasa:'Kasa',uretim_sarfiyat:'Sarfiyat'}[turler[0]] || turler[0]) : 'Karma';
+    const badgeCls = turler[0]==='satis'?'g':['gider','giris'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
+    const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
+    const aciklama = satirlar.length === 1 ? (satirlar[0].aciklama || satirlar[0].kat || '') : (satirlar[0].aciklama || '') + (satirlar.length > 1 ? ` +${satirlar.length-1}` : '');
+    const tutarRenk = turler[0]==='satis'?'var(--yesil)':['gider','giris'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
+
+    // Detay satırları
+    const detaySatirlar = satirlar.map((i, si) => {
+      const stok = stoklar.find(s => s.id === i.stok_id);
+      const urun = urunler.find(u => u.id === i.urun_id);
+      const kalem = typeof giderKalemleri !== 'undefined' ? giderKalemleri.find(k => k.id === i.gider_kalem_id) : null;
+      const ad = stok ? stok.ad : urun ? urun.ad : kalem ? kalem.ad : i.aciklama || '—';
+      const mik = i.miktar ? parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}) + ' ' + birimAd(i.birim_id) : '—';
+      const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
+      return `<tr style="background:var(--krem);font-size:11px">
+        <td style="padding:6px 8px;color:var(--yazi3)">${si+1}</td>
+        <td colspan="2" style="padding:6px 8px">${ad}${i.satir_not?`<div style="color:var(--yazi3);font-size:10px">${i.satir_not}</div>`:''}</td>
+        <td style="padding:6px 8px"></td>
+        <td style="padding:6px 8px;text-align:right;white-space:nowrap">${mik}</td>
+        <td style="padding:6px 8px;text-align:right;font-weight:500;white-space:nowrap;color:${iturRenk}">${i.tutar?para(i.tutar):''}</td>
+        <td style="padding:6px 8px;font-size:10px">${i.fiyat?para(i.fiyat)+'/br':''}${i.odeme_tipi==='cari'?'📋':'💵'}</td>
+        <td colspan="3" style="padding:6px 8px;text-align:right;white-space:nowrap">
+          ${isAdmin?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button> <button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
+        </td>
+      </tr>`;
+    }).join('');
+
+    const logSayisi = satirlar.reduce((s,i) => s + (typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===i.id).length, 0);
+    const altSatir = acik ? `<tr><td colspan="10" style="padding:0">
+      <div style="background:var(--krem);border-top:2px solid var(--yesil-ac);padding:0">
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="background:var(--krem2);font-size:10px;color:var(--yazi3)">
+            <th style="padding:4px 8px;text-align:left;width:30px">#</th>
+            <th style="padding:4px 8px;text-align:left" colspan="2">MALZEME / ÜRÜN</th>
+            <th style="padding:4px 8px"></th>
+            <th style="padding:4px 8px;text-align:right">MİKTAR</th>
+            <th style="padding:4px 8px;text-align:right">TUTAR</th>
+            <th style="padding:4px 8px">ÖDEME/FİYAT</th>
+            <th style="padding:4px 8px" colspan="3"></th>
+          </tr>
+          ${detaySatirlar}
+        </table>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
+          <div style="display:flex;gap:8px">
+            <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
+            ${isAdmin&&satirlar.length===1?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button><button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
+          </div>
+          <span style="font-size:13px;font-weight:600;color:var(--yesil)">Toplam: ${para(topTutar)}</span>
+        </div>
       </div>
-    </div></td></tr>`:'';
-    return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="ilToggle('${i.id}')">
-      <td style="white-space:nowrap;font-size:12px">${i.tarih||''}</td>
+    </td></tr>` : '';
+
+    return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="ilToggle('${belge.key}')">
+      <td style="white-space:nowrap;font-size:12px">${belge.tarih||''}</td>
       <td><span class="badge ${badgeCls}">${turAd}</span></td>
-      <td style="font-size:11px;max-width:180px"><div>${i.aciklama||i.kat||''}</div>${i.satir_not?`<div style="color:var(--yazi3);font-size:10px">${i.satir_not}</div>`:''}</td>
+      <td style="font-size:11px;max-width:180px">
+        <div>${aciklama}</div>
+        ${belge.belge_no?`<div style="color:var(--yazi3);font-size:10px">📄 ${belge.belge_no}</div>`:''}
+        ${belge.aciklama_not?`<div style="color:var(--yazi3);font-size:10px;font-style:italic">${belge.aciklama_not}</div>`:''}
+      </td>
       <td style="font-size:11px">${cari?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--krem2);white-space:nowrap">${cari.ad}</span>`:''}</td>
-      <td style="text-align:right;font-size:11px;white-space:nowrap">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+birimAd(i.birim_id):''}</td>
-      <td style="text-align:right;font-weight:500;white-space:nowrap;color:${i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)'}">${i.tutar?para(i.tutar):''}</td>
-      <td style="font-size:10px;white-space:nowrap">${i.odeme_tipi==='cari'?'📋 Cari':i.odeme_tipi==='pesin'?'💵 Peşin':''}</td>
-      <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${i.kullanici||''}</td>
-      <td colspan="2" style="text-align:right"><span style="font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</span></td>
-    </tr>${detayHTML}`;
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${topMiktar}</td>
+      <td style="text-align:right;font-weight:500;white-space:nowrap;color:${tutarRenk}">${para(topTutar)}</td>
+      <td style="font-size:10px;white-space:nowrap">${belge.odeme_tipi==='cari'?'📋 Cari':belge.odeme_tipi==='pesin'?'💵 Peşin':''}</td>
+      <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${belge.kullanici||''}</td>
+      <td colspan="2" style="text-align:right">
+        ${satirlar.length>1?`<span style="font-size:10px;background:var(--krem2);padding:1px 6px;border-radius:10px;color:var(--yazi3)">${satirlar.length} satır</span> `:''}
+        <span style="font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</span>
+      </td>
+    </tr>${altSatir}`;
   }).join('');
     document.getElementById('il-tb').innerHTML=rows||'<tr><td colspan="10" class="bos">İşlem bulunamadı</td></tr>';
 
