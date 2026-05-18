@@ -341,12 +341,13 @@ window.renderIslemListe=function(){
       const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
       return `<tr style="background:var(--krem);font-size:11px">
         <td style="padding:6px 8px;color:var(--yazi3)">${si+1}</td>
-        <td colspan="2" style="padding:6px 8px">${ad}${i.satir_not?`<div style="color:var(--yazi3);font-size:10px">${i.satir_not}</div>`:''}</td>
-        <td style="padding:6px 8px"></td>
-        <td style="padding:6px 8px;text-align:right;white-space:nowrap">${mik}</td>
+        <td style="padding:6px 8px">${ad}</td>
+        <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi3)">${birimAd(i.birim_id)||'—'}</td>
+        <td style="padding:6px 8px;text-align:right;white-space:nowrap">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}):''}</td>
+        <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi2)">${i.fiyat?para(i.fiyat):'—'}</td>
         <td style="padding:6px 8px;text-align:right;font-weight:500;white-space:nowrap;color:${iturRenk}">${i.tutar?para(i.tutar):''}</td>
-        <td style="padding:6px 8px;font-size:10px">${i.fiyat?para(i.fiyat)+'/br':''}${i.odeme_tipi==='cari'?'📋':'💵'}</td>
-        <td colspan="3" style="padding:6px 8px;text-align:right;white-space:nowrap">
+        <td style="padding:6px 8px;font-size:10px;color:var(--yazi3)">${i.satir_not||''}</td>
+        <td colspan="2" style="padding:6px 8px;text-align:right;white-space:nowrap">
           ${isAdmin?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button> <button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
         </td>
       </tr>`;
@@ -357,13 +358,14 @@ window.renderIslemListe=function(){
       <div style="background:var(--krem);border-top:2px solid var(--yesil-ac);padding:0">
         <table style="width:100%;border-collapse:collapse">
           <tr style="background:var(--krem2);font-size:10px;color:var(--yazi3)">
-            <th style="padding:4px 8px;text-align:left;width:30px">#</th>
-            <th style="padding:4px 8px;text-align:left" colspan="2">MALZEME / ÜRÜN</th>
-            <th style="padding:4px 8px"></th>
+            <th style="padding:4px 8px;text-align:left;width:24px">#</th>
+            <th style="padding:4px 8px;text-align:left">MALZEME / ÜRÜN</th>
+            <th style="padding:4px 8px;text-align:right">BİRİM</th>
             <th style="padding:4px 8px;text-align:right">MİKTAR</th>
+            <th style="padding:4px 8px;text-align:right">FİYAT</th>
             <th style="padding:4px 8px;text-align:right">TUTAR</th>
-            <th style="padding:4px 8px">ÖDEME/FİYAT</th>
-            <th style="padding:4px 8px" colspan="3"></th>
+            <th style="padding:4px 8px">AÇIKLAMA</th>
+            <th style="padding:4px 8px" colspan="2"></th>
           </tr>
           ${detaySatirlar}
         </table>
