@@ -135,7 +135,7 @@ function renderBilesenler(){
   let toplamMaliyet=0;
   const baslik=`<div style="display:flex;align-items:center;border-bottom:2px solid var(--border);padding-bottom:4px;margin-bottom:2px">
     <div style="width:30px;flex-shrink:0"></div>
-    <div style="width:160px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">MALZEME</div>
+    <div style="flex:1;min-width:120px;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">MALZEME</div>
     <div style="width:70px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">BİRİM</div>
     <div style="width:70px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px">MİKTAR</div>
     <div style="width:80px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px;text-align:right">FİYAT</div>
@@ -155,7 +155,7 @@ function renderBilesenler(){
       <div style="width:30px;flex-shrink:0;padding:8px 4px 8px 0">
         <span class="tip-chip ${isStok?'tip-stok':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':'ARA'}</span>
       </div>
-      <div style="width:160px;flex-shrink:0;padding:6px 4px">
+      <div style="flex:1;min-width:120px;padding:6px 4px">
         <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">Seçin...</option>
           ${secenekler}
@@ -182,8 +182,8 @@ function renderBilesenler(){
     <span style="font-size:14px;font-weight:600;color:var(--yesil)">${para(toplamMaliyet)}</span>
   </div>`;
   // Scroll container ile sar — mobilden yatay kaydırma
-  el.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px">
-    <div style="min-width:518px">${baslik+satirlar}</div>
+  el.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <div style="min-width:518px;display:inline-block;width:100%;max-width:700px">${baslik+satirlar}</div>
   </div>`+toplamHtml;
 
   if(_receteSeciliId){
