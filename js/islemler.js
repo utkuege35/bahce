@@ -190,6 +190,7 @@ window.kaydetHammadde=async function(){
   const tarih=document.getElementById('hm-tarih').value;
   const an=document.getElementById('hm-not').value;
   const belge=document.getElementById('hm-belge')?.value||null;
+  const belgeId=crypto.randomUUID();
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=hmSatirListesi.filter(s=>(s.secimId||s.manuel)&&parseFloat(s.tutar)>0||(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0));
   if(!gecerli.length){bil('En az bir satır!','err');return;}
@@ -207,18 +208,18 @@ window.kaydetHammadde=async function(){
     let islemData=null;
     if(_hmTur==='malzeme'&&s.secimId){
       const kart=stoklar.find(x=>x.id===s.secimId);
-      const {data:id}=await sb.from('islemler').insert({tur:'giris',tarih,stok_id:s.secimId,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:`${kart?.ad||''} alışı`,kat:'Alış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      const {data:id}=await sb.from('islemler').insert({tur:'giris',tarih,stok_id:s.secimId,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:`${kart?.ad||''} alışı`,kat:'Alış',aciklama_not:an,belge_no:belge,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
       if(hFiy>0){const yeni=hFiy/birimTemelCarp(s.birimId);const eski=parseFloat(kart?.maliyet||0);await sb.from('stoklar').update({maliyet:eski>0?(eski+yeni)/2:yeni}).eq('id',s.secimId);}
       if(s.birimId&&s.secimId)birimHafizaYaz(s.secimId,s.birimId);
     }else if(_hmTur==='hizmet'){
       const kalem=giderKalemleri.find(k=>k.id===s.secimId);
       const merkez_id=kalem?.merkez_id||null;
-      const {data:id}=await sb.from('islemler').insert({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:kalem?.ad||'Hizmet alımı',kat:kalem?.ad||'Hizmet',gider_kalem_id:s.secimId||null,aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      const {data:id}=await sb.from('islemler').insert({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:kalem?.ad||'Hizmet alımı',kat:kalem?.ad||'Hizmet',gider_kalem_id:s.secimId||null,aciklama_not:an,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
     }else{
       const merkez_id=s.merkez_id||null;
-      const {data:id}=await sb.from('islemler').insert({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:s.manuel||'Diğer alım',kat:'Diğer',aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      const {data:id}=await sb.from('islemler').insert({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:hFiy,tutar:tut,aciklama:s.manuel||'Diğer alım',kat:'Diğer',aciklama_not:an,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
     }
     if(odeme==='cari'&&s.cari_id&&tut>0){
@@ -363,6 +364,7 @@ window.kaydetSatis=async function(){
   const tarih=document.getElementById('st-tarih').value;const tip=document.getElementById('st-tip').value;
   const an=document.getElementById('st-not').value;
   const belge=document.getElementById('st-belge')?.value||null;
+  const belgeId=crypto.randomUUID();
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=tip==='diger'
     ?stSatirListesi.filter(s=>s.manuel&&parseFloat(s.tutar)>0||(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0))
@@ -384,18 +386,18 @@ window.kaydetSatis=async function(){
       const u=urunler.find(x=>x.id===s.secimId);
       if((u?.stok||0)<mik){if(!(await onay(`${u?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`,'⚠️')))return;}
       await sb.from('urunler').update({stok:(u.stok||0)-mik}).eq('id',s.secimId);
-      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,urun_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${u?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,urun_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${u?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
       if(s.birimId)birimHafizaYaz(s.secimId,s.birimId);
     }else if(tip==='stok'){
       const sk=stoklar.find(x=>x.id===s.secimId);
       if(stokMiktar(s.secimId)<mik*birimTemelCarp(bId)){if(!(await onay(`${sk?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`,'⚠️')))return;}
-      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,stok_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${sk?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,stok_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${sk?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
       if(s.birimId)birimHafizaYaz(s.secimId,s.birimId);
     }else{
       const merkez_id=s.merkez_id||null;
-      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:s.manuel||'Satış',kat:'Satış',aciklama_not:an,belge_no:belge,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
+      const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:s.manuel||'Satış',kat:'Satış',aciklama_not:an,belge_no:belge,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,merkez_id,kullanici:aktifKullanici?.ad||'',ts:Date.now()+n}).select();
       islemData=id;
     }
     if(odeme==='cari'&&s.cari_id&&tut>0){
