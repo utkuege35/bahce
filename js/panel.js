@@ -70,7 +70,7 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
     }]
   });
 }
-let _ilSira='tarih-azalan',_ilSayfa=1;
+let _ilSira='tarih-azalan',_ilSayfa=1,_ilAcikId=null;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
 
@@ -309,25 +309,46 @@ window.renderIslemListe=function(){
   const rows=pListe.map(i=>{
     const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===i.cari_id):null;
     const logSayisi=(typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===i.id).length;
-    return `<tr>
+    const acik=_ilAcikId===i.id;
+    const turAd={satis:'Satış',gider:'Gider',giris:'Giriş',uretim:'Üretim',kasa:'Kasa',uretim_sarfiyat:'Sarfiyat'}[i.tur]||i.tur;
+    const badgeCls=i.tur==='satis'?'g':['gider','giris'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u';
+    const stok=stoklar.find(s=>s.id===i.stok_id);
+    const urun=urunler.find(u=>u.id===i.urun_id);
+    const kalem=typeof giderKalemleri!=='undefined'?giderKalemleri.find(k=>k.id===i.gider_kalem_id):null;
+    function satirD(label,val,renk){if(!val&&val!==0)return '';return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--krem2)"><span style="font-size:11px;color:var(--yazi3);min-width:110px">${label}</span><span style="font-size:12px;font-weight:500;text-align:right;${renk?'color:'+renk:''}">${val}</span></div>`;}
+    const detayHTML=acik?`<tr><td colspan="10" style="padding:0"><div style="background:var(--krem);border-radius:0 0 8px 8px;padding:.75rem 1rem;border-top:2px solid var(--yesil-ac)">
+      ${satirD('Tarih',i.tarih)}
+      ${satirD('Tür','<span class="badge '+badgeCls+'">'+turAd+'</span>')}
+      ${stok?satirD('Stok','['+stok.kod+'] '+stok.ad):''}
+      ${urun?satirD('Ürün','['+urun.kod+'] '+urun.ad):''}
+      ${kalem?satirD('Gider Kalemi',kalem.ad):''}
+      ${i.miktar?satirD('Miktar',parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4})+' '+birimAd(i.birim_id)):''}
+      ${i.fiyat?satirD('Birim Fiyat',para(i.fiyat)):''}
+      ${i.tutar?satirD('Tutar',para(i.tutar),i.tur==='satis'?'var(--yesil)':'var(--turuncu)'):''}
+      ${i.odeme_tipi?satirD('Ödeme',i.odeme_tipi==='pesin'?'💵 Peşin':'📋 Cari'):''}
+      ${cari?satirD('Cari',cari.ad):''}
+      ${i.belge_no?satirD('Belge No',i.belge_no):''}
+      ${i.satir_not?satirD('Satır Notu',i.satir_not):''}
+      ${i.aciklama_not?satirD('Genel Not',i.aciklama_not):''}
+      ${satirD('Oluşturan',i.kullanici||'—')}
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${i.id}')">📋 Geçmiş${logSayisi>0?' ('+logSayisi+')':''}</button>
+        ${isAdmin?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏ Düzenle</button><button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕ Sil</button>`:''}
+      </div>
+    </div></td></tr>`:'';
+    return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="ilToggle('${i.id}')">
       <td style="white-space:nowrap;font-size:12px">${i.tarih||''}</td>
-      <td><span class="badge ${i.tur==='satis'?'g':['gider','giris'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u'}">${{satis:'Satış',gider:'Gider',giris:'Giriş',uretim:'Üretim',kasa:'Kasa',uretim_sarfiyat:'Sarfiyat'}[i.tur]||i.tur}</span></td>
-      <td style="font-size:11px;max-width:180px">
-        <div>${i.aciklama||i.kat||''}</div>
-        ${i.satir_not?`<div style="color:var(--yazi3);font-size:10px">${i.satir_not}</div>`:''}
-        ${i.aciklama_not?`<div style="color:var(--yazi3);font-size:10px;font-style:italic">${i.aciklama_not}</div>`:''}
-      </td>
+      <td><span class="badge ${badgeCls}">${turAd}</span></td>
+      <td style="font-size:11px;max-width:180px"><div>${i.aciklama||i.kat||''}</div>${i.satir_not?`<div style="color:var(--yazi3);font-size:10px">${i.satir_not}</div>`:''}</td>
       <td style="font-size:11px">${cari?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--krem2);white-space:nowrap">${cari.ad}</span>`:''}</td>
       <td style="text-align:right;font-size:11px;white-space:nowrap">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+birimAd(i.birim_id):''}</td>
       <td style="text-align:right;font-weight:500;white-space:nowrap;color:${i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)'}">${i.tutar?para(i.tutar):''}</td>
       <td style="font-size:10px;white-space:nowrap">${i.odeme_tipi==='cari'?'📋 Cari':i.odeme_tipi==='pesin'?'💵 Peşin':''}</td>
       <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${i.kullanici||''}</td>
-      <td><button class="btn sm" onclick="islemDetayAc('${i.id}')" title="Detay">🔍</button></td>
-      <td><button class="btn sm" onclick="islemGecmisAc('${i.id}')">📋${logSayisi>0?` <span style="background:var(--sari-ac);color:var(--sari);border-radius:10px;padding:0 4px;font-size:10px">${logSayisi}</span>`:''}</button></td>
-      ${isAdmin?`<td style="white-space:nowrap"><button class="btn sm" onclick="islemDuzenleAc('${i.id}')">✏</button> <button class="btn sm ghost" onclick="islemSilListe('${i.id}')">✕</button></td>`:'<td></td>'}
-    </tr>`;
+      <td colspan="2" style="text-align:right"><span style="font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</span></td>
+    </tr>${detayHTML}`;
   }).join('');
-  document.getElementById('il-tb').innerHTML=rows||'<tr><td colspan="10" class="bos">İşlem bulunamadı</td></tr>';
+    document.getElementById('il-tb').innerHTML=rows||'<tr><td colspan="10" class="bos">İşlem bulunamadı</td></tr>';
 
   let sayf='';
   if(topSayfa>1){
@@ -340,6 +361,7 @@ window.renderIslemListe=function(){
   document.getElementById('il-sayfalama').innerHTML=sayf;
 };
 
+window.ilToggle=function(id){_ilAcikId=_ilAcikId===id?null:id;renderIslemListe();};
 window.ilSirala=function(alan){_ilSira=_ilSira===alan+'-azalan'?alan+'-artan':alan+'-azalan';renderIslemListe();};
 window.ilFiltreTemizle=function(){
   ['il-ara','il-bas','il-bit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
