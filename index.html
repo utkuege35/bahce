@@ -105,6 +105,7 @@
       <button onclick="gp('cari')">Cari & Personel Kartları</button>
       <button onclick="gp('birimler')">Birimler</button>
       <button onclick="gp('merkezler')">Masraf & Gelir Merkezleri</button>
+      <button onclick="gp('isyerleri')">Şirket & İşyerleri</button>
     </div>
   </div>
   <button onclick="gp('rapor')">Rapor</button>
@@ -530,8 +531,18 @@
     <div id="cari-liste"></div>
   </div>
 </div>
+<div id="isyerleri" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Şirket & İşyerleri</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn sm sec" onclick="sirketModalAc()">+ Şirket</button>
+      <button class="btn sm pri" onclick="isyeriModalAc()">+ İşyeri</button>
+    </div>
+  </div>
+  <div id="isyerleri-liste"></div>
+</div>
 <div id="kullanicilar" class="page">
-  <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem"><button class="btn pri sm" onclick="modalAc('modal-kullanici')">+ Yeni Kullanıcı</button></div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem"><button class="btn pri sm" onclick="yeniKullaniciModalAc()">+ Yeni Kullanıcı</button></div>
   <div id="kullanici-liste"></div>
 </div>
 </div>
@@ -906,9 +917,43 @@
         </div>
       </div>
     </div>
+      <div id="km-isyeri-wrap" style="margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">İşyeri Yetkileri <span style="font-weight:400">(Admin değilse geçerli)</span></div>
+        <div id="km-isyeri-liste" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-kullanici')">İptal</button><button class="btn pri" onclick="kullaniciyiKaydet()">Kaydet</button></div>
   </div>
 </div>
+
+<!-- MODAL: ŞİRKET -->
+<div id="modal-sirket" class="overlay">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><h3 id="srk-title">Şirket</h3><button class="btn sm" onclick="modalKapat('modal-sirket')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="srk-id">
+      <div class="fg"><label>Şirket Adı</label><input type="text" id="srk-ad" placeholder="Şirket adını girin"></div>
+      <div class="fg"><label>Kısa Kod</label><input type="text" id="srk-kod" placeholder="SVR"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-sirket')">İptal</button><button class="btn pri" onclick="sirketKaydet()">Kaydet</button></div>
+  </div>
+</div>
+
+<!-- MODAL: İŞYERİ -->
+<div id="modal-isyeri" class="overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr"><h3 id="isy-title">İşyeri</h3><button class="btn sm" onclick="modalKapat('modal-isyeri')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="isy-id">
+      <div class="fg"><label>Bağlı Şirket</label><select id="isy-sirket-id"><option value="">— Şirket seçin —</option></select></div>
+      <div class="fg"><label>İşyeri Adı</label><input type="text" id="isy-ad" placeholder="İşyeri adını girin"></div>
+      <div class="fg"><label>Kısa Kod</label><input type="text" id="isy-kod" placeholder="MRK"></div>
+      <div class="fg"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="isy-aktif" checked> Aktif</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-isyeri')">İptal</button><button class="btn pri" onclick="isyeriKaydet()">Kaydet</button></div>
+  </div>
+</div>
+
 <!-- MODAL: PROFİL -->
 <div id="modal-profil" class="overlay">
   <div class="modal">
@@ -944,6 +989,7 @@
 <script src="js/panel.js"></script>
 <script src="js/birimler.js"></script>
 <script src="js/kullanicilar.js"></script>
+<script src="js/isyerleri.js"></script>
 <script src="js/giderkalemler.js"></script>
 <script src="js/merkezler.js"></script>
 <script src="js/cari.js"></script>
