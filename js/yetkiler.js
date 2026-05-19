@@ -394,3 +394,18 @@ window.kulYetkiKaydet = async function() {
   renderKulYetkiler();
   bil('Yetkiler kaydedildi ✓');
 };
+
+// Sütun başlığına tıklayınca tüm o eylemi seç/kaldır
+window.kySutunSec = function(eylemId, th) {
+  const checklar = EKRANLAR.map(e => document.getElementById(`ky-${e.id}-${eylemId}`)).filter(Boolean);
+  const tumSecili = checklar.every(ch => ch.checked || ch.disabled);
+  checklar.forEach(ch => { if (!ch.disabled) ch.checked = !tumSecili; });
+  th.style.background = !tumSecili ? 'var(--yesil-cok-ac)' : '';
+};
+
+window.ysSutunSec = function(eylemId, th) {
+  const checklar = EKRANLAR.map(e => document.getElementById(`ys-${e.id}-${eylemId}`)).filter(Boolean);
+  const tumSecili = checklar.every(ch => ch.checked || ch.disabled);
+  checklar.forEach(ch => { if (!ch.disabled) ch.checked = !tumSecili; });
+  th.style.background = !tumSecili ? 'var(--yesil-cok-ac)' : '';
+};
