@@ -83,12 +83,14 @@ function uygulamaAc(){
     document.getElementById('nav-kullanicilar').style.display='';
     document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     document.getElementById('nav-yetkiler')?.style && (document.getElementById('nav-yetkiler').style.display='');
+    document.getElementById('nav-kul-yetkiler')?.style && (document.getElementById('nav-kul-yetkiler').style.display='');
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
     // Kullanıcılar ve Şirket&İşyerleri butonlarını gizle
     document.getElementById('nav-kullanicilar').style.display='none';
     const navIsy=document.getElementById('nav-isyerleri');if(navIsy)navIsy.style.display='none';
     const navYtk=document.getElementById('nav-yetkiler');if(navYtk)navYtk.style.display='none';
+    const navKY=document.getElementById('nav-kul-yetkiler');if(navKY)navKY.style.display='none';
     // Yetki bazlı nav butonlarını göster/gizle
     const yetkiler=aktifKullanici.yetkiler||{};
     const navMap={
@@ -106,7 +108,9 @@ function uygulamaAc(){
       const oc=btn.getAttribute('onclick')||'';
       for(const [alan,gpc] of Object.entries(navMap)){
         if(oc.includes(gpc)){
-          btn.style.display=yetkiler[alan]?'':'none';
+          // Eski sayfa yetkisi VEYA yeni crud_yetkiler görüntüleme yetkisi
+          const crudGoruntule=typeof yetkiVar==='function'?yetkiVar(alan,'goruntule'):false;
+          btn.style.display=(yetkiler[alan]||crudGoruntule)?'':'none';
           break;
         }
       }
@@ -254,6 +258,7 @@ window.gp=function(id){
   if(id==='hizmetler')renderGiderKalemTree();
   if(id==='cari')renderCari();if(id==='islem-liste')renderIslemListe();
   if(id==='rapor')renderRapor();if(id==='kullanicilar')renderKullanicilar();if(id==='isyerleri'&&typeof renderIsyerleri==='function')renderIsyerleri();if(id==='yetkiler'&&typeof renderYetkiler==='function'){sablonYetkiTabloOlustur();renderYetkiler();}
+  if(id==='kul-yetkiler'&&typeof renderKulYetkiler==='function')renderKulYetkiler();
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
