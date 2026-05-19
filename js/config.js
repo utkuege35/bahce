@@ -149,11 +149,14 @@ window.yetkiVar = function(ekran, eylem) {
   // Admin her şeye yetkili
   if (aktifKullanici?.rol === 'admin') return true;
 
-  // Aktif işyeri için kullanıcının şablonlarını bul
   const isyeriId = aktifIsyeri?.id;
   const kulId = aktifKullanici?.id;
 
-  // Önce işyeri bazlı şablon ata, yoksa genel (isyeri_id null) şablona bak
+  // 1. Kullanıcı bazlı direkt crud_yetkiler kontrolü
+  const crudYetkiler = aktifKullanici?.crud_yetkiler;
+  if (crudYetkiler?.[ekran]?.[eylem] === true) return true;
+
+  // 2. Şablon bazlı yetki kontrolü (işyeri bazlı + genel)
   const atanmis = kullaniciYetkiSablonlari.filter(k =>
     k.kullanici_id === kulId &&
     (k.isyeri_id === isyeriId || !k.isyeri_id)
@@ -162,8 +165,7 @@ window.yetkiVar = function(ekran, eylem) {
   for (const atama of atanmis) {
     const sablon = yetkiSablonlari.find(s => s.id === atama.sablon_id);
     if (!sablon) continue;
-    const ekranYetki = sablon.yetkiler?.[ekran];
-    if (ekranYetki?.[eylem] === true) return true;
+    if (sablon.yetkiler?.[ekran]?.[eylem] === true) return true;
   }
   return false;
 };
