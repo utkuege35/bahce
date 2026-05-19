@@ -154,7 +154,12 @@ window.yetkiVar = function(ekran, eylem) {
 
   // 1. Kullanıcı bazlı direkt crud_yetkiler kontrolü
   const crudYetkiler = aktifKullanici?.crud_yetkiler;
-  if (crudYetkiler?.[ekran]?.[eylem] === true) return true;
+  if (crudYetkiler?.[ekran]?.[eylem] === true) {
+    // İşyeri kısıtı var mı?
+    const crudIsyeriler = aktifKullanici?.crud_isyeriler;
+    if (!crudIsyeriler || !crudIsyeriler.length) return true; // Tüm işyerleri
+    if (crudIsyeriler.includes(aktifIsyeri?.id)) return true; // Bu işyeri yetkili
+  }
 
   // 2. Şablon bazlı yetki kontrolü (işyeri bazlı + genel)
   const atanmis = kullaniciYetkiSablonlari.filter(k =>
