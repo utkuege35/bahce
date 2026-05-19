@@ -91,3 +91,30 @@ window.onay=function(mesaj,ikon){
 };
 window._onayTamam=function(){modalKapat('modal-onay');if(_onayResolve){_onayResolve(true);_onayResolve=null;}};
 window._onayIptal=function(){modalKapat('modal-onay');if(_onayResolve){_onayResolve(false);_onayResolve=null;}};
+
+// ===== MODAL MOD (görüntüle / düzenle) =====
+window.modalMod = function(modalId, mod) {
+  const el = document.getElementById(modalId); if (!el) return;
+  const inputs = el.querySelectorAll('input:not([type=hidden]), select, textarea');
+  const kaydetBtn = el.querySelector('.modal-footer .btn.pri');
+  const goruntuleChip = el.querySelector('.modal-mod-chip');
+  
+  if (mod === 'goruntule') {
+    inputs.forEach(i => { i.disabled = true; i.style.opacity = '0.7'; });
+    if (kaydetBtn) kaydetBtn.style.display = 'none';
+    if (!goruntuleChip) {
+      const hdr = el.querySelector('.modal-hdr h3');
+      if (hdr) {
+        const chip = document.createElement('span');
+        chip.className = 'modal-mod-chip';
+        chip.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:10px;background:var(--krem2);color:var(--yazi3);margin-left:8px;font-weight:400';
+        chip.textContent = '👁 Görüntüleme';
+        hdr.appendChild(chip);
+      }
+    }
+  } else {
+    inputs.forEach(i => { i.disabled = false; i.style.opacity = ''; });
+    if (kaydetBtn) kaydetBtn.style.display = '';
+    if (goruntuleChip) goruntuleChip.remove();
+  }
+};
