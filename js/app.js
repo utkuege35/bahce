@@ -150,7 +150,7 @@ async function baslat(){
   realtimeKanallar=[stokK,urunK,islemK];
   doldurBirimSecleri();doldurStokFil();doldurUrunFil();doldurIslemSecleri();doldurMerkezSecleri();
   await cariYukle();
-  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();kontolUyari();
+  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();kontolUyari();
   // Satır listelerini cari yüklendikten sonra yenile
   if(hmSatirListesi.length)hmSatirRender();
   if(stSatirListesi.length)stSatirRender();
@@ -235,7 +235,7 @@ window.gp=function(id){
   if(id==='merkezler')renderMerkezler();
   if(id==='hizmetler')renderGiderKalemTree();
   if(id==='cari')renderCari();if(id==='islem-liste')renderIslemListe();
-  if(id==='rapor')renderRapor();if(id==='kullanicilar')renderKullanicilar();
+  if(id==='rapor')renderRapor();if(id==='kullanicilar')renderKullanicilar();if(id==='isyerleri'&&typeof renderIsyerleri==='function')renderIsyerleri();
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
