@@ -28,6 +28,7 @@ window.yeniKullaniciModalAc=function(){
   _doldurKasaSelect('');
   _yetkiDoldur({});
   if(typeof doldurKmIsyeriListe==='function')doldurKmIsyeriListe([]);
+  _kmCrudTabloOlustur();_kmCrudDoldur({});
   modalAc('modal-kullanici');
 };
 
@@ -48,11 +49,13 @@ window.kullaniciyiKaydet=async function(){
       const {data:sd,error:se}=await sb.auth.signUp({email,password:sifre});
       if(se){bil('Hata: '+se.message,'err');return;}
       const isyeriYetkiler=typeof isyeriYetkilerOku==='function'?isyeriYetkilerOku():[];
-      await sb.from('kullanicilar').insert({id:sd?.user?.id||uid(),ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler});
+      const crudYetkiler=_kmCrudOku();
+      await sb.from('kullanicilar').insert({id:sd?.user?.id||uid(),ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler,crud_yetkiler:crudYetkiler});
       bil(`${ad} ${soyad} eklendi ✓`);
     }else{
       const isyeriYetkiler=typeof isyeriYetkilerOku==='function'?isyeriYetkilerOku():[];
-      await sb.from('kullanicilar').update({ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler}).eq('id',mUid);
+      const crudYetkiler=_kmCrudOku();
+      await sb.from('kullanicilar').update({ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler,crud_yetkiler:crudYetkiler}).eq('id',mUid);
       bil('Güncellendi ✓');
     }
     const {data}=await sb.from('kullanicilar').select('*');if(data)kullanicilar=data;
@@ -80,6 +83,7 @@ window.kullaniciDuzenle=function(id,mod='duzenle'){
   _doldurKasaSelect(k.varsayilan_kasa_id||'');
   _yetkiDoldur(k.yetkiler||{});
   if(typeof doldurKmIsyeriListe==='function')doldurKmIsyeriListe(k.isyeri_yetkiler||[]);
+  _kmCrudTabloOlustur();_kmCrudDoldur(k.crud_yetkiler||{});
   modalAc('modal-kullanici');setTimeout(()=>modalMod('modal-kullanici',mod),50);
 };
 
@@ -105,3 +109,49 @@ function renderKullanicilar(){
     </div>`;
   }).join('');
 }
+
+// ===== KULLANICI CRUD YETKİLERİ =====
+function _kmCrudTabloOlustur() {
+  const tbody = document.getElementById('km-crud-tablo');
+  if (!tbody || typeof EKRANLAR === 'undefined') return;
+  tbody.innerHTML = EKRANLAR.map(e => `
+    <tr style="border-bottom:1px solid var(--krem2)">
+      <td style="padding:6px 10px;font-weight:500">${e.ad}</td>
+      ${EYLEMLER.map(ey => `
+        <td style="padding:6px;text-align:center">
+          <input type="checkbox" id="km-crud-${e.id}-${ey.id}"
+            style="width:15px;height:15px;cursor:pointer;accent-color:var(--yesil)">
+        </td>`).join('')}
+    </tr>`).join('');
+}
+
+function _kmCrudDoldur(yetkiler) {
+  if (typeof EKRANLAR === 'undefined') return;
+  EKRANLAR.forEach(e => {
+    EYLEMLER.forEach(ey => {
+      const el = document.getElementById(`km-crud-${e.id}-${ey.id}`);
+      if (el) el.checked = yetkiler?.[e.id]?.[ey.id] === true;
+    });
+  });
+}
+
+function _kmCrudOku() {
+  if (typeof EKRANLAR === 'undefined') return {};
+  const y = {};
+  EKRANLAR.forEach(e => {
+    y[e.id] = {};
+    EYLEMLER.forEach(ey => {
+      const el = document.getElementById(`km-crud-${e.id}-${ey.id}`);
+      y[e.id][ey.id] = el ? el.checked : false;
+    });
+  });
+  return y;
+}
+
+window.kmCrudHepsiniSec = function(sec) {
+  if (typeof EKRANLAR === 'undefined') return;
+  EKRANLAR.forEach(e => EYLEMLER.forEach(ey => {
+    const el = document.getElementById(`km-crud-${e.id}-${ey.id}`);
+    if (el && !el.disabled) el.checked = sec;
+  }));
+};
