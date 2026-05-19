@@ -264,47 +264,27 @@ window.renderKulYetkiler = function() {
   }
 
   el.innerHTML = liste.map(k => {
-    const yetkiOzet = _yetkiOzetHTML(k.crud_yetkiler || {});
     const atananSablonlar = kullaniciYetkiSablonlari.filter(a => a.kullanici_id === k.id);
     const ini = (k.ad||'?')[0].toUpperCase() + (k.soyad||'')[0]?.toUpperCase()||'';
-    return `<div class="card" style="margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--yesil)">${ini}</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">${k.ad} ${k.soyad||''}</div>
-            <div style="font-size:11px;color:var(--yazi3)">@${k.kullanici_adi}</div>
+    const sablonHTML = atananSablonlar.map(a => {
+      const s = yetkiSablonlari.find(x => x.id === a.sablon_id);
+      const iy = isyerleri.find(x => x.id === a.isyeri_id);
+      return s ? `<span style="font-size:11px;background:var(--mor-ac);color:var(--mor);padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:4px">
+        📋 ${s.ad}${iy?' · '+iy.ad:' · Tüm işyerleri'}
+        <button onclick="sablonKullaniciKaldir('${a.sablon_id}','${k.id}')" style="background:none;border:none;color:var(--mor);cursor:pointer;font-size:13px;padding:0;line-height:1;opacity:.7">×</button>
+      </span>` : '';
+    }).join('');
+
+    return `<div class="card" style="margin-bottom:8px;padding:10px 14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--yesil);flex-shrink:0">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${k.ad} ${k.soyad||''} <span style="font-size:11px;color:var(--yazi3);font-weight:400">@${k.kullanici_adi}</span></div>
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">
+            ${sablonHTML || '<span style="font-size:11px;color:var(--yazi3)">Şablon atanmamış</span>'}
           </div>
         </div>
-        <button class="btn sm pri" onclick="kulYetkiDuzenleAc('${k.id}')">✏ Yetkileri Düzenle</button>
-      </div>
-      <!-- Mevcut yetkiler özeti -->
-      <div style="margin-top:10px">
-        <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">KULLANICI YETKİLERİ:</div>
-        ${yetkiOzet || '<span style="font-size:11px;color:var(--yazi3)">Yetki tanımlanmamış</span>'}
-        ${k.crud_isyeriler?.length ? `
-          <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px">
-            <span style="font-size:10px;color:var(--yazi3)">İşyerler:</span>
-            ${k.crud_isyeriler.map(id => {
-              const iy = isyerleri.find(x => x.id === id);
-              return iy ? `<span style="font-size:10px;background:var(--yesil-cok-ac);color:var(--yesil);padding:1px 6px;border-radius:8px">${iy.ad}</span>` : '';
-            }).join('')}
-          </div>` : '<div style="font-size:10px;color:var(--yazi3);margin-top:3px">🌐 Tüm işyerlerinde geçerli</div>'}
-      </div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--krem2)">
-        <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">ATANAN ŞABLONLAR:</div>
-        ${atananSablonlar.length ? `
-        <div style="display:flex;flex-wrap:wrap;gap:4px">
-          ${atananSablonlar.map(a => {
-            const s = yetkiSablonlari.find(x => x.id === a.sablon_id);
-            const iy = isyerleri.find(x => x.id === a.isyeri_id);
-            return s ? `<span style="font-size:11px;background:var(--mor-ac);color:var(--mor);padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:4px">
-              📋 ${s.ad}${iy?' · '+iy.ad:' · Tüm işyerleri'}
-              <button onclick="sablonKullaniciKaldir('${a.sablon_id}','${k.id}')" style="background:none;border:none;color:var(--mor);cursor:pointer;font-size:13px;padding:0;line-height:1;opacity:.7">×</button>
-            </span>` : '';
-          }).join('')}
-        </div>` : '<span style="font-size:11px;color:var(--yazi3)">Şablon atanmamış</span>'}
-        <button class="btn sm sec" style="margin-top:6px" onclick="sablonKullaniciEkleAcKulId('${k.id}')">+ Şablon Ekle</button>
+        <button class="btn sm pri" onclick="kulYetkiDuzenleAc('${k.id}')" style="flex-shrink:0">✏ Yetkileri Düzenle</button>
       </div>
     </div>`;
   }).join('');
