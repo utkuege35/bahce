@@ -41,6 +41,7 @@ window.renderKasalar = async function() {
       </div>
       ${k.aciklama ? `<div style="font-size:11px;color:var(--yazi3);margin-top:4px">${k.aciklama}</div>` : ''}
       ${isAdmin ? `<div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn sm" onclick="kasaGoruntule('${k.id}')">👁 Görüntüle</button>
         <button class="btn sm" onclick="kasaDuzenleAc('${k.id}')">✏ Düzenle</button>
         <button class="btn sm ghost" onclick="kasaSil('${k.id}')">Sil</button>
         <button class="btn sm" onclick="kasaYetkiAc('${k.id}')">👥 Yetkiler</button>
@@ -67,7 +68,8 @@ window.kasaModalAc = function() {
   modalAc('modal-kasa');
 };
 
-window.kasaDuzenleAc = function(id) {
+window.kasaGoruntule=function(id){kasaDuzenleAc(id,'goruntule');};
+window.kasaDuzenleAc = function(id,mod='duzenle') {
   const k = kasalar_list.find(x => x.id === id);
   if (!k) return;
   document.getElementById('kasa-km-id').value = k.id;
