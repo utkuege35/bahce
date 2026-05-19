@@ -81,6 +81,7 @@ function uygulamaAc(){
   if(subEl&&aktifIsyeri){subEl.textContent=aktifIsyeri.ad+(aktifSirket?' · '+aktifSirket.ad:'');}
   if(aktifKullanici.rol==='admin'){
     document.getElementById('nav-kullanicilar').style.display='';
+    document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
     // Yetki bazlı nav butonlarını göster/gizle
@@ -90,8 +91,12 @@ function uygulamaAc(){
       'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
-      'merkezler':'gp(\'merkezler\')', 'rapor':'gp(\'rapor\')'
+      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')'
     };
+    const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
+    if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
+      document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
+    }
     document.querySelectorAll('.nav button,.nav-grup-icerik button').forEach(btn=>{
       const oc=btn.getAttribute('onclick')||'';
       for(const [alan,gpc] of Object.entries(navMap)){
