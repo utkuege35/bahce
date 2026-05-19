@@ -118,3 +118,60 @@ window.modalMod = function(modalId, mod) {
     if (goruntuleChip) goruntuleChip.remove();
   }
 };
+
+// ===== YETKİ SİSTEMİ =====
+let yetkiSablonlari = [];
+let kullaniciYetkiSablonlari = [];
+
+const EKRANLAR = [
+  {id:'islem',      ad:'Yeni İşlem'},
+  {id:'islem_liste',ad:'İşlem Listesi'},
+  {id:'stok',       ad:'Stoklar'},
+  {id:'urunler',    ad:'Ürünler'},
+  {id:'receteler',  ad:'Ürün Reçeteleri'},
+  {id:'hizmetler',  ad:'Hizmetler'},
+  {id:'kasalar',    ad:'Kasalar'},
+  {id:'cari',       ad:'Cari & Personel'},
+  {id:'birimler',   ad:'Birimler'},
+  {id:'merkezler',  ad:'Merkezler'},
+  {id:'rapor',      ad:'Rapor'},
+];
+
+const EYLEMLER = [
+  {id:'goruntule', ad:'Görüntüle', ikon:'👁'},
+  {id:'ekle',      ad:'Ekle',      ikon:'➕'},
+  {id:'duzenle',   ad:'Düzenle',   ikon:'✏'},
+  {id:'sil',       ad:'Sil',       ikon:'🗑'},
+];
+
+// Aktif kullanıcının belirli ekran+eylem için yetkisi var mı?
+window.yetkiVar = function(ekran, eylem) {
+  // Admin her şeye yetkili
+  if (aktifKullanici?.rol === 'admin') return true;
+
+  // Aktif işyeri için kullanıcının şablonlarını bul
+  const isyeriId = aktifIsyeri?.id;
+  const kulId = aktifKullanici?.id;
+
+  // Önce işyeri bazlı şablon ata, yoksa genel (isyeri_id null) şablona bak
+  const atanmis = kullaniciYetkiSablonlari.filter(k =>
+    k.kullanici_id === kulId &&
+    (k.isyeri_id === isyeriId || !k.isyeri_id)
+  );
+
+  for (const atama of atanmis) {
+    const sablon = yetkiSablonlari.find(s => s.id === atama.sablon_id);
+    if (!sablon) continue;
+    const ekranYetki = sablon.yetkiler?.[ekran];
+    if (ekranYetki?.[eylem] === true) return true;
+  }
+  return false;
+};
+
+// Yetki yoksa butonu gizle/disable et
+window.yetkiButon = function(el, ekran, eylem) {
+  if (!el) return;
+  if (!yetkiVar(ekran, eylem)) {
+    el.style.display = 'none';
+  }
+};
