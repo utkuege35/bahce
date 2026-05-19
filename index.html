@@ -111,6 +111,7 @@
   <button onclick="gp('rapor')">Rapor</button>
   <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
   <button id="nav-yetkiler" onclick="gp('yetkiler')" style="display:none">Yetki Şablonları</button>
+  <button id="nav-kul-yetkiler" onclick="gp('kul-yetkiler')" style="display:none">Kullanıcı Yetkileri</button>
 </nav>
 <div id="uyari-bant" class="uyari-bant" onclick="gp('stok')"><div class="ub-ic">⚠ <span id="uyari-txt"></span> — Stoklar →</div></div>
 
@@ -542,6 +543,17 @@
   </div>
   <div id="isyerleri-liste"></div>
 </div>
+<div id="kul-yetkiler" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Kullanıcı Yetkileri</div>
+    <div style="display:flex;gap:8px">
+      <select id="kul-yetki-filtre" onchange="renderKulYetkiler()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--beyaz)">
+        <option value="">Tüm kullanıcılar</option>
+      </select>
+    </div>
+  </div>
+  <div id="kul-yetkiler-liste"></div>
+</div>
 <div id="yetkiler" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Yetki Şablonları</div>
@@ -923,51 +935,13 @@
       <div class="fgrid c2"><div class="fg"><label>E-posta</label><input type="email" id="km-email"></div><div class="fg"><label>Kullanıcı Adı</label><input type="text" id="km-kullanici-adi"></div></div>
       <div class="fgrid c2"><div class="fg"><label>Şifre</label><input type="password" id="km-sifre" placeholder="Min. 6 karakter"></div><div class="fg"><label>Rol</label><select id="km-rol"><option value="kullanici">Kullanıcı</option><option value="admin">Admin</option></select></div></div>
       <div class="fgrid c2"><div class="fg"><label>Varsayılan Kasa</label><select id="km-varsayilan-kasa"><option value="">— Seçin —</option></select></div><div></div></div>
-      <div id="km-yetki-wrap" style="margin-top:8px">
-        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Sayfa Yetkileri <span style="font-weight:400;color:var(--yazi3)">(Admin değilse geçerli)</span></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <label class="yetki-chk"><input type="checkbox" id="yk-islem"> Yeni İşlem</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-islem-liste"> İşlem Listesi</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-stok"> Stoklar</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-urunler"> Ürünler</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-hizmetler"> Hizmetler</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-kasalar"> Kasalar</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-cari"> Cari & Personel</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-birimler"> Birimler</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-merkezler"> Merkezler</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-receteler"> Ürün Reçeteleri</label>
-          <label class="yetki-chk"><input type="checkbox" id="yk-rapor"> Rapor</label>
-        </div>
-      </div>
+
     </div>
       <div id="km-isyeri-wrap" style="margin-top:12px">
         <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">İşyeri Yetkileri <span style="font-weight:400">(Admin değilse geçerli)</span></div>
         <div id="km-isyeri-liste" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
-      <div style="margin-top:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">
-          Kullanıcı Bazlı CRUD Yetkileri
-          <span style="font-weight:400">(Şablon yetkilerine ek olarak uygulanır)</span>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead>
-              <tr style="background:var(--krem2)">
-                <th style="padding:6px 10px;text-align:left;font-weight:600">Ekran</th>
-                <th style="padding:6px;text-align:center;width:72px">👁 Görüntüle</th>
-                <th style="padding:6px;text-align:center;width:72px">➕ Ekle</th>
-                <th style="padding:6px;text-align:center;width:72px">✏ Düzenle</th>
-                <th style="padding:6px;text-align:center;width:72px">🗑 Sil</th>
-              </tr>
-            </thead>
-            <tbody id="km-crud-tablo"></tbody>
-          </table>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <button class="btn sm sec" onclick="kmCrudHepsiniSec(true)">Tümünü Seç</button>
-          <button class="btn sm sec" onclick="kmCrudHepsiniSec(false)">Tümünü Kaldır</button>
-        </div>
-      </div>
+
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-kullanici')">İptal</button><button class="btn pri" onclick="kullaniciyiKaydet()">Kaydet</button></div>
   </div>
@@ -998,6 +972,40 @@
       <div class="fg"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="isy-aktif" checked> Aktif</label></div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-isyeri')">İptal</button><button class="btn pri" onclick="isyeriKaydet()">Kaydet</button></div>
+  </div>
+</div>
+
+<!-- MODAL: KULLANICI YETKİ -->
+<div id="modal-kul-yetki" class="overlay">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-hdr"><h3 id="ky-title">Kullanıcı Yetkileri</h3><button class="btn sm" onclick="modalKapat('modal-kul-yetki')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ky-kullanici-id">
+      <div style="margin-bottom:12px;padding:10px 12px;background:var(--krem2);border-radius:8px;font-size:13px" id="ky-kullanici-bilgi"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Ekran Yetkileri</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:var(--krem2)">
+              <th style="padding:8px 10px;text-align:left;font-weight:600">Ekran</th>
+              <th style="padding:8px;text-align:center;width:80px">👁 Görüntüle</th>
+              <th style="padding:8px;text-align:center;width:80px">➕ Ekle</th>
+              <th style="padding:8px;text-align:center;width:80px">✏ Düzenle</th>
+              <th style="padding:8px;text-align:center;width:80px">🗑 Sil</th>
+            </tr>
+          </thead>
+          <tbody id="ky-crud-tablo"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn sm sec" onclick="kyCrudHepsiniSec(true)">Tümünü Seç</button>
+        <button class="btn sm sec" onclick="kyCrudHepsiniSec(false)">Tümünü Kaldır</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="modalKapat('modal-kul-yetki')">İptal</button>
+      <button class="btn pri" onclick="kulYetkiKaydet()">Kaydet</button>
+    </div>
   </div>
 </div>
 
