@@ -1,3 +1,20 @@
+// ===== DARK MODE =====
+(function(){
+  const dk = localStorage.getItem('sv-dark');
+  if(dk==='1'){document.body.classList.add('dark');}
+})();
+window.darkToggle=function(){
+  const isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('sv-dark', isDark?'1':'0');
+  const btn=document.getElementById('dark-toggle-btn');
+  if(btn)btn.textContent=isDark?'🌙':'☀️';
+};
+// Sayfa yüklenince buton ikonunu ayarla
+document.addEventListener('DOMContentLoaded',function(){
+  const btn=document.getElementById('dark-toggle-btn');
+  if(btn)btn.textContent=document.body.classList.contains('dark')?'🌙':'☀️';
+});
+
 // ===== MODALLARı BODY'E TAŞI =====
 document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('.overlay').forEach(function(m){
