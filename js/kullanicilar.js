@@ -1,5 +1,5 @@
 // ===== KULLANICILAR =====
-const YETKI_ALANLARI=['islem','islem-liste','stok','urunler','hizmetler','kasalar','cari','birimler','merkezler','rapor'];
+const YETKI_ALANLARI=['islem','islem-liste','stok','urunler','receteler','hizmetler','kasalar','cari','birimler','merkezler','rapor'];
 
 function _doldurKasaSelect(seciliId){
   const el=document.getElementById('km-varsayilan-kasa');if(!el)return;
