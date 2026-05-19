@@ -110,6 +110,7 @@
   </div>
   <button onclick="gp('rapor')">Rapor</button>
   <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
+  <button id="nav-yetkiler" onclick="gp('yetkiler')" style="display:none">Yetki Şablonları</button>
 </nav>
 <div id="uyari-bant" class="uyari-bant" onclick="gp('stok')"><div class="ub-ic">⚠ <span id="uyari-txt"></span> — Stoklar →</div></div>
 
@@ -541,6 +542,13 @@
   </div>
   <div id="isyerleri-liste"></div>
 </div>
+<div id="yetkiler" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Yetki Şablonları</div>
+    <button class="btn sm pri" onclick="sablonYetkiTabloOlustur();sablonModalAc()">+ Yeni Şablon</button>
+  </div>
+  <div id="yetkiler-liste"></div>
+</div>
 <div id="kullanicilar" class="page">
   <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem"><button class="btn pri sm" onclick="yeniKullaniciModalAc()">+ Yeni Kullanıcı</button></div>
   <div id="kullanici-liste"></div>
@@ -969,6 +977,61 @@
   </div>
 </div>
 
+<!-- MODAL: YETKİ ŞABLON -->
+<div id="modal-yetki-sablon" class="overlay">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-hdr"><h3 id="ys-title">Yetki Şablonu</h3><button class="btn sm" onclick="modalKapat('modal-yetki-sablon')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ys-id">
+      <div class="fgrid c2">
+        <div class="fg"><label>Şablon Adı</label><input type="text" id="ys-ad" placeholder="örn: Kasiyer, Depo Görevlisi"></div>
+        <div class="fg"><label>Açıklama</label><input type="text" id="ys-aciklama" placeholder="Kısa açıklama"></div>
+      </div>
+      <div class="fg"><label>İşyeri <span style="font-weight:400;color:var(--yazi3)">(boş = tüm işyerlerinde geçerli)</span></label>
+        <select id="ys-isyeri"><option value="">🌐 Tüm işyerleri</option></select>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Ekran Yetkileri</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="background:var(--krem2)">
+                <th style="padding:8px 10px;text-align:left;font-weight:600">Ekran</th>
+                <th style="padding:8px;text-align:center;width:80px">👁 Görüntüle</th>
+                <th style="padding:8px;text-align:center;width:80px">➕ Ekle</th>
+                <th style="padding:8px;text-align:center;width:80px">✏ Düzenle</th>
+                <th style="padding:8px;text-align:center;width:80px">🗑 Sil</th>
+              </tr>
+            </thead>
+            <tbody id="ys-yetki-tablo"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="modalKapat('modal-yetki-sablon')">İptal</button>
+      <button class="btn sec" onclick="sablonHepsiniSec(true)">Tümünü Seç</button>
+      <button class="btn sec" onclick="sablonHepsiniSec(false)">Tümünü Kaldır</button>
+      <button class="btn pri" onclick="sablonKaydet()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: YETKİ ATAMA -->
+<div id="modal-yetki-atama" class="overlay">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><h3>Kullanıcı Ekle</h3><button class="btn sm" onclick="modalKapat('modal-yetki-atama')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ys-atama-sablon-id">
+      <div class="fg"><label>Kullanıcı</label><select id="ys-atama-kullanici"><option value="">— Seçin —</option></select></div>
+      <div class="fg"><label>İşyeri <span style="font-weight:400;color:var(--yazi3)">(boş = tüm işyerlerinde geçerli)</span></label>
+        <select id="ys-atama-isyeri"><option value="">🌐 Tüm işyerleri</option></select>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-yetki-atama')">İptal</button><button class="btn pri" onclick="sablonKullaniciKaydet()">Ekle</button></div>
+  </div>
+</div>
+
 <!-- MODAL: PROFİL -->
 <div id="modal-profil" class="overlay">
   <div class="modal">
@@ -1005,6 +1068,7 @@
 <script src="js/birimler.js"></script>
 <script src="js/kullanicilar.js"></script>
 <script src="js/isyerleri.js"></script>
+<script src="js/yetkiler.js"></script>
 <script src="js/giderkalemler.js"></script>
 <script src="js/merkezler.js"></script>
 <script src="js/cari.js"></script>
