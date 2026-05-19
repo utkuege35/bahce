@@ -146,7 +146,7 @@ function renderBilesenler(){
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const isHizmet=b.kaynak_tip==='hizmet';
-    const liste=isStok?stoklar.filter(s=>s.tip==='stok'):isHizmet?(typeof giderKalemleri!=='undefined'?giderKalemleri.filter(k=>k.aktif!==false):[]):urunler.filter(u=>u.tip==='ara_urun');
+    const liste=isStok?stoklar.filter(s=>s.tip==='stok'):isHizmet?(typeof giderKalemleri!=='undefined'?giderKalemleri.filter(k=>k.tip==='kalem'&&k.aktif!==false):[]):urunler.filter(u=>u.tip==='ara_urun');
     const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):isHizmet?(parseFloat(b.fiyat)||0):araUrunBirimMaliyet(b.kaynak_id);
     const miktar=parseFloat(b.miktar)||0;
     const carpan=birimTemelCarp(b.birim_id);
@@ -237,7 +237,7 @@ window.kaydetUrun=async function(){
     await sb.from('urun_bilesenleri').delete().eq('urun_id',id);
     const gecerliBilesenler=bilesenler.filter(b=>b.kaynak_id&&b.miktar>0);
     if(gecerliBilesenler.length){
-      await sb.from('urun_bilesenleri').insert(gecerliBilesenler.map((b,si)=>({urun_id:id,kaynak_tip:b.kaynak_tip,kaynak_id:b.kaynak_id,miktar:parseFloat(b.miktar),birim_id:b.birim_id||null,fiyat:b.kaynak_tip==='hizmet'?(parseFloat(b.fiyat)||null):null,sira:si})));
+      await sb.from('urun_bilesenleri').insert(gecerliBilesenler.map((b,si)=>({urun_id:id,kaynak_tip:b.kaynak_tip,kaynak_id:b.kaynak_id,miktar:parseFloat(b.miktar),birim_id:b.birim_id||null,fiyat:parseFloat(b.fiyat)||null,sira:si})));
     }
   }
   const {data:ud}=await sb.from('urunler').select('*').order('kod');if(ud)urunler=ud;
@@ -389,7 +389,8 @@ window.receteKaydet = async function() {
     await sb.from('urun_bilesenleri').insert({
       id: b.id && b.id.length > 10 ? b.id : uid(),
       urun_id: urunId, kaynak_tip: b.kaynak_tip,
-      kaynak_id: b.kaynak_id, miktar: parseFloat(b.miktar), birim_id: b.birim_id || null
+      kaynak_id: b.kaynak_id, miktar: parseFloat(b.miktar), birim_id: b.birim_id || null,
+      fiyat: parseFloat(b.fiyat) || null
     });
   }
   const { data: ub } = await sb.from('urun_bilesenleri').select('*');
