@@ -131,7 +131,7 @@ function renderBilesenler(){
   const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
   if(!bilesenler.length){
     el.innerHTML='<div style="font-size:12px;color:var(--yazi3);padding:8px 0">Henüz bileşen eklenmedi.</div>';
-    if(_receteSeciliId)el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
+    if(_receteSeciliId&&_receteMod==='duzenle')el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
     return;
   }
   let toplamMaliyet=0;
@@ -190,8 +190,20 @@ function renderBilesenler(){
     <div style="min-width:518px;display:inline-block;width:100%;max-width:700px">${baslik+satirlar}</div>
   </div>`+toplamHtml;
 
-  if(_receteSeciliId){
+  // Görüntüleme modunda ekle butonları ve kaydet gizli
+  const ekleDiv=document.getElementById('recete-ekle-btns');
+  if(ekleDiv)ekleDiv.style.display=_receteMod==='goruntule'?'none':'';
+  if(_receteSeciliId&&_receteMod==='duzenle'){
     el.innerHTML+=`<div style="margin-top:10px"><button class="btn pri" onclick="receteKaydet()">💾 Reçeteyi Kaydet</button></div>`;
+  }
+  if(_receteSeciliId&&_receteMod==='goruntule'){
+    el.innerHTML+=`<div style="margin-top:8px;padding:6px 10px;background:var(--krem2);border-radius:8px;font-size:11px;color:var(--yazi3);text-align:center">👁 Görüntüleme modu — düzenlemek için ✏ butonunu kullanın</div>`;
+  }
+  // Görüntüleme modunda tüm inputları/selectleri disable et
+  if(_receteMod==='goruntule'){
+    el.querySelectorAll('input,select,button:not(.btn.ghost)').forEach(i=>{
+      if(!i.onclick?.toString().includes('bilesenSil'))i.disabled=true;
+    });
   }
 }
 window.bilesenGuncelle=function(i,alan,deger){bilesenler[i][alan]=deger;};
@@ -308,6 +320,7 @@ function renderUrunler(){
 
 // ===== ÜRÜN REÇETELERİ SAYFASI =====
 let _receteSeciliId = null;
+let _receteMod = 'duzenle'; // 'goruntule' veya 'duzenle'
 
 window.renderReceteler = function() {
   receteAra();
@@ -318,7 +331,7 @@ function _receteDetayHTML(u, grup) {
   return `<div id="recete-detay-${u.id}" style="border-top:1px solid var(--border);padding:12px 4px 4px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <span style="font-size:12px;font-weight:600;color:var(--yazi2)">Bileşenler</span>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px" id="recete-ekle-btns">
         <button class="btn sm sec" onclick="event.stopPropagation();bilesenEkle('stok')">+ Hammadde</button>
         <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('ara_urun')">+ Ara Ürün</button>
         <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('hizmet')">+ Hizmet</button>
@@ -349,8 +362,11 @@ window.receteAra = function() {
           <div style="font-size:13px;font-weight:600;color:${secili?'var(--yesil)':'var(--yazi1)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[${u.kod}] ${u.ad}</div>
           <div style="font-size:11px;color:var(--yazi3);margin-top:2px">${grup ? grup.ad + ' · ' : ''}${u.tip==='ara_urun'?'Yarı Mamul':'Mamul Ürün'}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px">${bilSayisi} bileşen</span>
+          <button class="btn sm" onclick="event.stopPropagation();receteGoruntule('${u.id}')" title="Görüntüle">👁</button>
+          <button class="btn sm" onclick="event.stopPropagation();recedeDuzenle('${u.id}')" title="Düzenle">✏</button>
+          <button class="btn sm ghost" onclick="event.stopPropagation();recedeSil('${u.id}')" title="Sil">✕</button>
         </div>
         <span style="font-size:16px;color:var(--yazi3);margin-left:4px">${secili?'▲':'▼'}</span>
       </div>
@@ -365,8 +381,17 @@ window.receteAra = function() {
   }
 };
 
+window.receteGoruntule=function(id){_receteMod='goruntule';receteUrunSec(_receteSeciliId===id?null:id);};
+window.recedeDuzenle=function(id){_receteMod='duzenle';receteUrunSec(_receteSeciliId===id?null:id);};
+window.recedeSil=async function(id){
+  const u=urunler.find(x=>x.id===id);
+  if(!(await onay(`<b>${u?.ad||'Bu ürün'}</b> reçetesindeki tüm bileşenler silinecek. Emin misiniz?`,'🗑️')))return;
+  await sb.from('urun_bilesenleri').delete().eq('urun_id',id);
+  const {data:ub}=await sb.from('urun_bilesenleri').select('*');if(ub)urunBilesenleri=ub;
+  if(_receteSeciliId===id){_receteSeciliId=null;bilesenler=[];}
+  receteAra();bil('Reçete silindi ✓');
+};
 window.receteUrunSec = function(id) {
-  // Aynıya tıklanınca kapat
   if (_receteSeciliId === id) {
     _receteSeciliId = null;
     bilesenler = [];
