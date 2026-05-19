@@ -139,9 +139,9 @@ function renderStoklar(){
     const dusuk=s.tip==='stok'&&s.min_stok>0&&mik<=s.min_stok;
     const pasif=s.aktif===false;
     // Seviyeye göre grup rengi — stok/ürün kartları renksiz
-    const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
+    const grupRenkler=['var(--grup-kenar-0)','var(--grup-kenar-1)','var(--grup-kenar-2)','var(--grup-kenar-3)'];
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.13)':depth===1?'rgba(77,127,168,.08)':'rgba(169,200,224,.05)'):'';;
+    const satirBg=isGrup?(depth===0?'var(--grup-bg-0)':depth===1?'var(--grup-bg-1)':'var(--grup-bg-2)'):'';;
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${s.ikon||'📦'}</span>
       <span class="tree-kod" style="min-width:52px">${s.kod}</span>
