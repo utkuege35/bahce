@@ -15,7 +15,8 @@ window.kaydetAltBirim=async function(){
   document.getElementById('ab-ad').value='';document.getElementById('ab-kisaltma').value='';document.getElementById('ab-carpan').value='';
   renderBirimler();doldurBirimSecleri();bil('Alt birim eklendi ✓');
 };
-window.birimDuzenleAc=function(id){
+window.birimGoruntule=function(id){birimDuzenleAc(id,'goruntule');};
+window.birimDuzenleAc=function(id,mod='duzenle'){
   const b=birimler.find(x=>x.id===id);if(!b)return;
   document.getElementById('bd-id').value=id;
   document.getElementById('bd-title').textContent=b.temel?'Temel Birimi Düzenle':'Alt Birimi Düzenle';
@@ -24,7 +25,7 @@ window.birimDuzenleAc=function(id){
   const carpanWrap=document.getElementById('bd-carpan-wrap');
   if(!b.temel){carpanWrap.style.display='';document.getElementById('bd-carpan').value=b.carpan||1;}
   else carpanWrap.style.display='none';
-  modalAc('modal-birim-duzenle');
+  modalAc('modal-birim-duzenle');setTimeout(()=>modalMod('modal-birim-duzenle',mod),50);
 };
 window.birimKaydet=async function(){
   const id=document.getElementById('bd-id').value;
@@ -58,14 +59,14 @@ function renderBirimler(){
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--krem2);border-radius:6px;font-size:12px;font-weight:500">
         <span>${t.ad} <span style="color:var(--yazi3)">(${t.kisaltma})</span></span>
         <div style="display:flex;gap:4px">
-          <button class="btn sm" onclick="birimDuzenleAc('${t.id}')">✏</button>
+          <button class="btn sm" onclick="birimGoruntule('${t.id}')">👁</button><button class="btn sm" onclick="birimDuzenleAc('${t.id}')">✏</button>
           <button class="btn ghost sm" onclick="birimSil('${t.id}')">Sil</button>
         </div>
       </div>
       ${altlar.map(a=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px 5px 22px;font-size:11px;color:var(--yazi2);border-bottom:1px solid var(--krem2)">
         <span>↳ ${a.ad} <span style="color:var(--yazi3)">(${a.kisaltma})</span> = ${a.carpan} ${t.kisaltma}</span>
         <div style="display:flex;gap:4px">
-          <button class="btn sm" onclick="birimDuzenleAc('${a.id}')">✏</button>
+          <button class="btn sm" onclick="birimGoruntule('${a.id}')">👁</button><button class="btn sm" onclick="birimDuzenleAc('${a.id}')">✏</button>
           <button class="btn ghost sm" onclick="birimSil('${a.id}')">Sil</button>
         </div>
       </div>`).join('')}
