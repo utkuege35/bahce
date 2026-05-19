@@ -992,10 +992,17 @@
           <thead>
             <tr style="background:var(--krem2)">
               <th style="padding:8px 10px;text-align:left;font-weight:600">Ekran</th>
-              <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="kySutunSec('goruntule',this)" title="Tümünü seç/kaldır">👁 Görüntüle</th>
-              <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="kySutunSec('ekle',this)" title="Tümünü seç/kaldır">➕ Ekle</th>
-              <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="kySutunSec('duzenle',this)" title="Tümünü seç/kaldır">✏ Düzenle</th>
-              <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="kySutunSec('sil',this)" title="Tümünü seç/kaldır">🗑 Sil</th>
+              <th style="padding:8px;text-align:center;width:80px">👁 Görüntüle</th>
+              <th style="padding:8px;text-align:center;width:80px">➕ Ekle</th>
+              <th style="padding:8px;text-align:center;width:80px">✏ Düzenle</th>
+              <th style="padding:8px;text-align:center;width:80px">🗑 Sil</th>
+            </tr>
+            <tr style="background:var(--krem);border-bottom:2px solid var(--border)">
+              <td style="padding:5px 10px;font-size:10px;color:var(--yazi3);font-weight:600">TÜMÜNÜ SEÇ</td>
+              <td style="padding:5px;text-align:center"><input type="checkbox" id="ky-tum-goruntule" onchange="kySutunTum('goruntule',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
+              <td style="padding:5px;text-align:center"><input type="checkbox" id="ky-tum-ekle" onchange="kySutunTum('ekle',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
+              <td style="padding:5px;text-align:center"><input type="checkbox" id="ky-tum-duzenle" onchange="kySutunTum('duzenle',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
+              <td style="padding:5px;text-align:center"><input type="checkbox" id="ky-tum-sil" onchange="kySutunTum('sil',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
             </tr>
           </thead>
           <tbody id="ky-crud-tablo"></tbody>
@@ -1033,10 +1040,17 @@
             <thead>
               <tr style="background:var(--krem2)">
                 <th style="padding:8px 10px;text-align:left;font-weight:600">Ekran</th>
-                <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="ysSutunSec('goruntule',this)" title="Tümünü seç/kaldır">👁 Görüntüle</th>
-                <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="ysSutunSec('ekle',this)" title="Tümünü seç/kaldır">➕ Ekle</th>
-                <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="ysSutunSec('duzenle',this)" title="Tümünü seç/kaldır">✏ Düzenle</th>
-                <th style="padding:8px;text-align:center;width:80px;cursor:pointer" onclick="ysSutunSec('sil',this)" title="Tümünü seç/kaldır">🗑 Sil</th>
+                <th style="padding:8px;text-align:center;width:80px">👁 Görüntüle</th>
+                <th style="padding:8px;text-align:center;width:80px">➕ Ekle</th>
+                <th style="padding:8px;text-align:center;width:80px">✏ Düzenle</th>
+                <th style="padding:8px;text-align:center;width:80px">🗑 Sil</th>
+              </tr>
+              <tr style="background:var(--krem);border-bottom:2px solid var(--border)">
+                <td style="padding:5px 10px;font-size:10px;color:var(--yazi3);font-weight:600">TÜMÜNÜ SEÇ</td>
+                <td style="padding:5px;text-align:center"><input type="checkbox" id="ys-tum-goruntule" onchange="ysSutunTum('goruntule',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
+                <td style="padding:5px;text-align:center"><input type="checkbox" id="ys-tum-ekle" onchange="ysSutunTum('ekle',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
+                <td style="padding:5px;text-align:center"><input type="checkbox" id="ys-tum-duzenle" onchange="ysSutunTum('duzenle',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
+                <td style="padding:5px;text-align:center"><input type="checkbox" id="ys-tum-sil" onchange="ysSutunTum('sil',this.checked)" style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer"></td>
               </tr>
             </thead>
             <tbody id="ys-yetki-tablo"></tbody>
