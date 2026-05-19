@@ -737,6 +737,20 @@
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-gider-kalem')">İptal</button><button class="btn pri" onclick="kaydetGiderKalem()">Kaydet</button></div>
   </div>
 </div>
+<!-- MODAL: MERKEZ DÜZENLE -->
+<div id="modal-merkez-duzenle" class="overlay">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><h3>Merkez Düzenle</h3><button class="btn sm" onclick="modalKapat('modal-merkez-duzenle')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="mz-id">
+      <div class="fg"><label>Ad</label><input type="text" id="mz-ad"></div>
+      <div class="fg"><label>Kod</label><input type="text" id="mz-kod"></div>
+      <div class="fg"><label>Tip</label><select id="mz-tip"><option value="gelir">Gelir Merkezi</option><option value="masraf">Masraf Merkezi</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-merkez-duzenle')">İptal</button><button class="btn pri" onclick="kaydetMerkezDuzenle()">Kaydet</button></div>
+  </div>
+</div>
+
 <!-- MODAL: ONAY -->
 <div id="modal-onay" class="overlay" style="z-index:9999">
   <div class="modal" style="max-width:360px;text-align:center">
