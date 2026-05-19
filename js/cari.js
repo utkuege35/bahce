@@ -39,7 +39,8 @@ function kodOlusturCari(tip) {
   return prefix + String(sira).padStart(3, '0');
 }
 
-window.cariModalAc = function (tip, id) {
+window.cariGoruntule=function(tip,id){cariModalAc(tip,id,'goruntule');};
+window.cariModalAc = function (tip, id, mod='duzenle') {
   document.getElementById('cm-id').value = id || '';
   document.getElementById('cm-tip').value = tip || 'alici';
   const tipAd = { alici: 'Alıcı', satici: 'Satıcı', personel: 'Personel' }[tip] || 'Cari';
@@ -69,7 +70,7 @@ window.cariModalAc = function (tip, id) {
   const vergiGrup = document.getElementById('cm-vergi-grup');
   vergiGrup.style.display = tip === 'personel' ? 'none' : '';
 
-  modalAc('modal-cari');
+  modalAc('modal-cari');setTimeout(()=>modalMod('modal-cari',mod),50);
 };
 
 window.kaydetCari = async function () {
@@ -143,6 +144,7 @@ function renderCariGrup(tip, baslik, renk) {
         ${c.notlar ? `<div style="font-size:11px;color:var(--yazi2);margin-top:2px">📝 ${c.notlar}</div>` : ''}
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="btn sm" onclick="cariGoruntule('${tip}','${c.id}')">👁</button>
         <button class="btn sm" onclick="cariModalAc('${tip}','${c.id}')">✏</button>
         <button class="btn sm ghost" onclick="cariSil('${c.id}')">✕</button>
       </div>
