@@ -84,6 +84,9 @@ function uygulamaAc(){
     document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
+    // Kullanıcılar ve Şirket&İşyerleri butonlarını gizle
+    document.getElementById('nav-kullanicilar').style.display='none';
+    const navIsy=document.getElementById('nav-isyerleri');if(navIsy)navIsy.style.display='none';
     // Yetki bazlı nav butonlarını göster/gizle
     const yetkiler=aktifKullanici.yetkiler||{};
     const navMap={
@@ -95,7 +98,7 @@ function uygulamaAc(){
     };
     const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
     if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
-      document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
+      if(navIsy)navIsy.style.display='';
     }
     document.querySelectorAll('.nav button,.nav-grup-icerik button').forEach(btn=>{
       const oc=btn.getAttribute('onclick')||'';
