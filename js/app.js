@@ -76,6 +76,9 @@ window.bugun=function(){
 function uygulamaAc(){
   document.getElementById('giris-wrap').style.display='none';document.getElementById('uygulama').style.display='block';
   document.getElementById('kullanici-chip').textContent=(aktifKullanici.ad||'')+' '+(aktifKullanici.soyad||'');
+  // İşyeri adını sub başlığa yaz
+  const subEl=document.querySelector('.hdr .sub');
+  if(subEl&&aktifIsyeri){subEl.textContent=aktifIsyeri.ad+(aktifSirket?' · '+aktifSirket.ad:'');}
   if(aktifKullanici.rol==='admin'){
     document.getElementById('nav-kullanicilar').style.display='';
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
@@ -110,23 +113,28 @@ function uygulamaAc(){
 
 async function baslat(){
   document.getElementById('sync').textContent='⟳';document.getElementById('sync').className='sync load';
+  // İşyeri bazlı filtre — admin ise tüm işyerlerini çek, değilse sadece aktif işyerini
+  const isyFil=q=>aktifKullanici?.rol==='admin'?q:q.or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`);
   const [b,s,u,ub,k,il,mz,gk,ilog,ks]=await Promise.all([
     sb.from('birimler').select('*'),
-    sb.from('stoklar').select('*').order('kod'),
-    sb.from('urunler').select('*').order('kod'),
+    isyFil(sb.from('stoklar').select('*')).order('kod'),
+    isyFil(sb.from('urunler').select('*')).order('kod'),
     sb.from('urun_bilesenleri').select('*'),
     sb.from('kullanicilar').select('*'),
     sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
-    sb.from('merkezler').select('*').order('kod'),
-    sb.from('gider_kalemleri').select('*').order('kod'),
+    isyFil(sb.from('merkezler').select('*')).order('kod'),
+    isyFil(sb.from('gider_kalemleri').select('*')).order('kod'),
     sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
-    sb.from('kasalar').select('*').order('kod')
+    isyFil(sb.from('kasalar').select('*')).order('kod')
   ]);
   if(b.data)birimler=b.data;if(s.data)stoklar=s.data;if(u.data)urunler=u.data;
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)islemLoglari=il.data;
   if(mz.data)merkezler=mz.data;if(gk.data)giderKalemleri=gk.data;if(ilog.data)islemLoglari=ilog.data;
   if(ks.data)kasalar_list=ks.data;
-  const {data:iData}=await sb.from('islemler').select('*').order('ts',{ascending:false});
+  const islemQ=aktifKullanici?.rol==='admin'
+    ?sb.from('islemler').select('*').order('ts',{ascending:false})
+    :sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
+  const {data:iData}=await islemQ;
   if(iData)islemler=iData.filter(i=>!i.silindi);
   document.getElementById('sync').textContent='● Canlı';document.getElementById('sync').className='sync ok';
   const stokK=sb.channel('stoklar-ch').on('postgres_changes',{event:'*',schema:'public',table:'stoklar'},async()=>{
