@@ -37,6 +37,8 @@ function renderMerkezler(){
         <span style="font-size:12px"><span class="tree-kod">${m.kod}</span> <strong>${m.ad}</strong></span>
         <span style="font-size:10px;color:var(--yazi3)">Kullanımda</span>
       </label>
+      <button class="btn sm" onclick="merkezGoruntule('${m.id}')">👁</button>
+      <button class="btn sm" onclick="merkezDuzenle('${m.id}')">✏</button>
       <button class="btn sm ghost" onclick="merkezSil('${m.id}')">Sil</button>
     </div>`;
   }
@@ -49,4 +51,31 @@ window.merkezAktifToggle=async function(id,aktif){
   await sb.from('merkezler').update({aktif}).eq('id',id);
   const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
   renderMerkezler();bil((aktif?'Kullanıma alındı':'Kullanım dışı bırakıldı')+' ✓');
+};
+
+window.merkezGoruntule=function(id){
+  const m=merkezler.find(x=>x.id===id);if(!m)return;
+  document.getElementById('mz-id').value=m.id;
+  document.getElementById('mz-ad').value=m.ad;
+  document.getElementById('mz-kod').value=m.kod;
+  document.getElementById('mz-tip').value=m.tip;
+  modalAc('modal-merkez-duzenle');setTimeout(()=>modalMod('modal-merkez-duzenle','goruntule'),50);
+};
+window.merkezDuzenle=function(id){
+  const m=merkezler.find(x=>x.id===id);if(!m)return;
+  document.getElementById('mz-id').value=m.id;
+  document.getElementById('mz-ad').value=m.ad;
+  document.getElementById('mz-kod').value=m.kod;
+  document.getElementById('mz-tip').value=m.tip;
+  modalAc('modal-merkez-duzenle');setTimeout(()=>modalMod('modal-merkez-duzenle','duzenle'),50);
+};
+window.kaydetMerkezDuzenle=async function(){
+  const id=document.getElementById('mz-id').value;
+  const ad=document.getElementById('mz-ad').value.trim();
+  const kod=document.getElementById('mz-kod').value.trim().toUpperCase();
+  const tip=document.getElementById('mz-tip').value;
+  if(!ad||!kod){bil('Ad ve kod zorunlu!','err');return;}
+  await sb.from('merkezler').update({ad,kod,tip}).eq('id',id);
+  const {data}=await sb.from('merkezler').select('*').order('kod');if(data)merkezler=data;
+  modalKapat('modal-merkez-duzenle');renderMerkezler();doldurMerkezSecleri();bil('Merkez güncellendi ✓');
 };
