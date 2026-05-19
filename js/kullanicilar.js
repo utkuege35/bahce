@@ -41,7 +41,7 @@ window.kullaniciyiKaydet=async function(){
   const rol=document.getElementById('km-rol').value;
   const mUid=document.getElementById('km-uid').value;
   const varsayilanKasa=document.getElementById('km-varsayilan-kasa')?.value||null;
-  const yetkiler=_yetkiOku();
+  const yetkiler={};
   if(!ad||!email||!kAdi){bil('Ad, e-posta ve kullanıcı adı zorunlu!','err');return;}
   try{
     if(!mUid){
