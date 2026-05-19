@@ -273,9 +273,9 @@ function renderUrunler(){
     const bilesenSayisi=urunBilesenleri.filter(b=>b.urun_id===u.id).length;
     const pasif=u.aktif===false;
     const merkezAd=!isGrup&&u.merkez_id?merkezler.find(m=>m.id===u.merkez_id)?.ad:'';
-    const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
+    const grupRenkler=['var(--grup-kenar-0)','var(--grup-kenar-1)','var(--grup-kenar-2)','var(--grup-kenar-3)'];
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.14)':depth===1?'rgba(77,127,168,.09)':'rgba(169,200,224,.06)'):'';;
+    const satirBg=isGrup?(depth===0?'var(--grup-bg-0)':depth===1?'var(--grup-bg-1)':'var(--grup-bg-2)'):'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${u.ikon||'🍽️'}</span>
       <span class="tree-kod" style="min-width:52px">${u.kod}</span>
