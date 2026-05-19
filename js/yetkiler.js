@@ -282,17 +282,21 @@ window.renderKulYetkiler = function() {
             }).join('')}
           </div>` : '<div style="font-size:10px;color:var(--yazi3);margin-top:3px">🌐 Tüm işyerlerinde geçerli</div>'}
       </div>
-      ${atananSablonlar.length ? `
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--krem2)">
-        <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">ŞABLON YETKİLERİ:</div>
+        <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">ATANAN ŞABLONLAR:</div>
+        ${atananSablonlar.length ? `
         <div style="display:flex;flex-wrap:wrap;gap:4px">
           ${atananSablonlar.map(a => {
             const s = yetkiSablonlari.find(x => x.id === a.sablon_id);
             const iy = isyerleri.find(x => x.id === a.isyeri_id);
-            return s ? `<span style="font-size:11px;background:var(--mor-ac);color:var(--mor);padding:2px 8px;border-radius:10px">${s.ad}${iy?' · '+iy.ad:' · Genel'}</span>` : '';
+            return s ? `<span style="font-size:11px;background:var(--mor-ac);color:var(--mor);padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:4px">
+              📋 ${s.ad}${iy?' · '+iy.ad:' · Tüm işyerleri'}
+              <button onclick="sablonKullaniciKaldir('${a.sablon_id}','${k.id}')" style="background:none;border:none;color:var(--mor);cursor:pointer;font-size:13px;padding:0;line-height:1;opacity:.7">×</button>
+            </span>` : '';
           }).join('')}
-        </div>
-      </div>` : ''}
+        </div>` : '<span style="font-size:11px;color:var(--yazi3)">Şablon atanmamış</span>'}
+        <button class="btn sm sec" style="margin-top:6px" onclick="sablonKullaniciEkleAcKulId('${k.id}')">+ Şablon Ekle</button>
+      </div>
     </div>`;
   }).join('');
 };
@@ -425,3 +429,31 @@ function _ysTumCheckSifirla() {
     if (el) el.checked = false;
   });
 }
+
+window.sablonKullaniciEkleAcKulId = function(kulId) {
+  // Boş sablon seçimi aç — sablon_id olmadan kullanıcı bazlı
+  document.getElementById('ys-atama-sablon-id').value = '';
+  const sel = document.getElementById('ys-atama-kullanici');
+  sel.innerHTML = kullanicilar.filter(k=>k.rol!=='admin').map(k=>
+    `<option value="${k.id}"${k.id===kulId?' selected':''}>${k.ad} ${k.soyad||''} (@${k.kullanici_adi})</option>`
+  ).join('');
+  const iySel = document.getElementById('ys-atama-isyeri');
+  iySel.innerHTML = '<option value="">🌐 Tüm işyerleri</option>' +
+    isyerleri.map(i=>`<option value="${i.id}">${i.ad}</option>`).join('');
+  // Şablon seçimi için ek alan
+  const mevcut = kullaniciYetkiSablonlari.filter(a=>a.kullanici_id===kulId).map(a=>a.sablon_id);
+  document.getElementById('ys-atama-sablon-id').value = '';
+  // Şablon select ekle
+  let sablonSel = document.getElementById('ys-atama-sablon-sec');
+  if (!sablonSel) {
+    const div = document.createElement('div');
+    div.className = 'fg';
+    div.innerHTML = '<label>Şablon</label><select id="ys-atama-sablon-sec"><option value="">— Şablon seçin —</option></select>';
+    document.getElementById('ys-atama-isyeri').closest('.fg').before(div);
+    sablonSel = document.getElementById('ys-atama-sablon-sec');
+  }
+  sablonSel.innerHTML = '<option value="">— Şablon seçin —</option>' +
+    yetkiSablonlari.filter(s=>!mevcut.includes(s.id)).map(s=>`<option value="${s.id}">${s.ad}</option>`).join('');
+  sablonSel.onchange = () => { document.getElementById('ys-atama-sablon-id').value = sablonSel.value; };
+  modalAc('modal-yetki-atama');
+};
