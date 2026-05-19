@@ -90,6 +90,7 @@ function _sablonFormuDoldur(s) {
   sel.innerHTML = '<option value="">🌐 Tüm işyerleri (genel)</option>' +
     isyerleri.map(i => `<option value="${i.id}"${i.id === s.isyeri_id ? ' selected' : ''}>${i.ad}</option>`).join('');
   _sablonYetkiDoldur(s.yetkiler || {});
+  if(typeof _ysTumCheckSifirla==='function')_ysTumCheckSifirla();
 }
 
 function _sablonYetkiDoldur(yetkiler) {
@@ -333,6 +334,7 @@ window.kulYetkiDuzenleAc = function(kulId) {
 
   _kyCrudTabloOlustur();
   _kyCrudDoldur(k.crud_yetkiler || {});
+  _kyTumCheckSifirla();
   modalAc('modal-kul-yetki');
 };
 
@@ -395,17 +397,31 @@ window.kulYetkiKaydet = async function() {
   bil('Yetkiler kaydedildi ✓');
 };
 
-// Sütun başlığına tıklayınca tüm o eylemi seç/kaldır
-window.kySutunSec = function(eylemId, th) {
-  const checklar = EKRANLAR.map(e => document.getElementById(`ky-${e.id}-${eylemId}`)).filter(Boolean);
-  const tumSecili = checklar.every(ch => ch.checked || ch.disabled);
-  checklar.forEach(ch => { if (!ch.disabled) ch.checked = !tumSecili; });
-  th.style.background = !tumSecili ? 'var(--yesil-cok-ac)' : '';
+// Sütun tümünü seç/kaldır
+window.kySutunTum = function(eylemId, sec) {
+  EKRANLAR.forEach(e => {
+    const el = document.getElementById(`ky-${e.id}-${eylemId}`);
+    if (el && !el.disabled) el.checked = sec;
+  });
 };
 
-window.ysSutunSec = function(eylemId, th) {
-  const checklar = EKRANLAR.map(e => document.getElementById(`ys-${e.id}-${eylemId}`)).filter(Boolean);
-  const tumSecili = checklar.every(ch => ch.checked || ch.disabled);
-  checklar.forEach(ch => { if (!ch.disabled) ch.checked = !tumSecili; });
-  th.style.background = !tumSecili ? 'var(--yesil-cok-ac)' : '';
+window.ysSutunTum = function(eylemId, sec) {
+  EKRANLAR.forEach(e => {
+    const el = document.getElementById(`ys-${e.id}-${eylemId}`);
+    if (el && !el.disabled) el.checked = sec;
+  });
 };
+
+// Tümünü seç checkboxlarını sıfırla (modal açılırken)
+function _kyTumCheckSifirla() {
+  ['goruntule','ekle','duzenle','sil'].forEach(ey => {
+    const el = document.getElementById(`ky-tum-${ey}`);
+    if (el) el.checked = false;
+  });
+}
+function _ysTumCheckSifirla() {
+  ['goruntule','ekle','duzenle','sil'].forEach(ey => {
+    const el = document.getElementById(`ys-tum-${ey}`);
+    if (el) el.checked = false;
+  });
+}
