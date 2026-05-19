@@ -370,7 +370,8 @@ window.renderIslemListe=function(){
           ${detaySatirlar}
         </table>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sm" onclick="event.stopPropagation();islemDetayAc('${satirlar[0].id}')">👁 Detay</button>
             <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
             ${isAdmin&&satirlar.length===1?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button><button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
           </div>
