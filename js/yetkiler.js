@@ -272,6 +272,14 @@ window.renderKulYetkiler = function() {
       <div style="margin-top:10px">
         <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">KULLANICI YETKİLERİ:</div>
         ${yetkiOzet || '<span style="font-size:11px;color:var(--yazi3)">Yetki tanımlanmamış</span>'}
+        ${k.crud_isyeriler?.length ? `
+          <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px">
+            <span style="font-size:10px;color:var(--yazi3)">İşyerler:</span>
+            ${k.crud_isyeriler.map(id => {
+              const iy = isyerleri.find(x => x.id === id);
+              return iy ? `<span style="font-size:10px;background:var(--yesil-cok-ac);color:var(--yesil);padding:1px 6px;border-radius:8px">${iy.ad}</span>` : '';
+            }).join('')}
+          </div>` : '<div style="font-size:10px;color:var(--yazi3);margin-top:3px">🌐 Tüm işyerlerinde geçerli</div>'}
       </div>
       ${atananSablonlar.length ? `
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--krem2)">
@@ -304,6 +312,25 @@ window.kulYetkiDuzenleAc = function(kulId) {
   document.getElementById('ky-title').textContent = k.ad + ' ' + (k.soyad||'') + ' — Yetkileri';
   document.getElementById('ky-kullanici-bilgi').innerHTML =
     `<strong>${k.ad} ${k.soyad||''}</strong> · @${k.kullanici_adi} · <span style="color:var(--yazi3)">${k.email}</span>`;
+
+  // İşyeri checkboxları
+  const isyeriDiv = document.getElementById('ky-isyeri-checkler');
+  if (isyeriDiv) {
+    const mevcutIsyeriler = k.crud_isyeriler || []; // kaydedilmiş işyeri id listesi
+    isyeriDiv.innerHTML = isyerleri.map(iy => {
+      const sirket = sirketler.find(s => s.id === iy.sirket_id);
+      const secili = mevcutIsyeriler.includes(iy.id);
+      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:${secili?'var(--yesil-cok-ac)':'var(--beyaz)'}">
+        <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
+          style="width:15px;height:15px;accent-color:var(--yesil)">
+        <div>
+          <div style="font-size:12px;font-weight:500">${iy.ad}</div>
+          <div style="font-size:10px;color:var(--yazi3)">${sirket?sirket.ad:''}</div>
+        </div>
+      </label>`;
+    }).join('');
+  }
+
   _kyCrudTabloOlustur();
   _kyCrudDoldur(k.crud_yetkiler || {});
   modalAc('modal-kul-yetki');
@@ -351,10 +378,18 @@ window.kyCrudHepsiniSec = function(sec) {
 window.kulYetkiKaydet = async function() {
   const kulId = document.getElementById('ky-kullanici-id').value;
   const crudYetkiler = _kyCrudOku();
-  await sb.from('kullanicilar').update({ crud_yetkiler: crudYetkiler }).eq('id', kulId);
+  // Seçili işyerleri oku
+  const seciliIsyeriler = isyerleri
+    .filter(iy => document.getElementById('ky-iy-'+iy.id)?.checked)
+    .map(iy => iy.id);
+  await sb.from('kullanicilar').update({
+    crud_yetkiler: crudYetkiler,
+    crud_isyeriler: seciliIsyeriler.length ? seciliIsyeriler : null
+  }).eq('id', kulId);
   const { data } = await sb.from('kullanicilar').select('*'); if (data) kullanicilar = data;
-  // Aktif kullanıcı kendi yetkileriyse güncelle
-  if (kulId === aktifKullanici?.id) aktifKullanici = { ...aktifKullanici, crud_yetkiler: crudYetkiler };
+  if (kulId === aktifKullanici?.id) {
+    aktifKullanici = { ...aktifKullanici, crud_yetkiler: crudYetkiler, crud_isyeriler: seciliIsyeriler };
+  }
   modalKapat('modal-kul-yetki');
   renderKulYetkiler();
   bil('Yetkiler kaydedildi ✓');
