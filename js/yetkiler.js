@@ -161,6 +161,13 @@ window.sablonKullaniciKaydet = async function() {
   const kulId = document.getElementById('ys-atama-kullanici').value;
   const isyeriId = document.getElementById('ys-atama-isyeri').value || null;
   if (!kulId) { bil('Kullanıcı seçin!', 'err'); return; }
+  if (!sablonId) { bil('Şablon seçin!', 'err'); return; }
+  // Max 1 şablon kontrolü
+  const mevcut = kullaniciYetkiSablonlari.filter(a => a.kullanici_id === kulId);
+  if (mevcut.length > 0) {
+    bil('Bu kullanıcıya zaten bir şablon atanmış. Önce mevcut şablonu kaldırın.', 'err');
+    return;
+  }
   await sb.from('kullanici_yetki_sablonlari').insert({
     kullanici_id: kulId, sablon_id: sablonId, isyeri_id: isyeriId
   });
@@ -175,7 +182,9 @@ window.sablonKullaniciKaldir = async function(sablonId, kulId) {
   await sb.from('kullanici_yetki_sablonlari').delete()
     .eq('sablon_id', sablonId).eq('kullanici_id', kulId);
   await _yetkiYenile();
-  renderYetkiler();
+  renderKulYetkiler();
+  // Eğer modal açıksa kutucukları aktif et
+  _kyCrudPasifAyarla(false);
   bil('Kaldırıldı ✓');
 };
 
@@ -339,6 +348,15 @@ window.kulYetkiDuzenleAc = function(kulId) {
   _kyCrudTabloOlustur();
   _kyCrudDoldur(k.crud_yetkiler || {});
   _kyTumCheckSifirla();
+  // Şablon atanmışsa kutucukları pasif yap ve uyarıyı güncelle
+  const atananSablon = kullaniciYetkiSablonlari.find(a => a.kullanici_id === kulId);
+  if (atananSablon) {
+    const sablon = yetkiSablonlari.find(s => s.id === atananSablon.sablon_id);
+    const isyeri = isyerleri.find(i => i.id === atananSablon.isyeri_id);
+    const uyari = document.getElementById('ky-sablon-uyari');
+    if (uyari) uyari.innerHTML = `⚠️ Bu kullanıcı <strong>"${sablon?.ad||'Bilinmeyen Şablon'}"</strong> yetki şablonuna bağlı${isyeri?' (<strong>'+isyeri.ad+'</strong> işyeri için)':' (tüm işyerler için)'}. Bireysel yetki kutucukları pasif. Değişiklik için önce şablonu kaldırın.`;
+  }
+  _kyCrudPasifAyarla(!!atananSablon);
   modalAc('modal-kul-yetki');
 };
 
@@ -400,6 +418,26 @@ window.kulYetkiKaydet = async function() {
   renderKulYetkiler();
   bil('Yetkiler kaydedildi ✓');
 };
+
+// Şablon atanmışsa tüm crud kutucuklarını disable et
+function _kyCrudPasifAyarla(pasif) {
+  EKRANLAR.forEach(e => EYLEMLER.forEach(ey => {
+    const el = document.getElementById(`ky-${e.id}-${ey.id}`);
+    if (el) {
+      el.disabled = pasif;
+      el.style.opacity = pasif ? '0.35' : '';
+      el.style.cursor = pasif ? 'not-allowed' : '';
+    }
+  }));
+  // Tümünü seç checkboxları da pasif
+  ['goruntule','ekle','duzenle','sil'].forEach(ey => {
+    const el = document.getElementById(`ky-tum-${ey}`);
+    if (el) { el.disabled = pasif; el.style.opacity = pasif ? '0.35' : ''; }
+  });
+  // Kaydet butonu ve tümünü seç butonları
+  const uyari = document.getElementById('ky-sablon-uyari');
+  if (uyari) uyari.style.display = pasif ? '' : 'none';
+}
 
 // Sütun tümünü seç/kaldır
 window.kySutunTum = function(eylemId, sec) {
