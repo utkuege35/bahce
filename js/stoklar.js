@@ -39,7 +39,8 @@ window.stokModalAc=function(ustId,tip){
   doldurBirimSecleri();doldurMerkezSecleri();
   modalAc('modal-stok');
 };
-window.stokDuzenle=function(id){
+window.stokGoruntule=function(id){stokDuzenle(id,'goruntule');};
+window.stokDuzenle=function(id,mod='duzenle'){
   const s=stoklar.find(x=>x.id===id);if(!s)return;
   const hv=islemler.some(i=>i.stok_id===id);
   document.getElementById('sm-id').value=s.id;document.getElementById('sm-tip-h').value=s.tip;
@@ -69,7 +70,7 @@ window.stokDuzenle=function(id){
   const loglar=isimLoglari.filter(l=>l.tablo==='stoklar'&&l.kayit_id===id);
   if(loglar.length){document.getElementById('sm-log').style.display='block';document.getElementById('sm-log-liste').innerHTML=loglar.map(l=>`<div class="log-item"><span class="log-eski">${l.eski_ad}</span> → <span class="log-yeni">${l.yeni_ad}</span><span style="color:var(--yazi3);font-size:10px;float:right">${new Date(l.tarih).toLocaleDateString('tr-TR')} — ${l.degistiren||'?'}</span></div>`).join('');}
   else document.getElementById('sm-log').style.display='none';
-  modalAc('modal-stok');
+  modalAc('modal-stok');setTimeout(()=>modalMod('modal-stok',mod),50);
 };
 window.kaydetStok=async function(){
   const id=document.getElementById('sm-id').value||uid();
@@ -139,9 +140,9 @@ function renderStoklar(){
     const dusuk=s.tip==='stok'&&s.min_stok>0&&mik<=s.min_stok;
     const pasif=s.aktif===false;
     // Seviyeye göre grup rengi — stok/ürün kartları renksiz
-    const grupRenkler=['var(--grup-kenar-0)','var(--grup-kenar-1)','var(--grup-kenar-2)','var(--grup-kenar-3)'];
+    const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'var(--grup-bg-0)':depth===1?'var(--grup-bg-1)':'var(--grup-bg-2)'):'';;
+    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.06)':depth===1?'rgba(77,127,168,.04)':'rgba(169,200,224,.03)'):'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
       <span style="font-size:${isGrup?15:13}px">${s.ikon||'📦'}</span>
       <span class="tree-kod" style="min-width:52px">${s.kod}</span>
@@ -151,6 +152,7 @@ function renderStoklar(){
       <span class="tip-chip ${isGrup?'tip-grup':'tip-stok'}">${isGrup?'GRUP':'STOK'}</span>
       ${aktifKullanici?.rol==='admin'?`<div class="tree-actions">
         ${isGrup?`<button class="btn sm" onclick="event.stopPropagation();stokModalAc('${s.id}','grup')">+G</button><button class="btn sm sec" onclick="event.stopPropagation();stokModalAc('${s.id}','stok')">+S</button>`:''}
+        <button class="btn sm" onclick="event.stopPropagation();stokGoruntule('${s.id}')">👁</button>
         <button class="btn sm" onclick="event.stopPropagation();stokDuzenle('${s.id}')">✏</button>
         <button class="btn sm ghost" onclick="event.stopPropagation();stokSil('${s.id}')">✕</button>
       </div>`:''}
