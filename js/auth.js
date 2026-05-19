@@ -12,19 +12,90 @@ window.girisYap=async function(){
     const {data,error}=await sb.auth.signInWithPassword({email:kData.email,password:sifre});
     if(error){hEl.textContent='Şifre hatalı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
     if(hatirla)localStorage.setItem('bahce_hatirla',kAdi);else localStorage.removeItem('bahce_hatirla');
-    hEl.style.display='none';aktifKullanici={...kData,uid:data.user.id};uygulamaAc();
+    hEl.style.display='none';
+    aktifKullanici={...kData,uid:data.user.id};
+    // İşyeri seçim ekranını aç
+    await isyeriSecimAc();
   }catch(e){hEl.textContent='Hata: '+e.message;hEl.style.display='block';}
   btn.disabled=false;btn.textContent='Giriş Yap';
 };
+
+// İşyeri seçim ekranını hazırla ve göster
+async function isyeriSecimAc(){
+  // Şirket ve işyerlerini yükle
+  const {data:sData}=await sb.from('sirketler').select('*').eq('aktif',true);
+  if(sData)sirketler=sData;
+  const {data:iData}=await sb.from('isyerleri').select('*').eq('aktif',true);
+  if(iData)isyerleri=iData;
+
+  // Kullanıcının yetkili olduğu işyerlerini bul
+  let yetkiliIsyerleri=[];
+  if(aktifKullanici.rol==='admin'){
+    // Admin tüm işyerlerini görür
+    yetkiliIsyerleri=isyerleri;
+  }else{
+    const isyeriYetkiler=aktifKullanici.isyeri_yetkiler||[];
+    yetkiliIsyerleri=isyerleri.filter(iy=>isyeriYetkiler.some(y=>y.isyeri_id===iy.id));
+  }
+
+  // Tek işyeri varsa direkt seç
+  if(yetkiliIsyerleri.length===1){
+    await isyeriSec(yetkiliIsyerleri[0].id);
+    return;
+  }
+
+  // Seçim ekranını göster
+  document.getElementById('giris-wrap').style.display='none';
+  document.getElementById('isyeri-wrap').style.display='flex';
+  document.getElementById('isyeri-kullanici-ad').textContent=(aktifKullanici.ad||'')+' '+(aktifKullanici.soyad||'');
+
+  const liste=document.getElementById('isyeri-liste');
+  liste.innerHTML=yetkiliIsyerleri.map(iy=>{
+    const sirket=sirketler.find(s=>s.id===iy.sirket_id);
+    return `<button onclick="isyeriSec('${iy.id}')" style="
+      width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:10px;
+      background:var(--beyaz);cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;
+      transition:all .15s;display:flex;align-items:center;gap:12px
+    " onmouseover="this.style.borderColor='var(--yesil)';this.style.background='var(--yesil-cok-ac)'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--beyaz)'">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏢</div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--yazi1)">${iy.ad}</div>
+        <div style="font-size:11px;color:var(--yazi3);margin-top:2px">${sirket?sirket.ad:''} ${iy.kod?'· '+iy.kod:''}</div>
+      </div>
+    </button>`;
+  }).join('');
+
+  if(!yetkiliIsyerleri.length){
+    liste.innerHTML='<div style="text-align:center;color:var(--yazi3);font-size:13px;padding:1rem">Yetkili işyeriniz bulunmuyor.<br>Yöneticinizle iletişime geçin.</div>';
+  }
+}
+
+// İşyeri seç ve uygulamayı aç
+window.isyeriSec=async function(isyeriId){
+  const iy=isyerleri.find(x=>x.id===isyeriId);
+  if(!iy)return;
+  aktifIsyeri=iy;
+  aktifSirket=sirketler.find(s=>s.id===iy.sirket_id)||null;
+  // Tercihi kaydet
+  localStorage.setItem('bahce_isyeri_'+aktifKullanici.id, isyeriId);
+  // Ekranı kapat, uygulamayı aç
+  document.getElementById('isyeri-wrap').style.display='none';
+  uygulamaAc();
+};
+
 document.getElementById('giris-sifre').addEventListener('keydown',e=>{if(e.key==='Enter')window.girisYap();});
 document.getElementById('giris-kullanici-adi').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('giris-sifre').focus();});
 const _h=localStorage.getItem('bahce_hatirla');
 if(_h){document.getElementById('giris-kullanici-adi').value=_h;document.getElementById('giris-hatirla').checked=true;setTimeout(()=>document.getElementById('giris-sifre').focus(),100);}
 
 window.cikisYap=async function(){
-  await sb.auth.signOut();aktifKullanici=null;
+  await sb.auth.signOut();
+  aktifKullanici=null;aktifIsyeri=null;aktifSirket=null;
   realtimeKanallar.forEach(k=>sb.removeChannel(k));realtimeKanallar=[];
-  document.getElementById('giris-wrap').style.display='flex';document.getElementById('uygulama').style.display='none';
+  document.getElementById('isyeri-wrap').style.display='none';
+  document.getElementById('uygulama').style.display='none';
+  document.getElementById('giris-wrap').style.display='flex';
 };
 
 window.sifreSifirlamaGonder=async function(){
