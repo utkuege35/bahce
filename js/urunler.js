@@ -35,7 +35,8 @@ window.urunModalAc=function(ustId,tip){
   else document.getElementById('um-ust-bilgi').textContent=isGrup?'Ana ürün grubu':'Grup seçilmedi';
   document.getElementById('um-kod').disabled=false;doldurBirimSecleri();modalAc('modal-urun');
 };
-window.urunDuzenle=function(id){
+window.urunGoruntule=function(id){urunDuzenle(id,'goruntule');};
+window.urunDuzenle=function(id,mod='duzenle'){
   const u=urunler.find(x=>x.id===id);if(!u)return;
   const hv=islemler.some(i=>i.urun_id===id);
   document.getElementById('um-id').value=u.id;document.getElementById('um-tip-h').value=u.tip;
@@ -287,7 +288,7 @@ function renderUrunler(){
       <span class="tip-chip ${isGrup?'tip-grup':isAra?'tip-ara':'tip-urun'}">${isGrup?'GRUP':isAra?'YARI MAMUL':'MAMUL'}</span>
       ${isAdmin?`<div class="tree-actions">
         ${isGrup?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')" title="Alt Grup">+G</button><button class="btn sm" style="background:var(--mor-ac);color:var(--mor)" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')" title="Yarı Mamul Ekle">+Y</button><button class="btn sm sec" onclick="event.stopPropagation();urunModalAc('${u.id}','urun')" title="Mamul Ürün Ekle">+Ü</button>`:''}
-        <button class="btn sm" onclick="event.stopPropagation();urunDuzenle('${u.id}')">✏</button>
+        <button class="btn sm" onclick="event.stopPropagation();urunGoruntule('${u.id}')">👁</button><button class="btn sm" onclick="event.stopPropagation();urunDuzenle('${u.id}')">✏</button>
         <button class="btn sm ghost" onclick="event.stopPropagation();urunSil('${u.id}')">✕</button>
       </div>`:''}
     </div>`;
