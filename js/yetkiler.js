@@ -229,3 +229,133 @@ window.sablonHepsiniSec = function(sec) {
     if (el && !el.disabled) el.checked = sec;
   }));
 };
+
+// ===== KULLANICI YETKİLERİ SAYFASI =====
+
+window.renderKulYetkiler = function() {
+  const el = document.getElementById('kul-yetkiler-liste'); if (!el) return;
+
+  // Filtre select doldur
+  const filtreSel = document.getElementById('kul-yetki-filtre');
+  if (filtreSel) {
+    const secili = filtreSel.value;
+    filtreSel.innerHTML = '<option value="">Tüm kullanıcılar</option>' +
+      kullanicilar.filter(k => k.rol !== 'admin').map(k =>
+        `<option value="${k.id}"${k.id===secili?' selected':''}>${k.ad} ${k.soyad||''} (@${k.kullanici_adi})</option>`
+      ).join('');
+  }
+
+  const filtre = filtreSel?.value || '';
+  const liste = kullanicilar.filter(k => k.rol !== 'admin' && (!filtre || k.id === filtre));
+
+  if (!liste.length) {
+    el.innerHTML = '<div class="bos">Kullanıcı bulunamadı.</div>';
+    return;
+  }
+
+  el.innerHTML = liste.map(k => {
+    const yetkiOzet = _yetkiOzetHTML(k.crud_yetkiler || {});
+    const atananSablonlar = kullaniciYetkiSablonlari.filter(a => a.kullanici_id === k.id);
+    const ini = (k.ad||'?')[0].toUpperCase() + (k.soyad||'')[0]?.toUpperCase()||'';
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--yesil)">${ini}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${k.ad} ${k.soyad||''}</div>
+            <div style="font-size:11px;color:var(--yazi3)">@${k.kullanici_adi}</div>
+          </div>
+        </div>
+        <button class="btn sm pri" onclick="kulYetkiDuzenleAc('${k.id}')">✏ Yetkileri Düzenle</button>
+      </div>
+      <!-- Mevcut yetkiler özeti -->
+      <div style="margin-top:10px">
+        <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">KULLANICI YETKİLERİ:</div>
+        ${yetkiOzet || '<span style="font-size:11px;color:var(--yazi3)">Yetki tanımlanmamış</span>'}
+      </div>
+      ${atananSablonlar.length ? `
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--krem2)">
+        <div style="font-size:10px;font-weight:600;color:var(--yazi3);margin-bottom:5px">ŞABLON YETKİLERİ:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${atananSablonlar.map(a => {
+            const s = yetkiSablonlari.find(x => x.id === a.sablon_id);
+            const iy = isyerleri.find(x => x.id === a.isyeri_id);
+            return s ? `<span style="font-size:11px;background:var(--mor-ac);color:var(--mor);padding:2px 8px;border-radius:10px">${s.ad}${iy?' · '+iy.ad:' · Genel'}</span>` : '';
+          }).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+};
+
+function _yetkiOzetHTML(yetkiler) {
+  if (!yetkiler || !Object.keys(yetkiler).length) return '';
+  return EKRANLAR.map(e => {
+    const ey = yetkiler[e.id] || {};
+    const aktif = EYLEMLER.filter(ey2 => ey[ey2.id]).map(ey2 => ey2.ikon).join('');
+    if (!aktif) return '';
+    return `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--yesil-cok-ac);color:var(--yesil);margin-right:4px;margin-bottom:4px;display:inline-block">${e.ad}: ${aktif}</span>`;
+  }).join('');
+}
+
+window.kulYetkiDuzenleAc = function(kulId) {
+  const k = kullanicilar.find(x => x.id === kulId); if (!k) return;
+  document.getElementById('ky-kullanici-id').value = kulId;
+  document.getElementById('ky-title').textContent = k.ad + ' ' + (k.soyad||'') + ' — Yetkileri';
+  document.getElementById('ky-kullanici-bilgi').innerHTML =
+    `<strong>${k.ad} ${k.soyad||''}</strong> · @${k.kullanici_adi} · <span style="color:var(--yazi3)">${k.email}</span>`;
+  _kyCrudTabloOlustur();
+  _kyCrudDoldur(k.crud_yetkiler || {});
+  modalAc('modal-kul-yetki');
+};
+
+function _kyCrudTabloOlustur() {
+  const tbody = document.getElementById('ky-crud-tablo'); if (!tbody) return;
+  tbody.innerHTML = EKRANLAR.map(e => `
+    <tr style="border-bottom:1px solid var(--krem2)">
+      <td style="padding:8px 10px;font-weight:500">${e.ad}</td>
+      ${EYLEMLER.map(ey => `
+        <td style="padding:8px;text-align:center">
+          <input type="checkbox" id="ky-${e.id}-${ey.id}"
+            style="width:16px;height:16px;cursor:pointer;accent-color:var(--yesil)">
+        </td>`).join('')}
+    </tr>`).join('');
+}
+
+function _kyCrudDoldur(yetkiler) {
+  EKRANLAR.forEach(e => EYLEMLER.forEach(ey => {
+    const el = document.getElementById(`ky-${e.id}-${ey.id}`);
+    if (el) el.checked = yetkiler?.[e.id]?.[ey.id] === true;
+  }));
+}
+
+function _kyCrudOku() {
+  const y = {};
+  EKRANLAR.forEach(e => {
+    y[e.id] = {};
+    EYLEMLER.forEach(ey => {
+      const el = document.getElementById(`ky-${e.id}-${ey.id}`);
+      y[e.id][ey.id] = el ? el.checked : false;
+    });
+  });
+  return y;
+}
+
+window.kyCrudHepsiniSec = function(sec) {
+  EKRANLAR.forEach(e => EYLEMLER.forEach(ey => {
+    const el = document.getElementById(`ky-${e.id}-${ey.id}`);
+    if (el) el.checked = sec;
+  }));
+};
+
+window.kulYetkiKaydet = async function() {
+  const kulId = document.getElementById('ky-kullanici-id').value;
+  const crudYetkiler = _kyCrudOku();
+  await sb.from('kullanicilar').update({ crud_yetkiler: crudYetkiler }).eq('id', kulId);
+  const { data } = await sb.from('kullanicilar').select('*'); if (data) kullanicilar = data;
+  // Aktif kullanıcı kendi yetkileriyse güncelle
+  if (kulId === aktifKullanici?.id) aktifKullanici = { ...aktifKullanici, crud_yetkiler: crudYetkiler };
+  modalKapat('modal-kul-yetki');
+  renderKulYetkiler();
+  bil('Yetkiler kaydedildi ✓');
+};
