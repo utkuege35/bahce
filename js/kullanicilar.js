@@ -20,6 +20,17 @@ function _yetkiDoldur(yetkiler){
   });
 }
 
+window.yeniKullaniciModalAc=function(){
+  document.getElementById('km-uid').value='';
+  document.getElementById('km-title').textContent='Yeni Kullanıcı';
+  ['km-ad','km-soyad','km-email','km-kullanici-adi','km-sifre'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('km-rol').value='kullanici';
+  _doldurKasaSelect('');
+  _yetkiDoldur({});
+  if(typeof doldurKmIsyeriListe==='function')doldurKmIsyeriListe([]);
+  modalAc('modal-kullanici');
+};
+
 window.kullaniciyiKaydet=async function(){
   const ad=document.getElementById('km-ad').value.trim();
   const soyad=document.getElementById('km-soyad').value.trim();
@@ -36,10 +47,12 @@ window.kullaniciyiKaydet=async function(){
       if(!sifre||sifre.length<6){bil('Şifre en az 6 karakter!','err');return;}
       const {data:sd,error:se}=await sb.auth.signUp({email,password:sifre});
       if(se){bil('Hata: '+se.message,'err');return;}
-      await sb.from('kullanicilar').insert({id:sd?.user?.id||uid(),ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler});
+      const isyeriYetkiler=typeof isyeriYetkilerOku==='function'?isyeriYetkilerOku():[];
+      await sb.from('kullanicilar').insert({id:sd?.user?.id||uid(),ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler});
       bil(`${ad} ${soyad} eklendi ✓`);
     }else{
-      await sb.from('kullanicilar').update({ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler}).eq('id',mUid);
+      const isyeriYetkiler=typeof isyeriYetkilerOku==='function'?isyeriYetkilerOku():[];
+      await sb.from('kullanicilar').update({ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler}).eq('id',mUid);
       bil('Güncellendi ✓');
     }
     const {data}=await sb.from('kullanicilar').select('*');if(data)kullanicilar=data;
@@ -65,6 +78,7 @@ window.kullaniciDuzenle=function(id){
   document.getElementById('km-sifre').value='';
   _doldurKasaSelect(k.varsayilan_kasa_id||'');
   _yetkiDoldur(k.yetkiler||{});
+  if(typeof doldurKmIsyeriListe==='function')doldurKmIsyeriListe(k.isyeri_yetkiler||[]);
   modalAc('modal-kullanici');
 };
 
