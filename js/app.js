@@ -91,8 +91,7 @@ function uygulamaAc(){
     const navIsy=document.getElementById('nav-isyerleri');if(navIsy)navIsy.style.display='none';
     const navYtk=document.getElementById('nav-yetkiler');if(navYtk)navYtk.style.display='none';
     const navKY=document.getElementById('nav-kul-yetkiler');if(navKY)navKY.style.display='none';
-    // Yetki bazlı nav butonlarını göster/gizle
-    const yetkiler=aktifKullanici.yetkiler||{};
+    // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
       'islem':'gp(\'islem\')', 'islem-liste':'gp(\'islem-liste\')',
       'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
@@ -108,9 +107,7 @@ function uygulamaAc(){
       const oc=btn.getAttribute('onclick')||'';
       for(const [alan,gpc] of Object.entries(navMap)){
         if(oc.includes(gpc)){
-          // Eski sayfa yetkisi VEYA yeni crud_yetkiler görüntüleme yetkisi
-          const crudGoruntule=typeof yetkiVar==='function'?yetkiVar(alan,'goruntule'):false;
-          btn.style.display=(yetkiler[alan]||crudGoruntule)?'':'none';
+          btn.style.display=yetkiVar(alan,'goruntule')?'':'none';
           break;
         }
       }
@@ -151,7 +148,7 @@ async function baslat(){
   // Yetki tablolarını yükle
   const [{data:ysData},{data:kysData}] = await Promise.all([
     sb.from('yetki_sablonlari').select('*').eq('aktif',true),
-    sb.from('kullanici_yetki_sablonlari').select('*').eq('kullanici_id',aktifKullanici?.id)
+    sb.from('kullanici_yetki_sablonlari').select('*')
   ]);
   if(ysData)yetkiSablonlari=ysData;
   if(kysData)kullaniciYetkiSablonlari=kysData;
