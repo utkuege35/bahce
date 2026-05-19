@@ -24,7 +24,8 @@ window.giderKalemModalAc=function(ustId,tip){
   else document.getElementById('gk-ust-bilgi').textContent=tip==='grup'?'Ana gider grubu':'Grupsuz kalem';
   doldurMerkezSecleri();modalAc('modal-gider-kalem');
 };
-window.giderKalemDuzenle=function(id){
+window.giderKalemGoruntule=function(id){giderKalemDuzenle(id,'goruntule');};
+window.giderKalemDuzenle=function(id,mod='duzenle'){
   const g=giderKalemleri.find(x=>x.id===id);if(!g)return;
   document.getElementById('gk-id').value=g.id;document.getElementById('gk-tip-h').value=g.tip;
   document.getElementById('gk-title').textContent=g.tip==='grup'?'Grubu Düzenle':'Kalemi Düzenle';
@@ -90,6 +91,7 @@ function renderGiderKalemTree(){
       <span class="tip-chip ${isGrup?'tip-grup':'tip-stok'}" style="${isGrup?'':'background:var(--turuncu-cok-ac);color:var(--turuncu)'}">${isGrup?'GRUP':'KAL.'}</span>
       <div class="tree-actions">
         ${isGrup?`<button class="btn sm" onclick="event.stopPropagation();giderKalemModalAc('${g.id}','grup')">+G</button><button class="btn sm pri" onclick="event.stopPropagation();giderKalemModalAc('${g.id}','kalem')">+K</button>`:''}
+        <button class="btn sm" onclick="event.stopPropagation();giderKalemGoruntule('${g.id}')">👁</button>
         <button class="btn sm" onclick="event.stopPropagation();giderKalemDuzenle('${g.id}')">✏</button>
         <button class="btn sm ghost" onclick="event.stopPropagation();giderKalemSil('${g.id}')">✕</button>
       </div>
