@@ -66,7 +66,8 @@ window.kullaniciyiKaydet=async function(){
   }catch(e){bil('Hata: '+e.message,'err');}
 };
 
-window.kullaniciDuzenle=function(id){
+window.kullaniciGoruntule=function(id){kullaniciDuzenle(id,'goruntule');};
+window.kullaniciDuzenle=function(id,mod='duzenle'){
   const k=kullanicilar.find(x=>x.id===id);if(!k)return;
   document.getElementById('km-uid').value=k.id;
   document.getElementById('km-title').textContent='Kullanıcıyı Düzenle';
@@ -79,7 +80,7 @@ window.kullaniciDuzenle=function(id){
   _doldurKasaSelect(k.varsayilan_kasa_id||'');
   _yetkiDoldur(k.yetkiler||{});
   if(typeof doldurKmIsyeriListe==='function')doldurKmIsyeriListe(k.isyeri_yetkiler||[]);
-  modalAc('modal-kullanici');
+  modalAc('modal-kullanici');setTimeout(()=>modalMod('modal-kullanici',mod),50);
 };
 
 function renderKullanicilar(){
@@ -99,7 +100,8 @@ function renderKullanicilar(){
           ${varsKasa?`<span style="font-size:10px;color:var(--yazi3)">💵 ${varsKasa.ad}</span>`:''}
         </div>
       </div>
-      <button class="btn sm" onclick="kullaniciDuzenle('${k.id}')">Düzenle</button>
+      <button class="btn sm" onclick="kullaniciGoruntule('${k.id}')">👁 Görüntüle</button>
+      <button class="btn sm" onclick="kullaniciDuzenle('${k.id}')">✏ Düzenle</button>
     </div>`;
   }).join('');
 }
