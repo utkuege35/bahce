@@ -348,7 +348,8 @@ window.renderIslemListe=function(){
         <td style="padding:6px 8px;text-align:right;font-weight:500;white-space:nowrap;color:${iturRenk}">${i.tutar?para(i.tutar):''}</td>
         <td style="padding:6px 8px;font-size:10px;color:var(--yazi3)">${i.satir_not||''}</td>
         <td colspan="2" style="padding:6px 8px;text-align:right;white-space:nowrap">
-          ${isAdmin?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button> <button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
+          ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button>`:''}
+          ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
         </td>
       </tr>`;
     }).join('');
@@ -371,9 +372,9 @@ window.renderIslemListe=function(){
         </table>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn sm" onclick="event.stopPropagation();islemDetayAc('${satirlar[0].id}')">👁 Detay</button>
-            <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
-            ${isAdmin&&satirlar.length===1?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button><button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
+<button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
+            ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button>`:''}
+            ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
           </div>
           <span style="font-size:13px;font-weight:600;color:var(--yesil)">Toplam: ${para(topTutar)}</span>
         </div>
