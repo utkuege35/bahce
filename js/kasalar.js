@@ -1,5 +1,4 @@
 // ===== KASALAR =====
-let kasalar_list = [];
 let kullanici_kasalar_list = [];
 
 window.renderKasalar = async function() {
