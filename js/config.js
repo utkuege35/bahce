@@ -125,7 +125,7 @@ let kullaniciYetkiSablonlari = [];
 
 const EKRANLAR = [
   {id:'islem',      ad:'Yeni İşlem'},
-  {id:'islem_liste',ad:'İşlem Listesi'},
+  {id:'islem_liste',ad:'İşlem Listesi', ekleYok:true},
   {id:'stok',       ad:'Stoklar'},
   {id:'urunler',    ad:'Ürünler'},
   {id:'receteler',  ad:'Ürün Reçeteleri'},
