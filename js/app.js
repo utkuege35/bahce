@@ -93,7 +93,7 @@ function uygulamaAc(){
     const navKY=document.getElementById('nav-kul-yetkiler');if(navKY)navKY.style.display='none';
     // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
-      'islem':'gp(\'islem\')', 'islem-liste':'gp(\'islem-liste\')',
+      'islem':'gp(\'islem\')', 'islem_liste':'gp(\'islem-liste\')',
       'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
