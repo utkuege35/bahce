@@ -1,13 +1,19 @@
 // ===== ÜRETİM MALİYET =====
-function hesaplaUrunMaliyeti(urunId,miktar){
+// _derinlik: döngüsel referanslara (A -> B -> A) karşı güvenlik sınırı
+function hesaplaUrunMaliyeti(urunId,miktar,_derinlik){
+  _derinlik=_derinlik||0;
+  if(_derinlik>15)return 0;
   const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
   let toplam=0;
   bilesenleri.forEach(b=>{
     if(b.kaynak_tip==='stok'){
       const s=stoklar.find(x=>x.id===b.kaynak_id);
       toplam+=(s?.maliyet||0)*(b.miktar||0)*birimTemelCarp(b.birim_id)*miktar;
+    }else if(b.kaynak_tip==='hizmet'){
+      toplam+=(parseFloat(b.fiyat)||0)*(b.miktar||0)*birimTemelCarp(b.birim_id)*miktar;
     }else{
-      toplam+=hesaplaUrunMaliyeti(b.kaynak_id,(b.miktar||0)*miktar);
+      // 'ara_urun' veya 'urun' (mamul) — iç içe olabilir
+      toplam+=hesaplaUrunMaliyeti(b.kaynak_id,(b.miktar||0)*birimTemelCarp(b.birim_id)*miktar,_derinlik+1);
     }
   });
   return toplam;
@@ -37,16 +43,19 @@ window.kaydetUretim=async function(){
   const urun=urunler.find(x=>x.id===urunId);if(!urun)return;
   const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
   let topMal=0;
-  async function sarfiyatKaydet(bList,carpan){
+  async function sarfiyatKaydet(bList,carpan,_derinlik){
+    _derinlik=_derinlik||0;
+    if(_derinlik>15)return true; // döngüsel referans güvenlik sınırı
     for(const b of bList){
       if(b.kaynak_tip==='stok'){
         const gMik=parseFloat(b.miktar)*carpan;const s=stoklar.find(x=>x.id===b.kaynak_id);const carp=birimTemelCarp(b.birim_id);
         if(stokMiktar(b.kaynak_id)<gMik*carp){if(!(await onay(`${s?.ad||''} stoğu yetersiz! Devam edilsin mi?`,'⚠️')))return false;}
         topMal+=(s?.maliyet||0)*gMik*carp;
-        await sb.from('islemler').insert({tur:'uretim_sarfiyat',tarih,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,urun_id:urunId,aciklama:`${urun.ad} üretimi (sarfiyat)`,kat:'Üretim',aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
-      }else{
+        await sb.from('islemler').insert({tur:'uretim_sarfiyat',tarih,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,urun_id:urunId,aciklama:`${urun.ad} üretimi (sarfiyat)`,kat:'Üretim',aciklama_not:an,kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()});
+      }else if(b.kaynak_tip!=='hizmet'){
+        // 'ara_urun' veya 'urun' (mamul) — iç içe olabilir
         const altBilesenleri=urunBilesenleri.filter(x=>x.urun_id===b.kaynak_id);
-        const ok=await sarfiyatKaydet(altBilesenleri,(b.miktar||1)*carpan);if(!ok)return false;
+        const ok=await sarfiyatKaydet(altBilesenleri,(b.miktar||1)*carpan,_derinlik+1);if(!ok)return false;
       }
     }
     return true;
@@ -60,6 +69,31 @@ window.kaydetUretim=async function(){
   document.getElementById('ur-bilesen-bilgi').style.display='none';document.getElementById('ur-maliyet').value='';
   bil(`${urun.ad} üretimi kaydedildi ✓`);
 };
+
+// ===== SATIŞ ANINDA REÇETE BAZLI HAMMADDE DÜŞÜMÜ =====
+// Bir ürün (mamul veya ara ürün) satıldığında, reçetesindeki bileşenleri
+// (iç içe yarı mamul / ürün dahil) takip ederek en dipteki gerçek
+// hammaddeleri (stoklar) doğru oranda düşer. "Üretim" adımına gerek kalmaz —
+// made-to-order (siparişe göre anlık hazırlanan) restoran mantığı.
+async function satisSarfiyatKaydet(urunId,mik,tarih,an,_derinlik){
+  _derinlik=_derinlik||0;
+  if(_derinlik>15)return; // döngüsel referans güvenlik sınırı
+  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
+  if(!bilesenleri.length)return; // reçetesi tanımlanmamış — sadece gelir kaydedilir, hammadde düşülmez
+  for(const b of bilesenleri){
+    const gMik=(parseFloat(b.miktar)||0)*mik;
+    if(b.kaynak_tip==='stok'){
+      await sb.from('islemler').insert({
+        tur:'satis_sarfiyat',tarih,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,urun_id:urunId,
+        aciklama:'Satış sarfiyatı',kat:'Satış Sarfiyatı',aciklama_not:an,
+        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+      });
+    }else if(b.kaynak_tip!=='hizmet'){
+      // 'ara_urun' veya 'urun' (mamul) — iç içe olabilir, orantılı olarak devam
+      await satisSarfiyatKaydet(b.kaynak_id,gMik,tarih,an,_derinlik+1);
+    }
+  }
+}
 
 // ===== ALIŞ =====
 let hmSatirListesi=[];
@@ -384,11 +418,12 @@ window.kaydetSatis=async function(){
     let islemData=null;
     if(tip==='urun'){
       const u=urunler.find(x=>x.id===s.secimId);
-      if((u?.stok||0)<mik){if(!(await onay(`${u?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`,'⚠️')))return;}
-      await sb.from('urunler').update({stok:(u.stok||0)-mik}).eq('id',s.secimId);
       const {data:id}=await sb.from('islemler').insert({tur:'satis',tarih,urun_id:s.secimId,birim_id:bId,miktar:mik,fiyat:fiy,tutar:tut,aciklama:`${u?.ad||''} satışı`,kat:'Satış',aciklama_not:an,belge_no:belge,belge_id:belgeId,satir_not:s.satir_not||null,cari_id:s.cari_id||null,odeme_tipi:odeme,kasa_etkisi:kasaEtkisi,kasa_id:satirKasaId,kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()+n}).select();
       islemData=id;
       if(s.birimId)birimHafizaYaz(s.secimId,s.birimId);
+      // Reçeteye göre hammaddeleri (iç içe YM/ürün dahil) düş — üretim adımına gerek yok
+      const mikTemel=mik*birimTemelCarp(bId);
+      await satisSarfiyatKaydet(s.secimId,mikTemel,tarih,an);
     }else if(tip==='stok'){
       const sk=stoklar.find(x=>x.id===s.secimId);
       if(stokMiktar(s.secimId)<mik*birimTemelCarp(bId)){if(!(await onay(`${sk?.ad||''} stoğu yetersiz! Yine de satış yapılsın mı?`,'⚠️')))return;}
