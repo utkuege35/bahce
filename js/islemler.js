@@ -95,6 +95,113 @@ async function satisSarfiyatKaydet(urunId,mik,tarih,an,_derinlik){
   }
 }
 
+// ===== SAYIM =====
+// Mutfak sayımlarında hammadde (stok) yanında Yarı Mamul veya Ürün de
+// sayılabilir. YM/Ürün sayıldığında, reçetesi (iç içe olabilir) üzerinden
+// otomatik olarak altındaki gerçek hammaddelere dağıtılır ve her hammadde
+// için ayrı bir kayıt oluşturulur — böylece "ne kadarı direkt sayıldı,
+// ne kadarı hangi YM/Ürün'den geldi" ayrı ayrı görülebilir.
+// NOT: Bu kayıtlar stok miktarını OTOMATİK DEĞİŞTİRMEZ — sadece bilgi
+// amaçlıdır (ileride envanter raporunda kullanılacak).
+let sayimSatirListesi=[];
+
+window.sySatirEkle=function(){
+  sayimSatirListesi.push({tip:'stok',kaynakId:'',birimId:'',miktar:''});
+  sySatirRender();
+};
+function sySecimOpts(tip,seciliId){
+  let liste;
+  if(tip==='stok')liste=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false);
+  else if(tip==='ara_urun')liste=urunler.filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
+  else liste=urunler.filter(u=>u.tip==='urun'&&u.aktif!==false);
+  return '<option value="">Seçin...</option>'+liste.map(x=>`<option value="${x.id}"${x.id===seciliId?' selected':''}>[${x.kod}] ${x.ad}</option>`).join('');
+}
+function syBirimOpts(tip,kaynakId,seciliId){
+  let tbId=null;
+  if(tip==='stok'){const s=stoklar.find(x=>x.id===kaynakId);tbId=s?.birim_id;}
+  else{const u=urunler.find(x=>x.id===kaynakId);tbId=u?.birim_id;}
+  const list=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
+  return '<option value="">-</option>'+list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');
+}
+function sySatirRender(){
+  const el=document.getElementById('sy-satirlar');if(!el)return;
+  el.innerHTML=sayimSatirListesi.map((s,i)=>`<tr>
+    <td><select onchange="sySatirGuncelle(${i},'tip',this.value)" style="width:100%;padding:6px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <option value="stok"${s.tip==='stok'?' selected':''}>🧱 Hammadde</option>
+      <option value="ara_urun"${s.tip==='ara_urun'?' selected':''}>⚙️ Yarı Mamul</option>
+      <option value="urun"${s.tip==='urun'?' selected':''}>🍽️ Ürün</option>
+    </select></td>
+    <td><select onchange="sySatirGuncelle(${i},'kaynakId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${sySecimOpts(s.tip,s.kaynakId)}</select></td>
+    <td><select onchange="sySatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${syBirimOpts(s.tip,s.kaynakId,s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="sySatirGuncelle(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><button onclick="sySatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
+  </tr>`).join('');
+}
+window.sySatirGuncelle=function(i,alan,deger){
+  sayimSatirListesi[i][alan]=deger;
+  if(alan==='tip'){sayimSatirListesi[i].kaynakId='';sayimSatirListesi[i].birimId='';sySatirRender();}
+  else if(alan==='kaynakId'){
+    const tip=sayimSatirListesi[i].tip;
+    const kalem=tip==='stok'?stoklar.find(x=>x.id===deger):urunler.find(x=>x.id===deger);
+    sayimSatirListesi[i].birimId=kalem?.varsayilan_birim_id||kalem?.birim_id||'';
+    sySatirRender();
+  }
+};
+window.sySatirSil=function(i){sayimSatirListesi.splice(i,1);sySatirRender();};
+
+// Bir YM/Ürünün sayılan miktarını, reçetesi üzerinden (iç içe olabilir)
+// altındaki gerçek hammaddelere dağıtır. kaynakUstId: kullanıcının asıl
+// saydığı üst düzey YM/Ürün — dolaylı kayıtlarda kaynak olarak bu taşınır.
+async function sayimDagit(urunId,mik,kaynakUstAd,tarih,an,_derinlik){
+  _derinlik=_derinlik||0;
+  if(_derinlik>15)return;
+  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
+  for(const b of bilesenleri){
+    const gMik=(parseFloat(b.miktar)||0)*mik;
+    if(b.kaynak_tip==='stok'){
+      await sb.from('islemler').insert({
+        tur:'sayim',tarih,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,
+        aciklama:'Sayım (dolaylı)',kat:'Sayım',satir_not:`${kaynakUstAd} sayımından`,aciklama_not:an,
+        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+      });
+    }else if(b.kaynak_tip!=='hizmet'){
+      await sayimDagit(b.kaynak_id,gMik,kaynakUstAd,tarih,an,_derinlik+1);
+    }
+  }
+}
+window.kaydetSayim=async function(){
+  const tarih=document.getElementById('sy-tarih').value;
+  const an=document.getElementById('sy-not').value;
+  if(!tarih){bil('Tarih zorunlu!','err');return;}
+  const gecerli=sayimSatirListesi.filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
+  if(!gecerli.length){bil('En az bir satır!','err');return;}
+  for(const s of gecerli){
+    const mik=parseFloat(s.miktar)||0;
+    if(s.tip==='stok'){
+      await sb.from('islemler').insert({
+        tur:'sayim',tarih,stok_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
+        aciklama:'Sayım (direkt)',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
+        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+      });
+    }else{
+      const kalem=urunler.find(x=>x.id===s.kaynakId);
+      // YM/Ürünün kendi sayım kaydı (izlenebilirlik için)
+      await sb.from('islemler').insert({
+        tur:'sayim',tarih,urun_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
+        aciklama:`${kalem?.ad||''} sayımı`,kat:'Sayım',satir_not:'Doğrudan sayım (YM/Ürün)',aciklama_not:an,
+        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+      });
+      // Reçeteye göre hammaddelere dağıt
+      const mikTemel=mik*birimTemelCarp(s.birimId);
+      await sayimDagit(s.kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',tarih,an);
+    }
+  }
+  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+  sayimSatirListesi=[];sySatirRender();
+  document.getElementById('sy-not').value='';
+  bil(`${gecerli.length} kalem sayımı kaydedildi ✓`);
+};
+
 // ===== ALIŞ =====
 let hmSatirListesi=[];
 let _hmTur='malzeme'; // malzeme | hizmet | diger
