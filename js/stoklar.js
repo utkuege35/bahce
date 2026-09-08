@@ -10,6 +10,16 @@ function urunStok(urunId){
 
 // ===== STOK TREE =====
 window.stokModalAc=function(ustId,tip){
+  // Seviyelendirme kuralı: en fazla 3 grup seviyesi, stok kartları
+  // SADECE 3. seviye bir grubun altına eklenebilir.
+  if(tip==='grup'&&ustId){
+    const ust=stoklar.find(s=>s.id===ustId);
+    if(ust&&(ust.seviye||1)>=3){bil('En fazla 3 seviye grup açılabilir!','err');return;}
+  }
+  if(tip==='stok'){
+    const ust=ustId?stoklar.find(s=>s.id===ustId):null;
+    if(!ust||(ust.seviye||0)!==3){bil('Stok kartı sadece 3. seviye bir grubun altına eklenebilir!','err');return;}
+  }
   document.getElementById('sm-id').value='';
   document.getElementById('sm-tip-h').value=tip;
   document.getElementById('sm-ad').value='';
@@ -155,7 +165,7 @@ function renderStoklar(){
       ${dusuk?'<span class="badge sari">⚠ Min</span>':''}
       <span class="tip-chip ${isGrup?'tip-grup':'tip-stok'}">${isGrup?'GRUP':'STOK'}</span>
       ${aktifKullanici?.rol==='admin'?`<div class="tree-actions">
-        ${isGrup?`<button class="btn sm" onclick="event.stopPropagation();stokModalAc('${s.id}','grup')">+G</button><button class="btn sm sec" onclick="event.stopPropagation();stokModalAc('${s.id}','stok')">+S</button>`:''}
+        ${isGrup?`${(s.seviye||1)<3?`<button class="btn sm" onclick="event.stopPropagation();stokModalAc('${s.id}','grup')">+G</button>`:''}${(s.seviye||1)>=3?`<button class="btn sm sec" onclick="event.stopPropagation();stokModalAc('${s.id}','stok')">+S</button>`:''}`:''}
         <button class="btn sm" onclick="event.stopPropagation();stokGoruntule('${s.id}')">👁</button>
         <button class="btn sm" onclick="event.stopPropagation();stokDuzenle('${s.id}')">✏</button>
         <button class="btn sm ghost" onclick="event.stopPropagation();stokSil('${s.id}')">✕</button>
