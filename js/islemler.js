@@ -123,6 +123,52 @@ function syBirimOpts(tip,kaynakId,seciliId){
   const list=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
   return '<option value="">-</option>'+list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');
 }
+function doldurDepoSecleri(){
+  const el=document.getElementById('sy-depo');if(!el)return;
+  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
+  const c=el.value;
+  el.innerHTML='<option value="">— Depo seçin —</option>'+kapsam.filter(d=>d.aktif!==false).map(d=>`<option value="${d.id}">${d.ad}${d.kod?' ['+d.kod+']':''}</option>`).join('');
+  if(c)el.value=c;
+}
+window.syExcelSecildi=async function(input){
+  const file=input.files[0];if(!file)return;
+  const depoId=document.getElementById('sy-depo')?.value;
+  if(!depoId){bil('Excel aktarmadan önce depo seçin!','err');input.value='';return;}
+  if(typeof XLSX==='undefined'){bil('Excel okuma kütüphanesi yüklenemedi, sayfayı yenileyin.','err');input.value='';return;}
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+    let eklenen=0;const hatali=[];
+    for(const row of rows){
+      if(!row||!row.length)continue;
+      const kodRaw=row[0],miktarRaw=row[1],birimRaw=row[2];
+      const kod=(kodRaw===undefined||kodRaw===null)?'':String(kodRaw).trim();
+      if(!kod||kod.toLowerCase()==='kod')continue; // boş satır veya başlık satırı
+      const miktar=parseFloat(miktarRaw);
+      if(!(miktar>0)){hatali.push(`${kod} (miktar geçersiz)`);continue;}
+      let kalem=stoklar.find(s=>s.kod===kod);let tip='stok';
+      if(!kalem){kalem=urunler.find(u=>u.kod===kod&&u.tip==='ara_urun');tip='ara_urun';}
+      if(!kalem){kalem=urunler.find(u=>u.kod===kod&&u.tip==='urun');tip='urun';}
+      if(!kalem){hatali.push(`${kod} (kod bulunamadı)`);continue;}
+      const birimKisa=(birimRaw===undefined||birimRaw===null)?'':String(birimRaw).trim().toLowerCase();
+      const tbId=kalem.birim_id;
+      const uygunBirimler=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
+      let birim=birimKisa?uygunBirimler.find(b=>(b.kisaltma||'').toLowerCase()===birimKisa):null;
+      if(!birim)birim=birimler.find(b=>b.id===tbId)||uygunBirimler[0];
+      sayimSatirListesi.push({tip,kaynakId:kalem.id,birimId:birim?.id||'',miktar:miktar});
+      eklenen++;
+    }
+    sySatirRender();
+    if(hatali.length)bil(`${eklenen} satır eklendi. ${hatali.length} satır atlandı: ${hatali.slice(0,4).join(', ')}${hatali.length>4?'...':''}`,'uyari');
+    else if(eklenen)bil(`${eklenen} satır Excel'den eklendi ✓`);
+    else bil('Excel dosyasında geçerli satır bulunamadı.','err');
+  }catch(e){
+    bil('Excel okunamadı: '+e.message,'err');
+  }
+  input.value='';
+};
 function sySatirRender(){
   const el=document.getElementById('sy-satirlar');if(!el)return;
   el.innerHTML=sayimSatirListesi.map((s,i)=>`<tr>
@@ -152,7 +198,7 @@ window.sySatirSil=function(i){sayimSatirListesi.splice(i,1);sySatirRender();};
 // Bir YM/Ürünün sayılan miktarını, reçetesi üzerinden (iç içe olabilir)
 // altındaki gerçek hammaddelere dağıtır. kaynakUstId: kullanıcının asıl
 // saydığı üst düzey YM/Ürün — dolaylı kayıtlarda kaynak olarak bu taşınır.
-async function sayimDagit(urunId,mik,kaynakUstAd,tarih,an,_derinlik){
+async function sayimDagit(urunId,mik,kaynakUstAd,tarih,an,depoId,_derinlik){
   _derinlik=_derinlik||0;
   if(_derinlik>15)return;
   const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
@@ -160,26 +206,28 @@ async function sayimDagit(urunId,mik,kaynakUstAd,tarih,an,_derinlik){
     const gMik=(parseFloat(b.miktar)||0)*mik;
     if(b.kaynak_tip==='stok'){
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,
+        tur:'sayim',tarih,depo_id:depoId,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,
         aciklama:'Sayım (dolaylı)',kat:'Sayım',satir_not:`${kaynakUstAd} sayımından`,aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
     }else if(b.kaynak_tip!=='hizmet'){
-      await sayimDagit(b.kaynak_id,gMik,kaynakUstAd,tarih,an,_derinlik+1);
+      await sayimDagit(b.kaynak_id,gMik,kaynakUstAd,tarih,an,depoId,_derinlik+1);
     }
   }
 }
 window.kaydetSayim=async function(){
   const tarih=document.getElementById('sy-tarih').value;
+  const depoId=document.getElementById('sy-depo').value;
   const an=document.getElementById('sy-not').value;
   if(!tarih){bil('Tarih zorunlu!','err');return;}
+  if(!depoId){bil('Depo seçimi zorunlu!','err');return;}
   const gecerli=sayimSatirListesi.filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   for(const s of gecerli){
     const mik=parseFloat(s.miktar)||0;
     if(s.tip==='stok'){
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,stok_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
+        tur:'sayim',tarih,depo_id:depoId,stok_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
         aciklama:'Sayım (direkt)',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
@@ -187,13 +235,13 @@ window.kaydetSayim=async function(){
       const kalem=urunler.find(x=>x.id===s.kaynakId);
       // YM/Ürünün kendi sayım kaydı (izlenebilirlik için)
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,urun_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
+        tur:'sayim',tarih,depo_id:depoId,urun_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
         aciklama:`${kalem?.ad||''} sayımı`,kat:'Sayım',satir_not:'Doğrudan sayım (YM/Ürün)',aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
       // Reçeteye göre hammaddelere dağıt
       const mikTemel=mik*birimTemelCarp(s.birimId);
-      await sayimDagit(s.kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',tarih,an);
+      await sayimDagit(s.kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',tarih,an,depoId);
     }
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
