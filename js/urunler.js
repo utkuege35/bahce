@@ -9,15 +9,15 @@ window.umTipDegis=function(yeniTip){
   document.getElementById('um-title').textContent=document.getElementById('um-id').value?`${tipAd} Düzenle`:`Yeni ${tipAd}`;
 };
 window.urunModalAc=function(ustId,tip){
-  // Seviyelendirme kuralı: en fazla 3 grup seviyesi, ürün/YM kartları
-  // SADECE 3. seviye bir grubun altına eklenebilir.
+  // Seviyelendirme kuralı: en fazla 2 grup seviyesi (stoktan 1 basamak az),
+  // ürün/YM kartları SADECE 2. seviye bir grubun altına eklenebilir.
   if(tip==='grup'&&ustId){
     const ust=urunler.find(u=>u.id===ustId);
-    if(ust&&(ust.seviye||1)>=3){bil('En fazla 3 seviye grup açılabilir!','err');return;}
+    if(ust&&(ust.seviye||1)>=2){bil('En fazla 2 seviye grup açılabilir!','err');return;}
   }
   if(tip==='ara_urun'||tip==='urun'){
     const ust=ustId?urunler.find(u=>u.id===ustId):null;
-    if(!ust||(ust.seviye||0)!==3){bil('Ürün/Yarı Mamul sadece 3. seviye bir grubun altına eklenebilir!','err');return;}
+    if(!ust||(ust.seviye||0)!==2){bil('Ürün/Yarı Mamul sadece 2. seviye bir grubun altına eklenebilir!','err');return;}
   }
   document.getElementById('um-id').value='';document.getElementById('um-tip-h').value=tip;
   document.getElementById('um-ad').value='';
@@ -322,7 +322,7 @@ function renderUrunler(){
       ${dusuk?'<span class="badge sari">⚠</span>':''}
       <span class="tip-chip ${isGrup?'tip-grup':isAra?'tip-ara':'tip-urun'}">${isGrup?'GRUP':isAra?'YARI MAMUL':'MAMUL'}</span>
       ${isAdmin?`<div class="tree-actions">
-        ${isGrup?`${(u.seviye||1)<3?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')" title="Alt Grup">+G</button>`:''}${(u.seviye||1)>=3?`<button class="btn sm" style="background:var(--mor-ac);color:var(--mor)" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')" title="Yarı Mamul Ekle">+Y</button><button class="btn sm sec" onclick="event.stopPropagation();urunModalAc('${u.id}','urun')" title="Mamul Ürün Ekle">+Ü</button>`:''}`:''}
+        ${isGrup?`${(u.seviye||1)<2?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')" title="Alt Grup">+G</button>`:''}${(u.seviye||1)>=2?`<button class="btn sm" style="background:var(--mor-ac);color:var(--mor)" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')" title="Yarı Mamul Ekle">+Y</button><button class="btn sm sec" onclick="event.stopPropagation();urunModalAc('${u.id}','urun')" title="Mamul Ürün Ekle">+Ü</button>`:''}`:''}
         <button class="btn sm" onclick="event.stopPropagation();urunGoruntule('${u.id}')">👁</button><button class="btn sm" onclick="event.stopPropagation();urunDuzenle('${u.id}')">✏</button>
         <button class="btn sm ghost" onclick="event.stopPropagation();urunSil('${u.id}')">✕</button>
       </div>`:''}
