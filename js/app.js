@@ -97,7 +97,7 @@ function uygulamaAc(){
       'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
-      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')'
+      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')'
     };
     const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
     if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
@@ -126,7 +126,7 @@ async function baslat(){
   document.getElementById('sync').textContent='⟳';document.getElementById('sync').className='sync load';
   // İşyeri bazlı filtre — admin ise tüm işyerlerini çek, değilse sadece aktif işyerini
   const isyFil=q=>aktifKullanici?.rol==='admin'?q:q.or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`);
-  const [b,s,u,ub,k,il,mz,gk,ilog,ks]=await Promise.all([
+  const [b,s,u,ub,k,il,mz,gk,ilog,ks,dp]=await Promise.all([
     sb.from('birimler').select('*'),
     isyFil(sb.from('stoklar').select('*')).order('kod'),
     isyFil(sb.from('urunler').select('*')).order('kod'),
@@ -136,12 +136,13 @@ async function baslat(){
     isyFil(sb.from('merkezler').select('*')).order('kod'),
     isyFil(sb.from('gider_kalemleri').select('*')).order('kod'),
     sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
-    isyFil(sb.from('kasalar').select('*')).order('kod')
+    isyFil(sb.from('kasalar').select('*')).order('kod'),
+    isyFil(sb.from('depolar').select('*')).order('ad')
   ]);
   if(b.data)birimler=b.data;if(s.data)stoklar=s.data;if(u.data)urunler=u.data;
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)islemLoglari=il.data;
   if(mz.data)merkezler=mz.data;if(gk.data)giderKalemleri=gk.data;if(ilog.data)islemLoglari=ilog.data;
-  if(ks.data)kasalar_list=ks.data;
+  if(ks.data)kasalar_list=ks.data;if(dp.data)depolar=dp.data;
   const islemQ=aktifKullanici?.rol==='admin'
     ?sb.from('islemler').select('*').order('ts',{ascending:false})
     :sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
@@ -167,9 +168,9 @@ async function baslat(){
     if(data){islemler=data.filter(i=>!i.silindi);renderPanel();kontolUyari();}
   }).subscribe();
   realtimeKanallar=[stokK,urunK,islemK];
-  doldurBirimSecleri();doldurStokFil();doldurUrunFil();doldurIslemSecleri();doldurMerkezSecleri();
+  doldurBirimSecleri();doldurStokFil();doldurUrunFil();doldurIslemSecleri();doldurMerkezSecleri();if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
   await cariYukle();
-  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();if(typeof yetkiButonlariUygula==='function')yetkiButonlariUygula();kontolUyari();
+  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();if(typeof renderDepolar==='function')renderDepolar();if(typeof yetkiButonlariUygula==='function')yetkiButonlariUygula();kontolUyari();
   // Satır listelerini cari yüklendikten sonra yenile
   if(hmSatirListesi.length)hmSatirRender();
   if(stSatirListesi.length)stSatirRender();
@@ -255,12 +256,14 @@ window.gp=function(id){
   if(id==='merkezler')renderMerkezler();
   if(id==='hizmetler')renderGiderKalemTree();
   if(id==='cari')renderCari();if(id==='islem-liste')renderIslemListe();
+  if(id==='depolar'&&typeof renderDepolar==='function')renderDepolar();
   if(id==='rapor')renderRapor();if(id==='kullanicilar')renderKullanicilar();if(id==='isyerleri'&&typeof renderIsyerleri==='function')renderIsyerleri();if(id==='yetkiler'&&typeof renderYetkiler==='function'){sablonYetkiTabloOlustur();renderYetkiler();}
   if(id==='kul-yetkiler'&&typeof renderKulYetkiler==='function')renderKulYetkiler();
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
     if(typeof sayimSatirListesi!=='undefined'&&sayimSatirListesi.length===0)setTimeout(()=>sySatirEkle(),180);
+    if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
     setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();const syT=document.getElementById('sy-tarih');if(syT&&!syT.value)syT.value=bugun();},200);
   }
 };
