@@ -14,7 +14,7 @@ window.stokModalAc=function(ustId,tip){
   document.getElementById('sm-tip-h').value=tip;
   document.getElementById('sm-ad').value='';
 
-  document.getElementById('sm-kod').value=kodOlusturStok(ustId);
+  document.getElementById('sm-kod').value=kodOlusturStok(ustId,tip);
   document.getElementById('sm-log').style.display='none';
   document.getElementById('sm-aktif-satir').style.display='none';
   document.getElementById('sm-baslangic').value=0;
