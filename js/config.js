@@ -60,18 +60,31 @@ document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
 window.panelAc=function(id){document.getElementById(id)?.classList.add('open');};
 window.panelKapat=function(id){document.getElementById(id)?.classList.remove('open');};
 
-function kodOlusturStok(ustId){
-  if(!ustId){const analar=stoklar.filter(s=>s.seviye===1).map(s=>parseInt(s.kod)).filter(n=>!isNaN(n));const m=analar.length?Math.max(...analar):0;return String(Math.ceil((m+1)/10)*10);}
-  const ust=stoklar.find(s=>s.id===ustId);if(!ust)return '';
-  const altlar=stoklar.filter(s=>s.ust_id===ustId).map(s=>parseInt(s.kod)).filter(n=>!isNaN(n));
-  if(!altlar.length)return ust.kod+'01';return String(Math.max(...altlar)+1);
+// Hiyerarşik + işyerine özel kod üretici (Dewey tipi: 10, 10.10, 10.10.10 ...)
+// Her seviyede kardeşler arasında 10'ar arayla numaralandırır (araya sonradan
+// manuel kod eklenebilmesi için boşluk bırakır). Kodlar sadece AYNI işyeri +
+// AYNI üst grup kapsamında karşılaştırılır; farklı işyerleri birbirini etkilemez.
+function kodOlusturHiyerarsik(liste,ustId){
+  const isyeriId=aktifIsyeri?.id||null;
+  const kapsam=liste.filter(x=>(x.isyeri_id||null)===isyeriId);
+  const sonrakiOnluk=(sayilar)=>{
+    const m=sayilar.length?Math.max(...sayilar):0;
+    return Math.ceil((m+1)/10)*10;
+  };
+  if(!ustId){
+    const kokSayilar=kapsam.filter(x=>!x.ust_id).map(x=>parseInt(x.kod)).filter(n=>!isNaN(n));
+    return String(sonrakiOnluk(kokSayilar));
+  }
+  const ust=liste.find(x=>x.id===ustId);
+  if(!ust)return '';
+  const kardesSayilar=kapsam.filter(x=>x.ust_id===ustId).map(x=>{
+    const parcalar=String(x.kod).split('.');
+    return parseInt(parcalar[parcalar.length-1]);
+  }).filter(n=>!isNaN(n));
+  return ust.kod+'.'+sonrakiOnluk(kardesSayilar);
 }
-function kodOlusturUrun(ustId){
-  if(!ustId){const analar=urunler.filter(u=>u.seviye===1).map(u=>parseInt(u.kod)).filter(n=>!isNaN(n));const m=analar.length?Math.max(...analar):0;return String(Math.ceil((m+1)/10)*10);}
-  const ust=urunler.find(u=>u.id===ustId);if(!ust)return '';
-  const altlar=urunler.filter(u=>u.ust_id===ustId).map(u=>parseInt(u.kod)).filter(n=>!isNaN(n));
-  if(!altlar.length)return ust.kod+'01';return String(Math.max(...altlar)+1);
-}
+function kodOlusturStok(ustId){return kodOlusturHiyerarsik(stoklar,ustId);}
+function kodOlusturUrun(ustId){return kodOlusturHiyerarsik(urunler,ustId);}
 
 window.uygulamaYenile=async function(){
   const btn=document.getElementById('yenile-btn');
