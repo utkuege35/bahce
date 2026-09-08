@@ -173,6 +173,7 @@
       <option value="gider">Gider / Hizmet</option>
       <option value="satis">Satış</option>
       <option value="uretim">Üretim</option>
+      <option value="sayim">Sayım</option>
       <option value="kasa">Kasa</option>
     </select>
     <input type="date" id="il-bas" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
@@ -204,6 +205,7 @@
     <button class="tab" onclick="islemTab('satis',this)">Satış</button>
     <button class="tab" onclick="islemTab('kasa',this)">Kasa</button>
     <button class="tab" onclick="islemTab('uretim',this)">Üretim</button>
+    <button class="tab" onclick="islemTab('sayim',this)">Sayım</button>
   </div>
 
   <!-- ALIŞ -->
@@ -308,6 +310,33 @@
       </div>
       <div class="fgrid c1"><div class="fg"><label>Açıklama</label><input type="text" id="ks-aciklama" placeholder="Ödeme nedeni, fatura no..."></div></div>
       <div class="btn-row"><button class="btn pri" onclick="kaydetKasa()">Kaydet</button></div>
+    </div>
+  </div>
+
+  <!-- SAYIM -->
+  <div id="tp-sayim" class="tab-panel">
+    <div class="card"><div class="card-title">Sayım Kaydı</div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Hammadde, Yarı Mamul veya Ürün sayabilirsiniz. YM/Ürün sayımı, reçetesi üzerinden otomatik olarak altındaki gerçek hammaddelere dağıtılır. Bu kayıtlar stok miktarını değiştirmez, sadece bilgi amaçlıdır.</div>
+      <div class="fgrid c2" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="sy-tarih"></div>
+        <div class="fg"><label>Not</label><input type="text" id="sy-not" placeholder="Mutfak sayımı, vardiya sonu..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table style="font-size:13px">
+          <thead><tr>
+            <th style="width:120px">Tip</th>
+            <th style="min-width:180px">Kalem</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:100px">Sayılan Miktar</th>
+            <th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="sy-satirlar"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn sm sec" onclick="sySatirEkle()">+ Satır Ekle</button>
+        <button class="btn pri" onclick="kaydetSayim()">Sayımı Kaydet</button>
+      </div>
     </div>
   </div>
 </div>
@@ -917,6 +946,7 @@
           <option value="giris">Hammadde Girişi</option>
           <option value="satis">Satış</option>
           <option value="uretim">Üretim</option>
+          <option value="sayim">Sayım</option>
           <option value="gider">Gider</option>
         </select>
         <input type="date" id="pi-fil-bas" onchange="renderPanelIslemler()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
