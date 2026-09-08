@@ -61,31 +61,41 @@ document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{
 window.panelAc=function(id){document.getElementById(id)?.classList.add('open');};
 window.panelKapat=function(id){document.getElementById(id)?.classList.remove('open');};
 
-// Hiyerarşik + işyerine özel kod üretici (Dewey tipi: 10, 10.10, 10.10.10 ...)
-// Her seviyede kardeşler arasında 10'ar arayla numaralandırır (araya sonradan
-// manuel kod eklenebilmesi için boşluk bırakır). Kodlar sadece AYNI işyeri +
-// AYNI üst grup kapsamında karşılaştırılır; farklı işyerleri birbirini etkilemez.
-function kodOlusturHiyerarsik(liste,ustId){
+// Hiyerarşik + işyerine özel kod üretici.
+// Gruplar için Dewey tipi (10, 10.10, 10.10.10 ...) — kardeşler arasında
+// 10'ar arayla, araya sonradan manuel kod eklenebilmesi için boşluk bırakır.
+// Gerçek kartlar (stok/ürün/YM — grup olmayanlar) için son segment 3 haneli
+// ve 001'den başlayarak 1'er artar (örn. 10.10.10.001, 10.10.10.002 ...).
+// Kodlar sadece AYNI işyeri + AYNI üst grup kapsamında karşılaştırılır.
+function kodOlusturHiyerarsik(liste,ustId,tip){
   const isyeriId=aktifIsyeri?.id||null;
   const kapsam=liste.filter(x=>(x.isyeri_id||null)===isyeriId);
-  const sonrakiOnluk=(sayilar)=>{
-    const m=sayilar.length?Math.max(...sayilar):0;
-    return Math.ceil((m+1)/10)*10;
-  };
+  const isGrup=tip==='grup';
   if(!ustId){
     const kokSayilar=kapsam.filter(x=>!x.ust_id).map(x=>parseInt(x.kod)).filter(n=>!isNaN(n));
-    return String(sonrakiOnluk(kokSayilar));
+    const m=kokSayilar.length?Math.max(...kokSayilar):0;
+    return String(Math.ceil((m+1)/10)*10);
   }
   const ust=liste.find(x=>x.id===ustId);
   if(!ust)return '';
-  const kardesSayilar=kapsam.filter(x=>x.ust_id===ustId).map(x=>{
+  if(isGrup){
+    const kardesSayilar=kapsam.filter(x=>x.ust_id===ustId&&x.tip==='grup').map(x=>{
+      const parcalar=String(x.kod).split('.');
+      return parseInt(parcalar[parcalar.length-1]);
+    }).filter(n=>!isNaN(n));
+    const m=kardesSayilar.length?Math.max(...kardesSayilar):0;
+    return ust.kod+'.'+String(Math.ceil((m+1)/10)*10);
+  }
+  // Gerçek kart (stok/ürün/ara_urun) — 3 haneli, 001'den başlar, 1'er artar
+  const kardesSayilar=kapsam.filter(x=>x.ust_id===ustId&&x.tip!=='grup').map(x=>{
     const parcalar=String(x.kod).split('.');
     return parseInt(parcalar[parcalar.length-1]);
   }).filter(n=>!isNaN(n));
-  return ust.kod+'.'+sonrakiOnluk(kardesSayilar);
+  const m=kardesSayilar.length?Math.max(...kardesSayilar):0;
+  return ust.kod+'.'+String(m+1).padStart(3,'0');
 }
-function kodOlusturStok(ustId){return kodOlusturHiyerarsik(stoklar,ustId);}
-function kodOlusturUrun(ustId){return kodOlusturHiyerarsik(urunler,ustId);}
+function kodOlusturStok(ustId,tip){return kodOlusturHiyerarsik(stoklar,ustId,tip);}
+function kodOlusturUrun(ustId,tip){return kodOlusturHiyerarsik(urunler,ustId,tip);}
 
 window.uygulamaYenile=async function(){
   const btn=document.getElementById('yenile-btn');
