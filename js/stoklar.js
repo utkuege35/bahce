@@ -13,7 +13,7 @@ window.stokModalAc=function(ustId,tip){
   document.getElementById('sm-id').value='';
   document.getElementById('sm-tip-h').value=tip;
   document.getElementById('sm-ad').value='';
-  document.getElementById('sm-ikon').value='';
+
   document.getElementById('sm-kod').value=kodOlusturStok(ustId);
   document.getElementById('sm-log').style.display='none';
   document.getElementById('sm-aktif-satir').style.display='none';
@@ -46,7 +46,7 @@ window.stokDuzenle=function(id,mod='duzenle'){
   document.getElementById('sm-id').value=s.id;document.getElementById('sm-tip-h').value=s.tip;
   document.getElementById('sm-title').textContent=s.tip==='grup'?'Grubu Düzenle':'Stok Kartını Düzenle';
   document.getElementById('sm-ad').value=s.ad;document.getElementById('sm-kod').value=s.kod;
-  document.getElementById('sm-ikon').value=s.ikon||'';document.getElementById('sm-renk').value=s.renk||'yesil';
+
   document.getElementById('sm-kod').disabled=hv;
   if(s.tip==='grup'){
     document.getElementById('sm-stok-alanlar').style.display='none';document.getElementById('sm-birim-fg').style.display='none';
@@ -89,7 +89,7 @@ window.kaydetStok=async function(){
   if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const hv=mevcut&&islemler.some(i=>i.stok_id===id);
   if(mevcut&&mevcut.ad!==ad)await sb.from('isim_loglari').insert({tablo:'stoklar',kayit_id:id,eski_ad:mevcut.ad,yeni_ad:ad,degistiren:aktifKullanici?.ad||''});
-  const data={id,ad,tip,ikon:document.getElementById('sm-ikon').value.trim(),renk:document.getElementById('sm-renk').value};
+  const data={id,ad,tip};
   if(!hv)data.kod=kod;
   if(tip==='stok'){
     const bId=document.getElementById('sm-birim').value||null;
