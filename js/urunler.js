@@ -11,7 +11,7 @@ window.umTipDegis=function(yeniTip){
 window.urunModalAc=function(ustId,tip){
   document.getElementById('um-id').value='';document.getElementById('um-tip-h').value=tip;
   document.getElementById('um-ad').value='';
-  document.getElementById('um-kod').value=kodOlusturUrun(ustId);
+  document.getElementById('um-kod').value=kodOlusturUrun(ustId,tip);
   document.getElementById('um-log').style.display='none';bilesenler=[];renderBilesenler();
   const isGrup=tip==='grup';
   document.getElementById('um-urun-alanlar').style.display=isGrup?'none':'';
