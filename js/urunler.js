@@ -10,7 +10,7 @@ window.umTipDegis=function(yeniTip){
 };
 window.urunModalAc=function(ustId,tip){
   document.getElementById('um-id').value='';document.getElementById('um-tip-h').value=tip;
-  document.getElementById('um-ad').value='';document.getElementById('um-ikon').value='';
+  document.getElementById('um-ad').value='';
   document.getElementById('um-kod').value=kodOlusturUrun(ustId);
   document.getElementById('um-log').style.display='none';bilesenler=[];renderBilesenler();
   const isGrup=tip==='grup';
@@ -43,7 +43,7 @@ window.urunDuzenle=function(id,mod='duzenle'){
   const tipAd={grup:'Grup',ara_urun:'Yarı Mamul',urun:'Mamul Ürün'}[u.tip]||u.tip;
   document.getElementById('um-title').textContent=`${tipAd} Düzenle`;
   document.getElementById('um-ad').value=u.ad;document.getElementById('um-kod').value=u.kod;
-  document.getElementById('um-ikon').value=u.ikon||'';document.getElementById('um-renk').value=u.renk||'yesil';
+
   document.getElementById('um-kod').disabled=hv;
   const isGrup=u.tip==='grup';
   // Tip seçim
@@ -235,7 +235,7 @@ window.kaydetUrun=async function(){
   if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const hv=mevcut&&islemler.some(i=>i.urun_id===id);
   if(mevcut&&mevcut.ad!==ad)await sb.from('isim_loglari').insert({tablo:'urunler',kayit_id:id,eski_ad:mevcut.ad,yeni_ad:ad,degistiren:aktifKullanici?.ad||''});
-  const data={id,ad,tip,ikon:document.getElementById('um-ikon').value.trim(),renk:document.getElementById('um-renk').value};
+  const data={id,ad,tip};
   if(!hv)data.kod=kod;
   if(tip!=='grup'){
     const bId=document.getElementById('um-birim').value||null;
