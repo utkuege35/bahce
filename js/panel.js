@@ -73,6 +73,7 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
 let _ilSira='tarih-azalan',_ilSayfa=1,_ilAcikId=null;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
+const ISLEM_TUR_ADLARI={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',gider:'Gider',kasa:'Kasa'};
 
 window.idHesapla=function(kaynak){
   const mik=parseFloat(document.getElementById('id-miktar').value)||0;
@@ -325,8 +326,8 @@ window.renderIslemListe=function(){
     const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
     const topMiktar = satirlar.length === 1 ? (satirlar[0].miktar ? parseFloat(satirlar[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(satirlar[0].birim_id) : '') : satirlar.length + ' kalem';
     const turler = [...new Set(satirlar.map(i => i.tur))];
-    const turAd = turler.length === 1 ? ({satis:'Satış',gider:'Gider',giris:'Giriş',uretim:'Üretim',kasa:'Kasa',uretim_sarfiyat:'Sarfiyat'}[turler[0]] || turler[0]) : 'Karma';
-    const badgeCls = turler[0]==='satis'?'g':['gider','giris'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
+    const turAd = turler.length === 1 ? (ISLEM_TUR_ADLARI[turler[0]] || turler[0]) : 'Karma';
+    const badgeCls = turler[0]==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
     const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
     const aciklama = satirlar.length === 1 ? (satirlar[0].aciklama || satirlar[0].kat || '') : (satirlar[0].aciklama || '') + (satirlar.length > 1 ? ` +${satirlar.length-1}` : '');
     const tutarRenk = turler[0]==='satis'?'var(--yesil)':['gider','giris'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
@@ -338,7 +339,7 @@ window.renderIslemListe=function(){
       const kalem = typeof giderKalemleri !== 'undefined' ? giderKalemleri.find(k => k.id === i.gider_kalem_id) : null;
       const ad = stok ? stok.ad : urun ? urun.ad : kalem ? kalem.ad : i.aciklama || '—';
       const mik = i.miktar ? parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}) + ' ' + birimAd(i.birim_id) : '—';
-      const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
+      const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris','satis_sarfiyat'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
       return `<tr style="background:var(--krem);font-size:11px">
         <td style="padding:6px 8px;color:var(--yazi3)">${si+1}</td>
         <td style="padding:6px 8px">${ad}</td>
@@ -468,7 +469,7 @@ function formatDeger(alan,deger){if(deger===null||deger===undefined||deger==='')
 
 window.islemGecmisAc=function(id){
   const islem=islemler.find(x=>x.id===id);if(!islem)return;
-  const turAd={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',gider:'Gider',kasa:'Kasa'}[islem.tur]||islem.tur;
+  const turAd=ISLEM_TUR_ADLARI[islem.tur]||islem.tur;
   document.getElementById('ig-title').textContent=`${turAd} — ${islem.tarih} — ${islem.aciklama||''}`;
   document.getElementById('ig-icerik').innerHTML=islemGecmisHtml(id);
   modalAc('modal-islem-gecmis');
@@ -477,7 +478,7 @@ window.islemGecmisAc=function(id){
 window.islemDuzenleAc=function(id){
   const i=islemler.find(x=>x.id===id);if(!i)return;
   document.getElementById('id-islem-id').value=id;
-  const turAd={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',gider:'Gider',kasa:'Kasa'}[i.tur]||i.tur;
+  const turAd=ISLEM_TUR_ADLARI[i.tur]||i.tur;
   document.getElementById('id-bilgi').textContent=`${turAd} — ${i.tarih} — ${i.aciklama||''} — Oluşturan: ${i.kullanici||'?'}`;
   document.getElementById('id-tarih').value=i.tarih||'';
   document.getElementById('id-miktar').value=i.miktar||'';
@@ -524,7 +525,7 @@ window.islemSil=async function(id){
 
 window.islemDetayAc=function(id){
   const i=islemler.find(x=>x.id===id);if(!i)return;
-  const turAd={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',gider:'Gider',kasa:'Kasa'}[i.tur]||i.tur;
+  const turAd=ISLEM_TUR_ADLARI[i.tur]||i.tur;
   document.getElementById('idet-title').textContent=`${turAd} — ${i.tarih||''}`;
   document.getElementById('idet-alt').textContent=`${i.aciklama||i.kat||''} · ${i.kullanici||''}`;
   const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===i.cari_id):null;
@@ -542,7 +543,7 @@ window.islemDetayAc=function(id){
   document.getElementById('idet-icerik').innerHTML=`
     <div style="background:var(--krem);border-radius:8px;padding:.75rem 1rem">
       ${satir('Tarih',i.tarih)}
-      ${satir('Tür',`<span class="badge ${i.tur==='satis'?'g':['gider','giris'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u'}">${turAd}</span>`)}
+      ${satir('Tür',`<span class="badge ${i.tur==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(i.tur)?'d':i.tur==='uretim'?'m':'u'}">${turAd}</span>`)}
       ${stok?satir('Stok',`[${stok.kod}] ${stok.ad}`):''}
       ${urun?satir('Ürün',`[${urun.kod}] ${urun.ad}`):''}
       ${kalem?satir('Gider Kalemi',kalem.ad):''}
