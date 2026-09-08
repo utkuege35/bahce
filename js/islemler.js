@@ -96,19 +96,26 @@ async function satisSarfiyatKaydet(urunId,mik,tarih,an,_derinlik){
 }
 
 // ===== SAYIM =====
-// Mutfak sayımlarında hammadde (stok) yanında Yarı Mamul veya Ürün de
-// sayılabilir. YM/Ürün sayıldığında, reçetesi (iç içe olabilir) üzerinden
-// otomatik olarak altındaki gerçek hammaddelere dağıtılır ve her hammadde
-// için ayrı bir kayıt oluşturulur — böylece "ne kadarı direkt sayıldı,
-// ne kadarı hangi YM/Ürün'den geldi" ayrı ayrı görülebilir.
-// NOT: Bu kayıtlar stok miktarını OTOMATİK DEĞİŞTİRMEZ — sadece bilgi
-// amaçlıdır (ileride envanter raporunda kullanılacak).
+// Sayım Fişi SADECE hammaddeleri (stok) satır olarak gösterir. Bir YM veya
+// Ürün sayılmak istendiğinde ayrı bir pencereden (modal) girilir; sistem
+// reçetesini (iç içe olabilir) otomatik dağıtıp SONUCU doğrudan fişteki
+// ilgili hammadde satırlarına ekler — YM/Ürün'ün kendisi fişte satır
+// olarak görünmez, sadece etkisi yansır. Her hammadde satırında "Direkt"
+// (elle sayılan) ve "YM/Ürün'den" (otomatik gelen, kaynak dökümü açılabilir)
+// ayrı ayrı tutulur. NOT: Bu kayıtlar stok miktarını OTOMATİK DEĞİŞTİRMEZ —
+// sadece bilgi amaçlıdır (ileride envanter raporunda kullanılacak).
+// sayimSatirListesi öğesi: {stokId, birimId(stok'un temel birimi), direkt, kaynaklar:[{ustId,ad,miktar}], _detayAcik}
 let sayimSatirListesi=[];
 
-window.sySatirEkle=function(){
-  sayimSatirListesi.push({tip:'stok',kaynakId:'',birimId:'',miktar:''});
-  sySatirRender();
-};
+function doldurDepoSecleri(){
+  const el=document.getElementById('sy-depo');if(!el)return;
+  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
+  const c=el.value;
+  el.innerHTML='<option value="">— Depo seçin —</option>'+kapsam.filter(d=>d.aktif!==false).map(d=>`<option value="${d.id}">${d.ad}${d.kod?' ['+d.kod+']':''}</option>`).join('');
+  if(c)el.value=c;
+}
+
+// ---- Hammadde / YM-Ürün seçim listeleri (modallar için) ----
 function sySecimOpts(tip,seciliId){
   let liste;
   if(tip==='stok')liste=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false);
@@ -123,13 +130,110 @@ function syBirimOpts(tip,kaynakId,seciliId){
   const list=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
   return '<option value="">-</option>'+list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');
 }
-function doldurDepoSecleri(){
-  const el=document.getElementById('sy-depo');if(!el)return;
-  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
-  const c=el.value;
-  el.innerHTML='<option value="">— Depo seçin —</option>'+kapsam.filter(d=>d.aktif!==false).map(d=>`<option value="${d.id}">${d.ad}${d.kod?' ['+d.kod+']':''}</option>`).join('');
-  if(c)el.value=c;
+
+// ---- Fişe hammadde satırı ekleme/güncelleme (ortak yardımcı) ----
+function sayimFisSatiriEkleVeyaGuncelle(stokId,ekMiktarTemel){
+  let satir=sayimSatirListesi.find(s=>s.stokId===stokId);
+  if(!satir){
+    const stok=stoklar.find(x=>x.id===stokId);
+    satir={stokId,birimId:stok?.birim_id||'',direkt:0,kaynaklar:[]};
+    sayimSatirListesi.push(satir);
+  }
+  satir.direkt+=ekMiktarTemel;
+  return satir;
 }
+
+// ---- "+ Hammadde Ekle" penceresi ----
+window.hmSayimModalAc=function(){
+  document.getElementById('hsm-stok').innerHTML=sySecimOpts('stok','');
+  document.getElementById('hsm-birim').innerHTML=syBirimOpts('stok','','');
+  document.getElementById('hsm-miktar').value='';
+  modalAc('modal-hammadde-sayim');
+};
+window.hmSayimStokDegis=function(){
+  const stokId=document.getElementById('hsm-stok').value;
+  document.getElementById('hsm-birim').innerHTML=syBirimOpts('stok',stokId,'');
+};
+window.hmSayimUygula=function(){
+  const stokId=document.getElementById('hsm-stok').value;
+  const miktar=parseFloat(document.getElementById('hsm-miktar').value)||0;
+  const birimId=document.getElementById('hsm-birim').value;
+  if(!stokId||!(miktar>0)||!birimId){bil('Stok, miktar ve birim gerekli!','err');return;}
+  const mikTemel=miktar*birimTemelCarp(birimId);
+  sayimFisSatiriEkleVeyaGuncelle(stokId,mikTemel);
+  sySatirRender();
+  modalKapat('modal-hammadde-sayim');
+  bil('Hammadde fişe eklendi ✓');
+};
+
+// ---- "+ YM/Ürün Sayımı Ekle" penceresi ----
+window.ymSayimModalAc=function(){
+  document.getElementById('ysm-tip').value='ara_urun';
+  ymSayimTipDegis();
+  document.getElementById('ysm-miktar').value='';
+  modalAc('modal-ym-sayim');
+};
+window.ymSayimTipDegis=function(){
+  const tip=document.getElementById('ysm-tip').value;
+  document.getElementById('ysm-kalem').innerHTML=sySecimOpts(tip,'');
+  document.getElementById('ysm-birim').innerHTML=syBirimOpts(tip,'','');
+};
+window.ymSayimKalemDegis=function(){
+  const tip=document.getElementById('ysm-tip').value;
+  const kaynakId=document.getElementById('ysm-kalem').value;
+  document.getElementById('ysm-birim').innerHTML=syBirimOpts(tip,kaynakId,'');
+};
+// Bir YM/Ürünün miktarını, reçetesi üzerinden (iç içe olabilir) altındaki
+// gerçek hammaddelere dağıtır. DB'ye yazmaz, sadece hesaplanan {stokId,miktarTemel}
+// listesini döner — sonuç fişe uygulanmadan önce toplanır.
+function sayimHesaplaDagitim(urunId,mikTemel,ustAd,ustId,sonuc,_derinlik){
+  _derinlik=_derinlik||0;sonuc=sonuc||[];
+  if(_derinlik>15)return sonuc;
+  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
+  bilesenleri.forEach(b=>{
+    const gMikTemel=(parseFloat(b.miktar)||0)*birimTemelCarp(b.birim_id)*mikTemel;
+    if(b.kaynak_tip==='stok'){
+      sonuc.push({stokId:b.kaynak_id,miktar:gMikTemel,ustAd,ustId});
+    }else if(b.kaynak_tip!=='hizmet'){
+      sayimHesaplaDagitim(b.kaynak_id,gMikTemel,ustAd,ustId,sonuc,_derinlik+1);
+    }
+  });
+  return sonuc;
+}
+window.ymSayimUygula=function(){
+  const tip=document.getElementById('ysm-tip').value;
+  const kaynakId=document.getElementById('ysm-kalem').value;
+  const miktar=parseFloat(document.getElementById('ysm-miktar').value)||0;
+  const birimId=document.getElementById('ysm-birim').value;
+  if(!kaynakId||!(miktar>0)||!birimId){bil('Kalem, miktar ve birim gerekli!','err');return;}
+  const kalem=urunler.find(u=>u.id===kaynakId);
+  const mikTemel=miktar*birimTemelCarp(birimId);
+  const sonuc=sayimHesaplaDagitim(kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',kaynakId);
+  if(!sonuc.length){bil('Bu kalemin reçetesi tanımlı değil, dağıtılacak hammadde bulunamadı.','err');return;}
+  // Aynı stok + aynı üst kaynak için topla, sonra fişe uygula
+  const gruplanmis={};
+  sonuc.forEach(r=>{
+    const key=r.stokId+'|'+r.ustId;
+    if(!gruplanmis[key])gruplanmis[key]={stokId:r.stokId,ustId:r.ustId,ustAd:r.ustAd,miktar:0};
+    gruplanmis[key].miktar+=r.miktar;
+  });
+  Object.values(gruplanmis).forEach(g=>{
+    let satir=sayimSatirListesi.find(s=>s.stokId===g.stokId);
+    if(!satir){
+      const stok=stoklar.find(x=>x.id===g.stokId);
+      satir={stokId:g.stokId,birimId:stok?.birim_id||'',direkt:0,kaynaklar:[]};
+      sayimSatirListesi.push(satir);
+    }
+    let kaynak=satir.kaynaklar.find(k=>k.ustId===g.ustId);
+    if(kaynak)kaynak.miktar+=g.miktar;
+    else satir.kaynaklar.push({ustId:g.ustId,ad:g.ustAd,miktar:g.miktar});
+  });
+  sySatirRender();
+  modalKapat('modal-ym-sayim');
+  bil(`${kalem?.ad||''} → ${Object.keys(gruplanmis).length} hammaddeye dağıtılıp fişe yansıtıldı ✓`);
+};
+
+// ---- Excel'den içe aktarma — sadece hammadde (stok) kabul eder ----
 window.syExcelSecildi=async function(input){
   const file=input.files[0];if(!file)return;
   const depoId=document.getElementById('sy-depo')?.value;
@@ -148,16 +252,20 @@ window.syExcelSecildi=async function(input){
       if(!kod||kod.toLowerCase()==='kod')continue; // boş satır veya başlık satırı
       const miktar=parseFloat(miktarRaw);
       if(!(miktar>0)){hatali.push(`${kod} (miktar geçersiz)`);continue;}
-      let kalem=stoklar.find(s=>s.kod===kod);let tip='stok';
-      if(!kalem){kalem=urunler.find(u=>u.kod===kod&&u.tip==='ara_urun');tip='ara_urun';}
-      if(!kalem){kalem=urunler.find(u=>u.kod===kod&&u.tip==='urun');tip='urun';}
-      if(!kalem){hatali.push(`${kod} (kod bulunamadı)`);continue;}
+      const stok=stoklar.find(s=>s.kod===kod);
+      if(!stok){
+        const urunEslesme=urunler.find(u=>u.kod===kod);
+        if(urunEslesme)hatali.push(`${kod} (YM/Ürün kodu — "YM/Ürün Sayımı" penceresinden ekleyin)`);
+        else hatali.push(`${kod} (kod bulunamadı)`);
+        continue;
+      }
       const birimKisa=(birimRaw===undefined||birimRaw===null)?'':String(birimRaw).trim().toLowerCase();
-      const tbId=kalem.birim_id;
+      const tbId=stok.birim_id;
       const uygunBirimler=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
       let birim=birimKisa?uygunBirimler.find(b=>(b.kisaltma||'').toLowerCase()===birimKisa):null;
       if(!birim)birim=birimler.find(b=>b.id===tbId)||uygunBirimler[0];
-      sayimSatirListesi.push({tip,kaynakId:kalem.id,birimId:birim?.id||'',miktar:miktar});
+      const mikTemel=miktar*birimTemelCarp(birim?.id);
+      sayimFisSatiriEkleVeyaGuncelle(stok.id,mikTemel);
       eklenen++;
     }
     sySatirRender();
@@ -169,79 +277,55 @@ window.syExcelSecildi=async function(input){
   }
   input.value='';
 };
+
+// ---- Fiş tablosu render ----
 function sySatirRender(){
   const el=document.getElementById('sy-satirlar');if(!el)return;
-  el.innerHTML=sayimSatirListesi.map((s,i)=>`<tr>
-    <td><select onchange="sySatirGuncelle(${i},'tip',this.value)" style="width:100%;padding:6px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
-      <option value="stok"${s.tip==='stok'?' selected':''}>🧱 Hammadde</option>
-      <option value="ara_urun"${s.tip==='ara_urun'?' selected':''}>⚙️ Yarı Mamul</option>
-      <option value="urun"${s.tip==='urun'?' selected':''}>🍽️ Ürün</option>
-    </select></td>
-    <td><select onchange="sySatirGuncelle(${i},'kaynakId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${sySecimOpts(s.tip,s.kaynakId)}</select></td>
-    <td><select onchange="sySatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${syBirimOpts(s.tip,s.kaynakId,s.birimId)}</select></td>
-    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="sySatirGuncelle(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><button onclick="sySatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
-  </tr>`).join('');
+  el.innerHTML=sayimSatirListesi.map((s,i)=>{
+    const stok=stoklar.find(x=>x.id===s.stokId);
+    const birim=birimler.find(b=>b.id===s.birimId);
+    const ymToplam=s.kaynaklar.reduce((t,k)=>t+k.miktar,0);
+    const genelToplam=(s.direkt||0)+ymToplam;
+    const detaySatir=s._detayAcik?`<tr><td colspan="6" style="background:var(--krem);padding:6px 14px;font-size:11px;color:var(--yazi2)">
+      ${s.kaynaklar.map(k=>`<span style="margin-right:12px">${k.ad}: <strong>${k.miktar.toLocaleString('tr-TR',{maximumFractionDigits:3})}</strong> ${birim?.kisaltma||''}</span>`).join('')}
+    </td></tr>`:'';
+    return `<tr>
+      <td>${stok?stok.ad:'(bilinmeyen)'} <span style="font-size:10px;color:var(--yazi3)">[${stok?.kod||''}]</span></td>
+      <td>${birim?.kisaltma||''}</td>
+      <td><input type="number" placeholder="0" value="${s.direkt||''}" onblur="sySatirGuncelle(${i},this.value)" style="width:100%;padding:5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+      <td style="text-align:center">${ymToplam>0?`<span style="cursor:pointer;color:var(--mor);text-decoration:underline;font-size:12px" onclick="syDetayToggle(${i})">${ymToplam.toLocaleString('tr-TR',{maximumFractionDigits:3})} ${s._detayAcik?'▲':'▼'}</span>`:'<span style="color:var(--yazi3);font-size:12px">—</span>'}</td>
+      <td style="font-weight:600">${genelToplam.toLocaleString('tr-TR',{maximumFractionDigits:3})}</td>
+      <td><button onclick="sySatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
+    </tr>${detaySatir}`;
+  }).join('');
 }
-window.sySatirGuncelle=function(i,alan,deger){
-  sayimSatirListesi[i][alan]=deger;
-  if(alan==='tip'){sayimSatirListesi[i].kaynakId='';sayimSatirListesi[i].birimId='';sySatirRender();}
-  else if(alan==='kaynakId'){
-    const tip=sayimSatirListesi[i].tip;
-    const kalem=tip==='stok'?stoklar.find(x=>x.id===deger):urunler.find(x=>x.id===deger);
-    sayimSatirListesi[i].birimId=kalem?.varsayilan_birim_id||kalem?.birim_id||'';
-    sySatirRender();
-  }
-};
+window.syDetayToggle=function(i){sayimSatirListesi[i]._detayAcik=!sayimSatirListesi[i]._detayAcik;sySatirRender();};
+window.sySatirGuncelle=function(i,val){sayimSatirListesi[i].direkt=parseFloat(val)||0;sySatirRender();};
 window.sySatirSil=function(i){sayimSatirListesi.splice(i,1);sySatirRender();};
 
-// Bir YM/Ürünün sayılan miktarını, reçetesi üzerinden (iç içe olabilir)
-// altındaki gerçek hammaddelere dağıtır. kaynakUstId: kullanıcının asıl
-// saydığı üst düzey YM/Ürün — dolaylı kayıtlarda kaynak olarak bu taşınır.
-async function sayimDagit(urunId,mik,kaynakUstAd,tarih,an,depoId,_derinlik){
-  _derinlik=_derinlik||0;
-  if(_derinlik>15)return;
-  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
-  for(const b of bilesenleri){
-    const gMik=(parseFloat(b.miktar)||0)*mik;
-    if(b.kaynak_tip==='stok'){
-      await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,stok_id:b.kaynak_id,birim_id:b.birim_id,miktar:gMik,
-        aciklama:'Sayım (dolaylı)',kat:'Sayım',satir_not:`${kaynakUstAd} sayımından`,aciklama_not:an,
-        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
-      });
-    }else if(b.kaynak_tip!=='hizmet'){
-      await sayimDagit(b.kaynak_id,gMik,kaynakUstAd,tarih,an,depoId,_derinlik+1);
-    }
-  }
-}
 window.kaydetSayim=async function(){
   const tarih=document.getElementById('sy-tarih').value;
   const depoId=document.getElementById('sy-depo').value;
   const an=document.getElementById('sy-not').value;
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   if(!depoId){bil('Depo seçimi zorunlu!','err');return;}
-  const gecerli=sayimSatirListesi.filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
+  const gecerli=sayimSatirListesi.filter(s=>(s.direkt>0)||s.kaynaklar.some(k=>k.miktar>0));
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   for(const s of gecerli){
-    const mik=parseFloat(s.miktar)||0;
-    if(s.tip==='stok'){
+    if(s.direkt>0){
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,stok_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
+        tur:'sayim',tarih,depo_id:depoId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:s.direkt,
         aciklama:'Sayım (direkt)',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
-    }else{
-      const kalem=urunler.find(x=>x.id===s.kaynakId);
-      // YM/Ürünün kendi sayım kaydı (izlenebilirlik için)
+    }
+    for(const k of s.kaynaklar){
+      if(!(k.miktar>0))continue;
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,urun_id:s.kaynakId,birim_id:s.birimId||null,miktar:mik,
-        aciklama:`${kalem?.ad||''} sayımı`,kat:'Sayım',satir_not:'Doğrudan sayım (YM/Ürün)',aciklama_not:an,
+        tur:'sayim',tarih,depo_id:depoId,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:k.miktar,
+        aciklama:'Sayım (dolaylı)',kat:'Sayım',satir_not:`${k.ad} sayımından`,aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
-      // Reçeteye göre hammaddelere dağıt
-      const mikTemel=mik*birimTemelCarp(s.birimId);
-      await sayimDagit(s.kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',tarih,an,depoId);
     }
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
