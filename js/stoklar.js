@@ -79,12 +79,14 @@ window.kaydetStok=async function(){
   const kod=document.getElementById('sm-kod').value;
   if(!ad){bil('Ad zorunlu!','err');return;}
   if(!kod){bil('Kod oluşturulamadı, üst grup seçin','err');return;}
-  // Mükerrer kontrol
-  const dupAd=stoklar.find(x=>x.id!==id&&x.ad.trim().toLowerCase()===ad.toLowerCase());
-  if(dupAd){bil(`"${ad}" adında zaten bir stok/grup var! [${dupAd.kod}]`,'err');return;}
-  const dupKod=stoklar.find(x=>x.id!==id&&x.kod===kod);
-  if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const mevcut=stoklar.find(x=>x.id===id);
+  const isyeriId=mevcut?mevcut.isyeri_id:(aktifIsyeri?.id||null);
+  // Mükerrer kontrol — sadece AYNI işyeri kapsamında
+  const kapsam=stoklar.filter(x=>(x.isyeri_id||null)===(isyeriId||null));
+  const dupAd=kapsam.find(x=>x.id!==id&&x.ad.trim().toLowerCase()===ad.toLowerCase());
+  if(dupAd){bil(`"${ad}" adında zaten bir stok/grup var! [${dupAd.kod}]`,'err');return;}
+  const dupKod=kapsam.find(x=>x.id!==id&&x.kod===kod);
+  if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const hv=mevcut&&islemler.some(i=>i.stok_id===id);
   if(mevcut&&mevcut.ad!==ad)await sb.from('isim_loglari').insert({tablo:'stoklar',kayit_id:id,eski_ad:mevcut.ad,yeni_ad:ad,degistiren:aktifKullanici?.ad||''});
   const data={id,ad,tip,ikon:document.getElementById('sm-ikon').value.trim(),renk:document.getElementById('sm-renk').value};
@@ -104,9 +106,10 @@ window.kaydetStok=async function(){
   if(!mevcut){
     const ustBilgi=document.getElementById('sm-ust-bilgi').textContent;
     const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
-    const ust=ustKod?stoklar.find(s=>s.kod===ustKod):null;
+    const ust=ustKod?stoklar.find(s=>s.kod===ustKod&&(s.isyeri_id||null)===(aktifIsyeri?.id||null)):null;
     data.ust_id=ust?.id||null;
     data.seviye=ust?(ust.seviye||1)+1:1;
+    data.isyeri_id=aktifIsyeri?.id||null;
     if(tip==='stok')data.aktif=true;
   }
   if(mevcut)await sb.from('stoklar').update(data).eq('id',id);
@@ -132,6 +135,7 @@ window.stokSil=async function(id){
 function renderStoklar(){
   const el=document.getElementById('stok-tree');if(!el)return;
   const fil=document.getElementById('stok-fil')?.value||'';
+  const kapsam=isyeriFiltre(stoklar);
   function renderRow(s,depth){
     const renk=renkMap[s.renk]||'var(--yesil)';
     const isGrup=s.tip==='grup';
@@ -159,24 +163,25 @@ function renderStoklar(){
     </div>`;
   }
   function renderTree(ustId,depth){
-    return stoklar.filter(s=>s.ust_id===ustId&&s.aktif!==false).map(s=>renderRow(s,depth)+renderTree(s.id,depth+1)).join('');
+    return kapsam.filter(s=>s.ust_id===ustId&&s.aktif!==false).map(s=>renderRow(s,depth)+renderTree(s.id,depth+1)).join('');
   }
   function renderTreeAdmin(ustId,depth){
-    return stoklar.filter(s=>s.ust_id===ustId).map(s=>renderRow(s,depth)+renderTreeAdmin(s.id,depth+1)).join('');
+    return kapsam.filter(s=>s.ust_id===ustId).map(s=>renderRow(s,depth)+renderTreeAdmin(s.id,depth+1)).join('');
   }
   const isAdmin=aktifKullanici?.rol==='admin';
   const treeFn=isAdmin?renderTreeAdmin:renderTree;
   let html='';
   if(fil){
-    const grup=stoklar.find(s=>s.id===fil);if(!grup)return;
+    const grup=kapsam.find(s=>s.id===fil);if(!grup)return;
     html=renderRow(grup,0)+treeFn(fil,1);
   }else{
-    html=stoklar.filter(s=>!s.ust_id&&(isAdmin||s.aktif!==false)).map(s=>renderRow(s,0)+treeFn(s.id,1)).join('');
+    html=kapsam.filter(s=>!s.ust_id&&(isAdmin||s.aktif!==false)).map(s=>renderRow(s,0)+treeFn(s.id,1)).join('');
   }
   el.innerHTML=html||'<div class="bos">Henüz stok yok. "Grup" veya "Stok Kartı" ekleyin.</div>';
 }
 function kontolUyari(){
-  const d=stoklar.filter(s=>s.tip==='stok'&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
+  const kapsam=isyeriFiltre(stoklar);
+  const d=kapsam.filter(s=>s.tip==='stok'&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
   const bant=document.getElementById('uyari-bant');
   if(d.length){bant.style.display='block';document.getElementById('uyari-txt').textContent=`${d.length} stok kritik: ${d.map(s=>s.ad).join(', ')}`;}
   else bant.style.display='none';
