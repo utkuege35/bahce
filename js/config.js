@@ -11,6 +11,7 @@ let aktifSirket=null;   // {id, ad, kod}
 let stoklar=[],urunler=[],urunBilesenleri=[],islemler=[],birimler=[],merkezler=[],giderKalemleri=[],kullanicilar=[],isimLoglari=[],islemLoglari=[],realtimeKanallar=[];
 let sirketler=[],isyerleri=[];
 let kasalar_list=[];
+let depolar=[];
 
 const AYLAR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const para=n=>'₺'+Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -147,6 +148,8 @@ const EKRANLAR = [
   {id:'cari',       ad:'Cari & Personel'},
   {id:'birimler',   ad:'Birimler'},
   {id:'merkezler',  ad:'Merkezler'},
+  {id:'depolar',    ad:'Depolar'},
+  {id:'sayim_raporu', ad:'Sayım Raporu'},
   {id:'rapor',      ad:'Rapor'},
 ];
 
