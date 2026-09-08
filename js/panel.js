@@ -73,7 +73,7 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
 let _ilSira='tarih-azalan',_ilSayfa=1,_ilAcikId=null;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
-const ISLEM_TUR_ADLARI={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',gider:'Gider',kasa:'Kasa'};
+const ISLEM_TUR_ADLARI={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım',gider:'Gider',kasa:'Kasa'};
 
 window.idHesapla=function(kaynak){
   const mik=parseFloat(document.getElementById('id-miktar').value)||0;
