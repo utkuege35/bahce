@@ -144,10 +144,14 @@ function renderBilesenler(){
     <div style="width:80px;flex-shrink:0;font-size:10px;color:var(--yazi3);font-weight:600;padding:0 4px;text-align:right">MALİYET</div>
     <div style="width:28px;flex-shrink:0"></div>
   </div>`;
+  // Bileşen seçim listeleri: sadece aktif işyerinin (veya genel/işyerisiz) kayıtları gösterilir
+  const stoklarKapsam=isyeriFiltre(stoklar);
+  const urunlerKapsam=isyeriFiltre(urunler);
+  const giderKapsam=typeof giderKalemleri!=='undefined'?isyeriFiltre(giderKalemleri):[];
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const isHizmet=b.kaynak_tip==='hizmet';
-    const liste=isStok?stoklar.filter(s=>s.tip==='stok'):isHizmet?(typeof giderKalemleri!=='undefined'?giderKalemleri.filter(k=>k.tip==='kalem'&&k.aktif!==false):[]):urunler.filter(u=>u.tip==='ara_urun');
+    const liste=isStok?stoklarKapsam.filter(s=>s.tip==='stok'):isHizmet?giderKapsam.filter(k=>k.tip==='kalem'&&k.aktif!==false):urunlerKapsam.filter(u=>u.tip==='ara_urun');
     const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):isHizmet?(parseFloat(b.fiyat)||0):araUrunBirimMaliyet(b.kaynak_id);
     const miktar=parseFloat(b.miktar)||0;
     const carpan=birimTemelCarp(b.birim_id);
@@ -216,12 +220,14 @@ window.kaydetUrun=async function(){
   const kod=document.getElementById('um-kod').value;
   if(!ad){bil('Ad zorunlu!','err');return;}
   if(!kod){bil('Kod oluşturulamadı','err');return;}
-  // Mükerrer kontrol
-  const dupAd=urunler.find(x=>x.id!==id&&x.ad.trim().toLowerCase()===ad.toLowerCase());
-  if(dupAd){bil(`"${ad}" adında zaten bir ürün/grup var! [${dupAd.kod}]`,'err');return;}
-  const dupKod=urunler.find(x=>x.id!==id&&x.kod===kod);
-  if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const mevcut=urunler.find(x=>x.id===id);
+  const isyeriId=mevcut?mevcut.isyeri_id:(aktifIsyeri?.id||null);
+  // Mükerrer kontrol — sadece AYNI işyeri kapsamında
+  const kapsam=urunler.filter(x=>(x.isyeri_id||null)===(isyeriId||null));
+  const dupAd=kapsam.find(x=>x.id!==id&&x.ad.trim().toLowerCase()===ad.toLowerCase());
+  if(dupAd){bil(`"${ad}" adında zaten bir ürün/grup var! [${dupAd.kod}]`,'err');return;}
+  const dupKod=kapsam.find(x=>x.id!==id&&x.kod===kod);
+  if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const hv=mevcut&&islemler.some(i=>i.urun_id===id);
   if(mevcut&&mevcut.ad!==ad)await sb.from('isim_loglari').insert({tablo:'urunler',kayit_id:id,eski_ad:mevcut.ad,yeni_ad:ad,degistiren:aktifKullanici?.ad||''});
   const data={id,ad,tip,ikon:document.getElementById('um-ikon').value.trim(),renk:document.getElementById('um-renk').value};
@@ -240,8 +246,9 @@ window.kaydetUrun=async function(){
   if(!mevcut){
     const ustBilgi=document.getElementById('um-ust-bilgi').textContent;
     const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
-    const ust=ustKod?urunler.find(u=>u.kod===ustKod):null;
+    const ust=ustKod?urunler.find(u=>u.kod===ustKod&&(u.isyeri_id||null)===(aktifIsyeri?.id||null)):null;
     data.ust_id=ust?.id||null;data.seviye=ust?(ust.seviye||1)+1:1;
+    data.isyeri_id=aktifIsyeri?.id||null;
     if(tip!=='grup')data.aktif=true;
   }
   if(mevcut)await sb.from('urunler').update(data).eq('id',id);else await sb.from('urunler').insert(data);
@@ -278,6 +285,7 @@ function renderUrunler(){
   const el=document.getElementById('urun-tree');if(!el)return;
   const fil=document.getElementById('urun-fil')?.value||'';
   const isAdmin=aktifKullanici?.rol==='admin';
+  const kapsam=isyeriFiltre(urunler);
   function renderRow(u,depth){
     const renk=renkMap[u.renk]||'var(--yesil)';
     const isGrup=u.tip==='grup';const isAra=u.tip==='ara_urun';
@@ -306,14 +314,14 @@ function renderUrunler(){
     </div>`;
   }
   function renderTree(ustId,depth,showAll){
-    return urunler.filter(u=>u.ust_id===ustId&&(showAll||u.aktif!==false)).map(u=>renderRow(u,depth)+renderTree(u.id,depth+1,showAll)).join('');
+    return kapsam.filter(u=>u.ust_id===ustId&&(showAll||u.aktif!==false)).map(u=>renderRow(u,depth)+renderTree(u.id,depth+1,showAll)).join('');
   }
   let html='';
   if(fil){
-    const grup=urunler.find(u=>u.id===fil);if(!grup)return;
+    const grup=kapsam.find(u=>u.id===fil);if(!grup)return;
     html=renderRow(grup,0)+renderTree(fil,1,isAdmin);
   }else{
-    html=urunler.filter(u=>!u.ust_id&&(isAdmin||u.aktif!==false)).map(u=>renderRow(u,0)+renderTree(u.id,1,isAdmin)).join('');
+    html=kapsam.filter(u=>!u.ust_id&&(isAdmin||u.aktif!==false)).map(u=>renderRow(u,0)+renderTree(u.id,1,isAdmin)).join('');
   }
   el.innerHTML=html||'<div class="bos">Henüz ürün yok. "Grup", "Ara Ürün" veya "Ürün" ekleyin.</div>';
 }
@@ -344,7 +352,7 @@ function _receteDetayHTML(u, grup) {
 window.receteAra = function() {
   const ara = (document.getElementById('recete-ara')?.value || '').toLowerCase();
   const el = document.getElementById('recete-urun-liste'); if (!el) return;
-  let liste = urunler.filter(u => u.tip === 'urun' || u.tip === 'ara_urun');
+  let liste = isyeriFiltre(urunler).filter(u => u.tip === 'urun' || u.tip === 'ara_urun');
   if (ara) liste = liste.filter(u => u.ad.toLowerCase().includes(ara) || u.kod.toLowerCase().includes(ara));
 
   el.innerHTML = liste.map(u => {
