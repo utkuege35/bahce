@@ -1,7 +1,7 @@
 // ===== STOK MİKTAR =====
 function stokMiktar(stokId){
   let m=0;const s=stoklar.find(x=>x.id===stokId);if(s)m+=parseFloat(s.baslangic||0);
-  islemler.forEach(i=>{if(i.stok_id===stokId){const c=birimTemelCarp(i.birim_id);const mik=parseFloat(i.miktar||0)*c;if(i.tur==='giris')m+=mik;else if(['cikis','satis','uretim_sarfiyat'].includes(i.tur))m-=mik;}});
+  islemler.forEach(i=>{if(i.stok_id===stokId){const c=birimTemelCarp(i.birim_id);const mik=parseFloat(i.miktar||0)*c;if(i.tur==='giris')m+=mik;else if(['cikis','satis','uretim_sarfiyat','satis_sarfiyat'].includes(i.tur))m-=mik;}});
   return m;
 }
 function urunStok(urunId){
@@ -195,7 +195,7 @@ window.stokDetay=async function(id){
   const thEl=document.getElementById('sd-islem-th');if(thEl)thEl.style.display=isAdmin?'':'none';
   const rows=islemler.filter(i=>i.stok_id===id).map(i=>`<tr>
     <td>${i.tarih}</td>
-    <td><span class="badge ${i.tur==='giris'?'g':'d'}">${{giris:'Giriş',satis:'Satış',uretim_sarfiyat:'Sarfiyat'}[i.tur]||i.tur}</span></td>
+    <td><span class="badge ${i.tur==='giris'?'g':'d'}">${{giris:'Giriş',satis:'Satış',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı'}[i.tur]||i.tur}</span></td>
     <td style="color:${i.tur==='giris'?'var(--yesil)':'var(--turuncu)'}">${i.tur==='giris'?'+':'-'}${parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
     <td>${birimAd(i.birim_id)}</td>
     <td>${i.tutar?para(i.tutar):''}</td>
