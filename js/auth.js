@@ -7,10 +7,15 @@ window.girisYap=async function(){
   if(!kAdi||!sifre){hEl.textContent='Kullanıcı adı ve şifre gerekli.';hEl.style.display='block';return;}
   btn.disabled=true;btn.textContent='Giriş yapılıyor...';
   try{
-    const {data:kData,error:kErr}=await sb.from('kullanicilar').select('*').eq('kullanici_adi',kAdi).single();
-    if(kErr||!kData){hEl.textContent='Kullanıcı adı bulunamadı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
-    const {data,error}=await sb.auth.signInWithPassword({email:kData.email,password:sifre});
+    // RLS nedeniyle giriş yapmadan önce kullanicilar tablosu tam olarak
+    // okunamaz — sadece email_bul() ile email'i buluyoruz.
+    const {data:email,error:emailErr}=await sb.rpc('email_bul',{p_kullanici_adi:kAdi});
+    if(emailErr||!email){hEl.textContent='Kullanıcı adı bulunamadı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
+    const {data,error}=await sb.auth.signInWithPassword({email,password:sifre});
     if(error){hEl.textContent='Şifre hatalı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
+    // Giriş başarılı — artık authenticated olduğumuz için tam satırı okuyabiliriz.
+    const {data:kData,error:kErr}=await sb.from('kullanicilar').select('*').eq('kullanici_adi',kAdi).single();
+    if(kErr||!kData){hEl.textContent='Kullanıcı bilgisi okunamadı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
     if(hatirla)localStorage.setItem('bahce_hatirla',kAdi);else localStorage.removeItem('bahce_hatirla');
     hEl.style.display='none';
     aktifKullanici={...kData,uid:data.user.id};
@@ -118,9 +123,11 @@ window.girisEkraniSifreDegistir=async function(){
   if(yeni.length<6){hEl.textContent='En az 6 karakter.';hEl.style.display='block';return;}
   if(yeni!==yeni2){hEl.textContent='Şifreler eşleşmiyor.';hEl.style.display='block';return;}
   try{
-    const {data:kData}=await sb.from('kullanicilar').select('email').eq('kullanici_adi',kAdi).single();
-    if(!kData){hEl.textContent='Kullanıcı bulunamadı.';hEl.style.display='block';return;}
-    const {error:lErr}=await sb.auth.signInWithPassword({email:kData.email,password:eski});
+    // RLS nedeniyle giriş yapmadan önce kullanicilar tablosu tam olarak
+    // okunamaz — sadece email_bul() ile email'i buluyoruz.
+    const {data:email}=await sb.rpc('email_bul',{p_kullanici_adi:kAdi});
+    if(!email){hEl.textContent='Kullanıcı bulunamadı.';hEl.style.display='block';return;}
+    const {error:lErr}=await sb.auth.signInWithPassword({email,password:eski});
     if(lErr){hEl.textContent='Mevcut şifre hatalı.';hEl.style.display='block';return;}
     const {error:uErr}=await sb.auth.updateUser({password:yeni});
     if(uErr){hEl.textContent='Hata: '+uErr.message;hEl.style.display='block';return;}
