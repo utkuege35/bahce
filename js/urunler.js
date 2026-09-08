@@ -107,8 +107,11 @@ function stokBirimMaliyet(stokId){
   return s?.maliyet||0;
 }
 
-// Ara ürün 1 birim maliyeti: kendi bileşenlerinin toplam maliyeti
-function araUrunBirimMaliyet(urunId){
+// Ara ürün/ürün 1 birim maliyeti: kendi bileşenlerinin toplam maliyeti (iç içe YM/ürün destekli)
+// _derinlik: döngüsel referanslara (A -> B -> A) karşı güvenlik sınırı
+function araUrunBirimMaliyet(urunId,_derinlik){
+  _derinlik=_derinlik||0;
+  if(_derinlik>15)return 0; // olası döngüsel referans — sonsuz döngüyü engelle
   const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===urunId);
   if(!bilesenleri.length)return 0;
   let toplam=0;
@@ -120,7 +123,8 @@ function araUrunBirimMaliyet(urunId){
     }else if(b.kaynak_tip==='hizmet'){
       toplam+=(parseFloat(b.fiyat)||0)*miktar*carpan;
     }else{
-      toplam+=araUrunBirimMaliyet(b.kaynak_id)*miktar*carpan;
+      // 'ara_urun' veya 'urun' (mamul) — ikisi de urunler tablosunda, aynı şekilde iç içe hesaplanır
+      toplam+=araUrunBirimMaliyet(b.kaynak_id,_derinlik+1)*miktar*carpan;
     }
   });
   return toplam;
@@ -151,17 +155,18 @@ function renderBilesenler(){
   const satirlar=bilesenler.map((b,i)=>{
     const isStok=b.kaynak_tip==='stok';
     const isHizmet=b.kaynak_tip==='hizmet';
-    const liste=isStok?stoklarKapsam.filter(s=>s.tip==='stok'):isHizmet?giderKapsam.filter(k=>k.tip==='kalem'&&k.aktif!==false):urunlerKapsam.filter(u=>u.tip==='ara_urun');
+    const isUrun=b.kaynak_tip==='urun';
+    const liste=isStok?stoklarKapsam.filter(s=>s.tip==='stok'):isHizmet?giderKapsam.filter(k=>k.tip==='kalem'&&k.aktif!==false):isUrun?urunlerKapsam.filter(u=>u.tip==='urun'):urunlerKapsam.filter(u=>u.tip==='ara_urun');
     const birimFiyat=isStok?stokBirimMaliyet(b.kaynak_id):isHizmet?(parseFloat(b.fiyat)||0):araUrunBirimMaliyet(b.kaynak_id);
     const miktar=parseFloat(b.miktar)||0;
     const carpan=birimTemelCarp(b.birim_id);
     const maliyet=birimFiyat*miktar*carpan;
     toplamMaliyet+=maliyet;
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
-    const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':'Ara ürün seçin...';
+    const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':isUrun?'Ürün (mamul) seçin...':'Ara ürün seçin...';
     return `<div style="display:flex;align-items:center;border-bottom:1px solid var(--krem2)">
       <div style="width:30px;flex-shrink:0;padding:8px 4px 8px 0">
-        <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':'ARA'}</span>
+        <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':isUrun?'tip-urun':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':isUrun?'MM':'ARA'}</span>
       </div>
       <div style="flex:1;min-width:120px;padding:6px 4px">
         <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
@@ -336,18 +341,52 @@ window.renderReceteler = function() {
 
 function _receteDetayHTML(u, grup) {
   const bilSayisi = urunBilesenleri.filter(b => b.urun_id === u.id).length;
+  const birimKisa = birimAd(u.birim_id) || 'birim';
+  const normalizeKutu = _receteMod==='duzenle' ? `
+    <div style="background:var(--mor-ac,#f3e8ff);border:1px solid #7c3aed33;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--yazi2);margin-bottom:6px">📐 Girdiğiniz miktarlar toplamda ne kadar üretti?</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="number" id="recete-uretilen-miktar" placeholder="örn: 550" min="0" step="any" style="width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+        <select id="recete-uretilen-birim" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+          ${birimSecenekleri(u.birim_id)}
+        </select>
+        <button class="btn sm sec" onclick="event.stopPropagation();receteNormalizeEt('${u.id}')">↺ 1 ${birimKisa} için normalize et</button>
+      </div>
+      <div style="font-size:10px;color:var(--yazi3);margin-top:4px">Bileşen miktarlarını, tam olarak "1 ${birimKisa}" üretecek şekilde otomatik yeniden ölçeklendirir. Fire/pişirme kaybı böylece hesaba katılmış olur.</div>
+    </div>` : '';
   return `<div id="recete-detay-${u.id}" style="border-top:1px solid var(--border);padding:12px 4px 4px">
+    ${normalizeKutu}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="font-size:12px;font-weight:600;color:var(--yazi2)">Bileşenler</span>
+      <span style="font-size:12px;font-weight:600;color:var(--yazi2)">Bileşenler <span style="font-weight:400;color:var(--yazi3)">(1 ${birimKisa} için)</span></span>
       <div style="display:flex;gap:6px" id="recete-ekle-btns">
         <button class="btn sm sec" onclick="event.stopPropagation();bilesenEkle('stok')">+ Hammadde</button>
         <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('ara_urun')">+ Ara Ürün</button>
+        <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('urun')">+ Ürün</button>
         <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('hizmet')">+ Hizmet</button>
       </div>
     </div>
     <div id="bilesen-listesi"></div>
   </div>`;
 }
+
+// Bileşen miktarlarını "1 [ürünün temel birimi]" üretecek şekilde yeniden ölçeklendirir.
+// Örn: 500g domates + 100g yağ + 20g tuz karışımı 550g sos verdiyse ve ürünün
+// temel birimi kg ise, tüm miktarlar "1 kg sos için gereken miktar"a çevrilir.
+window.receteNormalizeEt = function(urunId){
+  const u = urunler.find(x=>x.id===urunId); if(!u) return;
+  if(!bilesenler.length){bil('Önce bileşen ekleyin!','err');return;}
+  const miktarEl = document.getElementById('recete-uretilen-miktar');
+  const birimEl = document.getElementById('recete-uretilen-birim');
+  const girilenMiktar = parseFloat(miktarEl?.value)||0;
+  const girilenBirimId = birimEl?.value||'';
+  if(girilenMiktar<=0||!girilenBirimId){bil('Üretilen miktarı ve birimini girin!','err');return;}
+  const uretilenTemel = girilenMiktar*birimTemelCarp(girilenBirimId); // ürünün kendi temel birimi cinsinden karşılığı
+  if(uretilenTemel<=0){bil('Geçersiz miktar','err');return;}
+  const carpan = 1/uretilenTemel;
+  bilesenler = bilesenler.map(b=>({...b, miktar:+(((parseFloat(b.miktar)||0)*carpan).toFixed(6))}));
+  renderBilesenler();
+  bil(`Bileşenler 1 ${birimAd(u.birim_id)||'birim'} için yeniden ölçeklendirildi ✓ — kaydetmeyi unutmayın`);
+};
 
 window.receteAra = function() {
   const ara = (document.getElementById('recete-ara')?.value || '').toLowerCase();
