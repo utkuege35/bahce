@@ -173,10 +173,11 @@ async function baslat(){
   // Satır listelerini cari yüklendikten sonra yenile
   if(hmSatirListesi.length)hmSatirRender();
   if(stSatirListesi.length)stSatirRender();
-  ['hm-tarih','ur-tarih','st-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=bugun();});
+  ['hm-tarih','ur-tarih','st-tarih','sy-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=bugun();});
   if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),200);
   if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),250);
   if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),300);
+  if(typeof sayimSatirListesi!=='undefined'&&sayimSatirListesi.length===0)setTimeout(()=>sySatirEkle(),350);
 }
 
 function doldurBirimSecleri(){
@@ -259,7 +260,8 @@ window.gp=function(id){
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
-    setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();},200);
+    if(typeof sayimSatirListesi!=='undefined'&&sayimSatirListesi.length===0)setTimeout(()=>sySatirEkle(),180);
+    setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();const syT=document.getElementById('sy-tarih');if(syT&&!syT.value)syT.value=bugun();},200);
   }
 };
 window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');};
