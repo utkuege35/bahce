@@ -97,7 +97,7 @@ function uygulamaAc(){
       'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
-      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')'
+      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')'
     };
     const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
     if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
@@ -178,7 +178,6 @@ async function baslat(){
   if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),200);
   if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),250);
   if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),300);
-  if(typeof sayimSatirListesi!=='undefined'&&sayimSatirListesi.length===0)setTimeout(()=>sySatirEkle(),350);
 }
 
 function doldurBirimSecleri(){
@@ -262,9 +261,12 @@ window.gp=function(id){
   if(id==='islem'){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
-    if(typeof sayimSatirListesi!=='undefined'&&sayimSatirListesi.length===0)setTimeout(()=>sySatirEkle(),180);
     if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
     setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();const syT=document.getElementById('sy-tarih');if(syT&&!syT.value)syT.value=bugun();},200);
+  }
+  if(id==='sayim-raporu'){
+    if(typeof doldurSayimRaporDepoSecimi==='function')doldurSayimRaporDepoSecimi();
+    if(typeof renderSayimRaporu==='function')renderSayimRaporu();
   }
 };
 window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');};
