@@ -67,12 +67,15 @@ window.panelKapat=function(id){document.getElementById(id)?.classList.remove('op
 // Gerçek kartlar (stok/ürün/YM — grup olmayanlar) için son segment 3 haneli
 // ve 001'den başlayarak 1'er artar (örn. 10.10.10.001, 10.10.10.002 ...).
 // Kodlar sadece AYNI işyeri + AYNI üst grup kapsamında karşılaştırılır.
-function kodOlusturHiyerarsik(liste,ustId,tip){
+// agacTip (ürünler için): kök seviyede (ustId yokken) hangi ağacın (urun/ara_urun)
+// numaralandırma havuzunu kullanacağını belirtir — iki ağaç birbirinden bağımsızdır.
+function kodOlusturHiyerarsik(liste,ustId,tip,agacTip){
   const isyeriId=aktifIsyeri?.id||null;
   const kapsam=liste.filter(x=>(x.isyeri_id||null)===isyeriId);
   const isGrup=tip==='grup';
   if(!ustId){
-    const kokSayilar=kapsam.filter(x=>!x.ust_id).map(x=>parseInt(x.kod)).filter(n=>!isNaN(n));
+    const kokKapsam=agacTip?kapsam.filter(x=>(x.agac_tip||'urun')===agacTip):kapsam;
+    const kokSayilar=kokKapsam.filter(x=>!x.ust_id).map(x=>parseInt(x.kod)).filter(n=>!isNaN(n));
     const m=kokSayilar.length?Math.max(...kokSayilar):0;
     return String(Math.ceil((m+1)/10)*10);
   }
@@ -95,7 +98,7 @@ function kodOlusturHiyerarsik(liste,ustId,tip){
   return ust.kod+'.'+String(m+1).padStart(3,'0');
 }
 function kodOlusturStok(ustId,tip){return kodOlusturHiyerarsik(stoklar,ustId,tip);}
-function kodOlusturUrun(ustId,tip){return kodOlusturHiyerarsik(urunler,ustId,tip);}
+function kodOlusturUrun(ustId,tip,agacTip){return kodOlusturHiyerarsik(urunler,ustId,tip,agacTip);}
 
 window.uygulamaYenile=async function(){
   const btn=document.getElementById('yenile-btn');
