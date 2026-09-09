@@ -354,6 +354,8 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div class="fr" style="margin:0"><select id="stok-fil" onchange="renderStoklar()"><option value="">Tüm stoklar</option></select></div>
     <div style="display:flex;gap:6px">
+      <input type="file" id="stok-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="stokExcelSecildi(this)">
+      <button id="btn-stok-excel-yukle" class="btn sm sec" onclick="document.getElementById('stok-excel-input').click()" style="display:none">📥 Excel'den Toplu Yükle</button>
       <button id="btn-yeni-stok-grup" class="btn sm" onclick="stokModalAc(null,'grup')" style="display:none">+ Grup</button>
       <button id="btn-yeni-stok" class="btn pri sm" onclick="stokModalAc(null,'stok')" style="display:none">+ Stok Kartı</button>
     </div>
