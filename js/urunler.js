@@ -42,10 +42,10 @@ window.urunModalAc=function(ustId,tip,amac){
   document.getElementById('um-fiyat').value=0;document.getElementById('um-min').value=0;
   document.getElementById('um-merkez').value='';
   document.getElementById('um-varsayilan-birim').value='';
-  // Tip seçim alanını göster/gizle
+  // Tip seçimi artık kullanıcıya sorulmuyor — Ürünler/Yarı Mamuller ayrı
+  // ekranlar olduğu için hangi tipte açıldığı zaten belli.
   const tipSecim=document.getElementById('um-tip-secim');
-  if(tipSecim)tipSecim.style.display=isGrup?'none':'block';
-  // Radio'yu seç
+  if(tipSecim)tipSecim.style.display='none';
   if(!isGrup){
     const radio=document.querySelector(`input[name="um-tip-radio"][value="${tip}"]`);
     if(radio)radio.checked=true;
@@ -68,9 +68,10 @@ window.urunDuzenle=function(id,mod='duzenle'){
 
   document.getElementById('um-kod').disabled=hv;
   const isGrup=u.tip==='grup';
-  // Tip seçim
+  // Tip seçimi artık kullanıcıya sorulmuyor — Ürünler/Yarı Mamuller ayrı
+  // ekranlar olduğu için hangi tipte açıldığı zaten belli.
   const tipSecim=document.getElementById('um-tip-secim');
-  if(tipSecim)tipSecim.style.display=isGrup?'none':'block';
+  if(tipSecim)tipSecim.style.display='none';
   if(!isGrup){
     const radio=document.querySelector(`input[name="um-tip-radio"][value="${u.tip}"]`);
     if(radio)radio.checked=true;
