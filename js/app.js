@@ -192,15 +192,15 @@ function doldurStokFil(){
   gruplar.forEach(g=>{fo+=`<option value="${g.id}">${'—'.repeat((g.seviye||1)-1)} ${g.ikon||''} ${g.ad}</option>`;});
   el.innerHTML=fo;
 }
-function doldurUrunFilId(elId,maxSeviye){
+function doldurUrunFilId(elId,maxSeviye,agacTip){
   const el=document.getElementById(elId);if(!el)return;
-  const gruplar=urunler.filter(u=>u.tip==='grup'&&(!maxSeviye||(u.seviye||1)<=maxSeviye));
+  const gruplar=urunler.filter(u=>u.tip==='grup'&&(!agacTip||(u.agac_tip||'urun')===agacTip)&&(!maxSeviye||(u.seviye||1)<=maxSeviye));
   let fo='<option value="">Tüm ürünler</option>';
   gruplar.forEach(g=>{fo+=`<option value="${g.id}">${'—'.repeat((g.seviye||1)-1)} ${g.ad}</option>`;});
   el.innerHTML=fo;
 }
-function doldurUrunFil(){doldurUrunFilId('urun-fil');}
-function doldurYariMamulFil(){doldurUrunFilId('yarimamul-fil',1);}
+function doldurUrunFil(){doldurUrunFilId('urun-fil',null,'urun');}
+function doldurYariMamulFil(){doldurUrunFilId('yarimamul-fil',1,'ara_urun');}
 function doldurIslemSecleri(){
   const urEl=document.getElementById('ur-urun');
   if(urEl){const c=urEl.value;urEl.innerHTML='<option value="">Seçin...</option>'+urunler.filter(u=>u.tip==='urun'||u.tip==='ara_urun').map(u=>`<option value="${u.id}">[${u.kod}] ${u.ad} ${u.tip==='ara_urun'?'(Ara Ürün)':''}</option>`).join('');if(c)urEl.value=c;}
