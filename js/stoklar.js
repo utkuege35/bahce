@@ -74,6 +74,18 @@ window.stokExcelSecildi=async function(input){
   input.value='';
 };
 
+// Temel birim seçilince: hem varsayılan işlem birimi listesini doldurur,
+// hem de Reçete Birimi alanlarını (ad=temel birimin kısaltması, işlem=×, katsayı=1) varsayılan yapar.
+window.stokTemelBirimDegis=function(birimId){
+  _doldurVarsayilanBirim('sm-varsayilan-birim',birimId,null);
+  const b=birimler.find(x=>x.id===birimId);
+  const recAd=document.getElementById('sm-recete-birim-ad');
+  const recIslem=document.getElementById('sm-recete-birim-islem');
+  const recKat=document.getElementById('sm-recete-birim-katsayi');
+  if(recAd)recAd.value=b?.kisaltma||b?.ad||'';
+  if(recIslem)recIslem.value='*';
+  if(recKat)recKat.value=1;
+};
 window.stokModalAc=function(ustId,tip){
   // Seviyelendirme kuralı: en fazla 3 grup seviyesi, stok kartları
   // SADECE 3. seviye bir grubun altına eklenebilir.
