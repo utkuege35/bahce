@@ -157,6 +157,7 @@ const EKRANLAR = [
   {id:'urunler',    ad:'Ürünler'},
   {id:'yarimamuller', ad:'Yarı Mamuller'},
   {id:'receteler',  ad:'Ürün Reçeteleri'},
+  {id:'recete_normalize', ad:'Reçete Normalize Et'},
   {id:'hizmetler',  ad:'Hizmetler'},
   {id:'kasalar',    ad:'Kasalar'},
   {id:'cari',       ad:'Cari & Personel'},
