@@ -227,52 +227,74 @@ window.stokSil=async function(id){
   const {data}=await sb.from('stoklar').select('*').order('kod');if(data)stoklar=data;
   renderStoklar();doldurStokFil();doldurIslemSecleri();bil(hv?'Pasife alındı ✓':'Silindi ✓');
 };
+let _stokSeciliGrupId = null;
+let _stokAcikGruplar = new Set();
+window.stokGrupSec = function(grupId){
+  if(_stokAcikGruplar.has(grupId))_stokAcikGruplar.delete(grupId);
+  else _stokAcikGruplar.add(grupId);
+  _stokSeciliGrupId = grupId;
+  renderStoklar();
+};
 function renderStoklar(){
-  const el=document.getElementById('stok-tree');if(!el)return;
-  const fil=document.getElementById('stok-fil')?.value||'';
+  const elGrup=document.getElementById('stok-grup-agac');
+  const elKart=document.getElementById('stok-kart-liste');
+  if(!elGrup||!elKart)return;
   const kapsam=isyeriFiltre(stoklar);
-  function renderRow(s,depth){
-    const renk=renkMap[s.renk]||'var(--yesil)';
-    const isGrup=s.tip==='grup';
-    const mik=s.tip==='stok'?stokMiktar(s.id):null;
-    const tb=birimler.find(b=>b.id===s.birim_id);
-    const dusuk=s.tip==='stok'&&s.min_stok>0&&mik<=s.min_stok;
-    const pasif=s.aktif===false;
-    // Seviyeye göre grup rengi — stok/ürün kartları renksiz
+  const isAdmin=aktifKullanici?.rol==='admin';
+  const btnYeniStok=document.getElementById('btn-yeni-stok');
+
+  function grupSatiri(g,depth){
+    const altGruplari=kapsam.filter(x=>x.ust_id===g.id&&x.tip==='grup');
+    const acik=_stokAcikGruplar.has(g.id);
+    const secili=_stokSeciliGrupId===g.id;
     const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
-    const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
-    const satirBg=isGrup?(depth===0?'rgba(53,95,130,.06)':depth===1?'rgba(77,127,168,.04)':'rgba(169,200,224,.03)'):'';
-    return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
-      <span style="font-size:${isGrup?15:13}px">${s.ikon||'📦'}</span>
-      <span class="tree-kod" style="min-width:52px">${s.kod}</span>
-      <span style="flex:1;font-size:${isGrup?13:12}px">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
-      ${s.tip==='stok'?`<span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik?.toLocaleString('tr-TR',{maximumFractionDigits:2})||0} ${tb?.kisaltma||''}</span>`:''}
-      ${dusuk?'<span class="badge sari">⚠ Min</span>':''}
-      <span class="tip-chip ${isGrup?'tip-grup':'tip-stok'}">${isGrup?'GRUP':'STOK'}</span>
-      ${aktifKullanici?.rol==='admin'?`<div class="tree-actions">
-        ${isGrup?`${(s.seviye||1)<3?`<button class="btn sm" onclick="event.stopPropagation();stokModalAc('${s.id}','grup')">+G</button>`:''}${(s.seviye||1)>=3?`<button class="btn sm sec" onclick="event.stopPropagation();stokModalAc('${s.id}','stok')">+S</button>`:''}`:''}
-        <button class="btn sm" onclick="event.stopPropagation();stokGoruntule('${s.id}')">👁</button>
-        <button class="btn sm" onclick="event.stopPropagation();stokDuzenle('${s.id}')">✏</button>
-        <button class="btn sm ghost" onclick="event.stopPropagation();stokSil('${s.id}')">✕</button>
+    const satirRenk=grupRenkler[Math.min(depth,grupRenkler.length-1)];
+    let html=`<div onclick="stokGrupSec('${g.id}')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':'transparent'};border-radius:6px;margin-bottom:2px">
+      <span style="font-size:10px;color:var(--yazi3);width:12px;flex-shrink:0">${altGruplari.length?(acik?'▼':'▶'):''}</span>
+      <span class="tree-kod" style="min-width:44px;font-size:10px">${g.kod}</span>
+      <span style="flex:1;font-size:12px;font-weight:${secili?'700':'500'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${g.ad}</span>
+      ${isAdmin?`<div class="tree-actions" style="flex-shrink:0">
+        ${(g.seviye||1)<3?`<button class="btn sm" onclick="event.stopPropagation();stokModalAc('${g.id}','grup')" title="Alt Grup">+G</button>`:''}
+        <button class="btn sm" onclick="event.stopPropagation();stokDuzenle('${g.id}')">✏</button>
+        <button class="btn sm ghost" onclick="event.stopPropagation();stokSil('${g.id}')">✕</button>
       </div>`:''}
     </div>`;
+    if(acik)altGruplari.forEach(ag=>{html+=grupSatiri(ag,depth+1);});
+    return html;
   }
-  function renderTree(ustId,depth){
-    return kapsam.filter(s=>s.ust_id===ustId&&s.aktif!==false).map(s=>renderRow(s,depth)+renderTree(s.id,depth+1)).join('');
-  }
-  function renderTreeAdmin(ustId,depth){
-    return kapsam.filter(s=>s.ust_id===ustId).map(s=>renderRow(s,depth)+renderTreeAdmin(s.id,depth+1)).join('');
-  }
-  const isAdmin=aktifKullanici?.rol==='admin';
-  const treeFn=isAdmin?renderTreeAdmin:renderTree;
-  let html='';
-  if(fil){
-    const grup=kapsam.find(s=>s.id===fil);if(!grup)return;
-    html=renderRow(grup,0)+treeFn(fil,1);
+
+  const kokGruplar=kapsam.filter(g=>!g.ust_id&&g.tip==='grup');
+  elGrup.innerHTML=kokGruplar.map(g=>grupSatiri(g,0)).join('')||'<div class="bos">Henüz grup yok. "+ Grup" ile başlayın.</div>';
+
+  const baslikEl=document.getElementById('stok-kart-baslik');
+  if(_stokSeciliGrupId){
+    const seciliGrup=kapsam.find(g=>g.id===_stokSeciliGrupId);
+    if(!seciliGrup){_stokSeciliGrupId=null;renderStoklar();return;}
+    if(baslikEl)baslikEl.textContent=`${seciliGrup.ad} [${seciliGrup.kod}]`;
+    if(btnYeniStok)btnYeniStok.style.display=(isAdmin&&(seciliGrup.seviye||1)===3)?'':'none';
+    const kartlar=kapsam.filter(s=>s.ust_id===_stokSeciliGrupId&&s.tip==='stok'&&(isAdmin||s.aktif!==false));
+    elKart.innerHTML=kartlar.length?kartlar.map(s=>{
+      const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);
+      const dusuk=s.min_stok>0&&mik<=s.min_stok;
+      const pasif=s.aktif===false;
+      return `<div class="tree-row" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
+        <span class="tree-kod" style="min-width:70px">${s.kod}</span>
+        <span style="flex:1;font-size:12px">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
+        <span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})} ${tb?.kisaltma||''}</span>
+        ${dusuk?'<span class="badge sari">⚠ Min</span>':''}
+        <span class="tip-chip tip-stok">STOK</span>
+        ${isAdmin?`<div class="tree-actions">
+          <button class="btn sm" onclick="stokGoruntule('${s.id}')">👁</button>
+          <button class="btn sm" onclick="stokDuzenle('${s.id}')">✏</button>
+          <button class="btn sm ghost" onclick="stokSil('${s.id}')">✕</button>
+        </div>`:''}
+      </div>`;
+    }).join(''):'<div class="bos">Bu grupta henüz stok kartı yok.</div>';
   }else{
-    html=kapsam.filter(s=>!s.ust_id&&(isAdmin||s.aktif!==false)).map(s=>renderRow(s,0)+treeFn(s.id,1)).join('');
+    if(baslikEl)baslikEl.textContent='← Soldan bir grup seçin';
+    if(btnYeniStok)btnYeniStok.style.display='none';
+    elKart.innerHTML='<div class="bos">← Soldan bir grup seçin</div>';
   }
-  el.innerHTML=html||'<div class="bos">Henüz stok yok. "Grup" veya "Stok Kartı" ekleyin.</div>';
 }
 function kontolUyari(){
   const kapsam=isyeriFiltre(stoklar);
