@@ -8,25 +8,32 @@ window.umTipDegis=function(yeniTip){
   const tipAd={urun:'Mamul Ürün',ara_urun:'Yarı Mamul'}[yeniTip]||yeniTip;
   document.getElementById('um-title').textContent=document.getElementById('um-id').value?`${tipAd} Düzenle`:`Yeni ${tipAd}`;
 };
-window.urunModalAc=function(ustId,tip){
+window.urunModalAc=function(ustId,tip,amac){
   // Seviyelendirme kuralı: gruplar en fazla 2 seviye (ürünler için).
   // Ürün SADECE 2. seviye bir grubun altına, Yarı Mamul ise SADECE
   // 1. seviye bir grubun altına eklenebilir (üründen 1 basamak az).
+  // Ürün ve Yarı Mamul ağaçları birbirinden TAMAMEN BAĞIMSIZDIR (agac_tip).
+  let hedefAmac=amac;
+  if(tip==='urun')hedefAmac='urun';
+  else if(tip==='ara_urun')hedefAmac='ara_urun';
   if(tip==='grup'&&ustId){
     const ust=urunler.find(u=>u.id===ustId);
-    if(ust&&(ust.seviye||1)>=2){bil('En fazla 2 seviye grup açılabilir!','err');return;}
+    if(!ust){bil('Üst grup bulunamadı!','err');return;}
+    if((ust.seviye||1)>=2){bil('En fazla 2 seviye grup açılabilir!','err');return;}
+    hedefAmac=ust.agac_tip||'urun';
   }
   if(tip==='urun'){
     const ust=ustId?urunler.find(u=>u.id===ustId):null;
-    if(!ust||(ust.seviye||0)!==2){bil('Ürün sadece 2. seviye bir grubun altına eklenebilir!','err');return;}
+    if(!ust||(ust.seviye||0)!==2||(ust.agac_tip||'urun')!=='urun'){bil('Ürün sadece 2. seviye bir ürün grubunun altına eklenebilir!','err');return;}
   }
   if(tip==='ara_urun'){
     const ust=ustId?urunler.find(u=>u.id===ustId):null;
-    if(!ust||(ust.seviye||0)!==1){bil('Yarı Mamul sadece 1. seviye bir grubun altına eklenebilir!','err');return;}
+    if(!ust||(ust.seviye||0)!==1||(ust.agac_tip||'urun')!=='ara_urun'){bil('Yarı Mamul sadece 1. seviye bir yarı mamul grubunun altına eklenebilir!','err');return;}
   }
+  document.getElementById('um-agac').value=hedefAmac||'urun';
   document.getElementById('um-id').value='';document.getElementById('um-tip-h').value=tip;
   document.getElementById('um-ad').value='';
-  document.getElementById('um-kod').value=kodOlusturUrun(ustId,tip);
+  document.getElementById('um-kod').value=kodOlusturUrun(ustId,tip,hedefAmac);
   document.getElementById('um-log').style.display='none';bilesenler=[];renderBilesenler();
   const isGrup=tip==='grup';
   document.getElementById('um-urun-alanlar').style.display=isGrup?'none':'';
@@ -238,12 +245,14 @@ window.kaydetUrun=async function(){
   const tip=document.getElementById('um-tip-h').value;
   const ad=document.getElementById('um-ad').value.trim();
   const kod=document.getElementById('um-kod').value;
+  const agac=document.getElementById('um-agac').value||'urun';
   if(!ad){bil('Ad zorunlu!','err');return;}
   if(!kod){bil('Kod oluşturulamadı','err');return;}
   const mevcut=urunler.find(x=>x.id===id);
   const isyeriId=mevcut?mevcut.isyeri_id:(aktifIsyeri?.id||null);
-  // Mükerrer kontrol — sadece AYNI işyeri kapsamında
-  const kapsam=urunler.filter(x=>(x.isyeri_id||null)===(isyeriId||null));
+  const agacTip=mevcut?(mevcut.agac_tip||'urun'):agac;
+  // Mükerrer kontrol — sadece AYNI işyeri + AYNI ağaç (ürün/YM) kapsamında
+  const kapsam=urunler.filter(x=>(x.isyeri_id||null)===(isyeriId||null)&&(x.agac_tip||'urun')===agacTip);
   const dupAd=kapsam.find(x=>x.id!==id&&x.ad.trim().toLowerCase()===ad.toLowerCase());
   if(dupAd){bil(`"${ad}" adında zaten bir ürün/grup var! [${dupAd.kod}]`,'err');return;}
   const dupKod=kapsam.find(x=>x.id!==id&&x.kod===kod);
@@ -266,9 +275,10 @@ window.kaydetUrun=async function(){
   if(!mevcut){
     const ustBilgi=document.getElementById('um-ust-bilgi').textContent;
     const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
-    const ust=ustKod?urunler.find(u=>u.kod===ustKod&&(u.isyeri_id||null)===(aktifIsyeri?.id||null)):null;
+    const ust=ustKod?urunler.find(u=>u.kod===ustKod&&(u.isyeri_id||null)===(aktifIsyeri?.id||null)&&(u.agac_tip||'urun')===agacTip):null;
     data.ust_id=ust?.id||null;data.seviye=ust?(ust.seviye||1)+1:1;
     data.isyeri_id=aktifIsyeri?.id||null;
+    data.agac_tip=agacTip;
     if(tip!=='grup')data.aktif=true;
   }
   if(mevcut)await sb.from('urunler').update(data).eq('id',id);else await sb.from('urunler').insert(data);
@@ -350,7 +360,7 @@ function renderUrunlerGenel(hedefTip){
     const grup=kapsam.find(u=>u.id===fil);if(!grup)return;
     html=renderRow(grup,0)+renderTree(fil,1,isAdmin);
   }else{
-    html=kapsam.filter(u=>!u.ust_id&&u.tip==='grup'&&(isAdmin||u.aktif!==false)).map(u=>renderRow(u,0)+renderTree(u.id,1,isAdmin)).join('');
+    html=kapsam.filter(u=>!u.ust_id&&u.tip==='grup'&&(u.agac_tip||'urun')===hedefTip&&(isAdmin||u.aktif!==false)).map(u=>renderRow(u,0)+renderTree(u.id,1,isAdmin)).join('');
   }
   const bosMsg=hedefTip==='ara_urun'?'Henüz yarı mamul yok. "Grup" veya "Yarı Mamul" ekleyin.':'Henüz ürün yok. "Grup" veya "Ürün" ekleyin.';
   el.innerHTML=html||`<div class="bos">${bosMsg}</div>`;
