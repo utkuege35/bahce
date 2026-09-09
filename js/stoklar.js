@@ -9,6 +9,71 @@ function urunStok(urunId){
 }
 
 // ===== STOK TREE =====
+// ===== STOK EXCEL TOPLU YÜKLEME =====
+// Excel formatı: Ana Grup | Alt Grup 1 | Alt Grup 2 | Stok Adı | Birim | Başlangıç Stok | Min Stok | Maliyet | Açıklama
+// Aynı isimli gruplar tekrar oluşturulmaz — bulunup altına eklenir. Kodlar
+// (10, 10.10, 10.10.10, 10.10.10.001...) otomatik ve hiyerarşiye uygun üretilir.
+function stokGrupBulVeyaOlustur(ad,ustId,isyeriId,hedefListe){
+  ad=(ad||'').trim();if(!ad)return null;
+  const mevcut=stoklar.find(s=>s.tip==='grup'&&(s.ust_id||null)===(ustId||null)&&(s.isyeri_id||null)===(isyeriId||null)&&s.ad.trim().toLowerCase()===ad.toLowerCase());
+  if(mevcut)return mevcut;
+  const ust=ustId?stoklar.find(s=>s.id===ustId):null;
+  const kod=kodOlusturStok(ustId,'grup');
+  const yeni={id:uid(),ad,tip:'grup',kod,ust_id:ustId||null,seviye:ust?(ust.seviye||1)+1:1,isyeri_id:isyeriId,aktif:true};
+  stoklar.push(yeni);
+  hedefListe.push(yeni);
+  return yeni;
+}
+window.stokExcelSecildi=async function(input){
+  const file=input.files[0];if(!file)return;
+  if(typeof XLSX==='undefined'){bil('Excel okuma kütüphanesi yüklenemedi, sayfayı yenileyin.','err');input.value='';return;}
+  const isyeriId=aktifIsyeri?.id||null;
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+    const seviye1Yeni=[],seviye2Yeni=[],seviye3Yeni=[],stokYeni=[];
+    const hatali=[];
+    for(const row of rows){
+      if(!row||!row.length)continue;
+      const anaGrup=(row[0]===undefined||row[0]===null)?'':String(row[0]).trim();
+      if(!anaGrup||anaGrup.toLowerCase()==='ana grup')continue; // boş veya başlık satırı
+      const altGrup1=(row[1]===undefined||row[1]===null)?'':String(row[1]).trim();
+      const altGrup2=(row[2]===undefined||row[2]===null)?'':String(row[2]).trim();
+      const stokAdi=(row[3]===undefined||row[3]===null)?'':String(row[3]).trim();
+      const birimKisa=(row[4]===undefined||row[4]===null)?'':String(row[4]).trim().toLowerCase();
+      if(!altGrup1||!altGrup2||!stokAdi||!birimKisa){hatali.push(`${stokAdi||anaGrup} (Ana Grup/Alt Grup 1/Alt Grup 2/Stok Adı/Birim zorunlu)`);continue;}
+      const birim=birimler.find(b=>b.temel!==false&&(b.kisaltma||'').toLowerCase()===birimKisa);
+      if(!birim){hatali.push(`${stokAdi} (birim "${birimKisa}" bulunamadı — temel birim olmalı: kg, lt, adet vb.)`);continue;}
+      const ana=stokGrupBulVeyaOlustur(anaGrup,null,isyeriId,seviye1Yeni);
+      const alt1=stokGrupBulVeyaOlustur(altGrup1,ana.id,isyeriId,seviye2Yeni);
+      const alt2=stokGrupBulVeyaOlustur(altGrup2,alt1.id,isyeriId,seviye3Yeni);
+      if((alt2.seviye||1)!==3){hatali.push(`${stokAdi} (grup zinciri hatalı)`);continue;}
+      const dupAd=stoklar.find(s=>(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===stokAdi.toLowerCase());
+      if(dupAd){hatali.push(`${stokAdi} (bu isimde zaten bir kayıt var)`);continue;}
+      const kod=kodOlusturStok(alt2.id,'stok');
+      const yeniStok={id:uid(),ad:stokAdi,kod,tip:'stok',ust_id:alt2.id,seviye:4,isyeri_id:isyeriId,birim_id:birim.id,baslangic:0,min_stok:0,maliyet:0,aciklama:null,aktif:true};
+      stoklar.push(yeniStok);
+      stokYeni.push(yeniStok);
+    }
+    // Seviye seviye ekle — üst gruplar veritabanına önce yazılmalı (foreign key)
+    if(seviye1Yeni.length)await sb.from('stoklar').insert(seviye1Yeni);
+    if(seviye2Yeni.length)await sb.from('stoklar').insert(seviye2Yeni);
+    if(seviye3Yeni.length)await sb.from('stoklar').insert(seviye3Yeni);
+    if(stokYeni.length)await sb.from('stoklar').insert(stokYeni);
+    const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
+    renderStoklar();doldurStokFil();kontolUyari();
+    const grupSayisi=seviye1Yeni.length+seviye2Yeni.length+seviye3Yeni.length;
+    if(hatali.length)bil(`${stokYeni.length} stok kartı (+${grupSayisi} yeni grup) eklendi. ${hatali.length} satır atlandı: ${hatali.slice(0,4).join(', ')}${hatali.length>4?'...':''}`,'uyari');
+    else if(stokYeni.length)bil(`${stokYeni.length} stok kartı, ${grupSayisi} yeni grupla birlikte eklendi ✓`);
+    else bil('Excel dosyasında geçerli satır bulunamadı.','err');
+  }catch(e){
+    bil('Excel okunamadı: '+e.message,'err');
+  }
+  input.value='';
+};
+
 window.stokModalAc=function(ustId,tip){
   // Seviyelendirme kuralı: en fazla 3 grup seviyesi, stok kartları
   // SADECE 3. seviye bir grubun altına eklenebilir.
