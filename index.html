@@ -482,7 +482,7 @@
       <input type="text" id="recete-ara" oninput="receteAra()" placeholder="🔍 Ürün ara..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:.75rem">
       <div id="recete-urun-liste" style="max-height:420px;overflow-y:auto"></div>
     </div>
-    <!-- Sağ: Seçilen ürünün reçetesi -->
+    <!-- Sağ: Seçilen ürünün reçetesi (sabit panel — akordeon değil) -->
     <div class="card" style="margin-bottom:0">
       <div id="recete-detay-bos" style="text-align:center;padding:2rem;color:var(--yazi3);font-size:13px">← Soldan bir ürün seçin</div>
       <div id="recete-detay" style="display:none">
@@ -490,11 +490,14 @@
           <div id="recete-urun-ad" style="font-size:15px;font-weight:600;color:var(--yazi1)"></div>
           <div id="recete-urun-grup" style="font-size:11px;color:var(--yazi3);margin-top:2px"></div>
         </div>
+        <div id="recete-normalize-alan"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-          <div style="font-size:12px;font-weight:500;color:var(--yazi2)">Bileşenler</div>
-          <div style="display:flex;gap:6px">
+          <div style="font-size:12px;font-weight:500;color:var(--yazi2)">Bileşenler <span id="recete-birim-etiket" style="font-weight:400;color:var(--yazi3)"></span></div>
+          <div style="display:flex;gap:6px" id="recete-ekle-btns">
             <button class="btn sm sec" onclick="bilesenEkle('stok')">+ Hammadde</button>
             <button class="btn sm" onclick="bilesenEkle('ara_urun')">+ Ara Ürün</button>
+            <button class="btn sm" onclick="bilesenEkle('urun')">+ Ürün</button>
+            <button class="btn sm" onclick="bilesenEkle('hizmet')">+ Hizmet</button>
           </div>
         </div>
         <div id="bilesen-listesi"></div>
