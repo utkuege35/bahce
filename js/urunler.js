@@ -382,34 +382,35 @@ window.renderReceteler = function() {
   receteAra();
 };
 
-function _receteDetayHTML(u, grup) {
-  const bilSayisi = urunBilesenleri.filter(b => b.urun_id === u.id).length;
+// Sağ paneldeki (sabit) reçete detayını doldurur — artık liste akordeon
+// şeklinde açılmıyor, seçim sağ paneli günceller.
+function receteDetayGoster(u) {
+  document.getElementById('recete-detay-bos').style.display='none';
+  document.getElementById('recete-detay').style.display='block';
+  const grup = urunler.find(g => g.id === u.ust_id);
+  document.getElementById('recete-urun-ad').textContent=`[${u.kod}] ${u.ad}`;
+  document.getElementById('recete-urun-grup').textContent=(grup?grup.ad+' · ':'')+(u.tip==='ara_urun'?'Yarı Mamul':'Mamul Ürün');
   const birimKisa = birimAd(u.birim_id) || 'birim';
-  const normalizeKutu = _receteMod==='duzenle' ? `
-    <div style="background:var(--mor-ac,#f3e8ff);border:1px solid #7c3aed33;border-radius:8px;padding:10px 12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--yazi2);margin-bottom:6px">📐 Girdiğiniz miktarlar toplamda ne kadar üretti?</div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <input type="number" id="recete-uretilen-miktar" placeholder="örn: 550" min="0" step="any" style="width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
-        <select id="recete-uretilen-birim" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
-          ${birimSecenekleri(u.birim_id)}
-        </select>
-        <button class="btn sm sec" onclick="event.stopPropagation();receteNormalizeEt('${u.id}')">↺ 1 ${birimKisa} için normalize et</button>
-      </div>
-      <div style="font-size:10px;color:var(--yazi3);margin-top:4px">Bileşen miktarlarını, tam olarak "1 ${birimKisa}" üretecek şekilde otomatik yeniden ölçeklendirir. Fire/pişirme kaybı böylece hesaba katılmış olur.</div>
-    </div>` : '';
-  return `<div id="recete-detay-${u.id}" style="border-top:1px solid var(--border);padding:12px 4px 4px">
-    ${normalizeKutu}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="font-size:12px;font-weight:600;color:var(--yazi2)">Bileşenler <span style="font-weight:400;color:var(--yazi3)">(1 ${birimKisa} için)</span></span>
-      <div style="display:flex;gap:6px" id="recete-ekle-btns">
-        <button class="btn sm sec" onclick="event.stopPropagation();bilesenEkle('stok')">+ Hammadde</button>
-        <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('ara_urun')">+ Ara Ürün</button>
-        <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('urun')">+ Ürün</button>
-        <button class="btn sm" onclick="event.stopPropagation();bilesenEkle('hizmet')">+ Hizmet</button>
-      </div>
-    </div>
-    <div id="bilesen-listesi"></div>
-  </div>`;
+  const birimEtiketEl=document.getElementById('recete-birim-etiket');
+  if(birimEtiketEl)birimEtiketEl.textContent=`(1 ${birimKisa} için)`;
+  const normEl=document.getElementById('recete-normalize-alan');
+  if(normEl){
+    normEl.innerHTML = _receteMod==='duzenle' ? `
+      <div style="background:var(--mor-ac,#f3e8ff);border:1px solid #7c3aed33;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--yazi2);margin-bottom:6px">📐 Girdiğiniz miktarlar toplamda ne kadar üretti?</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <input type="number" id="recete-uretilen-miktar" placeholder="örn: 550" min="0" step="any" style="width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+          <select id="recete-uretilen-birim" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+            ${birimSecenekleri(u.birim_id)}
+          </select>
+          <button class="btn sm sec" onclick="receteNormalizeEt('${u.id}')">↺ 1 ${birimKisa} için normalize et</button>
+        </div>
+        <div style="font-size:10px;color:var(--yazi3);margin-top:4px">Bileşen miktarlarını, tam olarak "1 ${birimKisa}" üretecek şekilde otomatik yeniden ölçeklendirir. Fire/pişirme kaybı böylece hesaba katılmış olur.</div>
+      </div>` : '';
+  }
+  const ekleDiv=document.getElementById('recete-ekle-btns');
+  if(ekleDiv)ekleDiv.style.display=_receteMod==='goruntule'?'none':'';
+  renderBilesenler();
 }
 
 // Bileşen miktarlarını "1 [ürünün temel birimi]" üretecek şekilde yeniden ölçeklendirir.
@@ -441,33 +442,38 @@ window.receteAra = function() {
     const grup = urunler.find(g => g.id === u.ust_id);
     const bilSayisi = urunBilesenleri.filter(b => b.urun_id === u.id).length;
     const secili = u.id === _receteSeciliId;
-    const detayHTML = secili ? _receteDetayHTML(u, grup) : '';
-    return `<div class="card" style="margin-bottom:8px;padding:0;overflow:hidden">
-      <div onclick="receteUrunSec('${u.id}')" style="
-        display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
-        background:${secili?'var(--yesil-cok-ac)':'var(--beyaz)'};
-      ">
-        <span style="font-size:18px">${u.ikon||'🍽️'}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:${secili?'var(--yesil)':'var(--yazi1)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[${u.kod}] ${u.ad}</div>
-          <div style="font-size:11px;color:var(--yazi3);margin-top:2px">${grup ? grup.ad + ' · ' : ''}${u.tip==='ara_urun'?'Yarı Mamul':'Mamul Ürün'}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px">${bilSayisi} bileşen</span>
-          <button class="btn sm" onclick="event.stopPropagation();receteGoruntule('${u.id}')" title="Görüntüle">👁</button>
-          <button class="btn sm" onclick="event.stopPropagation();recedeDuzenle('${u.id}')" title="Düzenle">✏</button>
-          <button class="btn sm ghost" onclick="event.stopPropagation();recedeSil('${u.id}')" title="Sil">✕</button>
-        </div>
-        <span style="font-size:16px;color:var(--yazi3);margin-left:4px">${secili?'▲':'▼'}</span>
+    return `<div onclick="receteUrunSec('${u.id}')" style="
+      display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
+      border-radius:8px;margin-bottom:4px;border:1px solid ${secili?'var(--yesil)':'var(--krem2)'};
+      background:${secili?'var(--yesil-cok-ac)':'var(--beyaz)'};
+    ">
+      <span style="font-size:16px">${u.tip==='ara_urun'?'⚙️':'🍽️'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:${secili?'var(--yesil)':'var(--yazi1)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[${u.kod}] ${u.ad}</div>
+        <div style="font-size:11px;color:var(--yazi3);margin-top:2px">${grup ? grup.ad : ''}</div>
       </div>
-      ${detayHTML}
+      <span style="font-size:10px;background:${bilSayisi?'var(--yesil-cok-ac)':'var(--krem2)'};color:${bilSayisi?'var(--yesil)':'var(--yazi3)'};padding:2px 8px;border-radius:10px;flex-shrink:0">${bilSayisi} bileşen</span>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <button class="btn sm" onclick="event.stopPropagation();receteGoruntule('${u.id}')" title="Görüntüle">👁</button>
+        <button class="btn sm" onclick="event.stopPropagation();recedeDuzenle('${u.id}')" title="Düzenle">✏</button>
+        <button class="btn sm ghost" onclick="event.stopPropagation();recedeSil('${u.id}')" title="Sil">✕</button>
+      </div>
     </div>`;
   }).join('') || '<div class="bos">Ürün bulunamadı</div>';
 
-  // Seçili ürün açıksa bileşenleri render et
   if (_receteSeciliId) {
-    bilesenler = urunBilesenleri.filter(b => b.urun_id === _receteSeciliId).map(b => ({...b}));
-    renderBilesenler();
+    const seciliUrun = urunler.find(u => u.id === _receteSeciliId);
+    if (seciliUrun) {
+      bilesenler = urunBilesenleri.filter(b => b.urun_id === _receteSeciliId).map(b => ({...b}));
+      receteDetayGoster(seciliUrun);
+    } else {
+      _receteSeciliId = null;
+      document.getElementById('recete-detay-bos').style.display='';
+      document.getElementById('recete-detay').style.display='none';
+    }
+  } else {
+    document.getElementById('recete-detay-bos').style.display='';
+    document.getElementById('recete-detay').style.display='none';
   }
 };
 
