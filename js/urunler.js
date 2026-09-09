@@ -192,7 +192,7 @@ function renderBilesenler(){
         <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':isUrun?'tip-urun':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':isUrun?'MM':'ARA'}</span>
       </div>
       <div style="flex:1;min-width:120px;padding:6px 4px">
-        <select onchange="bilesenGuncelle(${i},'kaynak_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+        <select onchange="bilesenKaynakDegis(${i},this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">${secPlaceholder}</option>
           ${secenekler}
         </select>
@@ -239,6 +239,27 @@ function renderBilesenler(){
   }
 }
 window.bilesenGuncelle=function(i,alan,deger){bilesenler[i][alan]=deger;};
+// Bileşen kaynağı (hammadde/YM/ürün) seçilince birimi otomatik varsayılana getirir.
+// Hammaddede: stok kartındaki "Reçete Birimi" adına uyan bir birim varsa onu,
+// yoksa stoğun kendi işlem birimini/temel birimini kullanır.
+window.bilesenKaynakDegis=function(i,deger){
+  bilesenler[i].kaynak_id=deger;
+  const tip=bilesenler[i].kaynak_tip;
+  let birimId='';
+  if(tip==='stok'){
+    const s=stoklar.find(x=>x.id===deger);
+    if(s){
+      const recAd=(s.recete_birim_ad||'').trim().toLowerCase();
+      const eslesen=recAd?birimler.find(b=>(b.kisaltma||'').toLowerCase()===recAd):null;
+      birimId=eslesen?.id||s.varsayilan_birim_id||s.birim_id||'';
+    }
+  }else if(tip==='ara_urun'||tip==='urun'){
+    const u=urunler.find(x=>x.id===deger);
+    birimId=u?.varsayilan_birim_id||u?.birim_id||'';
+  }
+  bilesenler[i].birim_id=birimId;
+  renderBilesenler();
+};
 window.bilesenSil=function(i){bilesenler.splice(i,1);renderBilesenler();};
 
 window.kaydetUrun=async function(){
