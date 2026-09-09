@@ -448,43 +448,67 @@ function receteDetayGoster(u) {
   const birimKisa = birimAd(u.birim_id) || 'birim';
   const birimEtiketEl=document.getElementById('recete-birim-etiket');
   if(birimEtiketEl)birimEtiketEl.textContent=`(1 ${birimKisa} için)`;
-  const normEl=document.getElementById('recete-normalize-alan');
-  if(normEl){
-    normEl.innerHTML = _receteMod==='duzenle' ? `
-      <div style="background:var(--mor-ac,#f3e8ff);border:1px solid #7c3aed33;border-radius:8px;padding:10px 12px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:600;color:var(--yazi2);margin-bottom:6px">📐 Girdiğiniz miktarlar toplamda ne kadar üretti?</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <input type="number" id="recete-uretilen-miktar" placeholder="örn: 550" min="0" step="any" style="width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
-          <select id="recete-uretilen-birim" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
-            ${birimSecenekleri(u.birim_id)}
-          </select>
-          <button class="btn sm sec" onclick="receteNormalizeEt('${u.id}')">↺ 1 ${birimKisa} için normalize et</button>
-        </div>
-        <div style="font-size:10px;color:var(--yazi3);margin-top:4px">Bileşen miktarlarını, tam olarak "1 ${birimKisa}" üretecek şekilde otomatik yeniden ölçeklendirir. Fire/pişirme kaybı böylece hesaba katılmış olur.</div>
-      </div>` : '';
-  }
   const ekleDiv=document.getElementById('recete-ekle-btns');
   if(ekleDiv)ekleDiv.style.display=_receteMod==='goruntule'?'none':'';
   renderBilesenler();
 }
 
-// Bileşen miktarlarını "1 [ürünün temel birimi]" üretecek şekilde yeniden ölçeklendirir.
-// Örn: 500g domates + 100g yağ + 20g tuz karışımı 550g sos verdiyse ve ürünün
-// temel birimi kg ise, tüm miktarlar "1 kg sos için gereken miktar"a çevrilir.
-window.receteNormalizeEt = function(urunId){
-  const u = urunler.find(x=>x.id===urunId); if(!u) return;
-  if(!bilesenler.length){bil('Önce bileşen ekleyin!','err');return;}
-  const miktarEl = document.getElementById('recete-uretilen-miktar');
-  const birimEl = document.getElementById('recete-uretilen-birim');
-  const girilenMiktar = parseFloat(miktarEl?.value)||0;
-  const girilenBirimId = birimEl?.value||'';
-  if(girilenMiktar<=0||!girilenBirimId){bil('Üretilen miktarı ve birimini girin!','err');return;}
-  const uretilenTemel = girilenMiktar*birimTemelCarp(girilenBirimId); // ürünün kendi temel birimi cinsinden karşılığı
+// Not: Reçete normalize etme işlemi artık ayrı bir ekranda
+// (Ürün Reçeteleri ▸ Reçete Normalize Et) yapılıyor — bkz. receteNormalizeEtVeKaydet().
+
+// ===== REÇETE NORMALİZE ET (ayrı ekran) =====
+// Bir reçete genelde bir kez normalize edilir — bu yüzden ayrı, sade bir
+// ekranda yapılır (Reçeteler ekranındaki sürekli görünen kutunun yerine).
+window.receteNormalizeTipDegis=function(){
+  const tip=document.getElementById('rn-tip').value;
+  const el=document.getElementById('rn-kalem');
+  const liste=isyeriFiltre(urunler).filter(u=>u.tip===tip);
+  el.innerHTML='<option value="">Seçin...</option>'+liste.map(u=>`<option value="${u.id}">[${u.kod}] ${u.ad}</option>`).join('');
+  document.getElementById('rn-bilesen-ozet').style.display='none';
+  document.getElementById('rn-uretilen-birim').innerHTML='<option value="">-</option>';
+  document.getElementById('rn-normalize-btn').disabled=true;
+  document.getElementById('rn-uretilen-miktar').value='';
+};
+window.receteNormalizeKalemDegis=function(){
+  const kalemId=document.getElementById('rn-kalem').value;
+  const ozetEl=document.getElementById('rn-bilesen-ozet');
+  const btn=document.getElementById('rn-normalize-btn');
+  const birimSel=document.getElementById('rn-uretilen-birim');
+  if(!kalemId){ozetEl.style.display='none';btn.disabled=true;birimSel.innerHTML='<option value="">-</option>';return;}
+  const u=urunler.find(x=>x.id===kalemId);
+  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===kalemId);
+  ozetEl.style.display='block';
+  if(!bilesenleri.length){
+    ozetEl.innerHTML='Bu kalemin henüz bileşeni yok. Önce Reçeteler ekranından bileşen ekleyin.';
+    btn.disabled=true;
+  }else{
+    ozetEl.innerHTML='<strong>Mevcut bileşenler (şu anki miktarlar):</strong> '+bilesenleri.map(b=>{
+      const ad=b.kaynak_tip==='stok'?stoklar.find(s=>s.id===b.kaynak_id)?.ad:urunler.find(x=>x.id===b.kaynak_id)?.ad;
+      return `${b.miktar} ${birimAd(b.birim_id)} ${ad||''}`;
+    }).join(' + ');
+    btn.disabled=false;
+  }
+  birimSel.innerHTML=birimSecenekleri(u?.birim_id);
+};
+window.receteNormalizeEtVeKaydet=async function(){
+  const kalemId=document.getElementById('rn-kalem').value;
+  const u=urunler.find(x=>x.id===kalemId);if(!u)return;
+  const miktar=parseFloat(document.getElementById('rn-uretilen-miktar').value)||0;
+  const birimId=document.getElementById('rn-uretilen-birim').value;
+  if(!miktar||!birimId){bil('Üretilen miktar ve birim gerekli!','err');return;}
+  const bilesenleri=urunBilesenleri.filter(b=>b.urun_id===kalemId);
+  if(!bilesenleri.length){bil('Bu kalemin bileşeni yok!','err');return;}
+  const uretilenTemel=miktar*birimTemelCarp(birimId);
   if(uretilenTemel<=0){bil('Geçersiz miktar','err');return;}
-  const carpan = 1/uretilenTemel;
-  bilesenler = bilesenler.map(b=>({...b, miktar:+(((parseFloat(b.miktar)||0)*carpan).toFixed(6))}));
-  renderBilesenler();
-  bil(`Bileşenler 1 ${birimAd(u.birim_id)||'birim'} için yeniden ölçeklendirildi ✓ — kaydetmeyi unutmayın`);
+  const carpan=1/uretilenTemel;
+  for(const b of bilesenleri){
+    const yeniMiktar=+(((parseFloat(b.miktar)||0)*carpan).toFixed(6));
+    await sb.from('urun_bilesenleri').update({miktar:yeniMiktar}).eq('id',b.id);
+  }
+  const {data:ub}=await sb.from('urun_bilesenleri').select('*');if(ub)urunBilesenleri=ub;
+  bil(`${u.ad} reçetesi 1 ${birimAd(u.birim_id)||'birim'} için normalize edildi ve kaydedildi ✓`);
+  receteNormalizeKalemDegis();
+  document.getElementById('rn-uretilen-miktar').value='';
 };
 
 window.receteAra = function() {
