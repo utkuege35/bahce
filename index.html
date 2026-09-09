@@ -363,35 +363,70 @@
 </div>
 <div id="stok" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
-    <div class="fr" style="margin:0"><select id="stok-fil" onchange="renderStoklar()"><option value="">Tüm stoklar</option></select></div>
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stoklar</div>
     <div style="display:flex;gap:6px">
       <input type="file" id="stok-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="stokExcelSecildi(this)">
       <button id="btn-stok-excel-yukle" class="btn sm sec" onclick="document.getElementById('stok-excel-input').click()" style="display:none">📥 Excel'den Toplu Yükle</button>
       <button id="btn-yeni-stok-grup" class="btn sm" onclick="stokModalAc(null,'grup')" style="display:none">+ Grup</button>
-      <button id="btn-yeni-stok" class="btn pri sm" onclick="stokModalAc(null,'stok')" style="display:none">+ Stok Kartı</button>
     </div>
   </div>
-  <div id="stok-tree"></div>
+  <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1rem">
+    <!-- Sol: Grup ağacı -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title" style="font-size:12px">Gruplar</div>
+      <div id="stok-grup-agac" style="max-height:520px;overflow-y:auto"></div>
+    </div>
+    <!-- Sağ: Seçili gruba ait stok kartları -->
+    <div class="card" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div id="stok-kart-baslik" style="font-size:13px;font-weight:600;color:var(--yazi1)">← Soldan bir grup seçin</div>
+        <button id="btn-yeni-stok" class="btn pri sm" onclick="stokModalAc(_stokSeciliGrupId,'stok')" style="display:none">+ Stok Kartı</button>
+      </div>
+      <div id="stok-kart-liste" style="max-height:480px;overflow-y:auto"></div>
+    </div>
+  </div>
 </div>
 <div id="urunler" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
-    <div class="fr" style="margin:0"><select id="urun-fil" onchange="renderUrunler()"><option value="">Tüm ürünler</option></select></div>
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ana Ürünler</div>
     <div style="display:flex;gap:6px">
       <button id="btn-yeni-urun-grup" class="btn sm" onclick="urunModalAc(null,'grup','urun')" style="display:none">+ Grup</button>
-      <button id="btn-yeni-urun" class="btn pri sm" onclick="urunModalAc(null,'urun')" style="display:none">+ Ürün</button>
     </div>
   </div>
-  <div id="urun-tree"></div>
+  <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1rem">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title" style="font-size:12px">Gruplar</div>
+      <div id="urun-grup-agac" style="max-height:520px;overflow-y:auto"></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div id="urun-kart-baslik" style="font-size:13px;font-weight:600;color:var(--yazi1)">← Soldan bir grup seçin</div>
+        <button id="btn-yeni-urun" class="btn pri sm" onclick="urunModalAc(_urunSeciliGrupId,'urun')" style="display:none">+ Ürün</button>
+      </div>
+      <div id="urun-kart-liste" style="max-height:480px;overflow-y:auto"></div>
+    </div>
+  </div>
 </div>
 <div id="yarimamuller" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
-    <div class="fr" style="margin:0"><select id="yarimamul-fil" onchange="renderYariMamuller()"><option value="">Tüm yarı mamuller</option></select></div>
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Yarı Mamuller</div>
     <div style="display:flex;gap:6px">
       <button id="btn-yeni-yarimamul-grup" class="btn sm" onclick="urunModalAc(null,'grup','ara_urun')" style="display:none">+ Grup</button>
-      <button id="btn-yeni-yarimamul" class="btn ara sm" onclick="urunModalAc(null,'ara_urun')" style="display:none">+ Yarı Mamul</button>
     </div>
   </div>
-  <div id="yarimamul-tree"></div>
+  <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1rem">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title" style="font-size:12px">Gruplar</div>
+      <div id="yarimamul-grup-agac" style="max-height:520px;overflow-y:auto"></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <div id="yarimamul-kart-baslik" style="font-size:13px;font-weight:600;color:var(--yazi1)">← Soldan bir grup seçin</div>
+        <button id="btn-yeni-yarimamul" class="btn ara sm" onclick="urunModalAc(_yarimamulSeciliGrupId,'ara_urun')" style="display:none">+ Yarı Mamul</button>
+      </div>
+      <div id="yarimamul-kart-liste" style="max-height:480px;overflow-y:auto"></div>
+    </div>
+  </div>
 </div>
 <!-- BİRİMLER -->
 <div id="birimler" class="page">
