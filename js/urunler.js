@@ -371,8 +371,13 @@ window.renderYariMamuller=function(){renderUrunlerGenel('ara_urun');};
 // ===== ÜRÜN REÇETELERİ SAYFASI =====
 let _receteSeciliId = null;
 let _receteMod = 'duzenle'; // 'goruntule' veya 'duzenle'
+let _receteHedefTip = 'urun'; // 'urun' (Ana Ürün Reçeteleri) | 'ara_urun' (Yarı Mamul Reçeteleri)
 
 window.renderReceteler = function() {
+  const baslikEl=document.getElementById('recete-baslik');
+  if(baslikEl)baslikEl.textContent=_receteHedefTip==='ara_urun'?'Yarı Mamul Reçeteleri':'Ana Ürün Reçeteleri';
+  const araEl=document.getElementById('recete-ara');
+  if(araEl)araEl.placeholder=_receteHedefTip==='ara_urun'?'🔍 Yarı mamul ara...':'🔍 Ürün ara...';
   receteAra();
 };
 
@@ -428,7 +433,7 @@ window.receteNormalizeEt = function(urunId){
 window.receteAra = function() {
   const ara = (document.getElementById('recete-ara')?.value || '').toLowerCase();
   const el = document.getElementById('recete-urun-liste'); if (!el) return;
-  let liste = isyeriFiltre(urunler).filter(u => u.tip === 'urun' || u.tip === 'ara_urun');
+  let liste = isyeriFiltre(urunler).filter(u => u.tip === _receteHedefTip);
   if (ara) liste = liste.filter(u => u.ad.toLowerCase().includes(ara) || u.kod.toLowerCase().includes(ara));
 
   el.innerHTML = liste.map(u => {
