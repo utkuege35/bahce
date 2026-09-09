@@ -100,6 +100,7 @@
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
       <button onclick="gp('urunler')">Ürünler</button>
+      <button onclick="gp('yarimamuller')">Yarı Mamuller</button>
       <button onclick="gp('receteler')">Ürün Reçeteleri</button>
       <button onclick="gp('hizmetler')">Hizmetler</button>
       <button onclick="gp('kasalar')">Kasalar</button>
@@ -364,11 +365,20 @@
     <div class="fr" style="margin:0"><select id="urun-fil" onchange="renderUrunler()"><option value="">Tüm ürünler</option></select></div>
     <div style="display:flex;gap:6px">
       <button id="btn-yeni-urun-grup" class="btn sm" onclick="urunModalAc(null,'grup')" style="display:none">+ Grup</button>
-      <button id="btn-yeni-ara-urun" class="btn ara sm" onclick="urunModalAc(null,'ara_urun')" style="display:none">+ Ara Ürün</button>
       <button id="btn-yeni-urun" class="btn pri sm" onclick="urunModalAc(null,'urun')" style="display:none">+ Ürün</button>
     </div>
   </div>
   <div id="urun-tree"></div>
+</div>
+<div id="yarimamuller" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div class="fr" style="margin:0"><select id="yarimamul-fil" onchange="renderYariMamuller()"><option value="">Tüm yarı mamuller</option></select></div>
+    <div style="display:flex;gap:6px">
+      <button id="btn-yeni-yarimamul-grup" class="btn sm" onclick="urunModalAc(null,'grup')" style="display:none">+ Grup</button>
+      <button id="btn-yeni-yarimamul" class="btn ara sm" onclick="urunModalAc(null,'ara_urun')" style="display:none">+ Yarı Mamul</button>
+    </div>
+  </div>
+  <div id="yarimamul-tree"></div>
 </div>
 <!-- BİRİMLER -->
 <div id="birimler" class="page">
