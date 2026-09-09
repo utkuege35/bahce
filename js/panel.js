@@ -393,9 +393,11 @@ window.renderIslemListe=function(){
       <td style="font-size:11px">${cari?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--krem2);white-space:nowrap">${cari.ad}</span>`:''}</td>
       <td style="text-align:right;font-size:11px;white-space:nowrap">${topMiktar}</td>
       <td style="text-align:right;font-weight:500;white-space:nowrap;color:${tutarRenk}">${para(topTutar)}</td>
-      <td style="font-size:10px;white-space:nowrap">${belge.odeme_tipi==='cari'?'📋 Cari':belge.odeme_tipi==='pesin'?'💵 Peşin':''}</td>
+      <td style="font-size:10px;white-space:nowrap">${turler[0]==='sayim'?'':(belge.odeme_tipi==='cari'?'📋 Cari':belge.odeme_tipi==='pesin'?'💵 Peşin':'')}</td>
       <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${belge.kullanici||''}</td>
       <td colspan="2" style="text-align:right">
+        ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏</button>`:''}
+        ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemBelgeSilListe('${satirlar.map(s=>s.id).join(',')}')" title="Tüm fişi sil">✕</button>`:''}
         ${satirlar.length>1?`<span style="font-size:10px;background:var(--krem2);padding:1px 6px;border-radius:10px;color:var(--yazi3)">${satirlar.length} satır</span> `:''}
         <span style="font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</span>
       </td>
@@ -427,6 +429,19 @@ window.islemSilListe=async function(id){
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
   if(data)islemler=data.filter(i=>!i.silindi);
   renderIslemListe();renderPanel();kontolUyari();bil('İşlem silindi ✓');
+};
+window.islemBelgeSilListe=async function(idsCsv){
+  const ids=idsCsv.split(',').filter(Boolean);
+  if(!ids.length)return;
+  const mesaj=ids.length>1?`Bu fişteki ${ids.length} kaydı topluca silmek istiyor musunuz?<br><small>Veritabanında kalır, ekranda görünmez.</small>`:'Bu işlemi silmek istiyor musunuz?<br><small>Veritabanında kalır, ekranda görünmez.</small>';
+  if(!(await onay(mesaj,'🗑️')))return;
+  const silinmeTarihi=new Date().toISOString();
+  for(const id of ids){
+    await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:silinmeTarihi}).eq('id',id);
+  }
+  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
+  if(data)islemler=data.filter(i=>!i.silindi);
+  renderIslemListe();renderPanel();kontolUyari();bil(ids.length>1?'Fiş silindi ✓':'İşlem silindi ✓');
 };
 
 // ===== İŞLEM GEÇMİŞİ =====
