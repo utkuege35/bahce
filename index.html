@@ -111,6 +111,7 @@
         <div class="nav-grup-icerik">
           <button onclick="_receteHedefTip='urun';_receteSeciliId=null;bilesenler=[];gp('receteler')">Ana Ürün Reçeteleri</button>
           <button onclick="_receteHedefTip='ara_urun';_receteSeciliId=null;bilesenler=[];gp('receteler')">Yarı Mamul Reçeteleri</button>
+          <button onclick="gp('recete-normalize')">Reçete Normalize Et</button>
         </div>
       </div>
       <button onclick="gp('hizmetler')">Hizmetler</button>
@@ -503,6 +504,27 @@
     </div>
   </div>
   <div id="kasalar-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem"></div>
+</div>
+
+<!-- REÇETE NORMALİZE ET (ayrı ekran) -->
+<div id="recete-normalize" class="page">
+  <div style="font-size:15px;font-weight:600;color:var(--yazi1);margin-bottom:1rem">Reçete Normalize Et</div>
+  <div class="card">
+    <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Bir reçete genelde <strong>bir kez</strong> normalize edilir: girdiğiniz bileşen miktarlarının toplamda ne kadar ürettiğini belirtirsiniz, sistem bileşenleri otomatik olarak "1 birim için" yeniden ölçeklendirip kaydeder. Fire/pişirme kaybı böylece hesaba katılmış olur.</div>
+    <div class="fgrid c2">
+      <div class="fg"><label>Tip</label><select id="rn-tip" onchange="receteNormalizeTipDegis()">
+        <option value="urun">🍽️ Ürün</option>
+        <option value="ara_urun">⚙️ Yarı Mamul</option>
+      </select></div>
+      <div class="fg"><label>Kalem</label><select id="rn-kalem" onchange="receteNormalizeKalemDegis()"><option value="">Seçin...</option></select></div>
+    </div>
+    <div id="rn-bilesen-ozet" style="margin:10px 0;padding:10px;background:var(--krem);border-radius:8px;font-size:12px;color:var(--yazi2);display:none"></div>
+    <div class="fgrid c2">
+      <div class="fg"><label>Üretilen Miktar</label><input type="number" id="rn-uretilen-miktar" placeholder="örn: 550" min="0" step="any"></div>
+      <div class="fg"><label>Birim</label><select id="rn-uretilen-birim"><option value="">-</option></select></div>
+    </div>
+    <div class="btn-row"><button class="btn pri" id="rn-normalize-btn" onclick="receteNormalizeEtVeKaydet()" disabled>↺ Normalize Et ve Kaydet</button></div>
+  </div>
 </div>
 
 <!-- ÜRÜN REÇETELERİ -->
