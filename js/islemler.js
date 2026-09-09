@@ -152,7 +152,8 @@ window.hmSayimModalAc=function(){
 };
 window.hmSayimStokDegis=function(){
   const stokId=document.getElementById('hsm-stok').value;
-  document.getElementById('hsm-birim').innerHTML=syBirimOpts('stok',stokId,'');
+  const s=stoklar.find(x=>x.id===stokId);
+  document.getElementById('hsm-birim').innerHTML=syBirimOpts('stok',stokId,s?.varsayilan_birim_id||s?.birim_id||'');
 };
 window.hmSayimUygula=function(){
   const stokId=document.getElementById('hsm-stok').value;
@@ -181,7 +182,8 @@ window.ymSayimTipDegis=function(){
 window.ymSayimKalemDegis=function(){
   const tip=document.getElementById('ysm-tip').value;
   const kaynakId=document.getElementById('ysm-kalem').value;
-  document.getElementById('ysm-birim').innerHTML=syBirimOpts(tip,kaynakId,'');
+  const u=urunler.find(x=>x.id===kaynakId);
+  document.getElementById('ysm-birim').innerHTML=syBirimOpts(tip,kaynakId,u?.varsayilan_birim_id||u?.birim_id||'');
 };
 // Bir YM/Ürünün miktarını, reçetesi üzerinden (iç içe olabilir) altındaki
 // gerçek hammaddelere dağıtır. DB'ye yazmaz, sadece hesaplanan {stokId,miktarTemel}
