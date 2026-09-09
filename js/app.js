@@ -97,7 +97,7 @@ function uygulamaAc(){
       'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')', 'yarimamuller':'gp(\'yarimamuller\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
-      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')'
+      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'recete_normalize':'gp(\'recete-normalize\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')'
     };
     const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
     if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
@@ -253,6 +253,7 @@ window.gp=function(id){
   }
   if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();if(id==='yarimamuller')renderYariMamuller();
   if(id==='receteler')renderReceteler();
+  if(id==='recete-normalize'&&typeof receteNormalizeTipDegis==='function')receteNormalizeTipDegis();
   if(id==='kasalar')renderKasalar();
   if(id==='merkezler')renderMerkezler();
   if(id==='hizmetler')renderGiderKalemTree();
