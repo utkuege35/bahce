@@ -311,19 +311,23 @@ window.kaydetSayim=async function(){
   if(!depoId){bil('Depo seçimi zorunlu!','err');return;}
   const gecerli=sayimSatirListesi.filter(s=>(s.direkt>0)||s.kaynaklar.some(k=>k.miktar>0));
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  // Tek bir "sayım oturumu" içindeki tüm satırlar aynı belge_id'yi paylaşır —
+  // böylece İşlem Listesi'nde Alış/Satış gibi tek özet satır olarak görünür,
+  // tıklanınca detay satırları açılır.
+  const belgeId=crypto.randomUUID();
   for(const s of gecerli){
     if(s.direkt>0){
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:s.direkt,
-        aciklama:'Sayım (direkt)',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
+        tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:s.direkt,
+        aciklama:'Sayım',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
     }
     for(const k of s.kaynaklar){
       if(!(k.miktar>0))continue;
       await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:k.miktar,
-        aciklama:'Sayım (dolaylı)',kat:'Sayım',satir_not:`${k.ad} sayımından`,aciklama_not:an,
+        tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:k.miktar,
+        aciklama:'Sayım',kat:'Sayım',satir_not:`${k.ad} sayımından`,aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
     }
