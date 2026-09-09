@@ -50,7 +50,7 @@ window.stokExcelSecildi=async function(input){
       const alt1=stokGrupBulVeyaOlustur(altGrup1,ana.id,isyeriId,seviye2Yeni);
       const alt2=stokGrupBulVeyaOlustur(altGrup2,alt1.id,isyeriId,seviye3Yeni);
       if((alt2.seviye||1)!==3){hatali.push(`${stokAdi} (grup zinciri hatalı)`);continue;}
-      const dupAd=stoklar.find(s=>(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===stokAdi.toLowerCase());
+      const dupAd=stoklar.find(s=>(s.isyeri_id||null)===isyeriId&&(s.seviye||1)===4&&s.ad.trim().toLowerCase()===stokAdi.toLowerCase());
       if(dupAd){hatali.push(`${stokAdi} (bu isimde zaten bir kayıt var)`);continue;}
       const kod=kodOlusturStok(alt2.id,'stok');
       const yeniStok={id:uid(),ad:stokAdi,kod,tip:'stok',ust_id:alt2.id,seviye:4,isyeri_id:isyeriId,birim_id:birim.id,baslangic:0,min_stok:0,maliyet:0,aciklama:null,aktif:true};
@@ -156,10 +156,19 @@ window.kaydetStok=async function(){
   if(!kod){bil('Kod oluşturulamadı, üst grup seçin','err');return;}
   const mevcut=stoklar.find(x=>x.id===id);
   const isyeriId=mevcut?mevcut.isyeri_id:(aktifIsyeri?.id||null);
-  // Mükerrer kontrol — sadece AYNI işyeri kapsamında
-  const kapsam=stoklar.filter(x=>(x.isyeri_id||null)===(isyeriId||null));
+  // Yeni kayıt için üst grubu ve seviyeyi şimdiden belirle (mükerrer kontrolde de lazım)
+  let hedefUstId=mevcut?mevcut.ust_id:null,hedefSeviye=mevcut?mevcut.seviye:1;
+  if(!mevcut){
+    const ustBilgi=document.getElementById('sm-ust-bilgi').textContent;
+    const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
+    const ust=ustKod?stoklar.find(s=>s.kod===ustKod&&(s.isyeri_id||null)===(aktifIsyeri?.id||null)):null;
+    hedefUstId=ust?.id||null;
+    hedefSeviye=ust?(ust.seviye||1)+1:1;
+  }
+  // Mükerrer kontrol — aynı işyeri VE aynı seviye kapsamında (farklı seviyede aynı isim serbest)
+  const kapsam=stoklar.filter(x=>(x.isyeri_id||null)===(isyeriId||null)&&(x.seviye||1)===hedefSeviye);
   const dupAd=kapsam.find(x=>x.id!==id&&x.ad.trim().toLowerCase()===ad.toLowerCase());
-  if(dupAd){bil(`"${ad}" adında zaten bir stok/grup var! [${dupAd.kod}]`,'err');return;}
+  if(dupAd){bil(`"${ad}" adında zaten aynı seviyede bir stok/grup var! [${dupAd.kod}]`,'err');return;}
   const dupKod=kapsam.find(x=>x.id!==id&&x.kod===kod);
   if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
   const hv=mevcut&&islemler.some(i=>i.stok_id===id);
@@ -179,11 +188,8 @@ window.kaydetStok=async function(){
     data.aktif=document.getElementById('sm-aktif').checked;
   }
   if(!mevcut){
-    const ustBilgi=document.getElementById('sm-ust-bilgi').textContent;
-    const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
-    const ust=ustKod?stoklar.find(s=>s.kod===ustKod&&(s.isyeri_id||null)===(aktifIsyeri?.id||null)):null;
-    data.ust_id=ust?.id||null;
-    data.seviye=ust?(ust.seviye||1)+1:1;
+    data.ust_id=hedefUstId;
+    data.seviye=hedefSeviye;
     data.isyeri_id=aktifIsyeri?.id||null;
     if(tip==='stok')data.aktif=true;
   }
