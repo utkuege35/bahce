@@ -364,7 +364,7 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div class="fr" style="margin:0"><select id="urun-fil" onchange="renderUrunler()"><option value="">Tüm ürünler</option></select></div>
     <div style="display:flex;gap:6px">
-      <button id="btn-yeni-urun-grup" class="btn sm" onclick="urunModalAc(null,'grup')" style="display:none">+ Grup</button>
+      <button id="btn-yeni-urun-grup" class="btn sm" onclick="urunModalAc(null,'grup','urun')" style="display:none">+ Grup</button>
       <button id="btn-yeni-urun" class="btn pri sm" onclick="urunModalAc(null,'urun')" style="display:none">+ Ürün</button>
     </div>
   </div>
@@ -374,7 +374,7 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div class="fr" style="margin:0"><select id="yarimamul-fil" onchange="renderYariMamuller()"><option value="">Tüm yarı mamuller</option></select></div>
     <div style="display:flex;gap:6px">
-      <button id="btn-yeni-yarimamul-grup" class="btn sm" onclick="urunModalAc(null,'grup')" style="display:none">+ Grup</button>
+      <button id="btn-yeni-yarimamul-grup" class="btn sm" onclick="urunModalAc(null,'grup','ara_urun')" style="display:none">+ Grup</button>
       <button id="btn-yeni-yarimamul" class="btn ara sm" onclick="urunModalAc(null,'ara_urun')" style="display:none">+ Yarı Mamul</button>
     </div>
   </div>
@@ -699,7 +699,7 @@
   <div class="modal">
     <div class="modal-hdr"><h3 id="um-title">Ürün</h3><button class="btn sm" onclick="modalKapat('modal-urun')">✕</button></div>
     <div class="modal-body">
-      <input type="hidden" id="um-id"><input type="hidden" id="um-tip-h">
+      <input type="hidden" id="um-id"><input type="hidden" id="um-tip-h"><input type="hidden" id="um-agac">
       <div style="background:var(--krem2);padding:8px 10px;border-radius:8px;font-size:12px;color:var(--yazi2);margin-bottom:8px" id="um-ust-bilgi"></div>
       <!-- Mamul / Yarı Mamul seçimi (sadece ürün tipinde göster) -->
       <div id="um-tip-secim" style="display:none;margin-bottom:10px">
