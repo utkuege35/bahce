@@ -99,9 +99,20 @@
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Tanımlar ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
-      <button onclick="gp('urunler')">Ürünler</button>
-      <button onclick="gp('yarimamuller')">Yarı Mamuller</button>
-      <button onclick="gp('receteler')">Ürün Reçeteleri</button>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürünler ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="gp('urunler')">Ana Ürünler</button>
+          <button onclick="gp('yarimamuller')">Yarı Mamuller</button>
+        </div>
+      </div>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün Reçeteleri ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="_receteHedefTip='urun';_receteSeciliId=null;bilesenler=[];gp('receteler')">Ana Ürün Reçeteleri</button>
+          <button onclick="_receteHedefTip='ara_urun';_receteSeciliId=null;bilesenler=[];gp('receteler')">Yarı Mamul Reçeteleri</button>
+        </div>
+      </div>
       <button onclick="gp('hizmetler')">Hizmetler</button>
       <button onclick="gp('kasalar')">Kasalar</button>
       <button onclick="gp('cari')">Cari & Personel Kartları</button>
@@ -462,7 +473,7 @@
 <!-- ÜRÜN REÇETELERİ -->
 <div id="receteler" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ürün Reçeteleri</div>
+    <div id="recete-baslik" style="font-size:15px;font-weight:600;color:var(--yazi1)">Ana Ürün Reçeteleri</div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
     <!-- Sol: Ürün seçimi -->
