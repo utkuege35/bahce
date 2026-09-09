@@ -152,6 +152,7 @@ const EKRANLAR = [
   {id:'islem_liste',ad:'İşlem Listesi', ekleYok:true},
   {id:'stok',       ad:'Stoklar'},
   {id:'urunler',    ad:'Ürünler'},
+  {id:'yarimamuller', ad:'Yarı Mamuller'},
   {id:'receteler',  ad:'Ürün Reçeteleri'},
   {id:'hizmetler',  ad:'Hizmetler'},
   {id:'kasalar',    ad:'Kasalar'},
