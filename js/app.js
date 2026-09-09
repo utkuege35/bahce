@@ -84,7 +84,7 @@ function uygulamaAc(){
     document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     document.getElementById('nav-yetkiler')?.style && (document.getElementById('nav-yetkiler').style.display='');
     document.getElementById('nav-kul-yetkiler')?.style && (document.getElementById('nav-kul-yetkiler').style.display='');
-    ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-ara-urun','btn-yeni-urun'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
+    ['btn-yeni-stok-grup','btn-yeni-stok','btn-yeni-urun-grup','btn-yeni-urun','btn-yeni-yarimamul-grup','btn-yeni-yarimamul'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
     // Kullanıcılar ve Şirket&İşyerleri butonlarını gizle
     document.getElementById('nav-kullanicilar').style.display='none';
@@ -94,7 +94,7 @@ function uygulamaAc(){
     // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
       'islem':'gp(\'islem\')', 'islem_liste':'gp(\'islem-liste\')',
-      'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')',
+      'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')', 'yarimamuller':'gp(\'yarimamuller\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
       'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')'
@@ -168,9 +168,9 @@ async function baslat(){
     if(data){islemler=data.filter(i=>!i.silindi);renderPanel();kontolUyari();}
   }).subscribe();
   realtimeKanallar=[stokK,urunK,islemK];
-  doldurBirimSecleri();doldurStokFil();doldurUrunFil();doldurIslemSecleri();doldurMerkezSecleri();if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
+  doldurBirimSecleri();doldurStokFil();doldurUrunFil();if(typeof doldurYariMamulFil==='function')doldurYariMamulFil();doldurIslemSecleri();doldurMerkezSecleri();if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
   await cariYukle();
-  renderPanel();renderStoklar();renderUrunler();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();if(typeof renderDepolar==='function')renderDepolar();if(typeof yetkiButonlariUygula==='function')yetkiButonlariUygula();kontolUyari();
+  renderPanel();renderStoklar();renderUrunler();renderYariMamuller();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();if(typeof renderDepolar==='function')renderDepolar();if(typeof yetkiButonlariUygula==='function')yetkiButonlariUygula();kontolUyari();
   // Satır listelerini cari yüklendikten sonra yenile
   if(hmSatirListesi.length)hmSatirRender();
   if(stSatirListesi.length)stSatirRender();
@@ -192,13 +192,15 @@ function doldurStokFil(){
   gruplar.forEach(g=>{fo+=`<option value="${g.id}">${'—'.repeat((g.seviye||1)-1)} ${g.ikon||''} ${g.ad}</option>`;});
   el.innerHTML=fo;
 }
-function doldurUrunFil(){
-  const el=document.getElementById('urun-fil');if(!el)return;
+function doldurUrunFilId(elId){
+  const el=document.getElementById(elId);if(!el)return;
   const gruplar=urunler.filter(u=>u.tip==='grup');
   let fo='<option value="">Tüm ürünler</option>';
-  gruplar.forEach(g=>{fo+=`<option value="${g.id}">${'—'.repeat((g.seviye||1)-1)} ${g.ikon||''} ${g.ad}</option>`;});
+  gruplar.forEach(g=>{fo+=`<option value="${g.id}">${'—'.repeat((g.seviye||1)-1)} ${g.ad}</option>`;});
   el.innerHTML=fo;
 }
+function doldurUrunFil(){doldurUrunFilId('urun-fil');}
+function doldurYariMamulFil(){doldurUrunFilId('yarimamul-fil');}
 function doldurIslemSecleri(){
   const urEl=document.getElementById('ur-urun');
   if(urEl){const c=urEl.value;urEl.innerHTML='<option value="">Seçin...</option>'+urunler.filter(u=>u.tip==='urun'||u.tip==='ara_urun').map(u=>`<option value="${u.id}">[${u.kod}] ${u.ad} ${u.tip==='ara_urun'?'(Ara Ürün)':''}</option>`).join('');if(c)urEl.value=c;}
@@ -249,7 +251,7 @@ window.gp=function(id){
     const icerik=navBtn.closest('.nav-grup-icerik');
     if(icerik){icerik.classList.add('acik');icerik.previousElementSibling?.classList.add('acik');}
   }
-  if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();
+  if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();if(id==='yarimamuller')renderYariMamuller();
   if(id==='receteler')renderReceteler();
   if(id==='kasalar')renderKasalar();
   if(id==='merkezler')renderMerkezler();
