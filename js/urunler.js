@@ -9,15 +9,20 @@ window.umTipDegis=function(yeniTip){
   document.getElementById('um-title').textContent=document.getElementById('um-id').value?`${tipAd} Düzenle`:`Yeni ${tipAd}`;
 };
 window.urunModalAc=function(ustId,tip){
-  // Seviyelendirme kuralı: en fazla 2 grup seviyesi (stoktan 1 basamak az),
-  // ürün/YM kartları SADECE 2. seviye bir grubun altına eklenebilir.
+  // Seviyelendirme kuralı: gruplar en fazla 2 seviye (ürünler için).
+  // Ürün SADECE 2. seviye bir grubun altına, Yarı Mamul ise SADECE
+  // 1. seviye bir grubun altına eklenebilir (üründen 1 basamak az).
   if(tip==='grup'&&ustId){
     const ust=urunler.find(u=>u.id===ustId);
     if(ust&&(ust.seviye||1)>=2){bil('En fazla 2 seviye grup açılabilir!','err');return;}
   }
-  if(tip==='ara_urun'||tip==='urun'){
+  if(tip==='urun'){
     const ust=ustId?urunler.find(u=>u.id===ustId):null;
-    if(!ust||(ust.seviye||0)!==2){bil('Ürün/Yarı Mamul sadece 2. seviye bir grubun altına eklenebilir!','err');return;}
+    if(!ust||(ust.seviye||0)!==2){bil('Ürün sadece 2. seviye bir grubun altına eklenebilir!','err');return;}
+  }
+  if(tip==='ara_urun'){
+    const ust=ustId?urunler.find(u=>u.id===ustId):null;
+    if(!ust||(ust.seviye||0)!==1){bil('Yarı Mamul sadece 1. seviye bir grubun altına eklenebilir!','err');return;}
   }
   document.getElementById('um-id').value='';document.getElementById('um-tip-h').value=tip;
   document.getElementById('um-ad').value='';
@@ -315,10 +320,10 @@ function renderUrunlerGenel(hedefTip){
     const satirRenk=isGrup?grupRenkler[Math.min(depth,grupRenkler.length-1)]:'var(--border)';
     const satirBg=isGrup?(depth===0?'var(--grup-bg-0)':depth===1?'var(--grup-bg-1)':'var(--grup-bg-2)'):'';
     const eklemeBtn=isGrup?(
-      (u.seviye||1)<2
-        ?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')" title="Alt Grup">+G</button>`
-        :(hedefTip==='ara_urun'
-            ?`<button class="btn sm" style="background:var(--mor-ac);color:var(--mor)" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')" title="Yarı Mamul Ekle">+Y</button>`
+      hedefTip==='ara_urun'
+        ?`<button class="btn sm" style="background:var(--mor-ac);color:var(--mor)" onclick="event.stopPropagation();urunModalAc('${u.id}','ara_urun')" title="Yarı Mamul Ekle">+Y</button>`
+        :((u.seviye||1)<2
+            ?`<button class="btn sm" onclick="event.stopPropagation();urunModalAc('${u.id}','grup')" title="Alt Grup">+G</button>`
             :`<button class="btn sm sec" onclick="event.stopPropagation();urunModalAc('${u.id}','urun')" title="Ürün Ekle">+Ü</button>`)
     ):'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'2'}px solid ${satirRenk};${satirBg?'background:'+satirBg+';':''}${pasif?'opacity:0.45;':''}">
@@ -338,7 +343,7 @@ function renderUrunlerGenel(hedefTip){
     </div>`;
   }
   function renderTree(ustId,depth,showAll){
-    return kapsam.filter(u=>u.ust_id===ustId&&(u.tip==='grup'||u.tip===hedefTip)&&(showAll||u.aktif!==false)).map(u=>renderRow(u,depth)+renderTree(u.id,depth+1,showAll)).join('');
+    return kapsam.filter(u=>u.ust_id===ustId&&(u.tip===hedefTip||(u.tip==='grup'&&hedefTip!=='ara_urun'))&&(showAll||u.aktif!==false)).map(u=>renderRow(u,depth)+renderTree(u.id,depth+1,showAll)).join('');
   }
   let html='';
   if(fil){
