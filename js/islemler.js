@@ -294,7 +294,7 @@ function sySatirRender(){
     return `<tr>
       <td>${stok?stok.ad:'(bilinmeyen)'} <span style="font-size:10px;color:var(--yazi3)">[${stok?.kod||''}]</span></td>
       <td>${birim?.kisaltma||''}</td>
-      <td><input type="number" placeholder="0" value="${s.direkt||''}" onblur="sySatirGuncelle(${i},this.value)" style="width:100%;padding:5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+      <td><input type="number" placeholder="0" value="${s.direkt||''}" onblur="sySatirGuncelle(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
       <td style="text-align:center">${ymToplam>0?`<span style="cursor:pointer;color:var(--mor);text-decoration:underline;font-size:12px" onclick="syDetayToggle(${i})">${ymToplam.toLocaleString('tr-TR',{maximumFractionDigits:3})} ${s._detayAcik?'▲':'▼'}</span>`:'<span style="color:var(--yazi3);font-size:12px">—</span>'}</td>
       <td style="font-weight:600">${genelToplam.toLocaleString('tr-TR',{maximumFractionDigits:3})}</td>
       <td><button onclick="sySatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
@@ -384,20 +384,20 @@ function hmSatirRender(){
   const el=document.getElementById('hm-satirlar');if(!el)return;
   el.innerHTML=hmSatirListesi.map((s,i)=>`<tr>
     <td>${_hmTur==='diger'
-      ?`<input type="text" placeholder="Ne alındı..." value="${s.manuel||''}" onblur="hmSatirGuncelle(${i},'manuel',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
-      :`<select onchange="hmSatirGuncelle(${i},'secimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${hmSecimOpts(s.secimId)}</select>`
+      ?`<input type="text" placeholder="Ne alındı..." value="${s.manuel||''}" onblur="hmSatirGuncelle(${i},'manuel',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
+      :`<select onchange="hmSatirGuncelle(${i},'secimId',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${hmSecimOpts(s.secimId)}</select>`
     }</td>
-    <td><select onchange="hmBirimSec(${i},this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${hmBirimOpts(s.secimId,s.birimId)}</select></td>
-    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td><select onchange="hmBirimSec(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">-</option>${hmBirimOpts(s.secimId,s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
     <td>${_hmTur==='diger'
-      ?`<select onchange="hmSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">— Masraf Merkezi —</option>${merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
-      :`<input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
+      ?`<select onchange="hmSatirGuncelle(${i},'merkez_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">— Masraf Merkezi —</option>${merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
+      :`<input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
     }</td>
-    <td><select onchange="hmSatirGuncelle(${i},'cari_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('',s.cari_id):'')}</select></td>
-    <td><select onchange="hmSatirGuncelle(${i},'odeme_tipi',this.value);hmOdemeKasaGuncelle(${i},this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
-    <td style="min-width:90px">${s.odeme_tipi!=='cari'?`<select onchange="hmSatirGuncelle(${i},'kasa_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)" id="hm-kasa-${i}"><option value="">Kasa</option></select>`:'<span style="font-size:10px;color:var(--yazi3)">Cari</span>'}</td>
+    <td><select onchange="hmSatirGuncelle(${i},'cari_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('',s.cari_id):'')}</select></td>
+    <td><select onchange="hmSatirGuncelle(${i},'odeme_tipi',this.value);hmOdemeKasaGuncelle(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
+    <td style="min-width:90px">${s.odeme_tipi!=='cari'?`<select onchange="hmSatirGuncelle(${i},'kasa_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)" id="hm-kasa-${i}"><option value="">Kasa</option></select>`:'<span style="font-size:10px;color:var(--yazi3)">Cari</span>'}</td>
     <td><button onclick="hmSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
   hmToplamGuncelle();
@@ -591,20 +591,20 @@ function stSatirRender(){
   const tip=document.getElementById('st-tip')?.value||'urun';
   el.innerHTML=stSatirListesi.map((s,i)=>`<tr>
     <td>${tip==='diger'
-      ?`<input type="text" placeholder="Ne satıldı..." value="${s.manuel||''}" onblur="stSatirGuncelle(${i},'manuel',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
-      :`<select onchange="stSatirGuncelle(${i},'secimId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Seçin...</option>${stUrunOpts(s.secimId)}</select>`
+      ?`<input type="text" placeholder="Ne satıldı..." value="${s.manuel||''}" onblur="stSatirGuncelle(${i},'manuel',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
+      :`<select onchange="stSatirGuncelle(${i},'secimId',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">Seçin...</option>${stUrunOpts(s.secimId)}</select>`
     }</td>
-    <td><select onchange="stSatirBirimSec(${i},this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${stBirimOpts(s.secimId,s.birimId)}</select></td>
-    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td><select onchange="stSatirBirimSec(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${stBirimOpts(s.secimId,s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
     <td>${tip==='diger'
-      ?`<select onchange="stSatirGuncelle(${i},'merkez_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">— Gelir Merkezi —</option>${merkezler.filter(m=>m.tip==='gelir'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
-      :`<input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
+      ?`<select onchange="stSatirGuncelle(${i},'merkez_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">— Gelir Merkezi —</option>${merkezler.filter(m=>m.tip==='gelir'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
+      :`<input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px">`
     }</td>
-    <td><select onchange="stSatirGuncelle(${i},'cari_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('alici',s.cari_id):'')}</select></td>
-    <td><select onchange="stSatirGuncelle(${i},'odeme_tipi',this.value);stOdemeKasaGuncelle(${i},this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
-    <td style="min-width:90px">${s.odeme_tipi!=='cari'?`<select onchange="stSatirGuncelle(${i},'kasa_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)" id="st-kasa-${i}"><option value="">Kasa</option></select>`:'<span style="font-size:10px;color:var(--yazi3)">Cari</span>'}</td>
+    <td><select onchange="stSatirGuncelle(${i},'cari_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOpts==='function'?cariOpts('alici',s.cari_id):'')}</select></td>
+    <td><select onchange="stSatirGuncelle(${i},'odeme_tipi',this.value);stOdemeKasaGuncelle(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz);${s.odeme_tipi==='cari'?'color:var(--mor)':''}">${odemeOpts(s.odeme_tipi)}</select></td>
+    <td style="min-width:90px">${s.odeme_tipi!=='cari'?`<select onchange="stSatirGuncelle(${i},'kasa_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)" id="st-kasa-${i}"><option value="">Kasa</option></select>`:'<span style="font-size:10px;color:var(--yazi3)">Cari</span>'}</td>
     <td><button onclick="stSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
   stToplamGuncelle();
@@ -702,16 +702,16 @@ function gdSatirRender(){
   const el=document.getElementById('gd-satirlar');if(!el)return;
   const kalemler=giderKalemleri.filter(g=>g.tip==='kalem'&&g.aktif!==false);
   el.innerHTML=gdSatirListesi.map((s,i)=>`<tr>
-    <td><select onchange="gdSatirGuncelle(${i},'kalemId',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+    <td><select onchange="gdSatirGuncelle(${i},'kalemId',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
       <option value="">Kalem seçin...</option>
       ${kalemler.map(k=>`<option value="${k.id}"${k.id===s.kalemId?' selected':''}>[${k.kod}] ${k.ad}</option>`).join('')}
     </select></td>
-    <td><select onchange="gdSatirGuncelle(${i},'birimId',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${gdBirimOpts(s.birimId)}</select></td>
-    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="gdSatirHesapla(${i},'miktar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="gdSatirHesapla(${i},'fiyat',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="gdSatirHesapla(${i},'tutar',this.value)" style="width:100%;padding:6px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--turuncu)"></td>
-    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="gdSatirGuncelle(${i},'satir_not',this.value)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-    <td><select onchange="gdSatirGuncelle(${i},'cari_id',this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOptsGider==='function'?cariOptsGider(s.cari_id):'')}</select></td>
+    <td><select onchange="gdSatirGuncelle(${i},'birimId',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${gdBirimOpts(s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="gdSatirHesapla(${i},'miktar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="gdSatirHesapla(${i},'fiyat',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="gdSatirHesapla(${i},'tutar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--turuncu)"></td>
+    <td><input type="text" placeholder="Açıklama..." value="${s.satir_not||''}" onblur="gdSatirGuncelle(${i},'satir_not',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><select onchange="gdSatirGuncelle(${i},'cari_id',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)"><option value="">—</option>${(typeof cariOptsGider==='function'?cariOptsGider(s.cari_id):'')}</select></td>
     <td><button onclick="gdSatirSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px">×</button></td>
   </tr>`).join('');
   gdToplamGuncelle();
