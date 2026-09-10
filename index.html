@@ -260,7 +260,10 @@
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <button class="btn sm sec" onclick="hmSatirEkle()">+ Satır Ekle</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm sec" onclick="hmSatirEkle()">+ Satır Ekle</button>
+          <button id="btn-hm-sil" class="btn sm ghost" onclick="hmSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
+        </div>
         <button class="btn pri" onclick="kaydetHammadde()">Tümünü Kaydet</button>
       </div>
     </div>
@@ -293,7 +296,10 @@
         </table>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <button class="btn sm sec" onclick="stSatirEkle()">+ Satır Ekle</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm sec" onclick="stSatirEkle()">+ Satır Ekle</button>
+          <button id="btn-st-sil" class="btn sm ghost" onclick="stSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
+        </div>
         <button class="btn pri" onclick="kaydetSatis()">Tümünü Kaydet</button>
       </div>
     </div>
@@ -357,6 +363,7 @@
         </table>
       </div>
       <div style="display:flex;justify-content:flex-end;align-items:center">
+        <button id="btn-sy-sil" class="btn sm ghost" onclick="sySatirSilHover()" title="Üzerine gelinen satırı sil" style="margin-right:auto">🗑 Satırı Sil</button>
         <button class="btn pri" onclick="kaydetSayim()">Sayımı Kaydet</button>
       </div>
     </div>
@@ -570,6 +577,7 @@
             <button class="btn sm" onclick="bilesenEkle('ara_urun')">+ Ara Ürün</button>
             <button class="btn sm" onclick="bilesenEkle('urun')">+ Ürün</button>
             <button class="btn sm" onclick="bilesenEkle('hizmet')">+ Hizmet</button>
+            <button id="btn-bilesen-sil" class="btn sm ghost" onclick="bilesenSilHover()" title="Üzerine gelinen satırı sil" style="display:none">🗑 Satırı Sil</button>
           </div>
         </div>
         <div id="bilesen-listesi"></div>
