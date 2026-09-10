@@ -287,34 +287,62 @@ function renderStoklar(){
   }
 }
 // ===== STOK LİSTESİ (düz tablo — grup ağacı değil) =====
+let _slSonListe=[];
 window.renderStokListesi=function(){
   const el=document.getElementById('stok-liste-tb');if(!el)return;
   const kapsam=isyeriFiltre(stoklar);
   const isAdmin=aktifKullanici?.rol==='admin';
-  const ara=(document.getElementById('sl-ara')?.value||'').toLowerCase();
-  let liste=kapsam.filter(s=>s.tip==='stok'&&(isAdmin||s.aktif!==false));
-  if(ara)liste=liste.filter(s=>s.ad.toLowerCase().includes(ara)||s.kod.toLowerCase().includes(ara));
-  liste=liste.slice().sort((a,b)=>(a.kod||'').localeCompare(b.kod||''));
-  el.innerHTML=liste.map(s=>{
+  const f=id=>(document.getElementById(id)?.value||'').toLowerCase();
+  const fAna=f('sl-f-ana'),fAlt=f('sl-f-alt'),fAlt2=f('sl-f-alt2'),fKod=f('sl-f-kod'),fAd=f('sl-f-ad'),fTb=f('sl-f-tb'),fIb=f('sl-f-ib'),fRb=f('sl-f-rb');
+
+  let liste=kapsam.filter(s=>s.tip==='stok'&&(isAdmin||s.aktif!==false)).map(s=>{
     const grup3=kapsam.find(g=>g.id===s.ust_id);
     const grup2=grup3?kapsam.find(g=>g.id===grup3.ust_id):null;
     const grup1=grup2?kapsam.find(g=>g.id===grup2.ust_id):null;
     const tb=birimler.find(b=>b.id===s.birim_id);
     const ib=birimler.find(b=>b.id===(s.varsayilan_birim_id||s.birim_id));
-    const mik=stokMiktar(s.id);
-    const dusuk=s.min_stok>0&&mik<=s.min_stok;
+    const rb=birimler.find(b=>b.id===s.recete_birim_id);
+    return {stok:s,anaGrup:grup1?.ad||'',altGrup:grup2?.ad||'',altGrup2:grup3?.ad||'',kod:s.kod||'',ad:s.ad||'',temelBirim:tb?.kisaltma||'',islemBirim:ib?.kisaltma||'',receteBirim:rb?.kisaltma||'',mevcutStok:stokMiktar(s.id)};
+  });
+  if(fAna)liste=liste.filter(r=>r.anaGrup.toLowerCase().includes(fAna));
+  if(fAlt)liste=liste.filter(r=>r.altGrup.toLowerCase().includes(fAlt));
+  if(fAlt2)liste=liste.filter(r=>r.altGrup2.toLowerCase().includes(fAlt2));
+  if(fKod)liste=liste.filter(r=>r.kod.toLowerCase().includes(fKod));
+  if(fAd)liste=liste.filter(r=>r.ad.toLowerCase().includes(fAd));
+  if(fTb)liste=liste.filter(r=>r.temelBirim.toLowerCase().includes(fTb));
+  if(fIb)liste=liste.filter(r=>r.islemBirim.toLowerCase().includes(fIb));
+  if(fRb)liste=liste.filter(r=>r.receteBirim.toLowerCase().includes(fRb));
+  liste.sort((a,b)=>a.kod.localeCompare(b.kod));
+  _slSonListe=liste;
+
+  el.innerHTML=liste.map(r=>{
+    const s=r.stok;
+    const dusuk=s.min_stok>0&&r.mevcutStok<=s.min_stok;
     const pasif=s.aktif===false;
     return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="stokGoruntule('${s.id}')">
-      <td class="tree-kod">${s.kod}</td>
-      <td style="font-weight:500">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
-      <td>${grup1?.ad||''}</td>
-      <td>${grup2?.ad||''}</td>
-      <td>${grup3?.ad||''}</td>
-      <td>${tb?.kisaltma||''}</td>
-      <td>${ib?.kisaltma||''}</td>
-      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+      <td>${r.anaGrup}</td>
+      <td>${r.altGrup}</td>
+      <td>${r.altGrup2}</td>
+      <td class="tree-kod">${r.kod}</td>
+      <td style="font-weight:500">${r.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
+      <td>${r.temelBirim}</td>
+      <td>${r.islemBirim}</td>
+      <td>${r.receteBirim}</td>
+      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--yesil)'}">${r.mevcutStok.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="8" class="bos">Kayıt yok</td></tr>';
+  }).join('')||'<tr><td colspan="9" class="bos">Kayıt yok</td></tr>';
+};
+window.stokListesiExcelIndir=function(){
+  if(!_slSonListe.length){bil('İndirilecek veri yok','err');return;}
+  const data=_slSonListe.map(r=>({
+    'Ana Grup':r.anaGrup,'Alt Grup':r.altGrup,'Alt Grup 2':r.altGrup2,
+    'Kod':r.kod,'Ad':r.ad,'Temel Birim':r.temelBirim,'İşlem Birimi':r.islemBirim,'Reçete Birim':r.receteBirim,
+    'Mevcut Stok':r.mevcutStok
+  }));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Stok Listesi');
+  XLSX.writeFile(wb,'stok_listesi.xlsx');
 };
 function kontolUyari(){
   const kapsam=isyeriFiltre(stoklar);
