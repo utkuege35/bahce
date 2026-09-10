@@ -428,47 +428,71 @@ window.renderUrunler=function(){renderUrunlerGenel('urun');};
 window.renderYariMamuller=function(){renderUrunlerGenel('ara_urun');};
 
 // ===== ÜRÜN / YM LİSTESİ (düz tablo — grup ağacı değil) =====
+let _ulSonListe=[],_ylSonListe=[];
 function renderUrunListesiGenel(hedefTip){
   const tbId=hedefTip==='ara_urun'?'ym-liste-tb':'urun-liste-tb';
-  const araId=hedefTip==='ara_urun'?'yl-ara':'ul-ara';
   const el=document.getElementById(tbId);if(!el)return;
   const isAdmin=aktifKullanici?.rol==='admin';
   const kapsam=isyeriFiltre(urunler);
-  const ara=(document.getElementById(araId)?.value||'').toLowerCase();
-  let liste=kapsam.filter(u=>u.tip===hedefTip&&(isAdmin||u.aktif!==false));
-  if(ara)liste=liste.filter(u=>u.ad.toLowerCase().includes(ara)||u.kod.toLowerCase().includes(ara));
-  liste=liste.slice().sort((a,b)=>(a.kod||'').localeCompare(b.kod||''));
-  el.innerHTML=liste.map(u=>{
+  const pre=hedefTip==='ara_urun'?'yl':'ul';
+  const f=id=>(document.getElementById(id)?.value||'').toLowerCase();
+  const fAna=f(`${pre}-f-ana`),fAlt=f(`${pre}-f-alt`),fKod=f(`${pre}-f-kod`),fAd=f(`${pre}-f-ad`),fBirim=f(`${pre}-f-birim`);
+
+  let liste=kapsam.filter(u=>u.tip===hedefTip&&(isAdmin||u.aktif!==false)).map(u=>{
     const ustGrup=kapsam.find(g=>g.id===u.ust_id);
     const anaGrup=hedefTip==='urun'&&ustGrup?kapsam.find(g=>g.id===ustGrup.ust_id):ustGrup;
     const altGrup=hedefTip==='urun'?ustGrup:null;
     const tb=birimler.find(b=>b.id===u.birim_id);
-    const pasif=u.aktif===false;
-    const onClick=hedefTip==='ara_urun'?`urunGoruntule('${u.id}')`:`urunGoruntule('${u.id}')`;
+    return {urun:u,anaGrup:anaGrup?.ad||'',altGrup:altGrup?.ad||'',kod:u.kod||'',ad:u.ad||'',birim:tb?.kisaltma||'',fiyat:u.fiyat||0,stokAdet:urunStok(u.id)};
+  });
+  if(fAna)liste=liste.filter(r=>r.anaGrup.toLowerCase().includes(fAna));
+  if(fAlt)liste=liste.filter(r=>r.altGrup.toLowerCase().includes(fAlt));
+  if(fKod)liste=liste.filter(r=>r.kod.toLowerCase().includes(fKod));
+  if(fAd)liste=liste.filter(r=>r.ad.toLowerCase().includes(fAd));
+  if(fBirim)liste=liste.filter(r=>r.birim.toLowerCase().includes(fBirim));
+  liste.sort((a,b)=>a.kod.localeCompare(b.kod));
+  if(hedefTip==='ara_urun')_ylSonListe=liste;else _ulSonListe=liste;
+
+  el.innerHTML=liste.map(r=>{
+    const u=r.urun;const pasif=u.aktif===false;
     if(hedefTip==='urun'){
-      const dusuk=u.min_stok>0&&urunStok(u.id)<=u.min_stok;
-      return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="${onClick}">
-        <td class="tree-kod">${u.kod}</td>
-        <td style="font-weight:500">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
-        <td>${anaGrup?.ad||''}</td>
-        <td>${altGrup?.ad||''}</td>
-        <td>${tb?.kisaltma||''}</td>
-        <td style="text-align:right">${(u.fiyat||0).toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺</td>
+      return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="urunGoruntule('${u.id}')">
+        <td>${r.anaGrup}</td>
+        <td>${r.altGrup}</td>
+        <td class="tree-kod">${r.kod}</td>
+        <td style="font-weight:500">${r.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
+        <td>${r.birim}</td>
+        <td style="text-align:right">${r.fiyat.toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺</td>
       </tr>`;
     }
-    const stokAdet=urunStok(u.id);
-    const dusuk=u.min_stok>0&&stokAdet<=u.min_stok;
-    return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="${onClick}">
-      <td class="tree-kod">${u.kod}</td>
-      <td style="font-weight:500">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
-      <td>${anaGrup?.ad||''}</td>
-      <td>${tb?.kisaltma||''}</td>
-      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--mavi)'}">${stokAdet.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+    const dusuk=u.min_stok>0&&r.stokAdet<=u.min_stok;
+    return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="urunGoruntule('${u.id}')">
+      <td>${r.anaGrup}</td>
+      <td class="tree-kod">${r.kod}</td>
+      <td style="font-weight:500">${r.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
+      <td>${r.birim}</td>
+      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--mavi)'}">${r.stokAdet.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
     </tr>`;
   }).join('')||`<tr><td colspan="${hedefTip==='urun'?6:5}" class="bos">Kayıt yok</td></tr>`;
 }
 window.renderUrunListesi=function(){renderUrunListesiGenel('urun');};
 window.renderYmListesi=function(){renderUrunListesiGenel('ara_urun');};
+window.urunListesiExcelIndir=function(){
+  if(!_ulSonListe.length){bil('İndirilecek veri yok','err');return;}
+  const data=_ulSonListe.map(r=>({'Ana Grup':r.anaGrup,'Alt Grup':r.altGrup,'Kod':r.kod,'Ad':r.ad,'Birim':r.birim,'Satış Fiyatı':r.fiyat}));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ürün Listesi');
+  XLSX.writeFile(wb,'urun_listesi.xlsx');
+};
+window.ymListesiExcelIndir=function(){
+  if(!_ylSonListe.length){bil('İndirilecek veri yok','err');return;}
+  const data=_ylSonListe.map(r=>({'Ana Grup':r.anaGrup,'Kod':r.kod,'Ad':r.ad,'Birim':r.birim,'Mevcut Stok':r.stokAdet}));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'YM Listesi');
+  XLSX.writeFile(wb,'ym_listesi.xlsx');
+};
 
 // ===== ÜRÜN REÇETELERİ SAYFASI =====
 let _receteSeciliId = null;
