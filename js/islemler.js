@@ -283,28 +283,36 @@ window.syExcelSecildi=async function(input){
 };
 
 // ---- Fiş tablosu render ----
+// Tek "Miktar" kolonu gösterilir (direkt + YM/Ürün kaynaklı toplam birlikte).
+// Kaynağın nereden geldiği burada gösterilmez — Sayım Raporu ekranında var.
 function sySatirRender(){
   const el=document.getElementById('sy-satirlar');if(!el)return;
   el.innerHTML=sayimSatirListesi.map((s,i)=>{
     const stok=stoklar.find(x=>x.id===s.stokId);
     const birim=birimler.find(b=>b.id===s.birimId);
-    const ymToplam=s.kaynaklar.reduce((t,k)=>t+k.miktar,0);
-    const genelToplam=(s.direkt||0)+ymToplam;
-    const detaySatir=s._detayAcik?`<tr><td colspan="6" style="background:var(--krem);padding:6px 14px;font-size:11px;color:var(--yazi2)">
-      ${s.kaynaklar.map(k=>`<span style="margin-right:12px">${k.ad}: <strong>${k.miktar.toLocaleString('tr-TR',{maximumFractionDigits:3})}</strong> ${birim?.kisaltma||''}</span>`).join('')}
-    </td></tr>`:'';
-    return `<tr>
+    const kaynaklarToplam=(s.kaynaklar||[]).reduce((t,k)=>t+(parseFloat(k.miktar)||0),0);
+    const genelToplam=(s.direkt||0)+kaynaklarToplam;
+    const birimFiyat=stok?stokBirimMaliyet(stok.id):0;
+    const tutar=genelToplam*birimFiyat;
+    return `<tr onmouseenter="_syHoverIndex=${i}">
       <td>${stok?stok.ad:'(bilinmeyen)'} <span style="font-size:10px;color:var(--yazi3)">[${stok?.kod||''}]</span></td>
       <td>${birim?.kisaltma||''}</td>
-      <td><input type="number" placeholder="0" value="${s.direkt||''}" onfocus="_syHoverIndex=${i}" onblur="sySatirGuncelle(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
-      <td style="text-align:center">${ymToplam>0?`<span style="cursor:pointer;color:var(--mor);text-decoration:underline;font-size:12px" onclick="syDetayToggle(${i})">${ymToplam.toLocaleString('tr-TR',{maximumFractionDigits:3})} ${s._detayAcik?'▲':'▼'}</span>`:'<span style="color:var(--yazi3);font-size:12px">—</span>'}</td>
-      <td style="font-weight:600">${genelToplam.toLocaleString('tr-TR',{maximumFractionDigits:3})}</td>
+      <td><input type="number" placeholder="0" value="${genelToplam||''}" onfocus="_syHoverIndex=${i}" onblur="sySatirGuncelle(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+      <td style="text-align:right;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</td>
+      <td style="text-align:right;font-weight:600">${tutar>0?para(tutar):'—'}</td>
       <td></td>
-    </tr>${detaySatir}`;
+    </tr>`;
   }).join('');
 }
-window.syDetayToggle=function(i){sayimSatirListesi[i]._detayAcik=!sayimSatirListesi[i]._detayAcik;sySatirRender();};
-window.sySatirGuncelle=function(i,val){sayimSatirListesi[i].direkt=parseFloat(val)||0;sySatirRender();};
+window.sySatirGuncelle=function(i,val){
+  const s=sayimSatirListesi[i];
+  const kaynaklarToplam=(s.kaynaklar||[]).reduce((t,k)=>t+(parseFloat(k.miktar)||0),0);
+  const girilenToplam=parseFloat(val)||0;
+  // Girilen değer toplamı temsil eder — kaynaklardan gelen kısım sabit kalır,
+  // fark direkt (manuel) kısma yansıtılır.
+  s.direkt=Math.max(0,girilenToplam-kaynaklarToplam);
+  sySatirRender();
+};
 window.sySatirSil=function(i){sayimSatirListesi.splice(i,1);sySatirRender();};
 
 window.kaydetSayim=async function(){
@@ -320,9 +328,12 @@ window.kaydetSayim=async function(){
   // tıklanınca detay satırları açılır.
   const belgeId=crypto.randomUUID();
   for(const s of gecerli){
+    const stok=stoklar.find(x=>x.id===s.stokId);
+    const birimFiyat=stok?stokBirimMaliyet(stok.id):0;
     if(s.direkt>0){
       await sb.from('islemler').insert({
         tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:s.direkt,
+        fiyat:birimFiyat,tutar:s.direkt*birimFiyat,
         aciklama:'Sayım',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
@@ -331,6 +342,7 @@ window.kaydetSayim=async function(){
       if(!(k.miktar>0))continue;
       await sb.from('islemler').insert({
         tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:k.miktar,
+        fiyat:birimFiyat,tutar:k.miktar*birimFiyat,
         aciklama:'Sayım',kat:'Sayım',satir_not:`${k.ad} sayımından`,aciklama_not:an,
         kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
       });
