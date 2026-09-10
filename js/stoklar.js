@@ -230,9 +230,10 @@ window.stokSil=async function(id){
 let _stokSeciliGrupId = null;
 let _stokAcikGruplar = new Set();
 let _stokHoverKartId = null;
-window.stokGoruntuleHover=function(){if(!_stokHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}stokGoruntule(_stokHoverKartId);};
-window.stokDuzenleHover=function(){if(!_stokHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}stokDuzenle(_stokHoverKartId);};
-window.stokSilHover=function(){if(!_stokHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}stokSil(_stokHoverKartId);};
+window.stokKartSec=function(id){_stokHoverKartId=id;renderStoklar();};
+window.stokGoruntuleHover=function(){if(!_stokHoverKartId){bil('Önce bir satır seçin','err');return;}stokGoruntule(_stokHoverKartId);};
+window.stokDuzenleHover=function(){if(!_stokHoverKartId){bil('Önce bir satır seçin','err');return;}stokDuzenle(_stokHoverKartId);};
+window.stokSilHover=function(){if(!_stokHoverKartId){bil('Önce bir satır seçin','err');return;}stokSil(_stokHoverKartId);};
 window.stokGrupSec = function(grupId){
   if(_stokAcikGruplar.has(grupId))_stokAcikGruplar.delete(grupId);
   else _stokAcikGruplar.add(grupId);
@@ -287,7 +288,7 @@ function renderStoklar(){
       const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);
       const dusuk=s.min_stok>0&&mik<=s.min_stok;
       const pasif=s.aktif===false;
-      return `<div class="tree-row" onmouseenter="_stokHoverKartId='${s.id}'" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
+      return `<div class="tree-row" onclick="stokKartSec('${s.id}')" style="border-left:2px solid var(--border);${_stokHoverKartId===s.id?'background:var(--yesil-cok-ac);':''}${pasif?'opacity:0.45;':''}">
         <span class="tree-kod" style="min-width:70px">${s.kod}</span>
         <span style="flex:1;font-size:12px">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
         <span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})} ${tb?.kisaltma||''}</span>
