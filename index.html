@@ -381,7 +381,12 @@
     <div class="card" style="margin-bottom:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
         <div id="stok-kart-baslik" style="font-size:13px;font-weight:600;color:var(--yazi1)">← Soldan bir grup seçin</div>
-        <button id="btn-yeni-stok" class="btn pri sm" onclick="stokModalAc(_stokSeciliGrupId,'stok')" style="display:none">+ Stok Kartı</button>
+        <div style="display:flex;gap:4px">
+          <button id="btn-stok-goruntule" class="btn sm" onclick="stokGoruntuleHover()" title="Görüntüle (üzerine gelinen satır)" style="display:none">👁</button>
+          <button id="btn-stok-duzenle" class="btn sm" onclick="stokDuzenleHover()" title="Düzenle (üzerine gelinen satır)" style="display:none">✏</button>
+          <button id="btn-stok-sil" class="btn sm ghost" onclick="stokSilHover()" title="Sil (üzerine gelinen satır)" style="display:none">✕</button>
+          <button id="btn-yeni-stok" class="btn pri sm" onclick="stokModalAc(_stokSeciliGrupId,'stok')" style="display:none">+ Stok Kartı</button>
+        </div>
       </div>
       <div id="stok-kart-liste" style="max-height:480px;overflow-y:auto"></div>
     </div>
@@ -402,7 +407,12 @@
     <div class="card" style="margin-bottom:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
         <div id="urun-kart-baslik" style="font-size:13px;font-weight:600;color:var(--yazi1)">← Soldan bir grup seçin</div>
-        <button id="btn-yeni-urun" class="btn pri sm" onclick="urunModalAc(_urunSeciliGrupId,'urun')" style="display:none">+ Ürün</button>
+        <div style="display:flex;gap:4px">
+          <button id="btn-urun-goruntule" class="btn sm" onclick="urunGoruntuleHover()" title="Görüntüle (üzerine gelinen satır)" style="display:none">👁</button>
+          <button id="btn-urun-duzenle" class="btn sm" onclick="urunDuzenleHover()" title="Düzenle (üzerine gelinen satır)" style="display:none">✏</button>
+          <button id="btn-urun-sil" class="btn sm ghost" onclick="urunSilHover()" title="Sil (üzerine gelinen satır)" style="display:none">✕</button>
+          <button id="btn-yeni-urun" class="btn pri sm" onclick="urunModalAc(_urunSeciliGrupId,'urun')" style="display:none">+ Ürün</button>
+        </div>
       </div>
       <div id="urun-kart-liste" style="max-height:480px;overflow-y:auto"></div>
     </div>
@@ -423,7 +433,12 @@
     <div class="card" style="margin-bottom:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
         <div id="yarimamul-kart-baslik" style="font-size:13px;font-weight:600;color:var(--yazi1)">← Soldan bir grup seçin</div>
-        <button id="btn-yeni-yarimamul" class="btn ara sm" onclick="urunModalAc(_yarimamulSeciliGrupId,'ara_urun')" style="display:none">+ Yarı Mamul</button>
+        <div style="display:flex;gap:4px">
+          <button id="btn-yarimamul-goruntule" class="btn sm" onclick="urunGoruntuleHover()" title="Görüntüle (üzerine gelinen satır)" style="display:none">👁</button>
+          <button id="btn-yarimamul-duzenle" class="btn sm" onclick="urunDuzenleHover()" title="Düzenle (üzerine gelinen satır)" style="display:none">✏</button>
+          <button id="btn-yarimamul-sil" class="btn sm ghost" onclick="urunSilHover()" title="Sil (üzerine gelinen satır)" style="display:none">✕</button>
+          <button id="btn-yeni-yarimamul" class="btn ara sm" onclick="urunModalAc(_yarimamulSeciliGrupId,'ara_urun')" style="display:none">+ Yarı Mamul</button>
+        </div>
       </div>
       <div id="yarimamul-kart-liste" style="max-height:480px;overflow-y:auto"></div>
     </div>
