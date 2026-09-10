@@ -74,17 +74,11 @@ window.stokExcelSecildi=async function(input){
   input.value='';
 };
 
-// Temel birim seçilince: hem varsayılan işlem birimi listesini doldurur,
-// hem de Reçete Birimi alanlarını (ad=temel birimin kısaltması, işlem=×, katsayı=1) varsayılan yapar.
+// Temel birim seçilince: hem işlem birimi hem de reçete birimi listesini,
+// o temel birim ailesine göre doldurur (ikisi de temel birim veya onun alt birimleri).
 window.stokTemelBirimDegis=function(birimId){
   _doldurVarsayilanBirim('sm-varsayilan-birim',birimId,null);
-  const b=birimler.find(x=>x.id===birimId);
-  const recAd=document.getElementById('sm-recete-birim-ad');
-  const recIslem=document.getElementById('sm-recete-birim-islem');
-  const recKat=document.getElementById('sm-recete-birim-katsayi');
-  if(recAd)recAd.value=b?.kisaltma||b?.ad||'';
-  if(recIslem)recIslem.value='*';
-  if(recKat)recKat.value=1;
+  _doldurVarsayilanBirim('sm-recete-birim',birimId,null);
 };
 window.stokModalAc=function(ustId,tip){
   // Seviyelendirme kuralı: en fazla 3 grup seviyesi, stok kartları
@@ -106,9 +100,7 @@ window.stokModalAc=function(ustId,tip){
   document.getElementById('sm-aktif-satir').style.display='none';
   document.getElementById('sm-min').value=0;
   document.getElementById('sm-aciklama').value='';
-  document.getElementById('sm-recete-birim-ad').value='';
-  document.getElementById('sm-recete-birim-islem').value='*';
-  document.getElementById('sm-recete-birim-katsayi').value='';
+  document.getElementById('sm-recete-birim').value='';
   document.getElementById('sm-varsayilan-birim').value='';
   if(tip==='grup'){
     document.getElementById('sm-title').textContent=ustId?'Alt Grup Ekle':'Ana Grup Ekle';
@@ -142,16 +134,14 @@ window.stokDuzenle=function(id,mod='duzenle'){
     document.getElementById('sm-stok-alanlar').style.display='';document.getElementById('sm-birim-fg').style.display='';
     document.getElementById('sm-min').value=s.min_stok||0;
     document.getElementById('sm-aciklama').value=s.aciklama||'';
-    document.getElementById('sm-recete-birim-ad').value=s.recete_birim_ad||'';
-    document.getElementById('sm-recete-birim-islem').value=s.recete_birim_islem||'*';
-    document.getElementById('sm-recete-birim-katsayi').value=s.recete_birim_katsayi||'';
     document.getElementById('sm-aktif-satir').style.display='';
     document.getElementById('sm-aktif').checked=s.aktif!==false;
     doldurBirimSecleri();doldurMerkezSecleri();
     setTimeout(()=>{
       document.getElementById('sm-birim').value=s.birim_id||'';
-      // Varsayılan birim select'i temel birime göre doldur
+      // Varsayılan işlem birimi ve reçete birimi select'lerini temel birime göre doldur
       _doldurVarsayilanBirim('sm-varsayilan-birim',s.birim_id,s.varsayilan_birim_id);
+      _doldurVarsayilanBirim('sm-recete-birim',s.birim_id,s.recete_birim_id);
     },100);
   }
   const ust=stoklar.find(x=>x.id===s.ust_id);
@@ -196,9 +186,7 @@ window.kaydetStok=async function(){
     data.varsayilan_birim_id=document.getElementById('sm-varsayilan-birim').value||null;
     data.min_stok=parseFloat(document.getElementById('sm-min').value)||0;
     data.aciklama=document.getElementById('sm-aciklama').value;
-    data.recete_birim_ad=document.getElementById('sm-recete-birim-ad').value.trim()||null;
-    data.recete_birim_islem=document.getElementById('sm-recete-birim-islem').value||'*';
-    data.recete_birim_katsayi=parseFloat(document.getElementById('sm-recete-birim-katsayi').value)||null;
+    data.recete_birim_id=document.getElementById('sm-recete-birim').value||null;
     data.aktif=document.getElementById('sm-aktif').checked;
   }
   if(!mevcut){
