@@ -100,6 +100,26 @@ function kodOlusturHiyerarsik(liste,ustId,tip,agacTip){
 function kodOlusturStok(ustId,tip){return kodOlusturHiyerarsik(stoklar,ustId,tip);}
 function kodOlusturUrun(ustId,tip,agacTip){return kodOlusturHiyerarsik(urunler,ustId,tip,agacTip);}
 
+// Excel benzeri "aşağı ok" ile satır atlama — bir tablo/satır listesindeki
+// input/select üzerinde ⬇ tuşuna basılınca aynı sütundaki bir alttaki
+// satırın alanına odaklanır. Hem <tr>/<td> tabanlı tablolarda hem de
+// div tabanlı satır listelerinde (reçete bileşenleri gibi) çalışır —
+// tek şart: her satırın aynı sırada/sayıda "hücre" içermesi.
+function satirAsagiGec(e){
+  if(e.key!=='ArrowDown')return;
+  const el=e.target;
+  const hucre=el.parentElement;
+  const satir=hucre?.parentElement;
+  if(!satir)return;
+  const index=Array.prototype.indexOf.call(satir.children,hucre);
+  const sonrakiSatir=satir.nextElementSibling;
+  if(!sonrakiSatir)return;
+  const hedefHucre=sonrakiSatir.children[index];
+  if(!hedefHucre)return;
+  const hedef=hedefHucre.matches('input,select')?hedefHucre:hedefHucre.querySelector('input,select');
+  if(hedef){e.preventDefault();hedef.focus();if(hedef.select)hedef.select();}
+}
+
 window.uygulamaYenile=async function(){
   const btn=document.getElementById('yenile-btn');
   if(btn){btn.style.animation='spin 0.8s linear infinite';btn.disabled=true;}
