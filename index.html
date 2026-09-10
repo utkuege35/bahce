@@ -99,11 +99,14 @@
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Tanımlar ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
+      <button onclick="gp('stok-liste')">Stok Listesi</button>
       <div class="nav-grup">
         <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürünler ▾</button>
         <div class="nav-grup-icerik">
           <button onclick="gp('urunler')">Ana Ürünler</button>
+          <button onclick="gp('urun-liste')">Ürün Listesi</button>
           <button onclick="gp('yarimamuller')">Yarı Mamuller</button>
+          <button onclick="gp('ym-liste')">YM Listesi</button>
         </div>
       </div>
       <div class="nav-grup">
@@ -399,6 +402,19 @@
     </div>
   </div>
 </div>
+<!-- STOK LİSTESİ (düz tablo) -->
+<div id="stok-liste" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stok Listesi</div>
+    <input type="text" id="sl-ara" oninput="renderStokListesi()" placeholder="🔍 Ara..." style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:180px">
+  </div>
+  <div class="card">
+    <div class="tw"><table>
+      <thead><tr><th>Kod</th><th>Ad</th><th>Ana Grup</th><th>Alt Grup</th><th>Alt Grup 2</th><th>Temel Birim</th><th>İşlem Birimi</th><th style="text-align:right">Mevcut Stok</th></tr></thead>
+      <tbody id="stok-liste-tb"></tbody>
+    </table></div>
+  </div>
+</div>
 <div id="urunler" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ana Ürünler</div>
@@ -425,6 +441,19 @@
     </div>
   </div>
 </div>
+<!-- ÜRÜN LİSTESİ (düz tablo) -->
+<div id="urun-liste" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ürün Listesi</div>
+    <input type="text" id="ul-ara" oninput="renderUrunListesi()" placeholder="🔍 Ara..." style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:180px">
+  </div>
+  <div class="card">
+    <div class="tw"><table>
+      <thead><tr><th>Kod</th><th>Ad</th><th>Ana Grup</th><th>Alt Grup</th><th>Birim</th><th style="text-align:right">Satış Fiyatı</th></tr></thead>
+      <tbody id="urun-liste-tb"></tbody>
+    </table></div>
+  </div>
+</div>
 <div id="yarimamuller" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Yarı Mamuller</div>
@@ -449,6 +478,19 @@
       </div>
       <div id="yarimamul-kart-liste" style="max-height:480px;overflow-y:auto"></div>
     </div>
+  </div>
+</div>
+<!-- YM LİSTESİ (düz tablo) -->
+<div id="ym-liste" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">YM Listesi</div>
+    <input type="text" id="yl-ara" oninput="renderYmListesi()" placeholder="🔍 Ara..." style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:180px">
+  </div>
+  <div class="card">
+    <div class="tw"><table>
+      <thead><tr><th>Kod</th><th>Ad</th><th>Ana Grup</th><th>Birim</th><th style="text-align:right">Mevcut Stok</th></tr></thead>
+      <tbody id="ym-liste-tb"></tbody>
+    </table></div>
   </div>
 </div>
 <!-- BİRİMLER -->
