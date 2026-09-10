@@ -558,6 +558,10 @@
 <div id="receteler" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
     <div id="recete-baslik" style="font-size:15px;font-weight:600;color:var(--yazi1)">Ana Ürün Reçeteleri</div>
+    <div>
+      <input type="file" id="urun-recete-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="urunReceteExcelSecildi(this)">
+      <button class="btn sm sec" onclick="document.getElementById('urun-recete-excel-input').click()">📥 Excel'den Ürün+Reçete Yükle</button>
+    </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
     <!-- Sol: Ürün seçimi -->
