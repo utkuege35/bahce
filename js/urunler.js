@@ -336,9 +336,7 @@ window.urunSil=async function(id){
   renderUrunler();renderYariMamuller();doldurUrunFil();if(typeof doldurYariMamulFil==='function')doldurYariMamulFil();bil(hv?'Pasife alındı ✓':'Silindi ✓');
 };
 let _urunSeciliGrupId = null;
-let _urunAcikGruplar = new Set();
 let _yarimamulSeciliGrupId = null;
-let _yarimamulAcikGruplar = new Set();
 let _urunHoverKartId = null;
 window.urunKartSec=function(hedefTip,id){_urunHoverKartId=id;renderUrunlerGenel(hedefTip);};
 window.urunGoruntuleHover=function(){if(!_urunHoverKartId){bil('Önce bir satır seçin','err');return;}urunGoruntule(_urunHoverKartId);};
@@ -346,8 +344,6 @@ window.urunDuzenleHover=function(){if(!_urunHoverKartId){bil('Önce bir satır s
 window.urunSilHover=function(){if(!_urunHoverKartId){bil('Önce bir satır seçin','err');return;}urunSil(_urunHoverKartId);};
 
 window.urunGrupSec = function(hedefTip, grupId){
-  const acikSet = hedefTip==='ara_urun' ? _yarimamulAcikGruplar : _urunAcikGruplar;
-  if(acikSet.has(grupId))acikSet.delete(grupId);else acikSet.add(grupId);
   if(hedefTip==='ara_urun')_yarimamulSeciliGrupId=grupId;else _urunSeciliGrupId=grupId;
   renderUrunlerGenel(hedefTip);
 };
@@ -363,18 +359,15 @@ function renderUrunlerGenel(hedefTip){
   if(!elGrup||!elKart)return;
   const isAdmin=aktifKullanici?.rol==='admin';
   const kapsam=isyeriFiltre(urunler);
-  const acikSet=hedefTip==='ara_urun'?_yarimamulAcikGruplar:_urunAcikGruplar;
   const seciliGrupId=hedefTip==='ara_urun'?_yarimamulSeciliGrupId:_urunSeciliGrupId;
 
   function grupSatiri(g,depth){
     const altGruplari=kapsam.filter(x=>x.ust_id===g.id&&x.tip==='grup');
-    const acik=acikSet.has(g.id);
     const secili=seciliGrupId===g.id;
     const grupRenkler=['var(--grup-kenar-0)','var(--grup-kenar-1)','var(--grup-kenar-2)','var(--grup-kenar-3)'];
     const satirRenk=grupRenkler[Math.min(depth,grupRenkler.length-1)];
     const grupBg=['var(--grup-bg-0)','var(--grup-bg-1)','var(--grup-bg-2)'][Math.min(depth,2)];
     let html=`<div class="grup-satir" onclick="urunGrupSec('${hedefTip}','${g.id}')" style="display:flex;align-items:center;gap:6px;padding:4px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':grupBg}">
-      <span style="font-size:10px;color:var(--yazi3);width:12px;flex-shrink:0">${altGruplari.length?(acik?'▼':'▶'):''}</span>
       <span class="tree-kod" style="min-width:44px;font-size:10px">${g.kod}</span>
       <span style="flex:1;font-size:12px;font-weight:${secili?'700':'500'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${g.ad}</span>
       ${isAdmin?`<div class="tree-actions" style="flex-shrink:0">
@@ -383,7 +376,7 @@ function renderUrunlerGenel(hedefTip){
         <button class="btn sm ghost" onclick="event.stopPropagation();urunSil('${g.id}')">✕</button>
       </div>`:''}
     </div>`;
-    if(acik)altGruplari.forEach(ag=>{html+=grupSatiri(ag,depth+1);});
+    altGruplari.forEach(ag=>{html+=grupSatiri(ag,depth+1);});
     return html;
   }
 
@@ -433,6 +426,49 @@ function renderUrunlerGenel(hedefTip){
 }
 window.renderUrunler=function(){renderUrunlerGenel('urun');};
 window.renderYariMamuller=function(){renderUrunlerGenel('ara_urun');};
+
+// ===== ÜRÜN / YM LİSTESİ (düz tablo — grup ağacı değil) =====
+function renderUrunListesiGenel(hedefTip){
+  const tbId=hedefTip==='ara_urun'?'ym-liste-tb':'urun-liste-tb';
+  const araId=hedefTip==='ara_urun'?'yl-ara':'ul-ara';
+  const el=document.getElementById(tbId);if(!el)return;
+  const isAdmin=aktifKullanici?.rol==='admin';
+  const kapsam=isyeriFiltre(urunler);
+  const ara=(document.getElementById(araId)?.value||'').toLowerCase();
+  let liste=kapsam.filter(u=>u.tip===hedefTip&&(isAdmin||u.aktif!==false));
+  if(ara)liste=liste.filter(u=>u.ad.toLowerCase().includes(ara)||u.kod.toLowerCase().includes(ara));
+  liste=liste.slice().sort((a,b)=>(a.kod||'').localeCompare(b.kod||''));
+  el.innerHTML=liste.map(u=>{
+    const ustGrup=kapsam.find(g=>g.id===u.ust_id);
+    const anaGrup=hedefTip==='urun'&&ustGrup?kapsam.find(g=>g.id===ustGrup.ust_id):ustGrup;
+    const altGrup=hedefTip==='urun'?ustGrup:null;
+    const tb=birimler.find(b=>b.id===u.birim_id);
+    const pasif=u.aktif===false;
+    const onClick=hedefTip==='ara_urun'?`urunGoruntule('${u.id}')`:`urunGoruntule('${u.id}')`;
+    if(hedefTip==='urun'){
+      const dusuk=u.min_stok>0&&urunStok(u.id)<=u.min_stok;
+      return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="${onClick}">
+        <td class="tree-kod">${u.kod}</td>
+        <td style="font-weight:500">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
+        <td>${anaGrup?.ad||''}</td>
+        <td>${altGrup?.ad||''}</td>
+        <td>${tb?.kisaltma||''}</td>
+        <td style="text-align:right">${(u.fiyat||0).toLocaleString('tr-TR',{minimumFractionDigits:2})} ₺</td>
+      </tr>`;
+    }
+    const stokAdet=urunStok(u.id);
+    const dusuk=u.min_stok>0&&stokAdet<=u.min_stok;
+    return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="${onClick}">
+      <td class="tree-kod">${u.kod}</td>
+      <td style="font-weight:500">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
+      <td>${anaGrup?.ad||''}</td>
+      <td>${tb?.kisaltma||''}</td>
+      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--mavi)'}">${stokAdet.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="${hedefTip==='urun'?6:5}" class="bos">Kayıt yok</td></tr>`;
+}
+window.renderUrunListesi=function(){renderUrunListesiGenel('urun');};
+window.renderYmListesi=function(){renderUrunListesiGenel('ara_urun');};
 
 // ===== ÜRÜN REÇETELERİ SAYFASI =====
 let _receteSeciliId = null;
