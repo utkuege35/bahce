@@ -254,11 +254,7 @@ window.bilesenKaynakDegis=function(i,deger){
   let birimId='';
   if(tip==='stok'){
     const s=stoklar.find(x=>x.id===deger);
-    if(s){
-      const recAd=(s.recete_birim_ad||'').trim().toLowerCase();
-      const eslesen=recAd?birimler.find(b=>(b.kisaltma||'').toLowerCase()===recAd):null;
-      birimId=eslesen?.id||s.varsayilan_birim_id||s.birim_id||'';
-    }
+    birimId=s?.recete_birim_id||s?.varsayilan_birim_id||s?.birim_id||'';
   }else if(tip==='ara_urun'||tip==='urun'){
     const u=urunler.find(x=>x.id===deger);
     birimId=u?.varsayilan_birim_id||u?.birim_id||'';
