@@ -155,7 +155,7 @@ function araUrunBirimMaliyet(urunId,_derinlik){
 
 let _bilesenHoverIndex = null;
 window.bilesenSilHover=function(){
-  if(_bilesenHoverIndex===null||!bilesenler[_bilesenHoverIndex]){bil('Önce bir satırın üzerine gelin','err');return;}
+  if(_bilesenHoverIndex===null||!bilesenler[_bilesenHoverIndex]){bil('Önce bir satır seçin','err');return;}
   bilesenSil(_bilesenHoverIndex);
 };
 function renderBilesenler(){
@@ -195,26 +195,26 @@ function renderBilesenler(){
     toplamMaliyet+=maliyet;
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
     const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':isUrun?'Ürün (mamul) seçin...':'Ara ürün seçin...';
-    return `<div class="excel-satir" onmouseenter="_bilesenHoverIndex=${i}" style="display:flex;align-items:center">
+    return `<div class="excel-satir" style="display:flex;align-items:center">
       <div style="width:30px;flex-shrink:0;padding:3px 4px 3px 0">
         <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':isUrun?'tip-urun':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':isUrun?'MM':'ARA'}</span>
       </div>
       <div style="flex:1;min-width:120px;padding:3px 4px">
-        <select onchange="bilesenKaynakDegis(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+        <select onfocus="_bilesenHoverIndex=${i}" onchange="bilesenKaynakDegis(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">${secPlaceholder}</option>
           ${secenekler}
         </select>
       </div>
       <div style="width:70px;flex-shrink:0;padding:3px 4px">
-        <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+        <select onfocus="_bilesenHoverIndex=${i}" onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">—</option>
           ${birimler.map(bx=>`<option value="${bx.id}"${bx.id===b.birim_id?' selected':''}>${bx.kisaltma||bx.ad}</option>`).join('')}
         </select>
       </div>
       <div style="width:70px;flex-shrink:0;padding:3px 4px">
-        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onfocus="_bilesenHoverIndex=${i}" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
       </div>
-      <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
+      <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onfocus="_bilesenHoverIndex=${i}" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
       <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
       <div style="width:28px;flex-shrink:0"></div>
     </div>`;
@@ -344,9 +344,10 @@ let _urunAcikGruplar = new Set();
 let _yarimamulSeciliGrupId = null;
 let _yarimamulAcikGruplar = new Set();
 let _urunHoverKartId = null;
-window.urunGoruntuleHover=function(){if(!_urunHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}urunGoruntule(_urunHoverKartId);};
-window.urunDuzenleHover=function(){if(!_urunHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}urunDuzenle(_urunHoverKartId);};
-window.urunSilHover=function(){if(!_urunHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}urunSil(_urunHoverKartId);};
+window.urunKartSec=function(hedefTip,id){_urunHoverKartId=id;renderUrunlerGenel(hedefTip);};
+window.urunGoruntuleHover=function(){if(!_urunHoverKartId){bil('Önce bir satır seçin','err');return;}urunGoruntule(_urunHoverKartId);};
+window.urunDuzenleHover=function(){if(!_urunHoverKartId){bil('Önce bir satır seçin','err');return;}urunDuzenle(_urunHoverKartId);};
+window.urunSilHover=function(){if(!_urunHoverKartId){bil('Önce bir satır seçin','err');return;}urunSil(_urunHoverKartId);};
 
 window.urunGrupSec = function(hedefTip, grupId){
   const acikSet = hedefTip==='ara_urun' ? _yarimamulAcikGruplar : _urunAcikGruplar;
@@ -417,7 +418,7 @@ function renderUrunlerGenel(hedefTip){
       const bilesenSayisi=urunBilesenleri.filter(b=>b.urun_id===u.id).length;
       const pasif=u.aktif===false;
       const merkezAd=u.merkez_id?merkezler.find(m=>m.id===u.merkez_id)?.ad:'';
-      return `<div class="tree-row" onmouseenter="_urunHoverKartId='${u.id}'" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
+      return `<div class="tree-row" onclick="urunKartSec('${hedefTip}','${u.id}')" style="border-left:2px solid var(--border);${_urunHoverKartId===u.id?'background:var(--yesil-cok-ac);':''}${pasif?'opacity:0.45;':''}">
         <span class="tree-kod" style="min-width:70px">${u.kod}</span>
         <span style="flex:1;font-size:12px">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
         ${merkezAd?`<span style="font-size:10px;color:var(--mor);background:var(--mor-ac);padding:1px 6px;border-radius:10px">${merkezAd}</span>`:''}
