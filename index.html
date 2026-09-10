@@ -406,11 +406,24 @@
 <div id="stok-liste" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stok Listesi</div>
-    <input type="text" id="sl-ara" oninput="renderStokListesi()" placeholder="🔍 Ara..." style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:180px">
+    <button class="btn sm sec" onclick="stokListesiExcelIndir()">📤 Excel'e Aktar</button>
   </div>
   <div class="card">
     <div class="tw"><table>
-      <thead><tr><th>Kod</th><th>Ad</th><th>Ana Grup</th><th>Alt Grup</th><th>Alt Grup 2</th><th>Temel Birim</th><th>İşlem Birimi</th><th style="text-align:right">Mevcut Stok</th></tr></thead>
+      <thead>
+        <tr><th>Ana Grup</th><th>Alt Grup</th><th>Alt Grup 2</th><th>Kod</th><th>Ad</th><th>Temel Birim</th><th>İşlem Birimi</th><th>Reçete Birim</th><th style="text-align:right">Mevcut Stok</th></tr>
+        <tr class="filtre-satir">
+          <th><input type="text" id="sl-f-ana" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-alt" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-alt2" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-kod" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-ad" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-tb" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-ib" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="sl-f-rb" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="stok-liste-tb"></tbody>
     </table></div>
   </div>
@@ -445,11 +458,21 @@
 <div id="urun-liste" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Ürün Listesi</div>
-    <input type="text" id="ul-ara" oninput="renderUrunListesi()" placeholder="🔍 Ara..." style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:180px">
+    <button class="btn sm sec" onclick="urunListesiExcelIndir()">📤 Excel'e Aktar</button>
   </div>
   <div class="card">
     <div class="tw"><table>
-      <thead><tr><th>Kod</th><th>Ad</th><th>Ana Grup</th><th>Alt Grup</th><th>Birim</th><th style="text-align:right">Satış Fiyatı</th></tr></thead>
+      <thead>
+        <tr><th>Ana Grup</th><th>Alt Grup</th><th>Kod</th><th>Ad</th><th>Birim</th><th style="text-align:right">Satış Fiyatı</th></tr>
+        <tr class="filtre-satir">
+          <th><input type="text" id="ul-f-ana" oninput="renderUrunListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="ul-f-alt" oninput="renderUrunListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="ul-f-kod" oninput="renderUrunListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="ul-f-ad" oninput="renderUrunListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="ul-f-birim" oninput="renderUrunListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="urun-liste-tb"></tbody>
     </table></div>
   </div>
@@ -484,11 +507,20 @@
 <div id="ym-liste" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">YM Listesi</div>
-    <input type="text" id="yl-ara" oninput="renderYmListesi()" placeholder="🔍 Ara..." style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:180px">
+    <button class="btn sm sec" onclick="ymListesiExcelIndir()">📤 Excel'e Aktar</button>
   </div>
   <div class="card">
     <div class="tw"><table>
-      <thead><tr><th>Kod</th><th>Ad</th><th>Ana Grup</th><th>Birim</th><th style="text-align:right">Mevcut Stok</th></tr></thead>
+      <thead>
+        <tr><th>Ana Grup</th><th>Kod</th><th>Ad</th><th>Birim</th><th style="text-align:right">Mevcut Stok</th></tr>
+        <tr class="filtre-satir">
+          <th><input type="text" id="yl-f-ana" oninput="renderYmListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="yl-f-kod" oninput="renderYmListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="yl-f-ad" oninput="renderYmListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th><input type="text" id="yl-f-birim" oninput="renderYmListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="ym-liste-tb"></tbody>
     </table></div>
   </div>
