@@ -195,27 +195,27 @@ function renderBilesenler(){
     toplamMaliyet+=maliyet;
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
     const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':isUrun?'Ürün (mamul) seçin...':'Ara ürün seçin...';
-    return `<div class="excel-satir" style="display:flex;align-items:center">
-      <div style="width:30px;flex-shrink:0;padding:3px 4px 3px 0">
+    return `<div class="excel-satir" style="display:flex;align-items:center;min-height:26px">
+      <div style="width:30px;flex-shrink:0;padding:0 4px 0 0;display:flex;align-items:center;height:26px">
         <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':isUrun?'tip-urun':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':isUrun?'MM':'ARA'}</span>
       </div>
-      <div style="flex:1;min-width:120px;padding:3px 4px">
-        <select onfocus="_bilesenHoverIndex=${i}" onchange="bilesenKaynakDegis(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <div style="flex:1;min-width:120px;padding:0 2px">
+        <select onfocus="_bilesenHoverIndex=${i}" onchange="bilesenKaynakDegis(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:2px 4px;border:none;border-radius:0;font-size:12px;background:transparent">
           <option value="">${secPlaceholder}</option>
           ${secenekler}
         </select>
       </div>
-      <div style="width:70px;flex-shrink:0;padding:3px 4px">
-        <select onfocus="_bilesenHoverIndex=${i}" onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <div style="width:70px;flex-shrink:0;padding:0 2px">
+        <select onfocus="_bilesenHoverIndex=${i}" onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:2px 4px;border:none;border-radius:0;font-size:12px;background:transparent">
           <option value="">—</option>
           ${birimler.map(bx=>`<option value="${bx.id}"${bx.id===b.birim_id?' selected':''}>${bx.kisaltma||bx.ad}</option>`).join('')}
         </select>
       </div>
-      <div style="width:70px;flex-shrink:0;padding:3px 4px">
-        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onfocus="_bilesenHoverIndex=${i}" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+      <div style="width:70px;flex-shrink:0;padding:0 2px">
+        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onfocus="_bilesenHoverIndex=${i}" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:2px 4px;border:none;border-radius:0;font-size:12px;background:transparent">
       </div>
-      <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onfocus="_bilesenHoverIndex=${i}" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
-      <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
+      <div style="width:80px;flex-shrink:0;padding:0 2px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onfocus="_bilesenHoverIndex=${i}" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:2px 4px;border:none;border-radius:0;font-size:11px;text-align:right;background:transparent">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
+      <div style="width:80px;flex-shrink:0;padding:0 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
       <div style="width:28px;flex-shrink:0"></div>
     </div>`;
   }).join('');
@@ -519,6 +519,108 @@ window.receteNormalizeEtVeKaydet=async function(){
   bil(`${u.ad} reçetesi 1 ${birimAd(u.birim_id)||'birim'} için normalize edildi ve kaydedildi ✓`);
   receteNormalizeKalemDegis();
   document.getElementById('rn-uretilen-miktar').value='';
+};
+
+// ===== ÜRÜN/YM + REÇETE TOPLU YÜKLEME (Excel) =====
+// Tek dosyada hem Ürün/Yarı Mamul kartlarını (grup zinciriyle) hem de
+// reçete bileşenlerini birlikte tanımlamayı sağlar. Aynı ürün için
+// birden fazla bileşen satırı, ürün bilgileri tekrarlanarak girilir —
+// sistem bunları otomatik aynı karta bağlar.
+function urunGrupBulVeyaOlustur(ad,ustId,agacTip,isyeriId,hedefListe){
+  ad=(ad||'').trim();if(!ad)return null;
+  const mevcut=urunler.find(u=>u.tip==='grup'&&(u.ust_id||null)===(ustId||null)&&(u.isyeri_id||null)===(isyeriId||null)&&(u.agac_tip||'urun')===agacTip&&u.ad.trim().toLowerCase()===ad.toLowerCase());
+  if(mevcut)return mevcut;
+  const ust=ustId?urunler.find(u=>u.id===ustId):null;
+  const kod=kodOlusturUrun(ustId,'grup',agacTip);
+  const yeni={id:uid(),ad,tip:'grup',kod,ust_id:ustId||null,seviye:ust?(ust.seviye||1)+1:1,isyeri_id:isyeriId,agac_tip:agacTip,aktif:true};
+  urunler.push(yeni);
+  hedefListe.push(yeni);
+  return yeni;
+}
+window.urunReceteExcelSecildi=async function(input){
+  const file=input.files[0];if(!file)return;
+  if(typeof XLSX==='undefined'){bil('Excel okuma kütüphanesi yüklenemedi, sayfayı yenileyin.','err');input.value='';return;}
+  const isyeriId=aktifIsyeri?.id||null;
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+    const seviye1Yeni=[],seviye2Yeni=[],urunYeni=[],bilesenYeni=[];
+    const hatali=[];
+    const urunCache={};
+    let bilesenSayisi=0;
+
+    for(const row of rows){
+      if(!row||!row.length)continue;
+      const tipRaw=(row[0]===undefined||row[0]===null)?'':String(row[0]).trim().toLowerCase();
+      if(!tipRaw||tipRaw==='tip')continue;
+      const tip=(tipRaw.includes('yarı')||tipRaw.includes('yari')||tipRaw==='ym')?'ara_urun':'urun';
+      const anaGrup=(row[1]===undefined||row[1]===null)?'':String(row[1]).trim();
+      const altGrup=(row[2]===undefined||row[2]===null)?'':String(row[2]).trim();
+      const urunAdi=(row[3]===undefined||row[3]===null)?'':String(row[3]).trim();
+      const urunBirimKisa=(row[4]===undefined||row[4]===null)?'':String(row[4]).trim().toLowerCase();
+      const bilesenTipRaw=(row[5]===undefined||row[5]===null)?'':String(row[5]).trim().toLowerCase();
+      const bilesenAdi=(row[6]===undefined||row[6]===null)?'':String(row[6]).trim();
+      const bilesenBirimKisa=(row[7]===undefined||row[7]===null)?'':String(row[7]).trim().toLowerCase();
+      const bilesenMiktar=parseFloat(row[8])||0;
+
+      if(!anaGrup||!urunAdi||!urunBirimKisa){hatali.push(`${urunAdi||'?'} (Ana Grup/Ürün Adı/Birim zorunlu)`);continue;}
+      if(tip==='urun'&&!altGrup){hatali.push(`${urunAdi} (Ürün için Alt Grup zorunlu)`);continue;}
+
+      const cacheKey=`${tip}|${anaGrup}|${altGrup}|${urunAdi}`.toLowerCase();
+      let u=urunCache[cacheKey];
+      if(!u){
+        u=urunler.find(x=>x.tip===tip&&(x.isyeri_id||null)===isyeriId&&x.ad.trim().toLowerCase()===urunAdi.toLowerCase());
+        if(!u){
+          const urunBirim=birimler.find(b=>b.temel!==false&&(b.kisaltma||'').toLowerCase()===urunBirimKisa);
+          if(!urunBirim){hatali.push(`${urunAdi} (temel birim "${urunBirimKisa}" bulunamadı)`);continue;}
+          const ana=urunGrupBulVeyaOlustur(anaGrup,null,tip,isyeriId,seviye1Yeni);
+          const hedefGrup=tip==='urun'?urunGrupBulVeyaOlustur(altGrup,ana.id,tip,isyeriId,seviye2Yeni):ana;
+          const kod=kodOlusturUrun(hedefGrup.id,tip,tip);
+          u={id:uid(),ad:urunAdi,kod,tip,ust_id:hedefGrup.id,seviye:(hedefGrup.seviye||1)+1,isyeri_id:isyeriId,agac_tip:tip,birim_id:urunBirim.id,aktif:true};
+          urunler.push(u);
+          urunYeni.push(u);
+        }
+        urunCache[cacheKey]=u;
+      }
+
+      if(bilesenTipRaw&&bilesenAdi){
+        if(!(bilesenMiktar>0)){hatali.push(`${urunAdi} → "${bilesenAdi}" (miktar geçersiz)`);continue;}
+        const kaynakTip=(bilesenTipRaw.includes('yarı')||bilesenTipRaw.includes('yari')||bilesenTipRaw==='ym')?'ara_urun':'stok';
+        const kaynak=kaynakTip==='stok'
+          ?stoklar.find(s=>s.tip==='stok'&&(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===bilesenAdi.toLowerCase())
+          :urunler.find(x=>x.tip==='ara_urun'&&(x.isyeri_id||null)===isyeriId&&x.ad.trim().toLowerCase()===bilesenAdi.toLowerCase());
+        if(!kaynak){hatali.push(`${urunAdi} → bileşen "${bilesenAdi}" bulunamadı`);continue;}
+        const bBirim=birimler.find(b=>(b.kisaltma||'').toLowerCase()===bilesenBirimKisa);
+        if(!bBirim){hatali.push(`${urunAdi} → bileşen birimi "${bilesenBirimKisa}" bulunamadı`);continue;}
+        const zatenVar=urunBilesenleri.some(b=>b.urun_id===u.id&&b.kaynak_tip===kaynakTip&&b.kaynak_id===kaynak.id)||bilesenYeni.some(b=>b.urun_id===u.id&&b.kaynak_tip===kaynakTip&&b.kaynak_id===kaynak.id);
+        if(zatenVar){hatali.push(`${urunAdi} → "${bilesenAdi}" zaten bu reçetede var, atlandı`);continue;}
+        bilesenYeni.push({id:uid(),urun_id:u.id,kaynak_tip:kaynakTip,kaynak_id:kaynak.id,birim_id:bBirim.id,miktar:bilesenMiktar});
+        bilesenSayisi++;
+      }
+    }
+
+    if(seviye1Yeni.length)await sb.from('urunler').insert(seviye1Yeni);
+    if(seviye2Yeni.length)await sb.from('urunler').insert(seviye2Yeni);
+    if(urunYeni.length)await sb.from('urunler').insert(urunYeni);
+    if(bilesenYeni.length)await sb.from('urun_bilesenleri').insert(bilesenYeni);
+
+    const {data:ud}=await sb.from('urunler').select('*').order('kod');if(ud)urunler=ud;
+    const {data:bd}=await sb.from('urun_bilesenleri').select('*');if(bd)urunBilesenleri=bd;
+
+    if(document.getElementById('urunler')?.classList.contains('active'))renderUrunlerGenel('urun');
+    if(document.getElementById('yarimamuller')?.classList.contains('active'))renderUrunlerGenel('ara_urun');
+    if(document.getElementById('receteler')?.classList.contains('active'))receteAra();
+
+    const grupSayisi=seviye1Yeni.length+seviye2Yeni.length;
+    if(hatali.length)bil(`${urunYeni.length} ürün/YM (+${grupSayisi} grup), ${bilesenSayisi} bileşen eklendi. ${hatali.length} satır atlandı: ${hatali.slice(0,3).join(', ')}${hatali.length>3?'...':''}`,'uyari');
+    else if(urunYeni.length||bilesenSayisi)bil(`${urunYeni.length} ürün/YM, ${bilesenSayisi} bileşen satırıyla birlikte eklendi ✓`);
+    else bil('Excel dosyasında geçerli satır bulunamadı.','err');
+  }catch(e){
+    bil('Excel okunamadı: '+e.message,'err');
+  }
+  input.value='';
 };
 
 window.receteAra = function() {
