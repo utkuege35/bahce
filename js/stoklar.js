@@ -249,7 +249,7 @@ function renderStoklar(){
     const secili=_stokSeciliGrupId===g.id;
     const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
     const satirRenk=grupRenkler[Math.min(depth,grupRenkler.length-1)];
-    let html=`<div onclick="stokGrupSec('${g.id}')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':'transparent'};border-radius:6px;margin-bottom:2px">
+    let html=`<div class="grup-satir" onclick="stokGrupSec('${g.id}')" style="display:flex;align-items:center;gap:6px;padding:4px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':'transparent'}">
       <span style="font-size:10px;color:var(--yazi3);width:12px;flex-shrink:0">${altGruplari.length?(acik?'▼':'▶'):''}</span>
       <span class="tree-kod" style="min-width:44px;font-size:10px">${g.kod}</span>
       <span style="flex:1;font-size:12px;font-weight:${secili?'700':'500'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${g.ad}</span>
