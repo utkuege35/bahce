@@ -229,6 +229,10 @@ window.stokSil=async function(id){
 };
 let _stokSeciliGrupId = null;
 let _stokAcikGruplar = new Set();
+let _stokHoverKartId = null;
+window.stokGoruntuleHover=function(){if(!_stokHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}stokGoruntule(_stokHoverKartId);};
+window.stokDuzenleHover=function(){if(!_stokHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}stokDuzenle(_stokHoverKartId);};
+window.stokSilHover=function(){if(!_stokHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}stokSil(_stokHoverKartId);};
 window.stokGrupSec = function(grupId){
   if(_stokAcikGruplar.has(grupId))_stokAcikGruplar.delete(grupId);
   else _stokAcikGruplar.add(grupId);
@@ -268,32 +272,33 @@ function renderStoklar(){
   elGrup.innerHTML=kokGruplar.map(g=>grupSatiri(g,0)).join('')||'<div class="bos">Henüz grup yok. "+ Grup" ile başlayın.</div>';
 
   const baslikEl=document.getElementById('stok-kart-baslik');
+  const btnGoruntule=document.getElementById('btn-stok-goruntule');
+  const btnDuzenle=document.getElementById('btn-stok-duzenle');
+  const btnSil=document.getElementById('btn-stok-sil');
   if(_stokSeciliGrupId){
     const seciliGrup=kapsam.find(g=>g.id===_stokSeciliGrupId);
     if(!seciliGrup){_stokSeciliGrupId=null;renderStoklar();return;}
     if(baslikEl)baslikEl.textContent=`${seciliGrup.ad} [${seciliGrup.kod}]`;
     if(btnYeniStok)btnYeniStok.style.display=(isAdmin&&(seciliGrup.seviye||1)===3)?'':'none';
     const kartlar=kapsam.filter(s=>s.ust_id===_stokSeciliGrupId&&s.tip==='stok'&&(isAdmin||s.aktif!==false));
+    if(isAdmin&&kartlar.length){if(btnGoruntule)btnGoruntule.style.display='';if(btnDuzenle)btnDuzenle.style.display='';if(btnSil)btnSil.style.display='';}
+    else{if(btnGoruntule)btnGoruntule.style.display='none';if(btnDuzenle)btnDuzenle.style.display='none';if(btnSil)btnSil.style.display='none';}
     elKart.innerHTML=kartlar.length?kartlar.map(s=>{
       const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);
       const dusuk=s.min_stok>0&&mik<=s.min_stok;
       const pasif=s.aktif===false;
-      return `<div class="tree-row" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
+      return `<div class="tree-row" onmouseenter="_stokHoverKartId='${s.id}'" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
         <span class="tree-kod" style="min-width:70px">${s.kod}</span>
         <span style="flex:1;font-size:12px">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
         <span style="font-size:12px;font-weight:500;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})} ${tb?.kisaltma||''}</span>
         ${dusuk?'<span class="badge sari">⚠ Min</span>':''}
         <span class="tip-chip tip-stok">STOK</span>
-        ${isAdmin?`<div class="tree-actions">
-          <button class="btn sm" onclick="stokGoruntule('${s.id}')">👁</button>
-          <button class="btn sm" onclick="stokDuzenle('${s.id}')">✏</button>
-          <button class="btn sm ghost" onclick="stokSil('${s.id}')">✕</button>
-        </div>`:''}
       </div>`;
     }).join(''):'<div class="bos">Bu grupta henüz stok kartı yok.</div>';
   }else{
     if(baslikEl)baslikEl.textContent='← Soldan bir grup seçin';
     if(btnYeniStok)btnYeniStok.style.display='none';
+    if(btnGoruntule)btnGoruntule.style.display='none';if(btnDuzenle)btnDuzenle.style.display='none';if(btnSil)btnSil.style.display='none';
     elKart.innerHTML='<div class="bos">← Soldan bir grup seçin</div>';
   }
 }
