@@ -153,14 +153,22 @@ function araUrunBirimMaliyet(urunId,_derinlik){
   return toplam;
 }
 
+let _bilesenHoverIndex = null;
+window.bilesenSilHover=function(){
+  if(_bilesenHoverIndex===null||!bilesenler[_bilesenHoverIndex]){bil('Önce bir satırın üzerine gelin','err');return;}
+  bilesenSil(_bilesenHoverIndex);
+};
 function renderBilesenler(){
   const el=document.getElementById('bilesen-listesi');if(!el)return;
   const receteSayfasi=document.getElementById('receteler')?.classList.contains('active');
+  const silBtn=document.getElementById('btn-bilesen-sil');
   if(!bilesenler.length){
     el.innerHTML='<div style="font-size:12px;color:var(--yazi3);padding:8px 0">Henüz bileşen eklenmedi.</div>';
     if(_receteSeciliId&&_receteMod==='duzenle')el.innerHTML+=`<div style="margin-top:8px"><button class="btn pri sm" onclick="receteKaydet()">💾 Kaydet</button></div>`;
+    if(silBtn)silBtn.style.display='none';
     return;
   }
+  if(silBtn)silBtn.style.display=_receteMod==='duzenle'?'':'none';
   let toplamMaliyet=0;
   const baslik=`<div style="display:flex;align-items:center;border-bottom:2px solid var(--border);padding-bottom:4px;margin-bottom:2px">
     <div style="width:30px;flex-shrink:0"></div>
@@ -187,7 +195,7 @@ function renderBilesenler(){
     toplamMaliyet+=maliyet;
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
     const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':isUrun?'Ürün (mamul) seçin...':'Ara ürün seçin...';
-    return `<div class="excel-satir" style="display:flex;align-items:center">
+    return `<div class="excel-satir" onmouseenter="_bilesenHoverIndex=${i}" style="display:flex;align-items:center">
       <div style="width:30px;flex-shrink:0;padding:3px 4px 3px 0">
         <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':isUrun?'tip-urun':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':isUrun?'MM':'ARA'}</span>
       </div>
@@ -208,9 +216,7 @@ function renderBilesenler(){
       </div>
       <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
       <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
-      <div style="width:28px;flex-shrink:0;text-align:center">
-        <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0">×</button>
-      </div>
+      <div style="width:28px;flex-shrink:0"></div>
     </div>`;
   }).join('');
   const toplamHtml=`<div style="margin-top:10px;padding:8px 12px;background:var(--yesil-cok-ac);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
