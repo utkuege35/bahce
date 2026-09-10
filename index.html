@@ -458,8 +458,13 @@
     <div class="btn-row"><button class="btn pri" onclick="kaydetTemelBirim()">Temel Birim Ekle</button></div>
   </div>
   <div class="card"><div class="card-title">Alt Birim Ekle</div>
-    <div class="fgrid c2"><div class="fg"><label>Alt Birim Adı</label><input type="text" id="ab-ad" placeholder="koli, demet..."></div><div class="fg"><label>Temel Birim</label><select id="ab-temel"><option value="">Seçin...</option></select></div></div>
-    <div class="fgrid c2"><div class="fg"><label>1 alt birim = kaç temel?</label><input type="number" id="ab-carpan" placeholder="30" min="0" step="any"></div><div class="fg"><label>Kısaltma</label><input type="text" id="ab-kisaltma" placeholder="koli..."></div></div>
+    <div class="fgrid c2"><div class="fg"><label>Alt Birim Adı</label><input type="text" id="ab-ad" placeholder="koli, gram..."></div><div class="fg"><label>Temel Birim</label><select id="ab-temel"><option value="">Seçin...</option></select></div></div>
+    <div class="fgrid c3">
+      <div class="fg"><label>Kısaltma</label><input type="text" id="ab-kisaltma" placeholder="koli, gr..."></div>
+      <div class="fg"><label>İşlem</label><select id="ab-islem"><option value="carpi">× (çarpım)</option><option value="bolu">÷ (bölüm)</option></select></div>
+      <div class="fg"><label>Katsayı</label><input type="number" id="ab-katsayi" placeholder="örn: 10" min="0" step="any"></div>
+    </div>
+    <div style="font-size:11px;color:var(--yazi3);margin:-4px 0 8px">Örnek: 1 koli = 10 kg ise İşlem=×, Katsayı=10 seçin. 1 kg = 1000 gr ise (Gram alt birimken) İşlem=÷, Katsayı=1000 seçin.</div>
     <div class="btn-row"><button class="btn sec" onclick="kaydetAltBirim()">Alt Birim Ekle</button></div>
   </div>
   <div class="card"><div class="card-title">Tanımlı Birimler</div>
@@ -768,15 +773,9 @@
           <div class="fg"><label>Min. Stok Uyarı</label><input type="number" id="sm-min" placeholder="0" min="0" step="any"></div>
           <div class="fg"><label>İşlem Birimi</label><select id="sm-varsayilan-birim"><option value="">— Temel birim —</option></select></div>
         </div>
-        <div class="fgrid c1">
+        <div class="fgrid c2">
+          <div class="fg"><label>Reçete Birimi</label><select id="sm-recete-birim"><option value="">— Temel birim —</option></select></div>
           <div class="fg"><label>Açıklama</label><input type="text" id="sm-aciklama"></div>
-        </div>
-        <div style="font-size:11px;font-weight:600;color:var(--yazi3);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.05em">Reçete Birimi</div>
-        <div style="font-size:11px;color:var(--yazi3);margin-bottom:8px">Reçetelerde bu stoğu kullanırken hangi birimle gireceğini ve temel birime nasıl çevrileceğini belirler. Örn: temel birim kg, reçete birimi Gr, işlem ×, katsayı 1000 (1 kg × 1000 = 1000 gr).</div>
-        <div class="fgrid c3">
-          <div class="fg"><label>Reçete Birimi</label><input type="text" id="sm-recete-birim-ad" placeholder="örn: Gr"></div>
-          <div class="fg"><label>Çevirme İşlemi</label><select id="sm-recete-birim-islem"><option value="*">× (çarpım)</option><option value="/">÷ (bölüm)</option></select></div>
-          <div class="fg"><label>Çevirme Katsayısı</label><input type="number" id="sm-recete-birim-katsayi" placeholder="örn: 1000" min="0" step="any"></div>
         </div>
         <div id="sm-aktif-satir" style="display:none;margin-top:4px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
@@ -1133,7 +1132,10 @@
         <div class="fg"><label>Kısaltma</label><input type="text" id="bd-kisaltma"></div>
       </div>
       <div id="bd-carpan-wrap" style="display:none">
-        <div class="fgrid c1"><div class="fg"><label>Çarpan (1 bu birim = kaç temel?)</label><input type="number" id="bd-carpan" min="0" step="any"></div></div>
+        <div class="fgrid c2">
+          <div class="fg"><label>İşlem</label><select id="bd-islem"><option value="carpi">× (çarpım)</option><option value="bolu">÷ (bölüm)</option></select></div>
+          <div class="fg"><label>Katsayı</label><input type="number" id="bd-katsayi" min="0" step="any"></div>
+        </div>
       </div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-birim-duzenle')">İptal</button><button class="btn pri" onclick="birimKaydet()">Kaydet</button></div>
