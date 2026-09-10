@@ -337,6 +337,10 @@ let _urunSeciliGrupId = null;
 let _urunAcikGruplar = new Set();
 let _yarimamulSeciliGrupId = null;
 let _yarimamulAcikGruplar = new Set();
+let _urunHoverKartId = null;
+window.urunGoruntuleHover=function(){if(!_urunHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}urunGoruntule(_urunHoverKartId);};
+window.urunDuzenleHover=function(){if(!_urunHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}urunDuzenle(_urunHoverKartId);};
+window.urunSilHover=function(){if(!_urunHoverKartId){bil('Önce bir satırın üzerine gelin','err');return;}urunSil(_urunHoverKartId);};
 
 window.urunGrupSec = function(hedefTip, grupId){
   const acikSet = hedefTip==='ara_urun' ? _yarimamulAcikGruplar : _urunAcikGruplar;
@@ -385,6 +389,10 @@ function renderUrunlerGenel(hedefTip){
 
   const baslikEl=document.getElementById(baslikElId);
   const btnYeni=document.getElementById(btnYeniId);
+  const btnOnPrefix=hedefTip==='ara_urun'?'yarimamul':'urun';
+  const btnGoruntule=document.getElementById(`btn-${btnOnPrefix}-goruntule`);
+  const btnDuzenle=document.getElementById(`btn-${btnOnPrefix}-duzenle`);
+  const btnSil=document.getElementById(`btn-${btnOnPrefix}-sil`);
   if(seciliGrupId){
     const seciliGrup=kapsam.find(g=>g.id===seciliGrupId);
     if(!seciliGrup){
@@ -394,6 +402,8 @@ function renderUrunlerGenel(hedefTip){
     if(baslikEl)baslikEl.textContent=`${seciliGrup.ad} [${seciliGrup.kod}]`;
     if(btnYeni)btnYeni.style.display=(isAdmin&&(seciliGrup.seviye||1)===gerekliSeviye)?'':'none';
     const kartlar=kapsam.filter(u=>u.ust_id===seciliGrupId&&u.tip===hedefTip&&(isAdmin||u.aktif!==false));
+    if(isAdmin&&kartlar.length){if(btnGoruntule)btnGoruntule.style.display='';if(btnDuzenle)btnDuzenle.style.display='';if(btnSil)btnSil.style.display='';}
+    else{if(btnGoruntule)btnGoruntule.style.display='none';if(btnDuzenle)btnDuzenle.style.display='none';if(btnSil)btnSil.style.display='none';}
     elKart.innerHTML=kartlar.length?kartlar.map(u=>{
       const isAra=u.tip==='ara_urun';
       const stokAdet=urunStok(u.id);const tb=birimler.find(b=>b.id===u.birim_id);
@@ -401,7 +411,7 @@ function renderUrunlerGenel(hedefTip){
       const bilesenSayisi=urunBilesenleri.filter(b=>b.urun_id===u.id).length;
       const pasif=u.aktif===false;
       const merkezAd=u.merkez_id?merkezler.find(m=>m.id===u.merkez_id)?.ad:'';
-      return `<div class="tree-row" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
+      return `<div class="tree-row" onmouseenter="_urunHoverKartId='${u.id}'" style="border-left:2px solid var(--border);${pasif?'opacity:0.45;':''}">
         <span class="tree-kod" style="min-width:70px">${u.kod}</span>
         <span style="flex:1;font-size:12px">${u.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu);font-weight:500">[PASİF]</span>':''}</span>
         ${merkezAd?`<span style="font-size:10px;color:var(--mor);background:var(--mor-ac);padding:1px 6px;border-radius:10px">${merkezAd}</span>`:''}
@@ -409,16 +419,12 @@ function renderUrunlerGenel(hedefTip){
         ${bilesenSayisi?`<span style="font-size:10px;color:var(--yazi3)">${bilesenSayisi} bil.</span>`:''}
         ${dusuk?'<span class="badge sari">⚠</span>':''}
         <span class="tip-chip ${isAra?'tip-ara':'tip-urun'}">${isAra?'YARI MAMUL':'MAMUL'}</span>
-        ${isAdmin?`<div class="tree-actions">
-          <button class="btn sm" onclick="urunGoruntule('${u.id}')">👁</button>
-          <button class="btn sm" onclick="urunDuzenle('${u.id}')">✏</button>
-          <button class="btn sm ghost" onclick="urunSil('${u.id}')">✕</button>
-        </div>`:''}
       </div>`;
     }).join(''):`<div class="bos">Bu grupta henüz ${hedefTip==='ara_urun'?'yarı mamul':'ürün'} yok.</div>`;
   }else{
     if(baslikEl)baslikEl.textContent='← Soldan bir grup seçin';
     if(btnYeni)btnYeni.style.display='none';
+    if(btnGoruntule)btnGoruntule.style.display='none';if(btnDuzenle)btnDuzenle.style.display='none';if(btnSil)btnSil.style.display='none';
     elKart.innerHTML='<div class="bos">← Soldan bir grup seçin</div>';
   }
 }
