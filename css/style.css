@@ -146,7 +146,7 @@ tr:hover td{background:var(--krem)}
 .badge.mor{background:var(--mor-ac);color:var(--mor)}.badge.sari{background:var(--sari-ac);color:var(--sari)}
 .fr{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.9rem;align-items:center}
 .fr select,.fr input{padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--yazi);background:var(--beyaz);-webkit-appearance:none}
-.tree-row{display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:1px solid var(--krem2);cursor:pointer;transition:background .1s;position:relative}
+.tree-row{display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:2px solid var(--border);cursor:pointer;transition:background .1s;position:relative}
 .tree-row:last-child{border-bottom:none}
 .tree-row:hover{background:var(--krem)}
 .tree-row.is-grup{background:var(--krem2);font-weight:600}
@@ -215,8 +215,8 @@ tr:hover td{background:var(--krem)}
 
 /* Excel benzeri sık (boşluksuz) satır girişleri — işlem tabloları, reçete
    bileşen satırları ve grup ağacı satırları için */
-.excel-satir{border-bottom:1px solid var(--krem2);padding:3px 8px}
+.excel-satir{border-bottom:2px solid var(--border);padding:3px 8px}
 .excel-satir:last-child{border-bottom:none}
 .excel-satir input,.excel-satir select{padding:3px 5px!important;font-size:12px!important}
-.grup-satir{border-bottom:1px solid var(--border)}
+.grup-satir{border-bottom:2px solid var(--border)}
 .grup-satir:last-child{border-bottom:none}
