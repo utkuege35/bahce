@@ -216,15 +216,12 @@ window.stokSil=async function(id){
   renderStoklar();doldurStokFil();doldurIslemSecleri();bil(hv?'Pasife alındı ✓':'Silindi ✓');
 };
 let _stokSeciliGrupId = null;
-let _stokAcikGruplar = new Set();
 let _stokHoverKartId = null;
 window.stokKartSec=function(id){_stokHoverKartId=id;renderStoklar();};
 window.stokGoruntuleHover=function(){if(!_stokHoverKartId){bil('Önce bir satır seçin','err');return;}stokGoruntule(_stokHoverKartId);};
 window.stokDuzenleHover=function(){if(!_stokHoverKartId){bil('Önce bir satır seçin','err');return;}stokDuzenle(_stokHoverKartId);};
 window.stokSilHover=function(){if(!_stokHoverKartId){bil('Önce bir satır seçin','err');return;}stokSil(_stokHoverKartId);};
 window.stokGrupSec = function(grupId){
-  if(_stokAcikGruplar.has(grupId))_stokAcikGruplar.delete(grupId);
-  else _stokAcikGruplar.add(grupId);
   _stokSeciliGrupId = grupId;
   renderStoklar();
 };
@@ -238,13 +235,11 @@ function renderStoklar(){
 
   function grupSatiri(g,depth){
     const altGruplari=kapsam.filter(x=>x.ust_id===g.id&&x.tip==='grup');
-    const acik=_stokAcikGruplar.has(g.id);
     const secili=_stokSeciliGrupId===g.id;
     const grupRenkler=['#284a65','#355f82','#a9c8e0','#d4e6f1'];
     const satirRenk=grupRenkler[Math.min(depth,grupRenkler.length-1)];
     const grupBg=['var(--grup-bg-0)','var(--grup-bg-1)','var(--grup-bg-2)'][Math.min(depth,2)];
     let html=`<div class="grup-satir" onclick="stokGrupSec('${g.id}')" style="display:flex;align-items:center;gap:6px;padding:4px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':grupBg}">
-      <span style="font-size:10px;color:var(--yazi3);width:12px;flex-shrink:0">${altGruplari.length?(acik?'▼':'▶'):''}</span>
       <span class="tree-kod" style="min-width:44px;font-size:10px">${g.kod}</span>
       <span style="flex:1;font-size:12px;font-weight:${secili?'700':'500'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${g.ad}</span>
       ${isAdmin?`<div class="tree-actions" style="flex-shrink:0">
@@ -253,7 +248,7 @@ function renderStoklar(){
         <button class="btn sm ghost" onclick="event.stopPropagation();stokSil('${g.id}')">✕</button>
       </div>`:''}
     </div>`;
-    if(acik)altGruplari.forEach(ag=>{html+=grupSatiri(ag,depth+1);});
+    altGruplari.forEach(ag=>{html+=grupSatiri(ag,depth+1);});
     return html;
   }
 
@@ -291,6 +286,36 @@ function renderStoklar(){
     elKart.innerHTML='<div class="bos">← Soldan bir grup seçin</div>';
   }
 }
+// ===== STOK LİSTESİ (düz tablo — grup ağacı değil) =====
+window.renderStokListesi=function(){
+  const el=document.getElementById('stok-liste-tb');if(!el)return;
+  const kapsam=isyeriFiltre(stoklar);
+  const isAdmin=aktifKullanici?.rol==='admin';
+  const ara=(document.getElementById('sl-ara')?.value||'').toLowerCase();
+  let liste=kapsam.filter(s=>s.tip==='stok'&&(isAdmin||s.aktif!==false));
+  if(ara)liste=liste.filter(s=>s.ad.toLowerCase().includes(ara)||s.kod.toLowerCase().includes(ara));
+  liste=liste.slice().sort((a,b)=>(a.kod||'').localeCompare(b.kod||''));
+  el.innerHTML=liste.map(s=>{
+    const grup3=kapsam.find(g=>g.id===s.ust_id);
+    const grup2=grup3?kapsam.find(g=>g.id===grup3.ust_id):null;
+    const grup1=grup2?kapsam.find(g=>g.id===grup2.ust_id):null;
+    const tb=birimler.find(b=>b.id===s.birim_id);
+    const ib=birimler.find(b=>b.id===(s.varsayilan_birim_id||s.birim_id));
+    const mik=stokMiktar(s.id);
+    const dusuk=s.min_stok>0&&mik<=s.min_stok;
+    const pasif=s.aktif===false;
+    return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="stokGoruntule('${s.id}')">
+      <td class="tree-kod">${s.kod}</td>
+      <td style="font-weight:500">${s.ad}${pasif?' <span style="font-size:10px;color:var(--turuncu)">[PASİF]</span>':''}</td>
+      <td>${grup1?.ad||''}</td>
+      <td>${grup2?.ad||''}</td>
+      <td>${grup3?.ad||''}</td>
+      <td>${tb?.kisaltma||''}</td>
+      <td>${ib?.kisaltma||''}</td>
+      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--yesil)'}">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="8" class="bos">Kayıt yok</td></tr>';
+};
 function kontolUyari(){
   const kapsam=isyeriFiltre(stoklar);
   const d=kapsam.filter(s=>s.tip==='stok'&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
