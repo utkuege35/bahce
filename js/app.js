@@ -94,7 +94,7 @@ function uygulamaAc(){
     // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
       'islem':'gp(\'islem\')', 'islem_liste':'gp(\'islem-liste\')',
-      'stok':'gp(\'stok\')', 'urunler':'gp(\'urunler\')', 'yarimamuller':'gp(\'yarimamuller\')',
+      'stok':'gp(\'stok\')', 'stok_liste':'gp(\'stok-liste\')', 'urunler':'gp(\'urunler\')', 'urun_liste':'gp(\'urun-liste\')', 'yarimamuller':'gp(\'yarimamuller\')', 'ym_liste':'gp(\'ym-liste\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
       'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'recete_normalize':'gp(\'recete-normalize\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')'
@@ -251,7 +251,7 @@ window.gp=function(id){
     const icerik=navBtn.closest('.nav-grup-icerik');
     if(icerik){icerik.classList.add('acik');icerik.previousElementSibling?.classList.add('acik');}
   }
-  if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='urunler')renderUrunler();if(id==='yarimamuller')renderYariMamuller();
+  if(id==='panel')renderPanel();if(id==='stok')renderStoklar();if(id==='stok-liste')renderStokListesi();if(id==='urunler')renderUrunler();if(id==='urun-liste')renderUrunListesi();if(id==='yarimamuller')renderYariMamuller();if(id==='ym-liste')renderYmListesi();
   if(id==='receteler')renderReceteler();
   if(id==='recete-normalize'&&typeof receteNormalizeTipDegis==='function')receteNormalizeTipDegis();
   if(id==='kasalar')renderKasalar();
