@@ -187,27 +187,27 @@ function renderBilesenler(){
     toplamMaliyet+=maliyet;
     const secenekler=liste.map(x=>`<option value="${x.id}"${x.id===b.kaynak_id?' selected':''}>${x.ad}</option>`).join('');
     const secPlaceholder=isStok?'Hammadde seçin...':isHizmet?'Hizmet seçin...':isUrun?'Ürün (mamul) seçin...':'Ara ürün seçin...';
-    return `<div style="display:flex;align-items:center;border-bottom:1px solid var(--krem2)">
-      <div style="width:30px;flex-shrink:0;padding:8px 4px 8px 0">
+    return `<div class="excel-satir" style="display:flex;align-items:center">
+      <div style="width:30px;flex-shrink:0;padding:3px 4px 3px 0">
         <span class="tip-chip ${isStok?'tip-stok':isHizmet?'tip-hizmet':isUrun?'tip-urun':'tip-ara'}" style="font-size:9px;padding:2px 3px">${isStok?'HAM':isHizmet?'HİZ':isUrun?'MM':'ARA'}</span>
       </div>
-      <div style="flex:1;min-width:120px;padding:6px 4px">
-        <select onchange="bilesenKaynakDegis(${i},this.value)" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <div style="flex:1;min-width:120px;padding:3px 4px">
+        <select onchange="bilesenKaynakDegis(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">${secPlaceholder}</option>
           ${secenekler}
         </select>
       </div>
-      <div style="width:70px;flex-shrink:0;padding:6px 4px">
-        <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <div style="width:70px;flex-shrink:0;padding:3px 4px">
+        <select onchange="bilesenGuncelle(${i},'birim_id',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
           <option value="">—</option>
           ${birimler.map(bx=>`<option value="${bx.id}"${bx.id===b.birim_id?' selected':''}>${bx.kisaltma||bx.ad}</option>`).join('')}
         </select>
       </div>
-      <div style="width:70px;flex-shrink:0;padding:6px 4px">
-        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" style="width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+      <div style="width:70px;flex-shrink:0;padding:3px 4px">
+        <input type="number" placeholder="0" value="${b.miktar||''}" min="0" step="any" onchange="bilesenGuncelle(${i},'miktar',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px">
       </div>
-      <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" style="width:100%;padding:4px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
-      <div style="width:80px;flex-shrink:0;padding:6px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
+      <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right">${isHizmet?`<input type="number" placeholder="Fiyat" value="${b.fiyat||''}" min="0" step="any" onclick="event.stopPropagation()" onchange="bilesenGuncelle(${i},'fiyat',this.value);renderBilesenler()" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:11px;text-align:right">`:`<span style="font-size:11px;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</span>`}</div>
+      <div style="width:80px;flex-shrink:0;padding:3px 4px;text-align:right;font-size:12px;font-weight:600;color:var(--yesil)">${maliyet>0?para(maliyet):'—'}</div>
       <div style="width:28px;flex-shrink:0;text-align:center">
         <button onclick="bilesenSil(${i})" style="background:none;border:none;color:var(--turuncu);cursor:pointer;font-size:18px;padding:0">×</button>
       </div>
@@ -365,7 +365,7 @@ function renderUrunlerGenel(hedefTip){
     const secili=seciliGrupId===g.id;
     const grupRenkler=['var(--grup-kenar-0)','var(--grup-kenar-1)','var(--grup-kenar-2)','var(--grup-kenar-3)'];
     const satirRenk=grupRenkler[Math.min(depth,grupRenkler.length-1)];
-    let html=`<div onclick="urunGrupSec('${hedefTip}','${g.id}')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':'transparent'};border-radius:6px;margin-bottom:2px">
+    let html=`<div class="grup-satir" onclick="urunGrupSec('${hedefTip}','${g.id}')" style="display:flex;align-items:center;gap:6px;padding:4px 10px;padding-left:${8+depth*16}px;cursor:pointer;border-left:4px solid ${satirRenk};background:${secili?'var(--yesil-cok-ac)':'transparent'}">
       <span style="font-size:10px;color:var(--yazi3);width:12px;flex-shrink:0">${altGruplari.length?(acik?'▼':'▶'):''}</span>
       <span class="tree-kod" style="min-width:44px;font-size:10px">${g.kod}</span>
       <span style="flex:1;font-size:12px;font-weight:${secili?'700':'500'};color:${secili?'var(--yesil)':'var(--yazi1)'}">${g.ad}</span>
