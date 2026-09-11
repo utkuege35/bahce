@@ -192,6 +192,7 @@
       <option value="satis">Satış</option>
       <option value="uretim">Üretim</option>
       <option value="sayim">Sayım</option>
+      <option value="devir">Devir</option>
       <option value="kasa">Kasa</option>
     </select>
     <input type="date" id="il-bas" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
@@ -227,6 +228,7 @@
     <button class="tab" onclick="islemTab('kasa',this)">Kasa</button>
     <button class="tab" onclick="islemTab('uretim',this)">Üretim</button>
     <button id="islem-tab-sayim" class="tab" onclick="islemTab('sayim',this)">Sayım</button>
+    <button id="islem-tab-devir" class="tab" onclick="islemTab('devir',this)">Devir</button>
   </div>
 
   <!-- ALIŞ -->
@@ -370,6 +372,47 @@
       <div style="display:flex;justify-content:flex-end;align-items:center">
         <button id="btn-sy-sil" class="btn sm ghost" onclick="sySatirSilHover()" title="Üzerine gelinen satırı sil" style="margin-right:auto">🗑 Satırı Sil</button>
         <button class="btn pri" onclick="kaydetSayim()">Sayımı Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEVİR -->
+  <div id="tp-devir" class="tab-panel">
+    <div class="card"><div class="card-title">Devir Fişi (Dönemsel Açılış — Hammadde)</div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Bir dönem başında elinizde bulunan hammadde stoklarını açılış (devir) olarak girmek için kullanılır. Girilen miktarlar stok miktarına Alış gibi eklenir.</div>
+      <div class="fgrid c2" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="dv-tarih"></div>
+        <div class="fg"><label>Not</label><input type="text" id="dv-not" placeholder="Dönem açılışı, yıl sonu devir..."></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:.75rem;flex-wrap:wrap">
+        <input type="file" id="dv-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="dvExcelSecildi(this)">
+        <button class="btn sm sec" onclick="document.getElementById('dv-excel-input').click()">📥 Excel'den İçe Aktar</button>
+        <button class="btn sm sec" onclick="dvExcelIndir()">📤 Excel'e Aktar</button>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:160px">Stok Adı</th>
+            <th style="width:80px">Birim</th>
+            <th style="width:75px">Miktar</th>
+            <th style="width:85px">Birim Fiyat (₺)</th>
+            <th style="width:85px">Tutar (₺)</th>
+            <th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="dv-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="dv-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;gap:6px">
+          <button class="btn sm sec" onclick="dvSatirEkle()">+ Satır Ekle</button>
+          <button id="btn-dv-sil" class="btn sm ghost" onclick="dvSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
+        </div>
+        <button class="btn pri" onclick="kaydetDevir()">Devri Kaydet</button>
       </div>
     </div>
   </div>
