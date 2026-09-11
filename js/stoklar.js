@@ -439,6 +439,20 @@ function renderStoklar(){
 }
 // ===== STOK LİSTESİ (düz tablo — grup ağacı değil) =====
 let _slSonListe=[];
+// Son Alım Fiyatı: en son Alış (giriş) veya Devir fişindeki fiyatı, stoğun
+// temel birimi cinsinden döner. Hiç alım/devir yoksa stok kartındaki kayıtlı
+// maliyete düşer.
+function stokSonAlimFiyati(stokId){
+  const kayitlar=islemler.filter(i=>i.stok_id===stokId&&(i.tur==='giris'||i.tur==='devir')&&parseFloat(i.fiyat)>0);
+  if(kayitlar.length){
+    kayitlar.sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')||(b.ts||0)-(a.ts||0));
+    const son=kayitlar[0];
+    const carpan=birimTemelCarp(son.birim_id)||1;
+    return (parseFloat(son.fiyat)||0)/carpan;
+  }
+  const s=stoklar.find(x=>x.id===stokId);
+  return parseFloat(s?.maliyet||0);
+}
 window.renderStokListesi=function(){
   const el=document.getElementById('stok-liste-tb');if(!el)return;
   const kapsam=isyeriFiltre(stoklar);
@@ -453,7 +467,7 @@ window.renderStokListesi=function(){
     const tb=birimler.find(b=>b.id===s.birim_id);
     const ib=birimler.find(b=>b.id===(s.varsayilan_birim_id||s.birim_id));
     const rb=birimler.find(b=>b.id===s.recete_birim_id);
-    return {stok:s,anaGrup:grup1?.ad||'',altGrup:grup2?.ad||'',altGrup2:grup3?.ad||'',kod:s.kod||'',ad:s.ad||'',temelBirim:tb?.kisaltma||'',islemBirim:ib?.kisaltma||'',receteBirim:rb?.kisaltma||'',mevcutStok:stokMiktar(s.id)};
+    return {stok:s,anaGrup:grup1?.ad||'',altGrup:grup2?.ad||'',altGrup2:grup3?.ad||'',kod:s.kod||'',ad:s.ad||'',temelBirim:tb?.kisaltma||'',islemBirim:ib?.kisaltma||'',receteBirim:rb?.kisaltma||'',sonAlimFiyati:stokSonAlimFiyati(s.id)};
   });
   if(fAna)liste=liste.filter(r=>r.anaGrup.toLowerCase().includes(fAna));
   if(fAlt)liste=liste.filter(r=>r.altGrup.toLowerCase().includes(fAlt));
@@ -468,7 +482,6 @@ window.renderStokListesi=function(){
 
   el.innerHTML=liste.map(r=>{
     const s=r.stok;
-    const dusuk=s.min_stok>0&&r.mevcutStok<=s.min_stok;
     const pasif=s.aktif===false;
     return `<tr style="${pasif?'opacity:.5':''};cursor:pointer" onclick="stokGoruntule('${s.id}')">
       <td>${r.anaGrup}</td>
@@ -479,7 +492,7 @@ window.renderStokListesi=function(){
       <td>${r.temelBirim}</td>
       <td>${r.islemBirim}</td>
       <td>${r.receteBirim}</td>
-      <td style="text-align:right;color:${dusuk?'var(--sari)':'var(--yesil)'}">${r.mevcutStok.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+      <td style="text-align:right;color:var(--yesil)">${r.sonAlimFiyati>0?para(r.sonAlimFiyati):'—'}</td>
     </tr>`;
   }).join('')||'<tr><td colspan="9" class="bos">Kayıt yok</td></tr>';
 };
@@ -488,7 +501,7 @@ window.stokListesiExcelIndir=function(){
   const data=_slSonListe.map(r=>({
     'Ana Grup':r.anaGrup,'Alt Grup':r.altGrup,'Alt Grup 2':r.altGrup2,
     'Kod':r.kod,'Ad':r.ad,'Temel Birim':r.temelBirim,'İşlem Birimi':r.islemBirim,'Reçete Birim':r.receteBirim,
-    'Mevcut Stok':r.mevcutStok
+    'Son Alım Fiyatı':r.sonAlimFiyati
   }));
   const ws=XLSX.utils.json_to_sheet(data);
   const wb=XLSX.utils.book_new();
