@@ -185,6 +185,7 @@ const EKRANLAR = [
   {id:'kasalar',    ad:'Kasalar'},
   {id:'cari',       ad:'Cari & Personel'},
   {id:'birimler',   ad:'Birimler'},
+  {id:'alt_birimler', ad:'Alt Birimler'},
   {id:'merkezler',  ad:'Merkezler'},
   {id:'depolar',    ad:'Depolar'},
   {id:'sayim_raporu', ad:'Sayım Raporu'},
