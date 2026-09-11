@@ -350,7 +350,6 @@
         <input type="file" id="sy-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="syExcelSecildi(this)">
         <button class="btn sm sec" onclick="document.getElementById('sy-excel-input').click()">📥 Excel'den İçe Aktar</button>
         <button class="btn sm sec" onclick="ymSayimModalAc()">⚙️ + YM/Ürün Sayımı Ekle</button>
-        <button class="btn sm sec" onclick="hmSayimModalAc()">+ Hammadde Ekle</button>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
         <table style="font-size:13px">
@@ -1042,21 +1041,6 @@
       </label>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-depo-duzenle')">İptal</button><button class="btn pri" onclick="depoKaydetDuzenle()">Kaydet</button></div>
-  </div>
-</div>
-
-<!-- MODAL: HAMMADDE SAYIMI EKLE -->
-<div id="modal-hammadde-sayim" class="overlay">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-hdr"><h3>Hammadde Sayımı Ekle</h3><button class="btn sm" onclick="modalKapat('modal-hammadde-sayim')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg"><label>Stok</label><select id="hsm-stok" onchange="hmSayimStokDegis()"><option value="">Seçin...</option></select></div>
-      <div class="fgrid c2">
-        <div class="fg"><label>Miktar</label><input type="number" id="hsm-miktar" placeholder="0" min="0" step="any"></div>
-        <div class="fg"><label>Birim</label><select id="hsm-birim"><option value="">-</option></select></div>
-      </div>
-    </div>
-    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-hammadde-sayim')">İptal</button><button class="btn pri" onclick="hmSayimUygula()">Fişe Ekle</button></div>
   </div>
 </div>
 
