@@ -492,7 +492,7 @@ window.renderStokListesi=function(){
       <td>${r.temelBirim}</td>
       <td>${r.islemBirim}</td>
       <td>${r.receteBirim}</td>
-      <td style="text-align:right;color:var(--yesil)">${r.sonAlimFiyati>0?para(r.sonAlimFiyati):'—'}</td>
+      <td style="text-align:right;color:var(--yesil)">${r.sonAlimFiyati>0?r.sonAlimFiyati.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</td>
     </tr>`;
   }).join('')||'<tr><td colspan="9" class="bos">Kayıt yok</td></tr>';
 };
