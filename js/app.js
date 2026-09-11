@@ -178,6 +178,7 @@ async function baslat(){
   if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),200);
   if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),250);
   if(gdSatirListesi.length===0)setTimeout(()=>gdSatirEkle(),300);
+  setTimeout(()=>{if(typeof sySatirRender==='function')sySatirRender();},200);
 }
 
 function doldurBirimSecleri(){
@@ -265,6 +266,7 @@ window.gp=function(id){
     if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
     if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
     if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
+    if(typeof sySatirRender==='function')sySatirRender();
     setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();const syT=document.getElementById('sy-tarih');if(syT&&!syT.value)syT.value=bugun();},200);
   }
   if(id==='sayim-raporu'){
@@ -272,5 +274,6 @@ window.gp=function(id){
     if(typeof renderSayimRaporu==='function')renderSayimRaporu();
   }
 };
-window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');};
+let _aktifIslemTab='hammadde';
+window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');_aktifIslemTab=id;};
 window.tanimTab=function(id,btn){document.querySelectorAll('#tanimlar .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#tanimlar .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tt-'+id)?.classList.add('active');btn.classList.add('active');};
