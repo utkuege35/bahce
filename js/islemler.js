@@ -145,24 +145,7 @@ function sayimFisSatiriEkleVeyaGuncelle(stokId,ekMiktarTemel){
   return satir;
 }
 
-// ---- "+ YM/Ürün Sayımı Ekle" penceresi ----
-window.ymSayimModalAc=function(){
-  document.getElementById('ysm-tip').value='ara_urun';
-  ymSayimTipDegis();
-  document.getElementById('ysm-miktar').value='';
-  modalAc('modal-ym-sayim');
-};
-window.ymSayimTipDegis=function(){
-  const tip=document.getElementById('ysm-tip').value;
-  document.getElementById('ysm-kalem').innerHTML=sySecimOpts(tip,'');
-  document.getElementById('ysm-birim').innerHTML=syBirimOpts(tip,'','');
-};
-window.ymSayimKalemDegis=function(){
-  const tip=document.getElementById('ysm-tip').value;
-  const kaynakId=document.getElementById('ysm-kalem').value;
-  const u=urunler.find(x=>x.id===kaynakId);
-  document.getElementById('ysm-birim').innerHTML=syBirimOpts(tip,kaynakId,u?.varsayilan_birim_id||u?.birim_id||'');
-};
+// ---- YM / Ürün Sayımı (ayrı ekran) ----
 // Bir YM/Ürünün miktarını, reçetesi üzerinden (iç içe olabilir) altındaki
 // gerçek hammaddelere dağıtır. DB'ye yazmaz, sadece hesaplanan {stokId,miktarTemel}
 // listesini döner — sonuç fişe uygulanmadan önce toplanır.
@@ -180,37 +163,92 @@ function sayimHesaplaDagitim(urunId,mikTemel,ustAd,ustId,sonuc,_derinlik){
   });
   return sonuc;
 }
-window.ymSayimUygula=function(){
-  const tip=document.getElementById('ysm-tip').value;
-  const kaynakId=document.getElementById('ysm-kalem').value;
-  const miktar=parseFloat(document.getElementById('ysm-miktar').value)||0;
-  const birimId=document.getElementById('ysm-birim').value;
-  if(!kaynakId||!(miktar>0)||!birimId){bil('Kalem, miktar ve birim gerekli!','err');return;}
-  const kalem=urunler.find(u=>u.id===kaynakId);
-  const mikTemel=miktar*birimTemelCarp(birimId);
-  const sonuc=sayimHesaplaDagitim(kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',kaynakId);
-  if(!sonuc.length){bil('Bu kalemin reçetesi tanımlı değil, dağıtılacak hammadde bulunamadı.','err');return;}
-  // Aynı stok + aynı üst kaynak için topla, sonra fişe uygula
-  const gruplanmis={};
-  sonuc.forEach(r=>{
-    const key=r.stokId+'|'+r.ustId;
-    if(!gruplanmis[key])gruplanmis[key]={stokId:r.stokId,ustId:r.ustId,ustAd:r.ustAd,miktar:0};
-    gruplanmis[key].miktar+=r.miktar;
+// Bu ekranda hangi ürün/YM'den ne kadar sayıldığı satır satır görünür
+// (Hammadde Sayım Fişi'ndeki gibi) — "Sayım Fişine Yansıt" ile ana fişe eklenir.
+let _ymSayimListesi=[];
+let _ymsyHoverIndex=null;
+window.ymSayimSatirSilHover=function(){
+  if(_ymsyHoverIndex===null||!_ymSayimListesi[_ymsyHoverIndex]){bil('Önce bir satır seçin','err');return;}
+  _ymSayimListesi.splice(_ymsyHoverIndex,1);ymSayimSatirRender();
+};
+window.ymSayimSatirGuncelle=function(i,alan,deger){
+  _ymSayimListesi[i][alan]=alan==='miktar'?(parseFloat(deger)||0):deger;
+  ymSayimSatirRender();
+};
+window.ymSayimBosSatirTipDegis=function(sel){
+  const kalemSel=document.getElementById('ymsy-bos-kalem');
+  if(kalemSel)kalemSel.innerHTML=sySecimOpts(sel.value,'');
+};
+window.ymSayimBosSatirSec=function(kalemId){
+  if(!kalemId)return;
+  const tip=document.getElementById('ymsy-bos-tip')?.value||'ara_urun';
+  const kalem=urunler.find(u=>u.id===kalemId);
+  _ymSayimListesi.push({tip,kaynakId:kalemId,birimId:kalem?.varsayilan_birim_id||kalem?.birim_id||'',miktar:''});
+  ymSayimSatirRender();
+};
+window.ymSayimSatirRender=function(){
+  const el=document.getElementById('ymsy-satirlar');if(!el)return;
+  let html=_ymSayimListesi.map((s,i)=>{
+    const kalem=urunler.find(u=>u.id===s.kaynakId);
+    return `<tr onmouseenter="_ymsyHoverIndex=${i}">
+      <td><span class="tip-chip ${s.tip==='urun'?'tip-urun':'tip-ara'}" style="font-size:9px">${s.tip==='urun'?'ÜRÜN':'YM'}</span></td>
+      <td>[${kalem?.kod||''}] ${kalem?.ad||'(bilinmeyen)'}</td>
+      <td><input type="number" placeholder="0" value="${s.miktar||''}" onfocus="_ymsyHoverIndex=${i}" onblur="ymSayimSatirGuncelle(${i},'miktar',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+      <td><select onchange="ymSayimSatirGuncelle(${i},'birimId',this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${syBirimOpts(s.tip,s.kaynakId,s.birimId)}</select></td>
+      <td></td>
+    </tr>`;
+  }).join('');
+  const tipBos=document.getElementById('ymsy-bos-tip')?.value||'ara_urun';
+  html+=`<tr style="background:var(--krem)">
+    <td><select id="ymsy-bos-tip" onchange="ymSayimBosSatirTipDegis(this)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+      <option value="ara_urun"${tipBos==='ara_urun'?' selected':''}>⚙️ Yarı Mamul</option>
+      <option value="urun"${tipBos==='urun'?' selected':''}>🍽️ Ürün</option>
+    </select></td>
+    <td><select id="ymsy-bos-kalem" onchange="ymSayimBosSatirSec(this.value)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${sySecimOpts(tipBos,'')}</select></td>
+    <td colspan="2" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
+    <td></td>
+  </tr>`;
+  el.innerHTML=html;
+};
+window.ymSayimTumunuYansit=function(){
+  const gecerli=_ymSayimListesi.filter(s=>s.kaynakId&&s.miktar>0&&s.birimId);
+  if(!gecerli.length){bil('Yansıtılacak geçerli satır yok!','err');return;}
+  let hatali=0;
+  gecerli.forEach(s=>{
+    const kalem=urunler.find(u=>u.id===s.kaynakId);
+    const mikTemel=s.miktar*birimTemelCarp(s.birimId);
+    const sonuc=sayimHesaplaDagitim(s.kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',s.kaynakId);
+    if(!sonuc.length){hatali++;return;}
+    const gruplanmis={};
+    sonuc.forEach(r=>{
+      const key=r.stokId+'|'+r.ustId;
+      if(!gruplanmis[key])gruplanmis[key]={stokId:r.stokId,ustId:r.ustId,ustAd:r.ustAd,miktar:0};
+      gruplanmis[key].miktar+=r.miktar;
+    });
+    Object.values(gruplanmis).forEach(g=>{
+      let satir=sayimSatirListesi.find(x=>x.stokId===g.stokId);
+      if(!satir){
+        const stok=stoklar.find(x=>x.id===g.stokId);
+        satir={stokId:g.stokId,birimId:stok?.birim_id||'',direkt:0,kaynaklar:[]};
+        sayimSatirListesi.push(satir);
+      }
+      let kaynak=satir.kaynaklar.find(k=>k.ustId===g.ustId);
+      if(kaynak)kaynak.miktar+=g.miktar;
+      else satir.kaynaklar.push({ustId:g.ustId,ad:g.ustAd,miktar:g.miktar});
+    });
   });
-  Object.values(gruplanmis).forEach(g=>{
-    let satir=sayimSatirListesi.find(s=>s.stokId===g.stokId);
-    if(!satir){
-      const stok=stoklar.find(x=>x.id===g.stokId);
-      satir={stokId:g.stokId,birimId:stok?.birim_id||'',direkt:0,kaynaklar:[]};
-      sayimSatirListesi.push(satir);
-    }
-    let kaynak=satir.kaynaklar.find(k=>k.ustId===g.ustId);
-    if(kaynak)kaynak.miktar+=g.miktar;
-    else satir.kaynaklar.push({ustId:g.ustId,ad:g.ustAd,miktar:g.miktar});
-  });
+  const yansitilan=gecerli.length-hatali;
+  _ymSayimListesi=[];
+  // Sayım Fişi'ne (İşlem > Sayım sekmesi) geri dön
+  gp('islem');
+  document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tp-sayim')?.classList.add('active');
+  document.getElementById('islem-tab-sayim')?.classList.add('active');
+  _aktifIslemTab='sayim';
   sySatirRender();
-  modalKapat('modal-ym-sayim');
-  bil(`${kalem?.ad||''} → ${Object.keys(gruplanmis).length} hammaddeye dağıtılıp fişe yansıtıldı ✓`);
+  if(hatali)bil(`${yansitilan} kalem sayım fişine yansıtıldı. ${hatali} kalemin reçetesi tanımlı değildi, atlandı.`,'uyari');
+  else bil(`${yansitilan} kalem sayım fişine yansıtıldı ✓`);
 };
 
 // ---- Excel'den içe aktarma — sadece hammadde (stok) kabul eder ----
