@@ -424,6 +424,7 @@
     <div style="display:flex;gap:6px">
       <input type="file" id="stok-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="stokExcelSecildi(this)">
       <button id="btn-stok-excel-yukle" class="btn sm sec" onclick="document.getElementById('stok-excel-input').click()" style="display:none">📥 Excel'den Toplu Yükle</button>
+      <button id="btn-stok-cift-excel" class="btn sm sec" onclick="modalAc('modal-stok-cift-excel')" style="display:none">📥 Grup+Stok Şablonundan Yükle</button>
       <button id="btn-yeni-stok-grup" class="btn sm" onclick="stokModalAc(null,'grup')" style="display:none">+ Grup</button>
     </div>
   </div>
@@ -457,7 +458,7 @@
   <div class="card">
     <div class="tw"><table>
       <thead>
-        <tr><th>Ana Grup</th><th>Alt Grup</th><th>Alt Grup 2</th><th>Kod</th><th>Ad</th><th>Temel Birim</th><th>İşlem Birimi</th><th>Reçete Birim</th><th style="text-align:right">Mevcut Stok</th></tr>
+        <tr><th>Ana Grup</th><th>Alt Grup</th><th>Alt Grup 2</th><th>Kod</th><th>Ad</th><th>Temel Birim</th><th>İşlem Birimi</th><th>Reçete Birim</th><th style="text-align:right">Son Alım Fiyatı</th></tr>
         <tr class="filtre-satir">
           <th><input type="text" id="sl-f-ana" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
           <th><input type="text" id="sl-f-alt" oninput="renderStokListesi()" class="kolon-filtre" placeholder="Filtrele..."></th>
@@ -903,6 +904,27 @@
   <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem"><button class="btn pri sm" onclick="yeniKullaniciModalAc()">+ Yeni Kullanıcı</button></div>
   <div id="kullanici-liste"></div>
 </div>
+</div>
+
+<!-- MODAL: STOK ÇİFT EXCEL (Grup Şablonu + Stok Şablonu) -->
+<div id="modal-stok-cift-excel" class="overlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr"><h3>Grup + Stok Şablonundan Toplu Yükle</h3><button class="btn sm" onclick="modalKapat('modal-stok-cift-excel')">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">İki ayrı Excel dosyası seçin. Önce grup hiyerarşisi kurulur, sonra stok kartları ilgili gruplara eklenir. Bazı gruplarda 2. ve 3. seviye grup adı aynı olabilir (örn. "Süt Ürünleri" hem 2. seviye grup hem de kendi altındaki 3. seviye alt grup) — stok kartları bu durumda otomatik olarak 3. seviyedeki (en alttaki) gruba bağlanır.</div>
+      <div class="fg" style="margin-bottom:1rem">
+        <label>1) Grup Şablonu</label>
+        <input type="file" id="sce-grup-dosya" accept=".xlsx,.xls,.csv">
+        <div style="font-size:10px;color:var(--yazi3);margin-top:3px">Kolonlar: Kod | Ad | Üst Grup (kök gruplarda Üst Grup boş bırakılır)</div>
+      </div>
+      <div class="fg">
+        <label>2) Stok Şablonu</label>
+        <input type="file" id="sce-stok-dosya" accept=".xlsx,.xls,.csv">
+        <div style="font-size:10px;color:var(--yazi3);margin-top:3px">Kolonlar: Stok Grup | Stok Adı | Birim (Stok Grup, 1. Excel'deki bir grup adıyla birebir eşleşmeli)</div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-stok-cift-excel')">İptal</button><button class="btn pri" onclick="stokCiftExcelYukle()">Yükle</button></div>
+  </div>
 </div>
 
 <!-- MODAL: STOK -->
