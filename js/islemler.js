@@ -432,8 +432,144 @@ window.yeniFisBaslat=function(){
   }else if(_aktifIslemTab==='uretim'){
     document.getElementById('ur-miktar').value='';document.getElementById('ur-not').value='';
     bil('Yeni Üretim kaydı başlatıldı ✓');
+  }else if(_aktifIslemTab==='devir'){
+    dvSatirListesi=[];dvSatirEkle();
+    document.getElementById('dv-not').value='';
+    bil('Yeni Devir fişi başlatıldı ✓');
   }
 };
+// ===== DEVİR FİŞİ (dönemsel açılış — hammadde stoğu) =====
+// Alış'a benzer ama cari/ödeme/kasa yok — sadece o an elde olan fiziksel
+// stoğun sisteme "açılış" olarak girilmesidir. stokMiktar hesabına 'giris'
+// ile aynı şekilde (pozitif) katılır.
+let dvSatirListesi=[];
+let _dvHoverIndex=null;
+window.dvSatirSilHover=function(){if(_dvHoverIndex===null||!dvSatirListesi[_dvHoverIndex]){bil('Önce bir satır seçin','err');return;}dvSatirListesi.splice(_dvHoverIndex,1);dvSatirRender();};
+window.dvSatirEkle=function(){dvSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:''});dvSatirRender();};
+function dvSecimOpts(seciliId){
+  return '<option value="">Stok seçin...</option>'+isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false).map(k=>`<option value="${k.id}"${k.id===seciliId?' selected':''}>[${k.kod}] ${k.ad}</option>`).join('');
+}
+function dvBirimOpts(stokId,seciliId){
+  const s=stoklar.find(x=>x.id===stokId);
+  const list=s?.birim_id?birimler.filter(b=>b.id===s.birim_id||b.temel_id===s.birim_id):birimler;
+  return list.map(b=>`<option value="${b.id}"${b.id===seciliId?' selected':''}>${b.kisaltma}</option>`).join('');
+}
+function dvSatirRender(){
+  const el=document.getElementById('dv-satirlar');if(!el)return;
+  el.innerHTML=dvSatirListesi.map((s,i)=>`<tr onmouseenter="_dvHoverIndex=${i}">
+    <td><select onchange="dvSatirGuncelle(${i},'stokId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${dvSecimOpts(s.stokId)}</select></td>
+    <td><select onchange="dvSatirGuncelle(${i},'birimId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${dvBirimOpts(s.stokId,s.birimId)}</select></td>
+    <td><input type="number" placeholder="0" value="${s.miktar||''}" onblur="dvSatirHesapla(${i},'miktar',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.fiyat||''}" onblur="dvSatirHesapla(${i},'fiyat',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px"></td>
+    <td><input type="number" placeholder="0.00" value="${s.tutar||''}" onblur="dvSatirHesapla(${i},'tutar',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+    <td></td>
+  </tr>`).join('');
+  dvToplamGuncelle();
+}
+window.dvSatirGuncelle=function(i,alan,deger){
+  dvSatirListesi[i][alan]=deger;
+  const sonSatirMi=i===dvSatirListesi.length-1;
+  const doldu=alan==='stokId'&&deger;
+  if(sonSatirMi&&doldu)dvSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:''});
+  if(alan==='stokId'){
+    const s=stoklar.find(x=>x.id===deger);
+    dvSatirListesi[i].birimId=s?.varsayilan_birim_id||s?.birim_id||'';
+    if(s?.maliyet)dvSatirListesi[i].fiyat=s.maliyet.toString();
+    dvSatirRender();
+  }else if(sonSatirMi&&doldu){
+    dvSatirRender();
+  }
+};
+window.dvSatirHesapla=function(i,kaynak,val){
+  dvSatirListesi[i][kaynak]=val;const mik=parseFloat(dvSatirListesi[i].miktar)||0;const fiy=parseFloat(dvSatirListesi[i].fiyat)||0;const tut=parseFloat(dvSatirListesi[i].tutar)||0;
+  const row=document.querySelectorAll('#dv-satirlar tr')[i];if(!row)return;const inputs=row.querySelectorAll('input[type="number"]');
+  if(kaynak==='miktar'||kaynak==='fiyat'){if(mik>0&&fiy>0){const y=(mik*fiy).toFixed(2);dvSatirListesi[i].tutar=y;if(inputs[2])inputs[2].value=y;}}
+  else if(kaynak==='tutar'){if(mik>0&&tut>0){const y=(tut/mik).toFixed(2);dvSatirListesi[i].fiyat=y;if(inputs[1])inputs[1].value=y;}}
+  dvToplamGuncelle();
+};
+function dvToplamGuncelle(){const t=dvSatirListesi.reduce((s,r)=>s+parseFloat(r.tutar||0),0);const el=document.getElementById('dv-toplam');if(el)el.textContent='₺'+t.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+window.kaydetDevir=async function(){
+  const tarih=document.getElementById('dv-tarih').value;
+  const an=document.getElementById('dv-not').value;
+  if(!tarih){bil('Tarih zorunlu!','err');return;}
+  const gecerli=dvSatirListesi.filter(s=>s.stokId&&parseFloat(s.miktar)>0);
+  if(!gecerli.length){bil('En az bir satır!','err');return;}
+  const belgeId=crypto.randomUUID();
+  let n=0;
+  for(const s of gecerli){
+    const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy)||0;
+    const kart=stoklar.find(x=>x.id===s.stokId);
+    await sb.from('islemler').insert({
+      tur:'devir',tarih,stok_id:s.stokId,birim_id:s.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,
+      aciklama:`${kart?.ad||''} devir`,kat:'Devir',aciklama_not:an,belge_id:belgeId,
+      kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()+n
+    });
+    n++;
+  }
+  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+  dvSatirListesi=[];dvSatirEkle();
+  document.getElementById('dv-not').value='';
+  if(typeof renderStoklar==='function')renderStoklar();
+  if(typeof kontolUyari==='function')kontolUyari();
+  bil(`${gecerli.length} kalem devir fişi olarak kaydedildi ✓`);
+};
+
+// ---- Excel'den içe aktar (Kod | Miktar | Birim | Birim Fiyat) ----
+window.dvExcelSecildi=async function(input){
+  const file=input.files[0];if(!file)return;
+  if(typeof XLSX==='undefined'){bil('Excel okuma kütüphanesi yüklenemedi, sayfayı yenileyin.','err');input.value='';return;}
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+    let eklenen=0;const hatali=[];
+    dvSatirListesi=dvSatirListesi.filter(s=>s.stokId); // boş son satırı at, sonra geri eklenecek
+    for(const row of rows){
+      if(!row||!row.length)continue;
+      const kodRaw=row[0];
+      const kod=(kodRaw===undefined||kodRaw===null)?'':String(kodRaw).trim();
+      if(!kod||kod.toLowerCase()==='kod')continue;
+      const miktar=parseFloat(row[1]);
+      if(!(miktar>0)){hatali.push(`${kod} (miktar geçersiz)`);continue;}
+      const birimKisa=(row[2]===undefined||row[2]===null)?'':String(row[2]).trim().toLowerCase();
+      const fiyat=parseFloat(row[3])||0;
+      const stok=stoklar.find(s=>s.kod===kod&&s.tip==='stok');
+      if(!stok){hatali.push(`${kod} (kod bulunamadı)`);continue;}
+      const tbId=stok.birim_id;
+      const uygunBirimler=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
+      let birim=birimKisa?uygunBirimler.find(b=>(b.kisaltma||'').toLowerCase()===birimKisa):null;
+      if(!birim)birim=birimler.find(b=>b.id===tbId)||uygunBirimler[0];
+      const tutar=fiyat>0?+(miktar*fiyat).toFixed(2):'';
+      dvSatirListesi.push({stokId:stok.id,birimId:birim?.id||'',miktar,fiyat:fiyat||'',tutar});
+      eklenen++;
+    }
+    dvSatirEkle(); // boş satırı geri ekle (render'ı da tetikler)
+    if(hatali.length)bil(`${eklenen} satır eklendi. ${hatali.length} satır atlandı: ${hatali.slice(0,4).join(', ')}${hatali.length>4?'...':''}`,'uyari');
+    else if(eklenen)bil(`${eklenen} satır Excel'den eklendi ✓`);
+    else bil('Excel dosyasında geçerli satır bulunamadı.','err');
+  }catch(e){
+    bil('Excel okunamadı: '+e.message,'err');
+  }
+  input.value='';
+};
+
+// ---- Tablodaki mevcut satırları Excel'e aktar ----
+window.dvExcelIndir=function(){
+  const gecerli=dvSatirListesi.filter(s=>s.stokId);
+  if(!gecerli.length){bil('İndirilecek veri yok','err');return;}
+  const data=gecerli.map(s=>{
+    const stok=stoklar.find(x=>x.id===s.stokId);
+    const birim=birimler.find(b=>b.id===s.birimId);
+    return {'Stok Adı':stok?.ad||'','Birim':birim?.kisaltma||'','Miktar':parseFloat(s.miktar)||0,'Birim Fiyat':parseFloat(s.fiyat)||0,'Tutar':parseFloat(s.tutar)||0};
+  });
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Devir Fişi');
+  XLSX.writeFile(wb,'devir_fisi.xlsx');
+};
+
 window.hmSatirEkle=function(){
   hmSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',cari_id:'',odeme_tipi:'pesin',manuel:''});
   hmSatirRender();
