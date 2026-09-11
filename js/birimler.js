@@ -64,29 +64,33 @@ window.birimSil=async function(id){
   const {data}=await sb.from('birimler').select('*');if(data)birimler=data;renderBirimler();doldurBirimSecleri();
 };
 function renderBirimler(){
-  const temel=birimler.filter(b=>b.temel!==false&&b.temel!=='false');const alt=birimler.filter(b=>b.temel===false||b.temel==='false');
-  let html='';
-  temel.forEach(t=>{const altlar=alt.filter(a=>a.temel_id===t.id);
-    html+=`<div style="margin-bottom:.6rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--krem2);border-radius:6px;font-size:12px;font-weight:500">
-        <span>${t.ad} <span style="color:var(--yazi3)">(${t.kisaltma})</span></span>
-        <div style="display:flex;gap:4px">
-          <button class="btn sm" onclick="birimGoruntule('${t.id}')">👁</button><button class="btn sm" onclick="birimDuzenleAc('${t.id}')">✏</button>
-          <button class="btn ghost sm" onclick="birimSil('${t.id}')">Sil</button>
-        </div>
+  renderTemelBirimler();
+  renderAltBirimler();
+}
+function renderTemelBirimler(){
+  const el=document.getElementById('temel-birim-liste');if(!el)return;
+  const temel=birimler.filter(b=>b.temel!==false&&b.temel!=='false');
+  el.innerHTML=temel.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--krem2);font-size:13px;font-weight:500">
+    <span>${t.ad} <span style="color:var(--yazi3);font-weight:400">(${t.kisaltma}) — ${t.tur||''}</span></span>
+    <div style="display:flex;gap:4px">
+      <button class="btn sm" onclick="birimGoruntule('${t.id}')">👁</button><button class="btn sm" onclick="birimDuzenleAc('${t.id}')">✏</button>
+      <button class="btn ghost sm" onclick="birimSil('${t.id}')">Sil</button>
+    </div>
+  </div>`).join('')||'<div class="bos">Henüz temel birim yok</div>';
+}
+function renderAltBirimler(){
+  const el=document.getElementById('alt-birim-liste');if(!el)return;
+  const alt=birimler.filter(b=>b.temel===false||b.temel==='false');
+  el.innerHTML=alt.map(a=>{
+    const t=birimler.find(x=>x.id===a.temel_id);
+    const c=parseFloat(a.carpan)||1;
+    const aciklama=c>=1?`1 ${a.kisaltma} = ${c} ${t?.kisaltma||''}`:`1 ${t?.kisaltma||''} = ${+(1/c).toFixed(6)} ${a.kisaltma}`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--krem2);font-size:13px">
+      <span>${a.ad} <span style="color:var(--yazi3)">(${a.kisaltma})</span> — <span style="color:var(--yazi2)">${aciklama}</span></span>
+      <div style="display:flex;gap:4px">
+        <button class="btn sm" onclick="birimGoruntule('${a.id}')">👁</button><button class="btn sm" onclick="birimDuzenleAc('${a.id}')">✏</button>
+        <button class="btn ghost sm" onclick="birimSil('${a.id}')">Sil</button>
       </div>
-      ${altlar.map(a=>{
-        const c=parseFloat(a.carpan)||1;
-        const aciklama=c>=1?`1 ${a.kisaltma} = ${c} ${t.kisaltma}`:`1 ${t.kisaltma} = ${+(1/c).toFixed(6)} ${a.kisaltma}`;
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px 5px 22px;font-size:11px;color:var(--yazi2);border-bottom:1px solid var(--krem2)">
-        <span>↳ ${a.ad} <span style="color:var(--yazi3)">(${a.kisaltma})</span> — ${aciklama}</span>
-        <div style="display:flex;gap:4px">
-          <button class="btn sm" onclick="birimGoruntule('${a.id}')">👁</button><button class="btn sm" onclick="birimDuzenleAc('${a.id}')">✏</button>
-          <button class="btn ghost sm" onclick="birimSil('${a.id}')">Sil</button>
-        </div>
-      </div>`;
-      }).join('')}
     </div>`;
-  });
-  document.getElementById('birim-liste').innerHTML=html||'<div class="bos">Henüz birim yok</div>';
+  }).join('')||'<div class="bos">Henüz alt birim yok</div>';
 }
