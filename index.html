@@ -121,6 +121,7 @@
       <button onclick="gp('kasalar')">Kasalar</button>
       <button onclick="gp('cari')">Cari & Personel Kartları</button>
       <button onclick="gp('birimler')">Birimler</button>
+      <button onclick="gp('alt-birimler')">Alt Birimler</button>
       <button onclick="gp('merkezler')">Masraf & Gelir Merkezleri</button>
       <button onclick="gp('depolar')">Depolar</button>
       <button id="nav-isyerleri" onclick="gp('isyerleri')" style="display:none">Şirket & İşyerleri</button>
@@ -570,12 +571,19 @@
     </table></div>
   </div>
 </div>
-<!-- BİRİMLER -->
+<!-- BİRİMLER (sadece temel birimler) -->
 <div id="birimler" class="page">
   <div class="card"><div class="card-title">Temel Birim Ekle</div>
     <div class="fgrid c3"><div class="fg"><label>Birim Adı</label><input type="text" id="tb-ad" placeholder="kg, adet..."></div><div class="fg"><label>Kısaltma</label><input type="text" id="tb-kisaltma" placeholder="kg, ad..."></div><div class="fg"><label>Tür</label><select id="tb-tur"><option value="agirlik">Ağırlık</option><option value="hacim">Hacim</option><option value="adet">Adet</option><option value="diger">Diğer</option></select></div></div>
     <div class="btn-row"><button class="btn pri" onclick="kaydetTemelBirim()">Temel Birim Ekle</button></div>
   </div>
+  <div class="card"><div class="card-title">Tanımlı Temel Birimler</div>
+    <div id="temel-birim-liste"></div>
+  </div>
+</div>
+
+<!-- ALT BİRİMLER (çeviriler) -->
+<div id="alt-birimler" class="page">
   <div class="card"><div class="card-title">Alt Birim Ekle</div>
     <div class="fgrid c2"><div class="fg"><label>Alt Birim Adı</label><input type="text" id="ab-ad" placeholder="koli, gram..."></div><div class="fg"><label>Temel Birim</label><select id="ab-temel"><option value="">Seçin...</option></select></div></div>
     <div class="fgrid c3">
@@ -586,8 +594,8 @@
     <div style="font-size:11px;color:var(--yazi3);margin:-4px 0 8px">Örnek: 1 koli = 10 kg ise İşlem=×, Katsayı=10 seçin. 1 kg = 1000 gr ise (Gram alt birimken) İşlem=÷, Katsayı=1000 seçin.</div>
     <div class="btn-row"><button class="btn sec" onclick="kaydetAltBirim()">Alt Birim Ekle</button></div>
   </div>
-  <div class="card"><div class="card-title">Tanımlı Birimler</div>
-    <div id="birim-liste"></div>
+  <div class="card"><div class="card-title">Tanımlı Alt Birimler</div>
+    <div id="alt-birim-liste"></div>
   </div>
 </div>
 
