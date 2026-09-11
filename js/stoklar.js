@@ -33,8 +33,25 @@ window.stokExcelSecildi=async function(input){
     const wb=XLSX.read(data,{type:'array'});
     const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+
+    // ---- 1. AŞAMA: SADECE DOĞRULAMA — henüz gerçek listeye/DB'ye HİÇBİR ŞEY YAZILMAZ ----
+    // Tüm grup/kart oluşturma işlemi, gerçek "stoklar" dizisinin bir KOPYASI
+    // üzerinde simüle edilir. Tek bir satırda bile hata varsa, hiçbir şey
+    // kaydedilmeden (tam ya da hiç) işlem durur.
+    const simKapsam=stoklar.slice();
     const seviye1Yeni=[],seviye2Yeni=[],seviye3Yeni=[],stokYeni=[];
     const hatali=[];
+    function simGrupBulVeyaOlustur(ad,ustId,hedefListe){
+      ad=(ad||'').trim();if(!ad)return null;
+      const mevcut=simKapsam.find(s=>s.tip==='grup'&&(s.ust_id||null)===(ustId||null)&&(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===ad.toLowerCase());
+      if(mevcut)return mevcut;
+      const ust=ustId?simKapsam.find(s=>s.id===ustId):null;
+      const kod=kodOlusturHiyerarsik(simKapsam,ustId,'grup');
+      const yeni={id:uid(),ad,tip:'grup',kod,ust_id:ustId||null,seviye:ust?(ust.seviye||1)+1:1,isyeri_id:isyeriId,aktif:true};
+      simKapsam.push(yeni);
+      hedefListe.push(yeni);
+      return yeni;
+    }
     for(const row of rows){
       if(!row||!row.length)continue;
       const anaGrup=(row[0]===undefined||row[0]===null)?'':String(row[0]).trim();
@@ -46,18 +63,32 @@ window.stokExcelSecildi=async function(input){
       if(!altGrup1||!altGrup2||!stokAdi||!birimKisa){hatali.push(`${stokAdi||anaGrup} (Ana Grup/Alt Grup 1/Alt Grup 2/Stok Adı/Birim zorunlu)`);continue;}
       const birim=birimler.find(b=>b.temel!==false&&(b.kisaltma||'').toLowerCase()===birimKisa);
       if(!birim){hatali.push(`${stokAdi} (birim "${birimKisa}" bulunamadı — temel birim olmalı: kg, lt, adet vb.)`);continue;}
-      const ana=stokGrupBulVeyaOlustur(anaGrup,null,isyeriId,seviye1Yeni);
-      const alt1=stokGrupBulVeyaOlustur(altGrup1,ana.id,isyeriId,seviye2Yeni);
-      const alt2=stokGrupBulVeyaOlustur(altGrup2,alt1.id,isyeriId,seviye3Yeni);
+      const ana=simGrupBulVeyaOlustur(anaGrup,null,seviye1Yeni);
+      const alt1=simGrupBulVeyaOlustur(altGrup1,ana.id,seviye2Yeni);
+      const alt2=simGrupBulVeyaOlustur(altGrup2,alt1.id,seviye3Yeni);
       if((alt2.seviye||1)!==3){hatali.push(`${stokAdi} (grup zinciri hatalı)`);continue;}
-      const dupAd=stoklar.find(s=>(s.isyeri_id||null)===isyeriId&&(s.seviye||1)===4&&s.ad.trim().toLowerCase()===stokAdi.toLowerCase());
+      const dupAd=simKapsam.find(s=>(s.isyeri_id||null)===isyeriId&&(s.seviye||1)===4&&s.ad.trim().toLowerCase()===stokAdi.toLowerCase());
       if(dupAd){hatali.push(`${stokAdi} (bu isimde zaten bir kayıt var)`);continue;}
-      const kod=kodOlusturStok(alt2.id,'stok');
+      const kod=kodOlusturHiyerarsik(simKapsam,alt2.id,'stok');
       const yeniStok={id:uid(),ad:stokAdi,kod,tip:'stok',ust_id:alt2.id,seviye:4,isyeri_id:isyeriId,birim_id:birim.id,baslangic:0,min_stok:0,maliyet:0,aciklama:null,aktif:true};
-      stoklar.push(yeniStok);
+      simKapsam.push(yeniStok);
       stokYeni.push(yeniStok);
     }
-    // Seviye seviye ekle — üst gruplar veritabanına önce yazılmalı (foreign key)
+
+    // ---- Hata varsa: HİÇBİR ŞEY KAYDETME, sadece raporla ----
+    if(hatali.length){
+      bil(`❌ Yükleme iptal edildi — hiçbir satır kaydedilmedi. ${hatali.length} satırda hata var: ${hatali.slice(0,10).join(', ')}${hatali.length>10?` (+${hatali.length-10} satır daha)`:''}`,'err');
+      input.value='';
+      return;
+    }
+    if(!stokYeni.length){
+      bil('Excel dosyasında geçerli satır bulunamadı.','err');
+      input.value='';
+      return;
+    }
+
+    // ---- 2. AŞAMA: HER ŞEY GEÇERLİ — şimdi gerçekten kaydet ----
+    stoklar.push(...seviye1Yeni,...seviye2Yeni,...seviye3Yeni,...stokYeni);
     if(seviye1Yeni.length)await sb.from('stoklar').insert(seviye1Yeni);
     if(seviye2Yeni.length)await sb.from('stoklar').insert(seviye2Yeni);
     if(seviye3Yeni.length)await sb.from('stoklar').insert(seviye3Yeni);
@@ -65,13 +96,133 @@ window.stokExcelSecildi=async function(input){
     const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
     renderStoklar();doldurStokFil();kontolUyari();
     const grupSayisi=seviye1Yeni.length+seviye2Yeni.length+seviye3Yeni.length;
-    if(hatali.length)bil(`${stokYeni.length} stok kartı (+${grupSayisi} yeni grup) eklendi. ${hatali.length} satır atlandı: ${hatali.slice(0,4).join(', ')}${hatali.length>4?'...':''}`,'uyari');
-    else if(stokYeni.length)bil(`${stokYeni.length} stok kartı, ${grupSayisi} yeni grupla birlikte eklendi ✓`);
-    else bil('Excel dosyasında geçerli satır bulunamadı.','err');
+    bil(`✓ ${stokYeni.length} stok kartı, ${grupSayisi} yeni grupla birlikte eklendi`);
   }catch(e){
     bil('Excel okunamadı: '+e.message,'err');
   }
   input.value='';
+};
+
+// ===== ÇİFT EXCEL (Grup Şablonu + Stok Şablonu) TOPLU YÜKLEME =====
+// Dosya 1 (Grup Şablonu): Kod | Ad | Üst Grup — her satır bir grup tanımlar,
+// "Üst Grup" o grubun BAĞLI OLDUĞU üst grubun ADINI taşır (kök gruplarda boş).
+// Kod sütunu kullanılmaz (kendi hiyerarşik kodumuzu üretiriz). Derinlik sabit
+// değildir — satırlar hangi sırada olursa olsun, üst grubu henüz oluşmamış
+// satırlar bir sonraki tura bırakılıp tekrar denenir.
+// Dosya 2 (Stok Şablonu): Stok Grup | Stok Adı | Birim — "Stok Grup", Dosya
+// 1'deki bir grup adıyla birebir eşleşmeli; stok kartı SADECE 3. seviyedeki
+// gruba eklenir (sistemin genel kuralı budur). Bazı gruplarda 2. ve 3. seviye
+// adı aynı olabilir (örn. "Süt Ürünleri" → kendi altında yine "Süt Ürünleri"
+// adlı bir 3. seviye alt grup) — böyle durumlarda isim aynı gruba iki kez
+// (2. ve 3. seviyede) karşılık geldiği için, eşleştirme otomatik olarak en
+// derindeki (3. seviye) gruba gider.
+window.stokCiftExcelYukle=async function(){
+  const grupDosya=document.getElementById('sce-grup-dosya').files[0];
+  const stokDosya=document.getElementById('sce-stok-dosya').files[0];
+  if(!grupDosya||!stokDosya){bil('İki dosyayı da seçin!','err');return;}
+  if(typeof XLSX==='undefined'){bil('Excel okuma kütüphanesi yüklenemedi, sayfayı yenileyin.','err');return;}
+  const isyeriId=aktifIsyeri?.id||null;
+  try{
+    // Tüm işlem, gerçek "stoklar" dizisinin bir KOPYASI üzerinde simüle
+    // edilir. İki dosyadan herhangi birinde tek bir hata bile varsa hiçbir
+    // şey kaydedilmez (tam ya da hiç).
+    const simKapsam=stoklar.slice();
+
+    // ---- 1) GRUP ŞABLONUNU OKU VE AĞACI SİMÜLE ET ----
+    const gData=await grupDosya.arrayBuffer();
+    const gWb=XLSX.read(gData,{type:'array'});
+    const gWs=gWb.Sheets[gWb.SheetNames[0]];
+    const gRows=XLSX.utils.sheet_to_json(gWs,{header:1,raw:true});
+    let kalan=[];
+    for(const row of gRows){
+      if(!row||!row.length)continue;
+      const ad=(row[1]===undefined||row[1]===null)?'':String(row[1]).trim();
+      if(!ad||ad.toLowerCase()==='ad')continue; // başlık veya boş satır
+      const ustAd=(row[2]===undefined||row[2]===null)?'':String(row[2]).trim();
+      kalan.push({ad,ustAd});
+    }
+    const olusanGruplar={};
+    const seviyeYeni=[[],[],[]];
+    let ilerleme=true;
+    const hatali=[];
+    while(kalan.length&&ilerleme){
+      ilerleme=false;
+      const beklemede=[];
+      for(const satir of kalan){
+        let ustId=null,ustSeviye=0;
+        if(satir.ustAd){
+          const anahtar=satir.ustAd.toLowerCase();
+          const ustKayit=olusanGruplar[anahtar]||simKapsam.find(s=>s.tip==='grup'&&(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===anahtar);
+          if(!ustKayit){beklemede.push(satir);continue;}
+          ustId=ustKayit.id;ustSeviye=ustKayit.seviye||1;
+        }
+        if((ustId?ustSeviye:0)>=3){hatali.push(`${satir.ad} (üst grup "${satir.ustAd}" zaten 3. seviyede, daha derin grup açılamaz)`);ilerleme=true;continue;}
+        let kayit=simKapsam.find(s=>s.tip==='grup'&&(s.ust_id||null)===(ustId||null)&&(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===satir.ad.toLowerCase());
+        if(!kayit){
+          const seviye=ustId?ustSeviye+1:1;
+          const kod=kodOlusturHiyerarsik(simKapsam,ustId,'grup');
+          kayit={id:uid(),ad:satir.ad,tip:'grup',kod,ust_id:ustId,seviye,isyeri_id:isyeriId,aktif:true};
+          simKapsam.push(kayit);
+          seviyeYeni[seviye-1].push(kayit);
+        }
+        olusanGruplar[satir.ad.toLowerCase()]=kayit;
+        ilerleme=true;
+      }
+      kalan=beklemede;
+    }
+    kalan.forEach(satir=>hatali.push(`${satir.ad} (üst grup "${satir.ustAd}" bulunamadı)`));
+
+    // ---- 2) STOK ŞABLONUNU OKU VE KARTLARI SİMÜLE ET ----
+    const sData=await stokDosya.arrayBuffer();
+    const sWb=XLSX.read(sData,{type:'array'});
+    const sWs=sWb.Sheets[sWb.SheetNames[0]];
+    const sRows=XLSX.utils.sheet_to_json(sWs,{header:1,raw:true});
+    const stokYeni=[];
+    for(const row of sRows){
+      if(!row||!row.length)continue;
+      const grupAdi=(row[0]===undefined||row[0]===null)?'':String(row[0]).trim();
+      if(!grupAdi||grupAdi.toLowerCase()==='stok grup')continue;
+      const stokAdi=(row[1]===undefined||row[1]===null)?'':String(row[1]).trim();
+      const birimKisa=(row[2]===undefined||row[2]===null)?'':String(row[2]).trim().toLowerCase();
+      if(!stokAdi||!birimKisa){hatali.push(`${stokAdi||grupAdi} (Stok Adı/Birim eksik)`);continue;}
+      const grup=olusanGruplar[grupAdi.toLowerCase()]||simKapsam.find(s=>s.tip==='grup'&&(s.isyeri_id||null)===isyeriId&&s.ad.trim().toLowerCase()===grupAdi.toLowerCase());
+      if(!grup){hatali.push(`${stokAdi} (grup "${grupAdi}" bulunamadı — Grup Şablonu'nda tanımlı mı kontrol edin)`);continue;}
+      if((grup.seviye||1)!==3){hatali.push(`${stokAdi} (grup "${grupAdi}" 3. seviyede değil — bu isimde bir 3. seviye alt grup Grup Şablonu'nda eksik olabilir)`);continue;}
+      const birim=birimler.find(b=>b.temel!==false&&(b.kisaltma||'').toLowerCase()===birimKisa);
+      if(!birim){hatali.push(`${stokAdi} (birim "${birimKisa}" bulunamadı — temel birim olmalı)`);continue;}
+      const dupAd=simKapsam.find(s=>(s.isyeri_id||null)===isyeriId&&(s.seviye||1)===((grup.seviye||1)+1)&&s.ad.trim().toLowerCase()===stokAdi.toLowerCase());
+      if(dupAd){hatali.push(`${stokAdi} (bu isimde zaten bir kayıt var)`);continue;}
+      const kod=kodOlusturHiyerarsik(simKapsam,grup.id,'stok');
+      const yeniStok={id:uid(),ad:stokAdi,kod,tip:'stok',ust_id:grup.id,seviye:(grup.seviye||1)+1,isyeri_id:isyeriId,birim_id:birim.id,baslangic:0,min_stok:0,maliyet:0,aciklama:null,aktif:true};
+      simKapsam.push(yeniStok);
+      stokYeni.push(yeniStok);
+    }
+
+    // ---- Hata varsa: HİÇBİR ŞEY KAYDETME, sadece raporla ----
+    if(hatali.length){
+      bil(`❌ Yükleme iptal edildi — hiçbir satır kaydedilmedi. ${hatali.length} satırda hata var: ${hatali.slice(0,10).join(', ')}${hatali.length>10?` (+${hatali.length-10} satır daha)`:''}`,'err');
+      return;
+    }
+    if(!stokYeni.length){
+      bil('Excel dosyasında geçerli satır bulunamadı.','err');
+      return;
+    }
+
+    // ---- Her şey geçerli — şimdi gerçekten kaydet ----
+    stoklar.push(...seviyeYeni[0],...seviyeYeni[1],...seviyeYeni[2],...stokYeni);
+    for(const liste of seviyeYeni){if(liste.length)await sb.from('stoklar').insert(liste);}
+    if(stokYeni.length)await sb.from('stoklar').insert(stokYeni);
+
+    const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
+    renderStoklar();if(typeof kontolUyari==='function')kontolUyari();
+    modalKapat('modal-stok-cift-excel');
+    document.getElementById('sce-grup-dosya').value='';document.getElementById('sce-stok-dosya').value='';
+
+    const grupSayisi=seviyeYeni.reduce((a,l)=>a+l.length,0);
+    bil(`✓ ${stokYeni.length} stok kartı, ${grupSayisi} grupla birlikte eklendi`);
+  }catch(e){
+    bil('Excel okunamadı: '+e.message,'err');
+  }
 };
 
 // Temel birim seçilince: hem işlem birimi hem de reçete birimi listesini,
