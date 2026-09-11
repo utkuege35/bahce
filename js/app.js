@@ -96,7 +96,7 @@ function uygulamaAc(){
       'islem':'gp(\'islem\')', 'islem_liste':'gp(\'islem-liste\')',
       'stok':'gp(\'stok\')', 'stok_liste':'gp(\'stok-liste\')', 'urunler':'gp(\'urunler\')', 'urun_liste':'gp(\'urun-liste\')', 'yarimamuller':'gp(\'yarimamuller\')', 'ym_liste':'gp(\'ym-liste\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
-      'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')',
+      'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')', 'alt_birimler':'gp(\'alt-birimler\')',
       'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'recete_normalize':'gp(\'recete-normalize\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')'
     };
     const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
