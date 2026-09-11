@@ -372,6 +372,30 @@ window.stTurDegis=function(){
   stSatirRender();
 };
 
+// "+ Yeni Fiş" — o an aktif olan sekmenin (Alış/Satış/Sayım) satırlarını
+// temizleyip sıfırdan boş bir fiş başlatır. Tarih/depo gibi seçimlere
+// dokunmaz (art arda aynı gün/depo için birden çok fiş girmek kolay olsun diye).
+window.yeniFisBaslat=function(){
+  if(_aktifIslemTab==='hammadde'){
+    hmSatirListesi=[];hmSatirRender();hmSatirEkle();
+    document.getElementById('hm-belge').value='';document.getElementById('hm-not').value='';
+    bil('Yeni Alış fişi başlatıldı ✓');
+  }else if(_aktifIslemTab==='satis'){
+    stSatirListesi=[];stSatirRender();stSatirEkle();
+    document.getElementById('st-belge').value='';document.getElementById('st-not').value='';
+    bil('Yeni Satış fişi başlatıldı ✓');
+  }else if(_aktifIslemTab==='sayim'){
+    sayimSatirListesi=[];sySatirRender();
+    document.getElementById('sy-not').value='';
+    bil('Yeni Sayım fişi başlatıldı ✓');
+  }else if(_aktifIslemTab==='kasa'){
+    document.getElementById('ks-tutar').value='';document.getElementById('ks-aciklama').value='';
+    bil('Yeni Kasa işlemi başlatıldı ✓');
+  }else if(_aktifIslemTab==='uretim'){
+    document.getElementById('ur-miktar').value='';document.getElementById('ur-not').value='';
+    bil('Yeni Üretim kaydı başlatıldı ✓');
+  }
+};
 window.hmSatirEkle=function(){
   hmSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',cari_id:'',odeme_tipi:'pesin',manuel:''});
   hmSatirRender();
