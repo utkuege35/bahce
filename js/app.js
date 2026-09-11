@@ -273,6 +273,7 @@ window.gp=function(id){
     if(typeof doldurSayimRaporDepoSecimi==='function')doldurSayimRaporDepoSecimi();
     if(typeof renderSayimRaporu==='function')renderSayimRaporu();
   }
+  if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
 };
 let _aktifIslemTab='hammadde';
 window.islemTab=function(id,btn){document.querySelectorAll('#islem .tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#islem .tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tp-'+id)?.classList.add('active');btn.classList.add('active');_aktifIslemTab=id;};
