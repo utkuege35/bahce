@@ -34,7 +34,6 @@ const renkMap={turuncu:'var(--turuncu)',mavi:'var(--mavi)',mor:'var(--mor)',sari
 // İşyeri filtresi: isyeri_id eşleşen VEYA null olanlar (genel kayıtlar)
 function isyeriFiltre(liste){
   if(!aktifIsyeri)return liste;
-  if(aktifKullanici?.rol==='admin')return liste; // admin hepsini görür, filtre uygulanmaz
   return liste.filter(x=>!x.isyeri_id||x.isyeri_id===aktifIsyeri.id);
 }
 
