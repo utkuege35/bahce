@@ -59,14 +59,14 @@ async function isyeriSecimAc(){
     const sirket=sirketler.find(s=>s.id===iy.sirket_id);
     return `<button onclick="isyeriSec('${iy.id}')" style="
       width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:10px;
-      background:var(--beyaz);cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;
+      background:var(--beyaz);color:var(--yazi);cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;
       transition:all .15s;display:flex;align-items:center;gap:12px
     " onmouseover="this.style.borderColor='var(--yesil)';this.style.background='var(--yesil-cok-ac)'"
        onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--beyaz)'">
       <div style="width:40px;height:40px;border-radius:10px;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏢</div>
       <div>
-        <div style="font-size:14px;font-weight:600;color:var(--yazi1)">${iy.ad}</div>
-        <div style="font-size:11px;color:var(--yazi3);margin-top:2px">${sirket?sirket.ad:''} ${iy.kod?'· '+iy.kod:''}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--yazi)">${iy.ad}</div>
+        <div style="font-size:11px;color:var(--yazi2);margin-top:2px">${sirket?sirket.ad:''} ${iy.kod?'· '+iy.kod:''}</div>
       </div>
     </button>`;
   }).join('');
