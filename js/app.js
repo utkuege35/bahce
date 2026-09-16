@@ -84,7 +84,7 @@ function uygulamaAc(){
     document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     document.getElementById('nav-yetkiler')?.style && (document.getElementById('nav-yetkiler').style.display='');
     document.getElementById('nav-kul-yetkiler')?.style && (document.getElementById('nav-kul-yetkiler').style.display='');
-    ['btn-yeni-stok-grup','btn-yeni-stok','btn-stok-excel-yukle','btn-yeni-urun-grup','btn-yeni-urun','btn-yeni-yarimamul-grup','btn-yeni-yarimamul'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
+    ['btn-yeni-stok-grup','btn-yeni-stok','btn-stok-excel-yukle','btn-stok-cift-excel','btn-yeni-urun-grup','btn-yeni-urun','btn-yeni-yarimamul-grup','btn-yeni-yarimamul'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
     // Kullanıcılar ve Şirket&İşyerleri butonlarını gizle
     document.getElementById('nav-kullanicilar').style.display='none';
@@ -124,8 +124,8 @@ function uygulamaAc(){
 
 async function baslat(){
   document.getElementById('sync').textContent='⟳';document.getElementById('sync').className='sync load';
-  // İşyeri bazlı filtre — admin ise tüm işyerlerini çek, değilse sadece aktif işyerini
-  const isyFil=q=>aktifKullanici?.rol==='admin'?q:q.or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`);
+  // İşyeri bazlı filtre — herkes (admin dahil) sadece aktif işyerini çeker
+  const isyFil=q=>q.or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`);
   const [b,s,u,ub,k,il,mz,gk,ilog,ks,dp]=await Promise.all([
     sb.from('birimler').select('*'),
     isyFil(sb.from('stoklar').select('*')).order('kod'),
@@ -143,9 +143,7 @@ async function baslat(){
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)islemLoglari=il.data;
   if(mz.data)merkezler=mz.data;if(gk.data)giderKalemleri=gk.data;if(ilog.data)islemLoglari=ilog.data;
   if(ks.data)kasalar_list=ks.data;if(dp.data)depolar=dp.data;
-  const islemQ=aktifKullanici?.rol==='admin'
-    ?sb.from('islemler').select('*').order('ts',{ascending:false})
-    :sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
+  const islemQ=sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
   // Yetki tablolarını yükle
   const [{data:ysData},{data:kysData}] = await Promise.all([
     sb.from('yetki_sablonlari').select('*').eq('aktif',true),
@@ -158,13 +156,13 @@ async function baslat(){
   if(iData)islemler=iData.filter(i=>!i.silindi);
   document.getElementById('sync').textContent='● Canlı';document.getElementById('sync').className='sync ok';
   const stokK=sb.channel('stoklar-ch').on('postgres_changes',{event:'*',schema:'public',table:'stoklar'},async()=>{
-    const {data}=await sb.from('stoklar').select('*').order('kod');if(data){stoklar=data;renderStoklar();kontolUyari();}
+    const {data}=await isyFil(sb.from('stoklar').select('*')).order('kod');if(data){stoklar=data;renderStoklar();kontolUyari();}
   }).subscribe();
   const urunK=sb.channel('urunler-ch').on('postgres_changes',{event:'*',schema:'public',table:'urunler'},async()=>{
-    const {data}=await sb.from('urunler').select('*').order('kod');if(data){urunler=data;renderUrunler();}
+    const {data}=await isyFil(sb.from('urunler').select('*')).order('kod');if(data){urunler=data;renderUrunler();}
   }).subscribe();
   const islemK=sb.channel('islemler-ch').on('postgres_changes',{event:'*',schema:'public',table:'islemler'},async()=>{
-    const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
+    const {data}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
     if(data){islemler=data.filter(i=>!i.silindi);renderPanel();kontolUyari();}
   }).subscribe();
   realtimeKanallar=[stokK,urunK,islemK];
