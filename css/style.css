@@ -156,6 +156,7 @@ tr:hover td{background:var(--krem)}
 .tree-kod{font-size:10px;color:var(--yazi3);font-family:monospace;background:rgba(0,0,0,.06);padding:1px 6px;border-radius:4px;flex-shrink:0}
 .tree-actions{display:flex;gap:3px;margin-left:auto;opacity:0;transition:opacity .15s;flex-shrink:0}
 .tree-row:hover .tree-actions{opacity:1}
+.grup-satir:hover .tree-actions{opacity:1}
 .tip-chip{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;flex-shrink:0}
 .tip-stok{background:var(--yesil-cok-ac);color:var(--yesil)}
 .tip-grup{background:var(--krem2);color:var(--yazi2);border:1px solid var(--border)}
