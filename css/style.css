@@ -105,6 +105,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 }
 .page{display:none;padding:1rem 1.5rem;max-width:980px;margin:0 auto;padding-bottom:2rem;margin-left:150px}
 @media(max-width:768px){.page{margin-left:0;padding:.85rem}}
+/* Geniş tablolu düz liste ekranları — sağda boşluk kalmasın, kolonlar sıkışmasın */
+#stok-liste.page,#urun-liste.page,#ym-liste.page{max-width:1500px}
 .page.active{display:block}
 .uyari-bant{background:var(--sari-ac);border-bottom:1px solid #ffd60a33;padding:.45rem 1.25rem;display:none;cursor:pointer;margin-left:150px}
 @media(max-width:768px){.uyari-bant{margin-left:0}}
