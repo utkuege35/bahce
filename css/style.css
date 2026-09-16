@@ -11,6 +11,7 @@ body.dark{
 }
 body.dark .hdr{background:#0d1825}
 body.dark #giris-wrap{background:#0d1825}
+body.dark #isyeri-wrap{background:#0d1825}
 body.dark .card{box-shadow:0 2px 12px rgba(0,0,0,.4)}
 body.dark .tree-row:hover{background:rgba(91,158,201,.08)!important}
 body.dark input,body.dark select,body.dark textarea{background:var(--beyaz)!important;color:var(--yazi)!important;border-color:var(--border)!important}
