@@ -358,12 +358,43 @@ window.sySatirGuncelle=function(i,val){
 };
 window.sySatirSil=function(i){sayimSatirListesi.splice(i,1);sySatirRender();};
 
+// Aynı gün + aynı depo için zaten bir sayım fişi var mı kontrol eder.
+// Varsa uyarı bandı gösterir ve "Sayımı Kaydet" butonunu devre dışı bırakır
+// — sistem bir depoya bir günde SADECE TEK sayım fişine izin verir.
+window.syFisKontrol=function(){
+  const tarih=document.getElementById('sy-tarih')?.value;
+  const depoId=document.getElementById('sy-depo')?.value;
+  const bant=document.getElementById('sy-uyari-bant');
+  const btn=document.getElementById('btn-sayim-kaydet');
+  if(!bant||!btn)return false;
+  if(!tarih||!depoId){bant.style.display='none';btn.disabled=false;btn.style.opacity='';return false;}
+  const mevcut=islemler.some(i=>i.tur==='sayim'&&i.tarih===tarih&&i.depo_id===depoId);
+  if(mevcut){
+    const depo=depolar.find(d=>d.id===depoId);
+    bant.textContent=`⚠️ Bu depo (${depo?.ad||''}) için ${tarih} tarihinde zaten bir sayım fişi var. Aynı depoya, aynı gün içinde ikinci bir sayım fişi girilemez.`;
+    bant.style.display='block';
+    btn.disabled=true;btn.style.opacity='.5';btn.style.cursor='not-allowed';
+    return true;
+  }
+  bant.style.display='none';btn.disabled=false;btn.style.opacity='';btn.style.cursor='';
+  return false;
+};
+
 window.kaydetSayim=async function(){
   const tarih=document.getElementById('sy-tarih').value;
   const depoId=document.getElementById('sy-depo').value;
   const an=document.getElementById('sy-not').value;
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   if(!depoId){bil('Depo seçimi zorunlu!','err');return;}
+  // Aynı gün + aynı depo için zaten bir sayım fişi varsa KAYDETMEYİ REDDET —
+  // bir depoya bir günde sadece tek sayım fişi girilebilir. Hammadde veya
+  // YM/Ürün sayımı fark etmeksizin, tüm kalemler tek oturumda girilip TEK
+  // seferde kaydedilmeli.
+  if(islemler.some(i=>i.tur==='sayim'&&i.tarih===tarih&&i.depo_id===depoId)){
+    bil('Bu depo için bu tarihte zaten bir sayım fişi var! Aynı depoya aynı gün ikinci fiş girilemez.','err');
+    syFisKontrol();
+    return;
+  }
   const gecerli=sayimSatirListesi.filter(s=>(s.direkt>0)||s.kaynaklar.some(k=>k.miktar>0));
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   // Tek bir "sayım oturumu" içindeki tüm satırlar aynı belge_id'yi paylaşır —
@@ -400,6 +431,7 @@ window.kaydetSayim=async function(){
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   sayimSatirListesi=[];sySatirRender();
   document.getElementById('sy-not').value='';
+  syFisKontrol();
   bil(`${gecerli.length} kalem sayımı kaydedildi ✓`);
 };
 
@@ -441,6 +473,7 @@ window.yeniFisBaslat=function(){
   }else if(_aktifIslemTab==='sayim'){
     sayimSatirListesi=[];sySatirRender();
     document.getElementById('sy-not').value='';
+    if(typeof syFisKontrol==='function')syFisKontrol();
     bil('Yeni Sayım fişi başlatıldı ✓');
   }else if(_aktifIslemTab==='kasa'){
     document.getElementById('ks-tutar').value='';document.getElementById('ks-aciklama').value='';
