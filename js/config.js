@@ -188,6 +188,7 @@ const EKRANLAR = [
   {id:'merkezler',  ad:'Merkezler'},
   {id:'depolar',    ad:'Depolar'},
   {id:'sayim_raporu', ad:'Sayım Raporu'},
+  {id:'recete_kullanim_raporu', ad:'Reçetelerde Kullanım Raporu'},
   {id:'rapor',      ad:'Rapor'},
 ];
 
