@@ -481,7 +481,6 @@ window.kaydetSayim=async function(){
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   sayimSatirListesi=[];sySatirRender();
   document.getElementById('sy-not').value='';
-  syFisKontrol();
   bil(`${gecerli.length} kalem sayımı kaydedildi ✓`);
 };
 
