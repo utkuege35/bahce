@@ -168,8 +168,10 @@ function sayimHesaplaDagitim(urunId,mikTemel,ustAd,ustId,sonuc,_derinlik){
 // (Hammadde Sayım Fişi'ndeki gibi) — "Sayım Fişine Yansıt" ile ana fişe eklenir.
 let _ymSayimListesi=[];
 let _ymsyHoverIndex=null;
-let _ymsyArama='';
-window.ymSayimAramaGuncelle=function(v){_ymsyArama=v;ymSayimSatirRender();};
+function ymsySecenekleri(tip){
+  if(tip==='ara_urun')return urunler.filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
+  return urunler.filter(u=>u.tip==='urun'&&u.aktif!==false);
+}
 window.ymSayimSatirSilHover=function(){
   if(_ymsyHoverIndex===null||!_ymSayimListesi[_ymsyHoverIndex]){bil('Önce bir satır seçin','err');return;}
   _ymSayimListesi.splice(_ymsyHoverIndex,1);ymSayimSatirRender();
@@ -179,8 +181,12 @@ window.ymSayimSatirGuncelle=function(i,alan,deger){
   ymSayimSatirRender();
 };
 window.ymSayimBosSatirTipDegis=function(sel){
-  const kalemSel=document.getElementById('ymsy-bos-kalem');
-  if(kalemSel)kalemSel.innerHTML=sySecimOpts(sel.value,'',_ymsyArama);
+  ymSayimSatirRender();
+};
+window.ymSayimAramaInput=function(val){
+  const tip=document.getElementById('ymsy-bos-tip')?.value||'ara_urun';
+  const eslesen=ymsySecenekleri(tip).find(x=>`[${x.kod}] ${x.ad}`===val);
+  if(eslesen)ymSayimBosSatirSec(eslesen.id);
 };
 window.ymSayimBosSatirSec=function(kalemId){
   if(!kalemId)return;
@@ -207,7 +213,8 @@ window.ymSayimSatirRender=function(){
       <option value="ara_urun"${tipBos==='ara_urun'?' selected':''}>⚙️ Yarı Mamul</option>
       <option value="urun"${tipBos==='urun'?' selected':''}>🍽️ Ürün</option>
     </select></td>
-    <td><select id="ymsy-bos-kalem" onchange="ymSayimBosSatirSec(this.value)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${sySecimOpts(tipBos,'',_ymsyArama)}</select></td>
+    <td><input type="text" id="ymsy-bos-kalem-arama" list="ymsy-datalist" autocomplete="off" placeholder="Yazarak arayın..." oninput="ymSayimAramaInput(this.value)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+    <datalist id="ymsy-datalist">${ymsySecenekleri(tipBos).map(x=>`<option value="[${x.kod}] ${x.ad}">`).join('')}</datalist></td>
     <td colspan="2" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
     <td></td>
   </tr>`;
