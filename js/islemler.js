@@ -188,6 +188,56 @@ window.ymSayimAramaInput=function(val){
   const eslesen=ymsySecenekleri(tip).find(x=>`[${x.kod}] ${x.ad}`===val);
   if(eslesen)ymSayimBosSatirSec(eslesen.id);
 };
+
+// ---- Excel'den toplu içe aktar (Tip | Kalem Adı | Birim | Miktar) ----
+// Tam ya da hiç: dosyanın TAMAMI önce doğrulanır, tek bir satırda bile hata
+// varsa (kalem adı bulunamadı, birim uyuşmazlığı vb.) HİÇBİR satır eklenmez.
+window.ymSayimExcelSecildi=async function(input){
+  const file=input.files[0];if(!file)return;
+  if(typeof XLSX==='undefined'){bil('Excel okuma kütüphanesi yüklenemedi, sayfayı yenileyin.','err');input.value='';return;}
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+    const gecerliSatirlar=[];const hatali=[];
+    for(const row of rows){
+      if(!row||!row.length)continue;
+      const tipRaw=(row[0]===undefined||row[0]===null)?'':String(row[0]).trim().toLowerCase();
+      if(!tipRaw||tipRaw==='tip')continue; // başlık veya boş satır
+      const ad=(row[1]===undefined||row[1]===null)?'':String(row[1]).trim();
+      const birimKisa=(row[2]===undefined||row[2]===null)?'':String(row[2]).trim().toLowerCase();
+      const miktar=parseFloat(row[3]);
+      if(!ad){hatali.push('(isimsiz satır)');continue;}
+      if(!(miktar>0)){hatali.push(`${ad} (miktar geçersiz)`);continue;}
+      const tip=tipRaw.startsWith('yarı')||tipRaw==='ym'||tipRaw==='ara_urun'?'ara_urun':'urun';
+      const kalem=ymsySecenekleri(tip).find(x=>x.ad.trim().toLowerCase()===ad.toLowerCase());
+      if(!kalem){hatali.push(`${ad} (${tip==='ara_urun'?'Yarı Mamul':'Ürün'} olarak bulunamadı)`);continue;}
+      const tbId=kalem.birim_id;
+      const uygunBirimler=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
+      let birim=birimKisa?uygunBirimler.find(b=>(b.kisaltma||'').toLowerCase()===birimKisa):null;
+      if(birimKisa&&!birim){hatali.push(`${ad} (birim "${birimKisa}" bu kalem için uygun değil)`);continue;}
+      if(!birim)birim=birimler.find(b=>b.id===(kalem.varsayilan_birim_id||tbId))||uygunBirimler[0];
+      gecerliSatirlar.push({tip,kaynakId:kalem.id,birimId:birim?.id||'',miktar});
+    }
+    if(hatali.length){
+      bil(`❌ Yükleme iptal edildi — hiçbir satır eklenmedi. ${hatali.length} satırda hata var: ${hatali.slice(0,10).join(', ')}${hatali.length>10?` (+${hatali.length-10} satır daha)`:''}`,'err');
+      input.value='';
+      return;
+    }
+    if(!gecerliSatirlar.length){
+      bil('Excel dosyasında geçerli satır bulunamadı.','err');
+      input.value='';
+      return;
+    }
+    _ymSayimListesi.push(...gecerliSatirlar);
+    ymSayimSatirRender();
+    bil(`✓ ${gecerliSatirlar.length} kalem Excel'den eklendi`);
+  }catch(e){
+    bil('Excel okunamadı: '+e.message,'err');
+  }
+  input.value='';
+};
 window.ymSayimBosSatirSec=function(kalemId){
   if(!kalemId)return;
   const tip=document.getElementById('ymsy-bos-tip')?.value||'ara_urun';
