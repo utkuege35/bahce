@@ -118,11 +118,12 @@ function doldurDepoSecleri(){
 }
 
 // ---- Hammadde / YM-Ürün seçim listeleri (modallar için) ----
-function sySecimOpts(tip,seciliId){
+function sySecimOpts(tip,seciliId,filtre){
   let liste;
   if(tip==='stok')liste=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false);
   else if(tip==='ara_urun')liste=urunler.filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
   else liste=urunler.filter(u=>u.tip==='urun'&&u.aktif!==false);
+  if(filtre){const f=filtre.trim().toLocaleLowerCase('tr');liste=liste.filter(x=>(x.ad||'').toLocaleLowerCase('tr').includes(f)||(x.kod||'').toLowerCase().includes(f.toLowerCase()));}
   return '<option value="">Seçin...</option>'+liste.map(x=>`<option value="${x.id}"${x.id===seciliId?' selected':''}>[${x.kod}] ${x.ad}</option>`).join('');
 }
 function syBirimOpts(tip,kaynakId,seciliId){
@@ -167,6 +168,8 @@ function sayimHesaplaDagitim(urunId,mikTemel,ustAd,ustId,sonuc,_derinlik){
 // (Hammadde Sayım Fişi'ndeki gibi) — "Sayım Fişine Yansıt" ile ana fişe eklenir.
 let _ymSayimListesi=[];
 let _ymsyHoverIndex=null;
+let _ymsyArama='';
+window.ymSayimAramaGuncelle=function(v){_ymsyArama=v;ymSayimSatirRender();};
 window.ymSayimSatirSilHover=function(){
   if(_ymsyHoverIndex===null||!_ymSayimListesi[_ymsyHoverIndex]){bil('Önce bir satır seçin','err');return;}
   _ymSayimListesi.splice(_ymsyHoverIndex,1);ymSayimSatirRender();
@@ -177,7 +180,7 @@ window.ymSayimSatirGuncelle=function(i,alan,deger){
 };
 window.ymSayimBosSatirTipDegis=function(sel){
   const kalemSel=document.getElementById('ymsy-bos-kalem');
-  if(kalemSel)kalemSel.innerHTML=sySecimOpts(sel.value,'');
+  if(kalemSel)kalemSel.innerHTML=sySecimOpts(sel.value,'',_ymsyArama);
 };
 window.ymSayimBosSatirSec=function(kalemId){
   if(!kalemId)return;
@@ -204,7 +207,7 @@ window.ymSayimSatirRender=function(){
       <option value="ara_urun"${tipBos==='ara_urun'?' selected':''}>⚙️ Yarı Mamul</option>
       <option value="urun"${tipBos==='urun'?' selected':''}>🍽️ Ürün</option>
     </select></td>
-    <td><select id="ymsy-bos-kalem" onchange="ymSayimBosSatirSec(this.value)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${sySecimOpts(tipBos,'')}</select></td>
+    <td><select id="ymsy-bos-kalem" onchange="ymSayimBosSatirSec(this.value)" style="width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">${sySecimOpts(tipBos,'',_ymsyArama)}</select></td>
     <td colspan="2" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
     <td></td>
   </tr>`;
@@ -358,31 +361,34 @@ window.kaydetSayim=async function(){
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   // Tek bir "sayım oturumu" içindeki tüm satırlar aynı belge_id'yi paylaşır —
   // böylece İşlem Listesi'nde Alış/Satış gibi tek özet satır olarak görünür,
-  // tıklanınca detay satırları açılır.
+  // tıklanınca detay satırları açılır. Kaynak bazlı satırlar (hangi YM'den ne
+  // kadar geldiği) veritabanında AYRI AYRI tutulur — bu bilgi Sayım Fişi
+  // ekranında gösterilmez (orada aynı stok tek satırda toplanır), ama
+  // Sayım Raporu ekranındaki "Kaynak Dökümü" kolonu bu ayrımı kullanır.
   const belgeId=crypto.randomUUID();
+  const y3=n=>Math.round(n*1000)/1000; // en fazla 3 ondalık basamak
   for(const s of gecerli){
     const stok=stoklar.find(x=>x.id===s.stokId);
     const birimFiyat=stok?stokBirimMaliyet(stok.id):0;
-    // Aynı stok birden fazla YM/Ürün'den (kaynaktan) geliyorsa TEK satırda
-    // toplanır — reçete kaynağı ne olursa olsun, aynı stoğun miktarı birleşir.
-    let toplamMiktar=parseFloat(s.direkt)||0;
-    const kaynakAdlari=[];
-    s.kaynaklar.forEach(k=>{
-      if(k.miktar>0){toplamMiktar+=k.miktar;if(!kaynakAdlari.includes(k.ad))kaynakAdlari.push(k.ad);}
-    });
-    if(!(toplamMiktar>0))continue;
-    toplamMiktar=Math.round(toplamMiktar*1000)/1000; // en fazla 3 ondalık basamak
-    const tutar=Math.round(toplamMiktar*birimFiyat*100)/100;
-    let satirNot;
-    if(!kaynakAdlari.length)satirNot='Doğrudan sayım';
-    else if(kaynakAdlari.length<=3)satirNot=(s.direkt>0?'Doğrudan + ':'')+kaynakAdlari.join(', ')+' sayımından';
-    else satirNot=(s.direkt>0?'Doğrudan + ':'')+kaynakAdlari.slice(0,3).join(', ')+` +${kaynakAdlari.length-3} kaynak daha`;
-    await sb.from('islemler').insert({
-      tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:toplamMiktar,
-      fiyat:birimFiyat,tutar,
-      aciklama:'Sayım',kat:'Sayım',satir_not:satirNot,aciklama_not:an,
-      kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
-    });
+    if(s.direkt>0){
+      const mik=y3(parseFloat(s.direkt)||0);
+      await sb.from('islemler').insert({
+        tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:mik,
+        fiyat:birimFiyat,tutar:Math.round(mik*birimFiyat*100)/100,
+        aciklama:'Sayım',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
+        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+      });
+    }
+    for(const k of s.kaynaklar){
+      if(!(k.miktar>0))continue;
+      const mik=y3(k.miktar);
+      await sb.from('islemler').insert({
+        tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:mik,
+        fiyat:birimFiyat,tutar:Math.round(mik*birimFiyat*100)/100,
+        aciklama:'Sayım',kat:'Sayım',satir_not:`${k.ad} sayımından`,aciklama_not:an,
+        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+      });
+    }
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   sayimSatirListesi=[];sySatirRender();
