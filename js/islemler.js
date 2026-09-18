@@ -363,23 +363,26 @@ window.kaydetSayim=async function(){
   for(const s of gecerli){
     const stok=stoklar.find(x=>x.id===s.stokId);
     const birimFiyat=stok?stokBirimMaliyet(stok.id):0;
-    if(s.direkt>0){
-      await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:s.direkt,
-        fiyat:birimFiyat,tutar:s.direkt*birimFiyat,
-        aciklama:'Sayım',kat:'Sayım',satir_not:'Doğrudan sayım',aciklama_not:an,
-        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
-      });
-    }
-    for(const k of s.kaynaklar){
-      if(!(k.miktar>0))continue;
-      await sb.from('islemler').insert({
-        tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:k.miktar,
-        fiyat:birimFiyat,tutar:k.miktar*birimFiyat,
-        aciklama:'Sayım',kat:'Sayım',satir_not:`${k.ad} sayımından`,aciklama_not:an,
-        kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
-      });
-    }
+    // Aynı stok birden fazla YM/Ürün'den (kaynaktan) geliyorsa TEK satırda
+    // toplanır — reçete kaynağı ne olursa olsun, aynı stoğun miktarı birleşir.
+    let toplamMiktar=parseFloat(s.direkt)||0;
+    const kaynakAdlari=[];
+    s.kaynaklar.forEach(k=>{
+      if(k.miktar>0){toplamMiktar+=k.miktar;if(!kaynakAdlari.includes(k.ad))kaynakAdlari.push(k.ad);}
+    });
+    if(!(toplamMiktar>0))continue;
+    toplamMiktar=Math.round(toplamMiktar*1000)/1000; // en fazla 3 ondalık basamak
+    const tutar=Math.round(toplamMiktar*birimFiyat*100)/100;
+    let satirNot;
+    if(!kaynakAdlari.length)satirNot='Doğrudan sayım';
+    else if(kaynakAdlari.length<=3)satirNot=(s.direkt>0?'Doğrudan + ':'')+kaynakAdlari.join(', ')+' sayımından';
+    else satirNot=(s.direkt>0?'Doğrudan + ':'')+kaynakAdlari.slice(0,3).join(', ')+` +${kaynakAdlari.length-3} kaynak daha`;
+    await sb.from('islemler').insert({
+      tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,stok_id:s.stokId,birim_id:s.birimId||null,miktar:toplamMiktar,
+      fiyat:birimFiyat,tutar,
+      aciklama:'Sayım',kat:'Sayım',satir_not:satirNot,aciklama_not:an,
+      kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+    });
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   sayimSatirListesi=[];sySatirRender();
