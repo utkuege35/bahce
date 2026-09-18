@@ -391,6 +391,7 @@ window.renderIslemListe=function(){
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
+            <button class="btn sm sec" onclick="event.stopPropagation();belgeExcelIndir('${belge.key}')">📤 Excel'e Aktar</button>
             ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button>`:''}
             ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
           </div>
@@ -555,6 +556,39 @@ window.islemSil=async function(id){
   renderPanel();if(document.getElementById('islem-liste')?.classList.contains('active'))renderIslemListe();kontolUyari();bil('İşlem silindi ✓');
 };
 
+// Bir fişin (belge) detay satırlarını — ekranda göründüğü kümülatif/toplamlı
+// haliyle (sayım fişlerinde aynı stok tek satırda toplanmış) — Excel'e aktarır.
+window.belgeExcelIndir=function(belgeKey){
+  const satirlar=islemler.filter(i=>(i.belge_id||i.id)===belgeKey);
+  if(!satirlar.length){bil('Veri bulunamadı','err');return;}
+  const turler=[...new Set(satirlar.map(i=>i.tur))];
+  let gosterim=satirlar;
+  if(turler.length===1&&turler[0]==='sayim'){
+    const grup={};const sira=[];
+    satirlar.forEach(i=>{
+      const key=i.stok_id||i.id;
+      if(!grup[key]){grup[key]={...i,miktar:0,tutar:0};sira.push(key);}
+      grup[key].miktar+=parseFloat(i.miktar||0);
+      grup[key].tutar+=parseFloat(i.tutar||0);
+    });
+    gosterim=sira.map(k=>grup[k]);
+  }
+  const data=gosterim.map(i=>{
+    const stok=stoklar.find(s=>s.id===i.stok_id);
+    const urun=urunler.find(u=>u.id===i.urun_id);
+    const ad=stok?stok.ad:urun?urun.ad:i.aciklama||'—';
+    return {
+      'Malzeme/Ürün':ad,'Kod':stok?.kod||urun?.kod||'','Birim':birimAd(i.birim_id)||'',
+      'Miktar':i.miktar?+parseFloat(i.miktar).toFixed(3):'','Fiyat':i.fiyat||'','Tutar':i.tutar||''
+    };
+  });
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Fiş Detayı');
+  const tarih=satirlar[0].tarih||'';
+  const turAd=ISLEM_TUR_ADLARI[turler[0]]||turler[0]||'fis';
+  XLSX.writeFile(wb,`${turAd}_${tarih}.xlsx`.replace(/\s+/g,'_'));
+};
 window.islemDetayAc=function(id){
   const i=islemler.find(x=>x.id===id);if(!i)return;
   const turAd=ISLEM_TUR_ADLARI[i.tur]||i.tur;
