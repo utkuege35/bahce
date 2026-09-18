@@ -323,23 +323,40 @@ window.renderIslemListe=function(){
   const rows = belgeler.map(belge => {
     const acik = _ilAcikId === belge.key;
     const satirlar = belge.satirlar;
-    const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
-    const topMiktar = satirlar.length === 1 ? (satirlar[0].miktar ? parseFloat(satirlar[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(satirlar[0].birim_id) : '') : satirlar.length + ' kalem';
     const turler = [...new Set(satirlar.map(i => i.tur))];
+    // Sayım fişlerinde aynı stok birden fazla YM/Ürün'den (kaynaktan)
+    // gelmiş olabilir — veritabanında ayrı ayrı satır olarak durur (Sayım
+    // Raporu'ndaki "Kaynak Dökümü" bunu kullanır), ama BU ekranda (fişin
+    // kendisinde) hangi kaynaktan geldiğini göstermeye gerek yok — aynı
+    // stok tek satırda, miktarları toplanmış halde gösterilir.
+    let gosterimSatirlari = satirlar;
+    if (turler.length === 1 && turler[0] === 'sayim') {
+      const grup = {}; const sira = [];
+      satirlar.forEach(i => {
+        const key = i.stok_id || i.id;
+        if (!grup[key]) { grup[key] = { ...i, miktar: 0, tutar: 0 }; sira.push(key); }
+        grup[key].miktar += parseFloat(i.miktar || 0);
+        grup[key].tutar += parseFloat(i.tutar || 0);
+      });
+      gosterimSatirlari = sira.map(k => grup[k]);
+    }
+    const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
+    const topMiktar = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].miktar ? parseFloat(gosterimSatirlari[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(gosterimSatirlari[0].birim_id) : '') : gosterimSatirlari.length + ' kalem';
     const turAd = turler.length === 1 ? (ISLEM_TUR_ADLARI[turler[0]] || turler[0]) : 'Karma';
     const badgeCls = turler[0]==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
     const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
-    const aciklama = satirlar.length === 1 ? (satirlar[0].aciklama || satirlar[0].kat || '') : (satirlar[0].aciklama || '') + (satirlar.length > 1 ? ` +${satirlar.length-1}` : '');
+    const aciklama = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].aciklama || gosterimSatirlari[0].kat || '') : (gosterimSatirlari[0].aciklama || '') + (gosterimSatirlari.length > 1 ? ` +${gosterimSatirlari.length-1}` : '');
     const tutarRenk = turler[0]==='satis'?'var(--yesil)':['gider','giris'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
 
     // Detay satırları
-    const detaySatirlar = satirlar.map((i, si) => {
+    const detaySatirlar = gosterimSatirlari.map((i, si) => {
       const stok = stoklar.find(s => s.id === i.stok_id);
       const urun = urunler.find(u => u.id === i.urun_id);
       const kalem = typeof giderKalemleri !== 'undefined' ? giderKalemleri.find(k => k.id === i.gider_kalem_id) : null;
       const ad = stok ? stok.ad : urun ? urun.ad : kalem ? kalem.ad : i.aciklama || '—';
       const mik = i.miktar ? parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}) + ' ' + birimAd(i.birim_id) : '—';
       const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris','satis_sarfiyat'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
+      const satirNotGoster = turler.length===1&&turler[0]==='sayim' ? '' : (i.satir_not||''); // sayımda kaynak notu bu ekranda gösterilmez
       return `<tr style="background:var(--krem);font-size:11px">
         <td style="padding:6px 8px;color:var(--yazi3)">${si+1}</td>
         <td style="padding:6px 8px">${ad}</td>
@@ -347,7 +364,7 @@ window.renderIslemListe=function(){
         <td style="padding:6px 8px;text-align:right;white-space:nowrap">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}):''}</td>
         <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi2)">${i.fiyat?para(i.fiyat):'—'}</td>
         <td style="padding:6px 8px;text-align:right;font-weight:500;white-space:nowrap;color:${iturRenk}">${i.tutar?para(i.tutar):''}</td>
-        <td style="padding:6px 8px;font-size:10px;color:var(--yazi3)">${i.satir_not||''}</td>
+        <td style="padding:6px 8px;font-size:10px;color:var(--yazi3)">${satirNotGoster}</td>
         <td colspan="2" style="padding:6px 8px;text-align:right;white-space:nowrap">
           ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button>`:''}
           ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
