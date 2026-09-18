@@ -303,15 +303,13 @@ window.renderIslemListe=function(){
   const ozEl=document.getElementById('il-ozet');
   if(ozEl)ozEl.innerHTML=`${liste.length} işlem &nbsp;·&nbsp; <span style="color:var(--yesil)">${para(topGelir)}</span> &nbsp;·&nbsp; <span style="color:var(--turuncu)">${para(topGider)}</span>`;
 
-  const topSayfa=Math.max(1,Math.ceil(liste.length/IL_SAYFA_BOY));
-  if(_ilSayfa>topSayfa)_ilSayfa=1;
-  const pListe=liste.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
-
-  // Belge bazlı gruplama
-  // belge_id varsa grupla, yoksa her satır kendi belgesi
+  // Belge bazlı gruplama — ÖNCE tüm filtrelenmiş listeyi belgelere ayır,
+  // SONRA sayfalamayı belge sayısına göre uygula. (Sayfalama ham satırlara
+  // uygulanırsa, çok satırlı tek bir fiş — örn. büyük bir sayım fişi — sayfa
+  // sınırında ikiye bölünüp aynı fiş birden fazla özet satırı gibi görünür.)
   const belgeler = [];
   const belgeMap = {};
-  pListe.forEach(i => {
+  liste.forEach(i => {
     const key = i.belge_id || i.id;
     if (!belgeMap[key]) {
       belgeMap[key] = {key, satirlar: [], tarih: i.tarih, tur: i.tur, cari_id: i.cari_id, odeme_tipi: i.odeme_tipi, kullanici: i.kullanici, aciklama: i.aciklama, belge_no: i.belge_no, aciklama_not: i.aciklama_not, ts: i.ts};
@@ -320,7 +318,11 @@ window.renderIslemListe=function(){
     belgeMap[key].satirlar.push(i);
   });
 
-  const rows = belgeler.map(belge => {
+  const topSayfa=Math.max(1,Math.ceil(belgeler.length/IL_SAYFA_BOY));
+  if(_ilSayfa>topSayfa)_ilSayfa=1;
+  const pBelgeler=belgeler.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
+
+  const rows = pBelgeler.map(belge => {
     const acik = _ilAcikId === belge.key;
     const satirlar = belge.satirlar;
     const turler = [...new Set(satirlar.map(i => i.tur))];
