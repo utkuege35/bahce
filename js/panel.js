@@ -290,7 +290,7 @@ window.renderIslemListe=function(){
   const tur=document.getElementById('il-tur')?.value||'';
   const bas=document.getElementById('il-bas')?.value||'';
   const bit=document.getElementById('il-bit')?.value||'';
-  let liste=[...islemler];
+  let liste=[...islemler].filter(i=>i.kat!=='YM Sayım Özeti'); // YM/Ürün seviyesi özet satırları burada gösterilmez, ayrı raporu var
   if(tur)liste=liste.filter(i=>i.tur===tur);
   if(bas)liste=liste.filter(i=>i.tarih>=bas);
   if(bit)liste=liste.filter(i=>i.tarih<=bit);
@@ -561,7 +561,7 @@ window.islemSil=async function(id){
 // Bir fişin (belge) detay satırlarını — ekranda göründüğü kümülatif/toplamlı
 // haliyle (sayım fişlerinde aynı stok tek satırda toplanmış) — Excel'e aktarır.
 window.belgeExcelIndir=function(belgeKey){
-  const satirlar=islemler.filter(i=>(i.belge_id||i.id)===belgeKey);
+  const satirlar=islemler.filter(i=>(i.belge_id||i.id)===belgeKey&&i.kat!=='YM Sayım Özeti');
   if(!satirlar.length){bil('Veri bulunamadı','err');return;}
   const turler=[...new Set(satirlar.map(i=>i.tur))];
   let gosterim=satirlar;
