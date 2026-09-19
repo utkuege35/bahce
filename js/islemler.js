@@ -394,18 +394,21 @@ function sySatirRender(){
     </tr>`;
   }).join('');
   const eklenenler=new Set(sayimSatirListesi.map(s=>s.stokId));
-  const secenekler=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false&&!eklenenler.has(s.id))
-    .map(s=>`<option value="${s.id}">[${s.kod}] ${s.ad}</option>`).join('');
+  const secenekler=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false&&!eklenenler.has(s.id));
   html+=`<tr style="background:var(--krem)">
-    <td><select onchange="syBosSatirSec(this.value)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
-      <option value="">+ Hammadde seçin...</option>
-      ${secenekler}
-    </select></td>
+    <td><input type="text" id="sy-bos-hammadde-arama" list="sy-hammadde-datalist" autocomplete="off" placeholder="Yazarak arayın..." oninput="syBosSatirAramaInput(this.value)" style="width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--beyaz)">
+    <datalist id="sy-hammadde-datalist">${secenekler.map(s=>`<option value="[${s.kod}] ${s.ad}">`).join('')}</datalist></td>
     <td colspan="4" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
     <td></td>
   </tr>`;
   el.innerHTML=html;
 }
+window.syBosSatirAramaInput=function(val){
+  const eklenenler=new Set(sayimSatirListesi.map(s=>s.stokId));
+  const secenekler=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false&&!eklenenler.has(s.id));
+  const eslesen=secenekler.find(s=>`[${s.kod}] ${s.ad}`===val);
+  if(eslesen)syBosSatirSec(eslesen.id);
+};
 window.syBosSatirSec=function(stokId){
   if(!stokId)return;
   sayimFisSatiriEkleVeyaGuncelle(stokId,0);
