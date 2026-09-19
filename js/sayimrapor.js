@@ -122,3 +122,61 @@ window.receteKullanimExcelIndir=function(){
   XLSX.utils.book_append_sheet(wb,ws,'Kullanım Raporu');
   XLSX.writeFile(wb,`recete_kullanim_${(stok?.ad||'stok').replace(/\s+/g,'_')}.xlsx`);
 };
+
+// ===== YM/ÜRÜN SAYIM ÖZETİ =====
+// "YM/Ürün Sayımı" ekranında girilip "Sayım Fişine Yansıt" denen orijinal
+// YM/Ürün seviyesindeki miktarları (hammaddeye bölünmemiş hali) gösterir.
+// Bu satırlar islemler'de kat='YM Sayım Özeti', stok_id boş, urun_id dolu
+// olarak tutulur.
+let _ysoSonListe=[];
+function doldurYmSayimOzetiDepoSecimi(){
+  const el=document.getElementById('yso-depo');if(!el)return;
+  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
+  const c=el.value;
+  el.innerHTML='<option value="">Tüm depolar</option>'+kapsam.map(d=>`<option value="${d.id}">${d.ad}${d.kod?' ['+d.kod+']':''}</option>`).join('');
+  if(c)el.value=c;
+}
+window.renderYmSayimOzeti=function(){
+  const el=document.getElementById('yso-tb');if(!el)return;
+  const bas=document.getElementById('yso-bas')?.value||'';
+  const bit=document.getElementById('yso-bit')?.value||'';
+  const depoId=document.getElementById('yso-depo')?.value||'';
+  let kayitlar=islemler.filter(i=>i.tur==='sayim'&&i.kat==='YM Sayım Özeti'&&i.urun_id);
+  if(bas)kayitlar=kayitlar.filter(i=>i.tarih>=bas);
+  if(bit)kayitlar=kayitlar.filter(i=>i.tarih<=bit);
+  if(depoId)kayitlar=kayitlar.filter(i=>i.depo_id===depoId);
+
+  const gruplanmis={};
+  kayitlar.forEach(i=>{
+    if(!gruplanmis[i.urun_id])gruplanmis[i.urun_id]={miktar:0,birim_id:i.birim_id};
+    gruplanmis[i.urun_id].miktar+=parseFloat(i.miktar)||0;
+  });
+  const urunIdler=Object.keys(gruplanmis);
+  _ysoSonListe=[];
+  if(!urunIdler.length){el.innerHTML='<tr><td colspan="4" class="bos">Bu filtrelerle YM/Ürün sayım kaydı bulunamadı.</td></tr>';return;}
+
+  const rows=urunIdler.map(urunId=>{
+    const g=gruplanmis[urunId];
+    const urun=urunler.find(u=>u.id===urunId);
+    const birim=birimler.find(b=>b.id===g.birim_id);
+    const tipAd=urun?.tip==='ara_urun'?'Yarı Mamul':'Ürün';
+    _ysoSonListe.push({ad:urun?urun.ad:'(silinmiş)',tip:tipAd,miktar:g.miktar,birim:birim?.kisaltma||''});
+    return `<tr>
+      <td style="font-weight:500">${urun?urun.ad:'(silinmiş)'} <span style="font-size:10px;color:var(--yazi3)">[${urun?.kod||''}]</span></td>
+      <td><span class="badge ${tipAd==='Yarı Mamul'?'m':'u'}">${tipAd}</span></td>
+      <td style="text-align:right;font-weight:600">${g.miktar.toLocaleString('tr-TR',{maximumFractionDigits:3})}</td>
+      <td>${birim?.kisaltma||''}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=rows;
+};
+window.ymSayimOzetExcelIndir=function(){
+  if(!_ysoSonListe.length){bil('İndirilecek veri yok','err');return;}
+  const data=_ysoSonListe.map(r=>({'YM/Ürün Adı':r.ad,'Tip':r.tip,'Toplam Sayılan Miktar':+r.miktar.toFixed(3),'Birim':r.birim}));
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'YM Sayım Özeti');
+  const bas=document.getElementById('yso-bas')?.value||'';
+  const bit=document.getElementById('yso-bit')?.value||'';
+  XLSX.writeFile(wb,`ym_sayim_ozeti${bas?'_'+bas:''}${bit?'_'+bit:''}.xlsx`);
+};
