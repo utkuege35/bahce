@@ -97,7 +97,7 @@ function uygulamaAc(){
       'stok':'gp(\'stok\')', 'stok_liste':'gp(\'stok-liste\')', 'urunler':'gp(\'urunler\')', 'urun_liste':'gp(\'urun-liste\')', 'yarimamuller':'gp(\'yarimamuller\')', 'ym_liste':'gp(\'ym-liste\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')', 'alt_birimler':'gp(\'alt-birimler\')',
-      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'recete_normalize':'gp(\'recete-normalize\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')', 'recete_kullanim_raporu':'gp(\'recete-kullanim-raporu\')'
+      'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'recete_normalize':'gp(\'recete-normalize\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')', 'recete_kullanim_raporu':'gp(\'recete-kullanim-raporu\')', 'ym_sayim_ozeti':'gp(\'ym-sayim-ozeti\')'
     };
     const isyeriRoller=(aktifKullanici.isyeri_yetkiler||[]).map(y=>y.rol);
     if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
@@ -275,6 +275,10 @@ window.gp=function(id){
     if(typeof renderSayimRaporu==='function')renderSayimRaporu();
   }
   if(id==='recete-kullanim-raporu'&&typeof doldurReceteKullanimDatalist==='function')doldurReceteKullanimDatalist();
+  if(id==='ym-sayim-ozeti'){
+    if(typeof doldurYmSayimOzetiDepoSecimi==='function')doldurYmSayimOzetiDepoSecimi();
+    if(typeof renderYmSayimOzeti==='function')renderYmSayimOzeti();
+  }
   if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
 };
 let _aktifIslemTab='hammadde';
