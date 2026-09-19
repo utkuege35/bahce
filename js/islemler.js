@@ -167,6 +167,12 @@ function sayimHesaplaDagitim(urunId,mikTemel,ustAd,ustId,sonuc,_derinlik){
 // Bu ekranda hangi ürün/YM'den ne kadar sayıldığı satır satır görünür
 // (Hammadde Sayım Fişi'ndeki gibi) — "Sayım Fişine Yansıt" ile ana fişe eklenir.
 let _ymSayimListesi=[];
+// YM/Ürün seviyesindeki orijinal sayılan miktarları (hammadde dağılımına
+// girmeden ÖNCEki hali) tutar — "Sayım Fişine Yansıt" her tıklandığında
+// birikir, aynı YM/Ürün tekrar sayılırsa üzerine toplanır. "Sayımı Kaydet"
+// ile birlikte veritabanına da yazılır (stok_id boş, urun_id dolu satırlar
+// olarak) — böylece "hangi YM'den ne kadar saymışım" sonradan raporlanabilir.
+let _ymSayimOzetListesi=[];
 let _ymsyHoverIndex=null;
 function ymsySecenekleri(tip){
   if(tip==='ara_urun')return urunler.filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
@@ -279,6 +285,10 @@ window.ymSayimTumunuYansit=function(){
     const mikTemel=s.miktar*birimTemelCarp(s.birimId);
     const sonuc=sayimHesaplaDagitim(s.kaynakId,mikTemel,kalem?.ad||'Bilinmeyen',s.kaynakId);
     if(!sonuc.length){hatali++;return;}
+    // Orijinal YM/Ürün seviyesindeki sayılan miktarı da ayrıca biriktir
+    let ozet=_ymSayimOzetListesi.find(o=>o.urunId===s.kaynakId);
+    if(!ozet){ozet={tip:s.tip,urunId:s.kaynakId,ad:kalem?.ad||'Bilinmeyen',birimId:s.birimId,miktar:0};_ymSayimOzetListesi.push(ozet);}
+    ozet.miktar+=parseFloat(s.miktar)||0;
     const gruplanmis={};
     sonuc.forEach(r=>{
       const key=r.stokId+'|'+r.ustId;
@@ -478,8 +488,23 @@ window.kaydetSayim=async function(){
       });
     }
   }
+  // YM/Ürün seviyesindeki orijinal sayılan miktarları da ayrıca kaydet
+  // (stok_id BOŞ, urun_id DOLU) — "hangi YM'den ne kadar saymışım" raporu
+  // bunları kullanır. Hammadde dağılım satırlarıyla karışmasın diye kat
+  // alanı farklı ("YM Sayım Özeti").
+  for(const o of _ymSayimOzetListesi){
+    if(!(o.miktar>0))continue;
+    const mik=y3(o.miktar);
+    await sb.from('islemler').insert({
+      tur:'sayim',tarih,depo_id:depoId,belge_id:belgeId,urun_id:o.urunId,stok_id:null,birim_id:o.birimId||null,miktar:mik,
+      fiyat:0,tutar:0,
+      aciklama:'Sayım',kat:'YM Sayım Özeti',satir_not:null,aciklama_not:an,
+      kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
+    });
+  }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   sayimSatirListesi=[];sySatirRender();
+  _ymSayimOzetListesi=[];
   document.getElementById('sy-not').value='';
   bil(`${gecerli.length} kalem sayımı kaydedildi ✓`);
 };
