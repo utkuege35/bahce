@@ -394,7 +394,8 @@ window.renderIslemListe=function(){
           <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
             <button class="btn sm sec" onclick="event.stopPropagation();belgeExcelIndir('${belge.key}')">📤 Excel'e Aktar</button>
-            ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button>`:''}
+            ${turler.length===1&&turler[0]==='sayim'&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" onclick="event.stopPropagation();sayimFisiDuzenleAc('${belge.key}')">✏ Fişi Düzenle</button>`:''}
+            ${!(turler.length===1&&turler[0]==='sayim')&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button>`:''}
             ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
           </div>
           <span style="font-size:13px;font-weight:600;color:var(--yesil)">Toplam: ${para(topTutar)}</span>
