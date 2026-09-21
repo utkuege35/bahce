@@ -35,14 +35,19 @@ window.yeniKullaniciModalAc=function(){
 window.kullaniciyiKaydet=async function(){
   const ad=document.getElementById('km-ad').value.trim();
   const soyad=document.getElementById('km-soyad').value.trim();
-  const email=document.getElementById('km-email').value.trim();
   const kAdi=document.getElementById('km-kullanici-adi').value.trim();
+  // E-posta artık opsiyonel — boş bırakılırsa kullanıcı adına göre görünmez
+  // bir "iç" e-posta üretilir. Supabase Auth'un signUp() işlemi teknik
+  // olarak bir e-posta istiyor, ama kullanıcının GERÇEK bir e-postası
+  // olması zorunlu değil (örn. aşçı gibi e-postası olmayan kullanıcılar için).
+  let email=document.getElementById('km-email').value.trim();
   const sifre=document.getElementById('km-sifre').value;
   const rol=document.getElementById('km-rol').value;
   const mUid=document.getElementById('km-uid').value;
   const varsayilanKasa=document.getElementById('km-varsayilan-kasa')?.value||null;
   const yetkiler={};
-  if(!ad||!email||!kAdi){bil('Ad, e-posta ve kullanıcı adı zorunlu!','err');return;}
+  if(!ad||!kAdi){bil('Ad ve kullanıcı adı zorunlu!','err');return;}
+  if(!email)email=`${kAdi.toLowerCase().replace(/[^a-z0-9]/g,'')}@dahili.local`;
   try{
     if(!mUid){
       if(!sifre||sifre.length<6){bil('Şifre en az 6 karakter!','err');return;}
