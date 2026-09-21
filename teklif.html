@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yeni Ürün / Reçete Öner — Sever Bahçesi</title>
+<style>
+  :root{--bg:#0d1825;--kart:#16233a;--kart2:#1a2535;--yazi:#e8edf2;--yazi2:#a0b4c4;--yazi3:#5a7080;--border:#28405a;--yesil:#5b9ec9;--turuncu:#f4a261;--kirmizi:#e07b4a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--yazi);font-family:'DM Sans',Arial,sans-serif;padding:1rem;padding-bottom:4rem}
+  h1{font-family:'Lora',serif;font-size:20px;margin:0 0 4px}
+  .sub{color:var(--yazi3);font-size:12px;margin-bottom:1.2rem}
+  .kart{background:var(--kart);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem}
+  label{display:block;font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+  input[type=text],input[type=number],select,textarea{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--kart2);color:var(--yazi);font-size:14px;font-family:inherit}
+  input::placeholder{color:var(--yazi3)}
+  .fg{margin-bottom:.85rem}
+  .btn{padding:10px 16px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+  .btn-pri{background:var(--yesil);color:#fff;width:100%}
+  .btn-sec{background:var(--kart2);color:var(--yazi);border:1px solid var(--border)}
+  .btn-sm{padding:6px 10px;font-size:12px}
+  .btn-ghost{background:transparent;color:var(--kirmizi);border:1px solid var(--kirmizi)}
+  .bilesen-satir{border:1px solid var(--border);border-radius:10px;padding:.75rem;margin-bottom:.6rem;position:relative}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .toggle-row{display:flex;gap:8px;margin-bottom:.6rem}
+  .toggle-row button{flex:1}
+  .toggle-row button.aktif{background:var(--yesil);color:#fff;border-color:var(--yesil)}
+  #basari{display:none;text-align:center;padding:2rem 1rem}
+  #basari .ikon{font-size:48px;margin-bottom:1rem}
+  .hata{color:var(--kirmizi);font-size:12px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div id="form-alan">
+  <h1>🍳 Yeni Ürün / Reçete Öner</h1>
+  <div class="sub">Buradan gönderdiğin bilgiler doğrudan sisteme işlenmez — Utku kontrol edip onayladıktan sonra sisteme eklenir.</div>
+
+  <div class="kart">
+    <div class="fg"><label>Adın</label><input type="text" id="ad" placeholder="Adını yaz..."></div>
+    <div class="fg"><label>İşyeri</label><select id="isyeri"><option value="">Yükleniyor...</option></select></div>
+  </div>
+
+  <div class="kart">
+    <div class="fg">
+      <label>Bu bir...</label>
+      <div class="toggle-row">
+        <button type="button" class="btn btn-sec aktif" id="tip-urun" onclick="tipSec('urun')">Ürün</button>
+        <button type="button" class="btn btn-sec" id="tip-ara_urun" onclick="tipSec('ara_urun')">Yarı Mamul</button>
+      </div>
+    </div>
+    <div class="fg"><label>Adı</label><input type="text" id="urun-adi" placeholder="Örn: Margherita Pizza"></div>
+    <div class="fg"><label>Not (opsiyonel)</label><input type="text" id="not" placeholder="Eklemek istediğin bir şey varsa..."></div>
+  </div>
+
+  <div class="kart">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+      <strong style="font-size:14px">İçindekiler (Reçete)</strong>
+    </div>
+    <div id="bilesenler"></div>
+    <button type="button" class="btn btn-sec" style="width:100%" onclick="bilesenEkle()">+ Malzeme Ekle</button>
+  </div>
+
+  <div id="gonder-hata" class="hata" style="display:none;text-align:center;margin-bottom:.6rem"></div>
+  <button type="button" class="btn btn-pri" id="btn-gonder" onclick="gonder()">Gönder</button>
+</div>
+
+<div id="basari">
+  <div class="ikon">✅</div>
+  <h1>Gönderildi!</h1>
+  <div class="sub">Teklifin Utku'ya ulaştı, kontrol edip sisteme ekleyecek.</div>
+  <button class="btn btn-sec" onclick="location.reload()">Yeni bir öneri daha gönder</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://thupqmtgxaqnnadrhuwi.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRodXBxbXRneGFxbm5hZHJodXdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4MjU5MzQsImV4cCI6MjEwNDQwMTkzNH0.mbeQe7p-SzIW-eUdMBQ88EwtU9tsDOSK3RiMVpWvMaM';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let stoklar=[],aramuller=[],birimler=[],isyerleri=[];
+let bilesenListesi=[]; // {id, tip:'stok'|'ara_urun'|'yeni', kaynakId, yeniAd, birimId, miktar}
+let secilenTip='urun';
+let sayac=0;
+
+async function yukle(){
+  const [{data:s},{data:a},{data:b},{data:iy}]=await Promise.all([
+    sb.from('stoklar_teklif_gorunum').select('*').eq('aktif',true),
+    sb.from('urunler_teklif_gorunum').select('*').eq('aktif',true),
+    sb.from('birimler').select('*'),
+    sb.from('isyerleri_teklif_gorunum').select('*')
+  ]);
+  stoklar=s||[];aramuller=a||[];birimler=b||[];isyerleri=iy||[];
+  const iySel=document.getElementById('isyeri');
+  iySel.innerHTML=isyerleri.map(x=>`<option value="${x.id}">${x.ad}${x.kod?' ['+x.kod+']':''}</option>`).join('')||'<option value="">İşyeri bulunamadı</option>';
+  bilesenEkle();
+}
+yukle();
+
+window.tipSec=function(t){
+  secilenTip=t;
+  document.getElementById('tip-urun').classList.toggle('aktif',t==='urun');
+  document.getElementById('tip-ara_urun').classList.toggle('aktif',t==='ara_urun');
+};
+
+function birimSecenekleri(tbId){
+  const list=tbId?birimler.filter(b=>b.id===tbId||b.temel_id===tbId):birimler;
+  return list.map(b=>`<option value="${b.id}">${b.kisaltma}</option>`).join('');
+}
+
+window.bilesenEkle=function(){
+  sayac++;
+  bilesenListesi.push({id:sayac,tip:'stok',kaynakId:'',yeniAd:'',birimId:'',miktar:''});
+  bilesenRender();
+};
+window.bilesenSil=function(id){
+  bilesenListesi=bilesenListesi.filter(b=>b.id!==id);
+  bilesenRender();
+};
+window.bilesenTipDegis=function(id,tip){
+  const b=bilesenListesi.find(x=>x.id===id);
+  b.tip=tip;b.kaynakId='';b.yeniAd='';b.birimId='';
+  bilesenRender();
+};
+window.bilesenKaynakSec=function(id,kaynakId){
+  const b=bilesenListesi.find(x=>x.id===id);
+  b.kaynakId=kaynakId;
+  const kalem=b.tip==='stok'?stoklar.find(x=>x.id===kaynakId):aramuller.find(x=>x.id===kaynakId);
+  b.birimId=kalem?.birim_id||'';
+  bilesenRender();
+};
+window.bilesenAlanGuncelle=function(id,alan,deger){
+  const b=bilesenListesi.find(x=>x.id===id);
+  b[alan]=deger;
+};
+
+function bilesenRender(){
+  const el=document.getElementById('bilesenler');
+  el.innerHTML=bilesenListesi.map(b=>{
+    const kalem=b.tip==='stok'?stoklar.find(x=>x.id===b.kaynakId):b.tip==='ara_urun'?aramuller.find(x=>x.id===b.kaynakId):null;
+    const tbId=kalem?.birim_id||null;
+    let ustAlan;
+    if(b.tip==='yeni'){
+      ustAlan=`<div class="fg"><label>Yeni Malzemenin Adı</label><input type="text" value="${b.yeniAd}" oninput="bilesenAlanGuncelle(${b.id},'yeniAd',this.value)" placeholder="Listede olmayan malzemenin adı..."></div>`;
+    }else{
+      const secenekler=(b.tip==='stok'?stoklar:aramuller).map(x=>`<option value="${x.id}"${x.id===b.kaynakId?' selected':''}>${x.ad}</option>`).join('');
+      ustAlan=`<div class="fg"><label>Malzeme</label><select onchange="bilesenKaynakSec(${b.id},this.value)"><option value="">Seçin...</option>${secenekler}</select></div>`;
+    }
+    return `<div class="bilesen-satir">
+      <div class="toggle-row">
+        <button type="button" class="btn btn-sm ${b.tip==='stok'?'btn-pri':'btn-sec'}" onclick="bilesenTipDegis(${b.id},'stok')">Hammadde</button>
+        <button type="button" class="btn btn-sm ${b.tip==='ara_urun'?'btn-pri':'btn-sec'}" onclick="bilesenTipDegis(${b.id},'ara_urun')">Yarı Mamul</button>
+        <button type="button" class="btn btn-sm ${b.tip==='yeni'?'btn-pri':'btn-sec'}" onclick="bilesenTipDegis(${b.id},'yeni')">Listede Yok</button>
+      </div>
+      ${ustAlan}
+      <div class="grid2">
+        <div class="fg" style="margin-bottom:0"><label>Miktar</label><input type="number" step="any" value="${b.miktar}" oninput="bilesenAlanGuncelle(${b.id},'miktar',this.value)" placeholder="0"></div>
+        <div class="fg" style="margin-bottom:0"><label>Birim</label><select onchange="bilesenAlanGuncelle(${b.id},'birimId',this.value)">${b.tip==='yeni'?'<option value="">Seçin...</option>'+birimSecenekleri(null):birimSecenekleri(tbId)}</select></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" style="margin-top:.6rem" onclick="bilesenSil(${b.id})">Bu Malzemeyi Kaldır</button>
+    </div>`;
+  }).join('')||'<div style="color:var(--yazi3);font-size:12px">Henüz malzeme eklenmedi.</div>';
+  bilesenListesi.forEach((b,i)=>{
+    const sels=el.querySelectorAll('.bilesen-satir');
+    if(sels[i]){
+      const birimSel=sels[i].querySelector('.grid2 select');
+      if(birimSel&&b.birimId)birimSel.value=b.birimId;
+    }
+  });
+}
+
+window.gonder=async function(){
+  const hataEl=document.getElementById('gonder-hata');
+  hataEl.style.display='none';
+  const ad=document.getElementById('ad').value.trim();
+  const isyeriId=document.getElementById('isyeri').value;
+  const urunAdi=document.getElementById('urun-adi').value.trim();
+  const not_=document.getElementById('not').value.trim();
+
+  if(!ad){hataEl.textContent='Lütfen adını yaz.';hataEl.style.display='block';return;}
+  if(!isyeriId){hataEl.textContent='Lütfen işyeri seç.';hataEl.style.display='block';return;}
+  if(!urunAdi){hataEl.textContent='Lütfen ürün/yarı mamul adını yaz.';hataEl.style.display='block';return;}
+  const gecerliBilesenler=bilesenListesi.filter(b=>{
+    if(!(parseFloat(b.miktar)>0))return false;
+    if(!b.birimId)return false;
+    if(b.tip==='yeni')return !!b.yeniAd.trim();
+    return !!b.kaynakId;
+  });
+  if(!gecerliBilesenler.length){hataEl.textContent='En az bir malzeme eklemelisin (miktar ve birim ile birlikte).';hataEl.style.display='block';return;}
+
+  const btn=document.getElementById('btn-gonder');
+  btn.disabled=true;btn.textContent='Gönderiliyor...';
+
+  try{
+    const teklifId=crypto.randomUUID();
+    const {error:e1}=await sb.from('urun_teklifleri').insert({
+      id:teklifId,isyeri_id:isyeriId,urun_adi:urunAdi,tip:secilenTip,olusturan_ad:ad,not_:not_||null,
+      durum:'bekliyor',olusturma_ts:Date.now()
+    });
+    if(e1)throw e1;
+
+    const bilesenKayitlari=gecerliBilesenler.map((b,i)=>({
+      teklif_id:teklifId,
+      kaynak_turu:b.tip,
+      kaynak_id:b.tip==='yeni'?null:b.kaynakId,
+      yeni_ad:b.tip==='yeni'?b.yeniAd.trim():null,
+      birim_id:b.birimId,
+      miktar:parseFloat(b.miktar),
+      sira:i
+    }));
+    const {error:e2}=await sb.from('urun_teklif_bilesenleri').insert(bilesenKayitlari);
+    if(e2)throw e2;
+
+    document.getElementById('form-alan').style.display='none';
+    document.getElementById('basari').style.display='block';
+  }catch(err){
+    hataEl.textContent='Gönderilemedi: '+(err.message||'bilinmeyen hata')+' — tekrar dener misin?';
+    hataEl.style.display='block';
+    btn.disabled=false;btn.textContent='Gönder';
+  }
+};
+</script>
+</body>
+</html>
