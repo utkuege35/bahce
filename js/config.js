@@ -190,6 +190,7 @@ const EKRANLAR = [
   {id:'sayim_raporu', ad:'Sayım Raporu'},
   {id:'recete_kullanim_raporu', ad:'Reçetelerde Kullanım Raporu'},
   {id:'ym_sayim_ozeti', ad:'YM/Ürün Sayım Özeti'},
+  {id:'urun_teklifleri', ad:'Ürün Teklifleri'},
   {id:'rapor',      ad:'Rapor'},
 ];
 
