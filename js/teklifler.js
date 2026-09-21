@@ -1,4 +1,131 @@
-// ===== ÜRÜN TEKLİFLERİ (aşçıdan şifresiz link üzerinden gelen öneriler) =====
+// ===== YENİ ÜRÜN/REÇETE ÖNER (aşçı ekranı — normal girişli kullanıcı) =====
+let _utgTip='urun';
+let _utgBilesenler=[]; // {id, tip:'stok'|'ara_urun'|'yeni', kaynakId, yeniAd, birimId, miktar}
+let _utgSayac=0;
+
+window.utgBaslat=function(){
+  _utgTip='urun';_utgBilesenler=[];_utgSayac=0;
+  document.getElementById('utg-tip-urun')?.classList.add('pri');
+  document.getElementById('utg-tip-urun')?.classList.remove('sec');
+  document.getElementById('utg-tip-ara_urun')?.classList.add('sec');
+  document.getElementById('utg-tip-ara_urun')?.classList.remove('pri');
+  document.getElementById('utg-urun-adi').value='';
+  document.getElementById('utg-not').value='';
+  document.getElementById('utg-hata').style.display='none';
+  const btn=document.getElementById('utg-gonder-btn');if(btn){btn.disabled=false;btn.textContent='Gönder';}
+  utgBilesenEkle();
+};
+window.utgTipSec=function(t){
+  _utgTip=t;
+  document.getElementById('utg-tip-urun').classList.toggle('pri',t==='urun');
+  document.getElementById('utg-tip-urun').classList.toggle('sec',t!=='urun');
+  document.getElementById('utg-tip-ara_urun').classList.toggle('pri',t==='ara_urun');
+  document.getElementById('utg-tip-ara_urun').classList.toggle('sec',t!=='ara_urun');
+};
+window.utgBilesenEkle=function(){
+  _utgSayac++;
+  _utgBilesenler.push({id:_utgSayac,tip:'stok',kaynakId:'',yeniAd:'',birimId:'',miktar:''});
+  utgBilesenRender();
+};
+window.utgBilesenSil=function(id){
+  _utgBilesenler=_utgBilesenler.filter(b=>b.id!==id);
+  utgBilesenRender();
+};
+window.utgBilesenTipDegis=function(id,tip){
+  const b=_utgBilesenler.find(x=>x.id===id);
+  b.tip=tip;b.kaynakId='';b.yeniAd='';b.birimId='';
+  utgBilesenRender();
+};
+window.utgBilesenAramaInput=function(id,val){
+  const kapsamStok=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
+  const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
+  const b=_utgBilesenler.find(x=>x.id===id);
+  const liste=b.tip==='stok'?kapsamStok:kapsamYm;
+  const eslesen=liste.find(x=>`[${x.kod}] ${x.ad}`===val);
+  if(!eslesen)return;
+  b.kaynakId=eslesen.id;
+  // Birim: hammaddede Reçete Birimi, YM'de kendi temel birimi
+  b.birimId=b.tip==='stok'?(eslesen.recete_birim_id||eslesen.birim_id||''):(eslesen.birim_id||'');
+  utgBilesenRender();
+};
+window.utgBilesenAlanGuncelle=function(id,alan,deger){
+  const b=_utgBilesenler.find(x=>x.id===id);
+  b[alan]=deger;
+};
+
+function utgBilesenRender(){
+  const el=document.getElementById('utg-bilesenler');if(!el)return;
+  const kapsamStok=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
+  const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
+  el.innerHTML=_utgBilesenler.map(b=>{
+    const secBirim=birimler.find(x=>x.id===b.birimId);
+    let ustAlan;
+    if(b.tip==='yeni'){
+      ustAlan=`<div class="fg"><label>Yeni Malzemenin Adı</label><input type="text" value="${b.yeniAd}" oninput="utgBilesenAlanGuncelle(${b.id},'yeniAd',this.value)" placeholder="Listede olmayan malzemenin adı..."></div>
+        <div class="fg"><label>Birim</label><select onchange="utgBilesenAlanGuncelle(${b.id},'birimId',this.value)"><option value="">Seçin...</option>${birimler.filter(x=>x.temel!==false).map(x=>`<option value="${x.id}"${x.id===b.birimId?' selected':''}>${x.kisaltma}</option>`).join('')}</select></div>`;
+    }else{
+      const liste=b.tip==='stok'?kapsamStok:kapsamYm;
+      const secili=liste.find(x=>x.id===b.kaynakId);
+      ustAlan=`<div class="fg"><label>Malzeme</label>
+        <input type="text" list="utg-dl-${b.id}" autocomplete="off" value="${secili?`[${secili.kod}] ${secili.ad}`:''}" oninput="utgBilesenAramaInput(${b.id},this.value)" placeholder="Yazarak arayın...">
+        <datalist id="utg-dl-${b.id}">${liste.map(x=>`<option value="[${x.kod}] ${x.ad}">`).join('')}</datalist>
+      </div>
+      <div class="fg"><label>Birim</label><div style="padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--krem);font-size:13px;color:var(--yazi2)">${secBirim?.kisaltma||(secili?'Bu kalemde reçete birimi tanımlı değil, yönetici belirleyecek':'—')}</div></div>`;
+    }
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:.75rem;margin-bottom:.6rem">
+      <div style="display:flex;gap:6px;margin-bottom:.6rem">
+        <button type="button" class="btn sm ${b.tip==='stok'?'pri':'sec'}" onclick="utgBilesenTipDegis(${b.id},'stok')">Hammadde</button>
+        <button type="button" class="btn sm ${b.tip==='ara_urun'?'pri':'sec'}" onclick="utgBilesenTipDegis(${b.id},'ara_urun')">Yarı Mamul</button>
+        <button type="button" class="btn sm ${b.tip==='yeni'?'pri':'sec'}" onclick="utgBilesenTipDegis(${b.id},'yeni')">Listede Yok</button>
+      </div>
+      ${ustAlan}
+      <div class="fg" style="margin-bottom:0"><label>Miktar</label><input type="number" step="any" value="${b.miktar}" oninput="utgBilesenAlanGuncelle(${b.id},'miktar',this.value)" placeholder="0"></div>
+      <button type="button" class="btn ghost sm" style="margin-top:.6rem" onclick="utgBilesenSil(${b.id})">Bu Malzemeyi Kaldır</button>
+    </div>`;
+  }).join('')||'<div class="bos">Henüz malzeme eklenmedi.</div>';
+}
+
+window.utgGonder=async function(){
+  const hataEl=document.getElementById('utg-hata');
+  hataEl.style.display='none';
+  const urunAdi=document.getElementById('utg-urun-adi').value.trim();
+  const not_=document.getElementById('utg-not').value.trim();
+  if(!aktifIsyeri){hataEl.textContent='İşyeri bilgisi bulunamadı, sayfayı yenileyin.';hataEl.style.display='block';return;}
+  if(!urunAdi){hataEl.textContent='Lütfen ürün/yarı mamul adını yaz.';hataEl.style.display='block';return;}
+  const gecerli=_utgBilesenler.filter(b=>{
+    if(!(parseFloat(b.miktar)>0))return false;
+    if(b.tip==='yeni')return !!b.yeniAd.trim()&&!!b.birimId;
+    return !!b.kaynakId; // birim boş olsa bile gönderilebilir, yönetici tamamlar
+  });
+  if(!gecerli.length){hataEl.textContent='En az bir malzeme eklemelisin (miktar girilmiş olmalı).';hataEl.style.display='block';return;}
+
+  const btn=document.getElementById('utg-gonder-btn');
+  btn.disabled=true;btn.textContent='Gönderiliyor...';
+  try{
+    const teklifId=uid();
+    const {error:e1}=await sb.from('urun_teklifleri').insert({
+      id:teklifId,isyeri_id:aktifIsyeri.id,urun_adi:urunAdi,tip:_utgTip,olusturan_ad:aktifKullanici?.ad||'',not_:not_||null,
+      durum:'bekliyor',olusturma_ts:Date.now()
+    });
+    if(e1)throw e1;
+    const bilesenKayitlari=gecerli.map((b,i)=>({
+      id:uid(),teklif_id:teklifId,
+      kaynak_turu:b.tip,
+      kaynak_id:b.tip==='yeni'?null:b.kaynakId,
+      yeni_ad:b.tip==='yeni'?b.yeniAd.trim():null,
+      birim_id:b.birimId||null,
+      miktar:parseFloat(b.miktar),sira:i
+    }));
+    const {error:e2}=await sb.from('urun_teklif_bilesenleri').insert(bilesenKayitlari);
+    if(e2)throw e2;
+    bil('✓ Teklif gönderildi, yönetici kontrol edecek');
+    utgBaslat();
+  }catch(err){
+    hataEl.textContent='Gönderilemedi: '+(err.message||'bilinmeyen hata');
+    hataEl.style.display='block';
+    btn.disabled=false;btn.textContent='Gönder';
+  }
+};
 let _teklifListesi=[];
 let _teklifAcikId=null;
 // Her teklif için çözüm durumu: { [teklifId]: { anaGrupId, altGrupId,
