@@ -191,6 +191,7 @@ const EKRANLAR = [
   {id:'recete_kullanim_raporu', ad:'Reçetelerde Kullanım Raporu'},
   {id:'ym_sayim_ozeti', ad:'YM/Ürün Sayım Özeti'},
   {id:'urun_teklifleri', ad:'Ürün Teklifleri'},
+  {id:'urun_teklif_gonder', ad:'Yeni Ürün/Reçete Öner (Aşçı Ekranı)'},
   {id:'rapor',      ad:'Rapor'},
 ];
 
