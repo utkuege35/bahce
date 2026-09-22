@@ -52,16 +52,16 @@ window.utgBilesenAramaFiltrele=function(id,val){
   const liste=b.tip==='stok'?kapsamStok:kapsamYm;
   const q=(val||'').trim().toLocaleLowerCase('tr');
   const kutu=document.getElementById('utg-oneri-'+id);if(!kutu)return;
-  if(!q){kutu.style.display='none';kutu.innerHTML='';return;}
-  const eslesenler=liste.filter(x=>
-    x.ad.toLocaleLowerCase('tr').includes(q) || (x.kod||'').toLocaleLowerCase('tr').includes(q)
-  ).slice(0,20);
+  const eslesenler=(q
+    ? liste.filter(x=>x.ad.toLocaleLowerCase('tr').includes(q)||(x.kod||'').toLocaleLowerCase('tr').includes(q))
+    : liste
+  ).slice(0,30);
   if(!eslesenler.length){
     kutu.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--yazi3)">Sonuç bulunamadı</div>';
     kutu.style.display='block';
     return;
   }
-  kutu.innerHTML=eslesenler.map(x=>`<div onclick="utgBilesenSecildi(${id},'${x.id}')" style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--krem2)" onmouseover="this.style.background='var(--krem2)'" onmouseout="this.style.background=''">[${x.kod}] ${x.ad}</div>`).join('');
+  kutu.innerHTML=eslesenler.map(x=>`<div onclick="utgBilesenSecildi(${id},'${x.id}')" style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--krem2)" onmouseover="this.style.background='var(--krem2)'" onmouseout="this.style.background=''">${x.ad}</div>`).join('');
   kutu.style.display='block';
 };
 window.utgBilesenSecildi=function(id,kaynakId){
@@ -91,7 +91,7 @@ function utgBilesenRender(){
       const secili=liste.find(x=>x.id===b.kaynakId);
       ustAlan=`<div class="fg" style="position:relative">
         <label>Malzeme</label>
-        <input type="text" autocomplete="off" value="${secili?`[${secili.kod}] ${secili.ad}`:''}"
+        <input type="text" autocomplete="off" value="${secili?secili.ad:''}"
           oninput="utgBilesenAramaFiltrele(${b.id},this.value)"
           onfocus="utgBilesenAramaFiltrele(${b.id},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('utg-oneri-${b.id}');if(d)d.style.display='none';},150)"
