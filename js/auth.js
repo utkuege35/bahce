@@ -14,7 +14,7 @@ window.girisYap=async function(){
     const {data,error}=await sb.auth.signInWithPassword({email,password:sifre});
     if(error){hEl.textContent='Şifre hatalı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
     // Giriş başarılı — artık authenticated olduğumuz için tam satırı okuyabiliriz.
-    const {data:kData,error:kErr}=await sb.from('kullanicilar').select('*').eq('kullanici_adi',kAdi).single();
+    const {data:kData,error:kErr}=await sb.from('kullanicilar').select('*').ilike('kullanici_adi',kAdi).single();
     if(kErr||!kData){hEl.textContent='Kullanıcı bilgisi okunamadı.';hEl.style.display='block';btn.disabled=false;btn.textContent='Giriş Yap';return;}
     if(hatirla)localStorage.setItem('bahce_hatirla',kAdi);else localStorage.removeItem('bahce_hatirla');
     hEl.style.display='none';
