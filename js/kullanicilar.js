@@ -55,16 +55,31 @@ window.kullaniciyiKaydet=async function(){
   try{
     if(!mUid){
       if(!sifre||sifre.length<6){bil('Şifre en az 6 karakter!','err');return;}
+      // signUp() bazen admin oturumunun yerine yeni kullanıcının oturumunu
+      // geçiriyor — bu yüzden kayıt işleminden önce admin oturumunu saklayıp,
+      // kullanicilar tablosuna yazmadan HEMEN ÖNCE geri yüklüyoruz (aksi halde
+      // ekleme, henüz hiç yetkisi olmayan yeni kullanıcı adına denenir ve RLS
+      // tarafından sessizce reddedilir).
+      const {data:oturumVerisi}=await sb.auth.getSession();
+      const adminOturum=oturumVerisi?.session;
+
       const {data:sd,error:se}=await sb.auth.signUp({email,password:sifre});
       if(se){bil('Hata: '+se.message,'err');return;}
+
+      if(adminOturum){
+        await sb.auth.setSession({access_token:adminOturum.access_token,refresh_token:adminOturum.refresh_token});
+      }
+
       const isyeriYetkiler=typeof isyeriYetkilerOku==='function'?isyeriYetkilerOku():[];
       const crudYetkiler=_kmCrudOku();
-      await sb.from('kullanicilar').insert({id:sd?.user?.id||uid(),ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler,crud_yetkiler:crudYetkiler});
+      const {error:ie}=await sb.from('kullanicilar').insert({id:sd?.user?.id||uid(),ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler,crud_yetkiler:crudYetkiler});
+      if(ie){bil('Kullanıcı hesabı oluşturuldu ama kayıt tablosuna eklenemedi: '+ie.message,'err');return;}
       bil(`${ad} ${soyad} eklendi ✓`);
     }else{
       const isyeriYetkiler=typeof isyeriYetkilerOku==='function'?isyeriYetkilerOku():[];
       const crudYetkiler=_kmCrudOku();
-      await sb.from('kullanicilar').update({ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler,crud_yetkiler:crudYetkiler}).eq('id',mUid);
+      const {error:ue}=await sb.from('kullanicilar').update({ad,soyad,email,kullanici_adi:kAdi,rol,varsayilan_kasa_id:varsayilanKasa||null,yetkiler,isyeri_yetkiler:isyeriYetkiler,crud_yetkiler:crudYetkiler}).eq('id',mUid);
+      if(ue){bil('Hata: '+ue.message,'err');return;}
       bil('Güncellendi ✓');
     }
     const {data}=await sb.from('kullanicilar').select('*');if(data)kullanicilar=data;
