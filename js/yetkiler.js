@@ -190,12 +190,14 @@ window.sablonKullaniciKaldir = async function(sablonId, kulId) {
 
 // Yetki verilerini yenile
 async function _yetkiYenile() {
-  const [{data:ys},{data:kys}] = await Promise.all([
+  const [{data:ys},{data:kys},{data:ku}] = await Promise.all([
     sb.from('yetki_sablonlari').select('*').eq('aktif', true),
-    sb.from('kullanici_yetki_sablonlari').select('*')
+    sb.from('kullanici_yetki_sablonlari').select('*'),
+    sb.from('kullanicilar').select('*')
   ]);
   if (ys) yetkiSablonlari = ys;
   if (kys) kullaniciYetkiSablonlari = kys;
+  if (ku) kullanicilar = ku;
 }
 
 // Tüm sayfada yetki butonlarını uygula
@@ -275,11 +277,16 @@ window.renderKulYetkiler = function() {
       </span>` : '';
     }).join('');
 
+    const isyeriOzet = (k.crud_isyeriler && k.crud_isyeriler.length)
+      ? k.crud_isyeriler.map(id => isyerleri.find(i=>i.id===id)?.ad).filter(Boolean).join(', ')
+      : 'Tüm işyerleri';
+
     return `<div class="card" style="margin-bottom:8px;padding:10px 14px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--yesil);flex-shrink:0">${ini}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600">${k.ad} ${k.soyad||''} <span style="font-size:11px;color:var(--yazi3);font-weight:400">@${k.kullanici_adi}</span></div>
+          <div style="font-size:10px;color:var(--yazi3);margin-top:2px">🏪 ${isyeriOzet}</div>
           <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">
             ${sablonHTML || '<span style="font-size:11px;color:var(--yazi3)">Şablon atanmamış</span>'}
           </div>
@@ -307,16 +314,17 @@ window.kulYetkiDuzenleAc = function(kulId) {
   document.getElementById('ky-kullanici-bilgi').innerHTML =
     `<strong>${k.ad} ${k.soyad||''}</strong> · @${k.kullanici_adi} · <span style="color:var(--yazi3)">${k.email}</span>`;
 
-  // İşyeri checkboxları
+  // İşyeri checkboxları — sade/beyaz, seçili olanı sadece kutucuğun kendi
+  // "checked" durumu belli eder (arka plan rengiyle ayrıca vurgulanmaz).
   const isyeriDiv = document.getElementById('ky-isyeri-checkler');
   if (isyeriDiv) {
-    const mevcutIsyeriler = k.crud_isyeriler || []; // kaydedilmiş işyeri id listesi
+    const mevcutIsyeriler = k.crud_isyeriler || [];
     isyeriDiv.innerHTML = isyerleri.map(iy => {
       const sirket = sirketler.find(s => s.id === iy.sirket_id);
       const secili = mevcutIsyeriler.includes(iy.id);
-      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:${secili?'var(--yesil-cok-ac)':'var(--beyaz)'}">
+      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--beyaz)">
         <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
-          style="width:15px;height:15px;accent-color:var(--yesil)">
+          style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer">
         <div>
           <div style="font-size:12px;font-weight:500">${iy.ad}</div>
           <div style="font-size:10px;color:var(--yazi3)">${sirket?sirket.ad:''}</div>
@@ -386,13 +394,18 @@ window.kulYetkiKaydet = async function() {
   const seciliIsyeriler = isyerleri
     .filter(iy => document.getElementById('ky-iy-'+iy.id)?.checked)
     .map(iy => iy.id);
-  await sb.from('kullanicilar').update({
+  const {error} = await sb.from('kullanicilar').update({
     crud_yetkiler: crudYetkiler,
     crud_isyeriler: seciliIsyeriler.length ? seciliIsyeriler : null
   }).eq('id', kulId);
-  const { data } = await sb.from('kullanicilar').select('*'); if (data) kullanicilar = data;
+  if (error) { bil('Kaydedilemedi: '+error.message, 'err'); return; }
+  // Kaydettikten sonra kullanicilar dizisini YENİDEN ÇEK — aksi halde
+  // tarayıcı hafızasındaki eski veri kalır ve pencereyi tekrar açtığında
+  // az önce kaydettiğin işyeri seçimi kayboluyormuş gibi görünür.
+  const { data } = await sb.from('kullanicilar').select('*');
+  if (data) kullanicilar = data;
   if (kulId === aktifKullanici?.id) {
-    aktifKullanici = { ...aktifKullanici, crud_yetkiler: crudYetkiler, crud_isyeriler: seciliIsyeriler };
+    aktifKullanici = { ...aktifKullanici, crud_yetkiler: crudYetkiler, crud_isyeriler: seciliIsyeriler.length ? seciliIsyeriler : null };
   }
   modalKapat('modal-kul-yetki');
   renderKulYetkiler();
