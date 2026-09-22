@@ -314,20 +314,22 @@ window.kulYetkiDuzenleAc = function(kulId) {
   document.getElementById('ky-kullanici-bilgi').innerHTML =
     `<strong>${k.ad} ${k.soyad||''}</strong> · @${k.kullanici_adi} · <span style="color:var(--yazi3)">${k.email}</span>`;
 
-  // İşyeri checkboxları — sade/beyaz, seçili olanı sadece kutucuğun kendi
-  // "checked" durumu belli eder (arka plan rengiyle ayrıca vurgulanmaz).
+  // İşyeri checkboxları — seçili olan işyeri artık belirgin şekilde
+  // yeşil dolgu + beyaz yazı ile vurgulanıyor (_kyIsyeriLabelGuncelle
+  // ile tıklandığında da anında güncelleniyor).
   const isyeriDiv = document.getElementById('ky-isyeri-checkler');
   if (isyeriDiv) {
     const mevcutIsyeriler = k.crud_isyeriler || [];
     isyeriDiv.innerHTML = isyerleri.map(iy => {
       const sirket = sirketler.find(s => s.id === iy.sirket_id);
       const secili = mevcutIsyeriler.includes(iy.id);
-      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:#f6f9fd;color:#1a1a18">
+      return `<label id="ky-iy-label-${iy.id}" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:2px solid ${secili?'var(--yesil)':'var(--border)'};border-radius:8px;cursor:pointer;background:${secili?'var(--yesil)':'#f6f9fd'};color:${secili?'#fff':'#1a1a18'};transition:all .15s">
         <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
-          style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer">
+          onchange="_kyIsyeriLabelGuncelle('${iy.id}')"
+          style="width:15px;height:15px;accent-color:#fff;cursor:pointer">
         <div>
           <div style="font-size:12px;font-weight:500">${iy.ad}</div>
-          <div style="font-size:10px;color:#5a5a52">${sirket?sirket.ad:''}</div>
+          <div style="font-size:10px;opacity:.75">${sirket?sirket.ad:''}</div>
         </div>
       </label>`;
     }).join('');
@@ -346,6 +348,17 @@ window.kulYetkiDuzenleAc = function(kulId) {
   }
   _kyCrudPasifAyarla(!!atananSablon);
   modalAc('modal-kul-yetki');
+};
+
+// İşyeri kutucuğunun seçili/seçili değil görünümünü anında günceller
+window._kyIsyeriLabelGuncelle = function(iyId) {
+  const input = document.getElementById('ky-iy-'+iyId);
+  const label = document.getElementById('ky-iy-label-'+iyId);
+  if (!input || !label) return;
+  const secili = input.checked;
+  label.style.background = secili ? 'var(--yesil)' : '#f6f9fd';
+  label.style.borderColor = secili ? 'var(--yesil)' : 'var(--border)';
+  label.style.color = secili ? '#fff' : '#1a1a18';
 };
 
 function _kyCrudTabloOlustur() {
