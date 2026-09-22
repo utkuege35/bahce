@@ -40,7 +40,19 @@ async function isyeriSecimAc(){
     yetkiliIsyerleri=isyerleri;
   }else{
     const isyeriYetkiler=aktifKullanici.isyeri_yetkiler||[];
-    yetkiliIsyerleri=isyerleri.filter(iy=>isyeriYetkiler.some(y=>y.isyeri_id===iy.id));
+    let idler=isyeriYetkiler.map(y=>y.isyeri_id);
+    // isyeri_yetkiler boşsa Kullanıcı Yetkileri ekranından atanan
+    // crud_isyeriler'e geri düş — böylece o ekrandan yapılan işyeri
+    // ataması giriş ekranında da geçerli olur.
+    if(!idler.length && aktifKullanici.crud_isyeriler && aktifKullanici.crud_isyeriler.length){
+      idler=aktifKullanici.crud_isyeriler;
+    }
+    if(idler.length){
+      yetkiliIsyerleri=isyerleri.filter(iy=>idler.includes(iy.id));
+    }else{
+      // Her iki alan da boşsa (= tüm işyerlerinde geçerli) tüm işyerlerini göster
+      yetkiliIsyerleri=isyerleri;
+    }
   }
 
   // Tek işyeri varsa direkt seç
