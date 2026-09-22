@@ -324,9 +324,12 @@ window.kulYetkiDuzenleAc = function(kulId) {
       const sirket = sirketler.find(s => s.id === iy.sirket_id);
       const secili = mevcutIsyeriler.includes(iy.id);
       return `<label id="ky-iy-label-${iy.id}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:2px solid ${secili?'var(--yesil)':'var(--border)'};border-radius:8px;cursor:pointer;background:#fff;color:#1a1a18;transition:border-color .15s">
-        <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
-          onchange="_kyIsyeriLabelGuncelle('${iy.id}')"
-          style="width:18px;height:18px;accent-color:var(--yesil);cursor:pointer;flex-shrink:0;background:#fff!important;border-radius:3px!important;border:1px solid #ccc!important">
+        <span style="position:relative;width:18px;height:18px;flex-shrink:0;display:inline-block">
+          <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
+            onchange="_kyIsyeriLabelGuncelle('${iy.id}')"
+            style="position:absolute;inset:0;width:18px;height:18px;opacity:0;margin:0;cursor:pointer;z-index:2">
+          <span id="ky-iy-box-${iy.id}" style="position:absolute;inset:0;border:2px solid ${secili?'var(--yesil)':'#ccc'};border-radius:4px;background:${secili?'var(--yesil)':'#fff'};display:flex;align-items:center;justify-content:center;pointer-events:none">${secili?'<span style="color:#fff;font-size:12px;font-weight:700;line-height:1">✓</span>':''}</span>
+        </span>
         <div>
           <div style="font-size:12px;font-weight:500">${iy.ad}</div>
           <div style="font-size:10px;color:#5a5a52">${sirket?sirket.ad:''}</div>
@@ -354,8 +357,13 @@ window.kulYetkiDuzenleAc = function(kulId) {
 window._kyIsyeriLabelGuncelle = function(iyId) {
   const input = document.getElementById('ky-iy-'+iyId);
   const label = document.getElementById('ky-iy-label-'+iyId);
-  if (!input || !label) return;
-  label.style.borderColor = input.checked ? 'var(--yesil)' : 'var(--border)';
+  const box = document.getElementById('ky-iy-box-'+iyId);
+  if (!input || !label || !box) return;
+  const secili = input.checked;
+  label.style.borderColor = secili ? 'var(--yesil)' : 'var(--border)';
+  box.style.background = secili ? 'var(--yesil)' : '#fff';
+  box.style.borderColor = secili ? 'var(--yesil)' : '#ccc';
+  box.innerHTML = secili ? '<span style="color:#fff;font-size:12px;font-weight:700;line-height:1">✓</span>' : '';
 };
 
 function _kyCrudTabloOlustur() {
