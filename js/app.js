@@ -103,11 +103,18 @@ function uygulamaAc(){
     if(isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici')){
       if(navIsy)navIsy.style.display='';
     }
+    // Yetkili olduğu ilk ekranı takip et — Panel gizlenirse oraya yönlendireceğiz
+    let ilkGorunurSayfa=null;
     document.querySelectorAll('.nav button,.nav-grup-icerik button').forEach(btn=>{
       const oc=btn.getAttribute('onclick')||'';
       for(const [alan,gpc] of Object.entries(navMap)){
         if(oc.includes(gpc)){
-          btn.style.display=yetkiVar(alan,'goruntule')?'':'none';
+          const yetki=yetkiVar(alan,'goruntule');
+          btn.style.display=yetki?'':'none';
+          if(yetki&&!ilkGorunurSayfa){
+            const m=gpc.match(/'([^']+)'/);
+            if(m)ilkGorunurSayfa=m[1];
+          }
           break;
         }
       }
@@ -118,6 +125,16 @@ function uygulamaAc(){
       const baslik=grup.querySelector('.nav-grup-baslik');
       if(baslik)baslik.style.display=gorunenBtnSayisi>0?'':'none';
     });
+    // Panel ekranı — sadece admin veya işyeri düzeyinde yönetici/admin
+    // rolüne sahip kullanıcılar görsün. Diğerleri butonu göremesin ve
+    // varsayılan açılış ekranı olarak Panel yerine yetkili oldukları
+    // ilk ekrana yönlendirilsinler.
+    const panelGorebilir=isyeriRoller.includes('admin')||isyeriRoller.includes('yonetici');
+    const panelBtn=document.querySelector(".nav button[onclick=\"gp('panel')\"]");
+    if(panelBtn)panelBtn.style.display=panelGorebilir?'':'none';
+    if(!panelGorebilir&&ilkGorunurSayfa){
+      setTimeout(()=>gp(ilkGorunurSayfa),0);
+    }
   }
   baslat();
 }
