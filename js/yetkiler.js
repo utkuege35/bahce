@@ -326,7 +326,7 @@ window.kulYetkiDuzenleAc = function(kulId) {
       return `<label id="ky-iy-label-${iy.id}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:2px solid ${secili?'var(--yesil)':'var(--border)'};border-radius:8px;cursor:pointer;background:#fff;color:#1a1a18;transition:border-color .15s">
         <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
           onchange="_kyIsyeriLabelGuncelle('${iy.id}')"
-          style="width:18px;height:18px;accent-color:var(--yesil);cursor:pointer;flex-shrink:0">
+          style="width:18px;height:18px;accent-color:var(--yesil);cursor:pointer;flex-shrink:0;background:#fff!important;border-radius:3px!important;border:1px solid #ccc!important">
         <div>
           <div style="font-size:12px;font-weight:500">${iy.ad}</div>
           <div style="font-size:10px;color:#5a5a52">${sirket?sirket.ad:''}</div>
