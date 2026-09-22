@@ -47,7 +47,7 @@ window.kullaniciyiKaydet=async function(){
   const varsayilanKasa=document.getElementById('km-varsayilan-kasa')?.value||null;
   const yetkiler={};
   if(!ad||!kAdi){bil('Ad ve kullanıcı adı zorunlu!','err');return;}
-  if(!email)email=`${kAdi.toLowerCase().replace(/[^a-z0-9]/g,'')}@dahili.local`;
+  if(!email)email=`${kAdi.toLowerCase().replace(/[^a-z0-9]/g,'')}@dahili-kullanici.com`;
   try{
     if(!mUid){
       if(!sifre||sifre.length<6){bil('Şifre en az 6 karakter!','err');return;}
