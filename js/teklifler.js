@@ -36,21 +36,44 @@ window.utgBilesenTipDegis=function(id,tip){
   b.tip=tip;b.kaynakId='';b.yeniAd='';b.birimId='';
   utgBilesenRender();
 };
-window.utgBilesenAramaInput=function(id,val){
-  const kapsamStok=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
-  const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
-  const b=_utgBilesenler.find(x=>x.id===id);
-  const liste=b.tip==='stok'?kapsamStok:kapsamYm;
-  const eslesen=liste.find(x=>`[${x.kod}] ${x.ad}`===val);
-  if(!eslesen)return;
-  b.kaynakId=eslesen.id;
-  // Birim: hammaddede Reçete Birimi, YM'de kendi temel birimi
-  b.birimId=b.tip==='stok'?(eslesen.recete_birim_id||eslesen.birim_id||''):(eslesen.birim_id||'');
-  utgBilesenRender();
-};
 window.utgBilesenAlanGuncelle=function(id,alan,deger){
   const b=_utgBilesenler.find(x=>x.id===id);
   b[alan]=deger;
+};
+
+// Malzeme arama kutusu — native <datalist> yerine kendi filtrelememiz:
+// datalist'in tarayıcıdaki eşleştirmesi sadece metnin BAŞINDAN arar,
+// seçenekler "[kod] Ad" ile başladığı için isim ortasında geçen
+// harflerle arama (ör. "maka") hiçbir sonuç döndürmüyordu.
+window.utgBilesenAramaFiltrele=function(id,val){
+  const b=_utgBilesenler.find(x=>x.id===id);if(!b)return;
+  const kapsamStok=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
+  const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
+  const liste=b.tip==='stok'?kapsamStok:kapsamYm;
+  const q=(val||'').trim().toLocaleLowerCase('tr');
+  const kutu=document.getElementById('utg-oneri-'+id);if(!kutu)return;
+  if(!q){kutu.style.display='none';kutu.innerHTML='';return;}
+  const eslesenler=liste.filter(x=>
+    x.ad.toLocaleLowerCase('tr').includes(q) || (x.kod||'').toLocaleLowerCase('tr').includes(q)
+  ).slice(0,20);
+  if(!eslesenler.length){
+    kutu.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--yazi3)">Sonuç bulunamadı</div>';
+    kutu.style.display='block';
+    return;
+  }
+  kutu.innerHTML=eslesenler.map(x=>`<div onclick="utgBilesenSecildi(${id},'${x.id}')" style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--krem2)" onmouseover="this.style.background='var(--krem2)'" onmouseout="this.style.background=''">[${x.kod}] ${x.ad}</div>`).join('');
+  kutu.style.display='block';
+};
+window.utgBilesenSecildi=function(id,kaynakId){
+  const b=_utgBilesenler.find(x=>x.id===id);if(!b)return;
+  const kapsamStok=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
+  const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
+  const eslesen=(b.tip==='stok'?kapsamStok:kapsamYm).find(x=>x.id===kaynakId);
+  if(!eslesen)return;
+  b.kaynakId=kaynakId;
+  // Birim: hammaddede Reçete Birimi, YM'de kendi temel birimi
+  b.birimId=b.tip==='stok'?(eslesen.recete_birim_id||eslesen.birim_id||''):(eslesen.birim_id||'');
+  utgBilesenRender();
 };
 
 function utgBilesenRender(){
@@ -66,9 +89,14 @@ function utgBilesenRender(){
     }else{
       const liste=b.tip==='stok'?kapsamStok:kapsamYm;
       const secili=liste.find(x=>x.id===b.kaynakId);
-      ustAlan=`<div class="fg"><label>Malzeme</label>
-        <input type="text" list="utg-dl-${b.id}" autocomplete="off" value="${secili?`[${secili.kod}] ${secili.ad}`:''}" oninput="utgBilesenAramaInput(${b.id},this.value)" placeholder="Yazarak arayın...">
-        <datalist id="utg-dl-${b.id}">${liste.map(x=>`<option value="[${x.kod}] ${x.ad}">`).join('')}</datalist>
+      ustAlan=`<div class="fg" style="position:relative">
+        <label>Malzeme</label>
+        <input type="text" autocomplete="off" value="${secili?`[${secili.kod}] ${secili.ad}`:''}"
+          oninput="utgBilesenAramaFiltrele(${b.id},this.value)"
+          onfocus="utgBilesenAramaFiltrele(${b.id},this.value)"
+          onblur="setTimeout(()=>{const d=document.getElementById('utg-oneri-${b.id}');if(d)d.style.display='none';},150)"
+          placeholder="Yazarak arayın... (ör. maka, sos, tavuk)">
+        <div id="utg-oneri-${b.id}" style="display:none;position:absolute;z-index:50;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15);margin-top:2px"></div>
       </div>
       <div class="fg"><label>Birim</label><div style="padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--krem);font-size:13px;color:var(--yazi2)">${secBirim?.kisaltma||(secili?'Bu kalemde reçete birimi tanımlı değil, yönetici belirleyecek':'—')}</div></div>`;
     }
