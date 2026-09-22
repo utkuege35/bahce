@@ -314,23 +314,18 @@ window.kulYetkiDuzenleAc = function(kulId) {
   document.getElementById('ky-kullanici-bilgi').innerHTML =
     `<strong>${k.ad} ${k.soyad||''}</strong> · @${k.kullanici_adi} · <span style="color:var(--yazi3)">${k.email}</span>`;
 
-  // İşyeri seçimi — checkbox değil, tamamen JS ile kontrol edilen
-  // tıklanabilir kutucuklar (○/● ikonu). Native form elemanı
-  // kullanılmadığı için tema/tarayıcı farkı etkilemiyor.
-  window._kySeciliIsyerler = new Set(k.crud_isyeriler || []);
+  // İşyeri seçimi — native <select multiple>, ekstra stil savaşı yok
   const isyeriDiv = document.getElementById('ky-isyeri-checkler');
   if (isyeriDiv) {
-    isyeriDiv.innerHTML = isyerleri.map(iy => {
-      const sirket = sirketler.find(s => s.id === iy.sirket_id);
-      return `<div id="ky-iy-pill-${iy.id}" onclick="_kyIsyeriToggle('${iy.id}')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:#1a1a18;user-select:none">
-        <span id="ky-iy-ikon-${iy.id}" style="font-size:16px;line-height:1;color:#ccc">○</span>
-        <div>
-          <div style="font-size:12px;font-weight:500">${iy.ad}</div>
-          <div style="font-size:10px;color:#5a5a52">${sirket?sirket.ad:''}</div>
-        </div>
-      </div>`;
-    }).join('');
-    isyerleri.forEach(iy => _kyIsyeriGorunumGuncelle(iy.id));
+    const mevcutIsyeriler = k.crud_isyeriler || [];
+    isyeriDiv.innerHTML = `<select id="ky-iy-select" multiple size="${Math.min(isyerleri.length,6)}" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--krem);color:var(--yazi)">
+      ${isyerleri.map(iy => {
+        const sirket = sirketler.find(s => s.id === iy.sirket_id);
+        const secili = mevcutIsyeriler.includes(iy.id);
+        return `<option value="${iy.id}"${secili?' selected':''}>${iy.ad}${sirket?' — '+sirket.ad:''}</option>`;
+      }).join('')}
+    </select>
+    <div style="font-size:10px;color:var(--yazi3);margin-top:4px">Birden fazla seçmek için Ctrl (Mac: Cmd) tuşuna basılı tutarak tıklayın.</div>`;
   }
 
   _kyCrudTabloOlustur();
@@ -349,24 +344,7 @@ window.kulYetkiDuzenleAc = function(kulId) {
 };
 
 // İşyeri kutucuğunun seçili/seçili değil görünümünü anında günceller
-// İşyeri kutucuğuna tıklandığında seçimi aç/kapat
-window._kyIsyeriToggle = function(iyId) {
-  if (_kySeciliIsyerler.has(iyId)) _kySeciliIsyerler.delete(iyId);
-  else _kySeciliIsyerler.add(iyId);
-  _kyIsyeriGorunumGuncelle(iyId);
-};
 
-// İşyeri kutucuğunun görselini (ikon + renk) günceller
-function _kyIsyeriGorunumGuncelle(iyId) {
-  const pill = document.getElementById('ky-iy-pill-'+iyId);
-  const ikon = document.getElementById('ky-iy-ikon-'+iyId);
-  if (!pill || !ikon) return;
-  const secili = _kySeciliIsyerler.has(iyId);
-  pill.style.borderColor = secili ? 'var(--yesil)' : 'var(--border)';
-  pill.style.background = secili ? 'var(--yesil-cok-ac)' : '#fff';
-  ikon.textContent = secili ? '●' : '○';
-  ikon.style.color = secili ? 'var(--yesil)' : '#ccc';
-}
 
 function _kyCrudTabloOlustur() {
   const tbody = document.getElementById('ky-crud-tablo'); if (!tbody) return;
@@ -410,8 +388,9 @@ window.kyCrudHepsiniSec = function(sec) {
 window.kulYetkiKaydet = async function() {
   const kulId = document.getElementById('ky-kullanici-id').value;
   const crudYetkiler = _kyCrudOku();
-  // Seçili işyerleri oku (yeni pill sistemi — checkbox değil, Set)
-  const seciliIsyeriler = Array.from(_kySeciliIsyerler || []);
+  // Seçili işyerleri oku (native select multiple)
+  const iySel = document.getElementById('ky-iy-select');
+  const seciliIsyeriler = iySel ? Array.from(iySel.selectedOptions).map(o => o.value) : [];
   const {error} = await sb.from('kullanicilar').update({
     crud_yetkiler: crudYetkiler,
     crud_isyeriler: seciliIsyeriler.length ? seciliIsyeriler : null
