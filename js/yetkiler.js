@@ -314,28 +314,23 @@ window.kulYetkiDuzenleAc = function(kulId) {
   document.getElementById('ky-kullanici-bilgi').innerHTML =
     `<strong>${k.ad} ${k.soyad||''}</strong> · @${k.kullanici_adi} · <span style="color:var(--yazi3)">${k.email}</span>`;
 
-  // İşyeri checkboxları — seçili olan işyeri artık belirgin şekilde
-  // yeşil dolgu + beyaz yazı ile vurgulanıyor (_kyIsyeriLabelGuncelle
-  // ile tıklandığında da anında güncelleniyor).
+  // İşyeri seçimi — checkbox değil, tamamen JS ile kontrol edilen
+  // tıklanabilir kutucuklar (○/● ikonu). Native form elemanı
+  // kullanılmadığı için tema/tarayıcı farkı etkilemiyor.
+  window._kySeciliIsyerler = new Set(k.crud_isyeriler || []);
   const isyeriDiv = document.getElementById('ky-isyeri-checkler');
   if (isyeriDiv) {
-    const mevcutIsyeriler = k.crud_isyeriler || [];
     isyeriDiv.innerHTML = isyerleri.map(iy => {
       const sirket = sirketler.find(s => s.id === iy.sirket_id);
-      const secili = mevcutIsyeriler.includes(iy.id);
-      return `<label id="ky-iy-label-${iy.id}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:2px solid ${secili?'var(--yesil)':'var(--border)'};border-radius:8px;cursor:pointer;background:#fff;color:#1a1a18;transition:border-color .15s">
-        <span style="position:relative;width:18px;height:18px;flex-shrink:0;display:inline-block">
-          <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
-            onchange="_kyIsyeriLabelGuncelle('${iy.id}')"
-            style="position:absolute;inset:0;width:18px;height:18px;opacity:0;margin:0;cursor:pointer;z-index:2">
-          <span id="ky-iy-box-${iy.id}" style="position:absolute;inset:0;border:2px solid ${secili?'var(--yesil)':'#ccc'};border-radius:4px;background:${secili?'var(--yesil)':'#fff'};display:flex;align-items:center;justify-content:center;pointer-events:none">${secili?'<span style="color:#fff;font-size:12px;font-weight:700;line-height:1">✓</span>':''}</span>
-        </span>
+      return `<div id="ky-iy-pill-${iy.id}" onclick="_kyIsyeriToggle('${iy.id}')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:2px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:#1a1a18;user-select:none">
+        <span id="ky-iy-ikon-${iy.id}" style="font-size:16px;line-height:1;color:#ccc">○</span>
         <div>
           <div style="font-size:12px;font-weight:500">${iy.ad}</div>
           <div style="font-size:10px;color:#5a5a52">${sirket?sirket.ad:''}</div>
         </div>
-      </label>`;
+      </div>`;
     }).join('');
+    isyerleri.forEach(iy => _kyIsyeriGorunumGuncelle(iy.id));
   }
 
   _kyCrudTabloOlustur();
@@ -354,17 +349,24 @@ window.kulYetkiDuzenleAc = function(kulId) {
 };
 
 // İşyeri kutucuğunun seçili/seçili değil görünümünü anında günceller
-window._kyIsyeriLabelGuncelle = function(iyId) {
-  const input = document.getElementById('ky-iy-'+iyId);
-  const label = document.getElementById('ky-iy-label-'+iyId);
-  const box = document.getElementById('ky-iy-box-'+iyId);
-  if (!input || !label || !box) return;
-  const secili = input.checked;
-  label.style.borderColor = secili ? 'var(--yesil)' : 'var(--border)';
-  box.style.background = secili ? 'var(--yesil)' : '#fff';
-  box.style.borderColor = secili ? 'var(--yesil)' : '#ccc';
-  box.innerHTML = secili ? '<span style="color:#fff;font-size:12px;font-weight:700;line-height:1">✓</span>' : '';
+// İşyeri kutucuğuna tıklandığında seçimi aç/kapat
+window._kyIsyeriToggle = function(iyId) {
+  if (_kySeciliIsyerler.has(iyId)) _kySeciliIsyerler.delete(iyId);
+  else _kySeciliIsyerler.add(iyId);
+  _kyIsyeriGorunumGuncelle(iyId);
 };
+
+// İşyeri kutucuğunun görselini (ikon + renk) günceller
+function _kyIsyeriGorunumGuncelle(iyId) {
+  const pill = document.getElementById('ky-iy-pill-'+iyId);
+  const ikon = document.getElementById('ky-iy-ikon-'+iyId);
+  if (!pill || !ikon) return;
+  const secili = _kySeciliIsyerler.has(iyId);
+  pill.style.borderColor = secili ? 'var(--yesil)' : 'var(--border)';
+  pill.style.background = secili ? 'var(--yesil-cok-ac)' : '#fff';
+  ikon.textContent = secili ? '●' : '○';
+  ikon.style.color = secili ? 'var(--yesil)' : '#ccc';
+}
 
 function _kyCrudTabloOlustur() {
   const tbody = document.getElementById('ky-crud-tablo'); if (!tbody) return;
@@ -408,10 +410,8 @@ window.kyCrudHepsiniSec = function(sec) {
 window.kulYetkiKaydet = async function() {
   const kulId = document.getElementById('ky-kullanici-id').value;
   const crudYetkiler = _kyCrudOku();
-  // Seçili işyerleri oku
-  const seciliIsyeriler = isyerleri
-    .filter(iy => document.getElementById('ky-iy-'+iy.id)?.checked)
-    .map(iy => iy.id);
+  // Seçili işyerleri oku (yeni pill sistemi — checkbox değil, Set)
+  const seciliIsyeriler = Array.from(_kySeciliIsyerler || []);
   const {error} = await sb.from('kullanicilar').update({
     crud_yetkiler: crudYetkiler,
     crud_isyeriler: seciliIsyeriler.length ? seciliIsyeriler : null
