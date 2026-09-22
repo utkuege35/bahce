@@ -322,12 +322,12 @@ window.kulYetkiDuzenleAc = function(kulId) {
     isyeriDiv.innerHTML = isyerleri.map(iy => {
       const sirket = sirketler.find(s => s.id === iy.sirket_id);
       const secili = mevcutIsyeriler.includes(iy.id);
-      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--beyaz)">
+      return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:#f6f9fd;color:#1a1a18">
         <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
           style="width:15px;height:15px;accent-color:var(--yesil);cursor:pointer">
         <div>
           <div style="font-size:12px;font-weight:500">${iy.ad}</div>
-          <div style="font-size:10px;color:var(--yazi3)">${sirket?sirket.ad:''}</div>
+          <div style="font-size:10px;color:#5a5a52">${sirket?sirket.ad:''}</div>
         </div>
       </label>`;
     }).join('');
