@@ -323,7 +323,7 @@ window.kulYetkiDuzenleAc = function(kulId) {
     isyeriDiv.innerHTML = isyerleri.map(iy => {
       const sirket = sirketler.find(s => s.id === iy.sirket_id);
       const secili = mevcutIsyeriler.includes(iy.id);
-      return `<label id="ky-iy-label-${iy.id}" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:2px solid ${secili?'var(--yesil)':'var(--border)'};border-radius:8px;cursor:pointer;background:${secili?'var(--yesil)':'#f6f9fd'};color:${secili?'#fff':'#1a1a18'};transition:all .15s">
+      return `<label id="ky-iy-label-${iy.id}" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:2px solid ${secili?'var(--yesil)':'var(--border)'};border-radius:8px;cursor:pointer;background:${secili?'var(--yesil)':'#fff'};color:${secili?'#fff':'#1a1a18'};transition:all .15s">
         <input type="checkbox" id="ky-iy-${iy.id}" ${secili?'checked':''}
           onchange="_kyIsyeriLabelGuncelle('${iy.id}')"
           style="width:15px;height:15px;accent-color:#fff;cursor:pointer">
@@ -356,7 +356,7 @@ window._kyIsyeriLabelGuncelle = function(iyId) {
   const label = document.getElementById('ky-iy-label-'+iyId);
   if (!input || !label) return;
   const secili = input.checked;
-  label.style.background = secili ? 'var(--yesil)' : '#f6f9fd';
+  label.style.background = secili ? 'var(--yesil)' : '#fff';
   label.style.borderColor = secili ? 'var(--yesil)' : 'var(--border)';
   label.style.color = secili ? '#fff' : '#1a1a18';
 };
