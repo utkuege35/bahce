@@ -28,25 +28,27 @@ window.utgTipSec=function(t){
   _utgGrupRender();
 };
 
-// Ana/Alt grup seçimi — hangi mevcut ürün/YM grubuna ait olduğunu seçtirir
+// Ana/Alt grup seçimi — opsiyonel: sistemde grup varsa göstermek/seçtirmek
+// için, yoksa zaten boş kalır. Seçilmeden de gönderilebilir.
 function _utgGrupRender(){
   const el=document.getElementById('utg-grup-alan');if(!el)return;
   const kok=_utgTip==='ara_urun'
     ? urunler.filter(u=>u.tip==='grup'&&u.agac_tip==='ara_urun'&&!u.ust_id)
     : urunler.filter(u=>u.tip==='grup'&&u.agac_tip==='urun'&&!u.ust_id);
+  if(!kok.length){el.innerHTML='';return;} // sistemde hiç grup yoksa alanı hiç gösterme
   const altListe=(_utgTip==='urun'&&_utgAnaGrupId)
     ? urunler.filter(g=>g.tip==='grup'&&g.ust_id===_utgAnaGrupId)
     : [];
   el.innerHTML=`<div class="fgrid ${_utgTip==='urun'?'c2':'c1'}">
-    <div class="fg"><label>Ana Grup</label>
+    <div class="fg"><label>Ana Grup <span style="font-weight:400;color:var(--yazi3)">(opsiyonel)</span></label>
       <select onchange="_utgAnaGrupDegis(this.value)">
-        <option value="">Seçin...</option>
+        <option value="">Seçin... (boş bırakılabilir)</option>
         ${kok.map(g=>`<option value="${g.id}"${g.id===_utgAnaGrupId?' selected':''}>${g.ad}</option>`).join('')}
       </select>
     </div>
-    ${_utgTip==='urun'?`<div class="fg"><label>Alt Grup</label>
+    ${_utgTip==='urun'?`<div class="fg"><label>Alt Grup <span style="font-weight:400;color:var(--yazi3)">(opsiyonel)</span></label>
       <select onchange="_utgAltGrupDegis(this.value)" ${!_utgAnaGrupId?'disabled':''}>
-        <option value="">Seçin...</option>
+        <option value="">Seçin... (boş bırakılabilir)</option>
         ${altListe.map(g=>`<option value="${g.id}"${g.id===_utgAltGrupId?' selected':''}>${g.ad}</option>`).join('')}
       </select>
     </div>`:''}
@@ -167,8 +169,6 @@ window.utgGonder=async function(){
   const not_=document.getElementById('utg-not').value.trim();
   if(!aktifIsyeri){hataEl.textContent='İşyeri bilgisi bulunamadı, sayfayı yenileyin.';hataEl.style.display='block';return;}
   if(!urunAdi){hataEl.textContent='Lütfen ürün/yarı mamul adını yaz.';hataEl.style.display='block';return;}
-  if(!_utgAnaGrupId){hataEl.textContent='Lütfen hangi gruba ait olduğunu seç.';hataEl.style.display='block';return;}
-  if(_utgTip==='urun'&&!_utgAltGrupId){hataEl.textContent='Lütfen alt grubu da seç.';hataEl.style.display='block';return;}
   const gecerli=_utgBilesenler.filter(b=>{
     if(!(parseFloat(b.miktar)>0))return false;
     if(b.tip==='yeni')return !!b.yeniAd.trim()&&!!b.birimId;
@@ -179,7 +179,7 @@ window.utgGonder=async function(){
   // Göndermeden önce özet göster ve onay iste — kaydet/kontrol et/gönder akışı
   const kapsamStok=isyeriFiltre(stoklar);
   const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun');
-  const anaGrupAdi=urunler.find(g=>g.id===_utgAnaGrupId)?.ad||'';
+  const anaGrupAdi=_utgAnaGrupId?(urunler.find(g=>g.id===_utgAnaGrupId)?.ad||''):'';
   const altGrupAdi=_utgAltGrupId?(urunler.find(g=>g.id===_utgAltGrupId)?.ad||''):'';
   const malzemeSatirlari=gecerli.map(b=>{
     let ad;
@@ -196,7 +196,7 @@ window.utgGonder=async function(){
   }).join('');
   const ozetHtml=`<div style="text-align:left">
     <div style="font-weight:600;margin-bottom:4px">${urunAdi} <span style="font-size:11px;color:var(--yazi3);font-weight:400">(${_utgTip==='ara_urun'?'Yarı Mamul':'Ürün'})</span></div>
-    <div style="font-size:12px;color:var(--yazi2);margin-bottom:6px">🗂 ${anaGrupAdi}${altGrupAdi?' / '+altGrupAdi:''}</div>
+    ${anaGrupAdi?`<div style="font-size:12px;color:var(--yazi2);margin-bottom:6px">🗂 ${anaGrupAdi}${altGrupAdi?' / '+altGrupAdi:''}</div>`:''}
     ${malzemeSatirlari}
     ${not_?`<div style="margin-top:6px;font-size:12px;color:var(--yazi2)">📝 ${not_}</div>`:''}
     <div style="margin-top:8px;font-size:11px;color:var(--yazi3)">Bu bilgileri kontrol ettin mi? Onaylarsan yöneticine gönderilecek.</div>
@@ -210,7 +210,7 @@ window.utgGonder=async function(){
     const teklifId=uid();
     const {error:e1}=await sb.from('urun_teklifleri').insert({
       id:teklifId,isyeri_id:aktifIsyeri.id,urun_adi:urunAdi,tip:_utgTip,olusturan_ad:aktifKullanici?.ad||'',not_:not_||null,
-      hedef_ana_grup_id:_utgAnaGrupId,hedef_alt_grup_id:_utgTip==='urun'?_utgAltGrupId:null,
+      hedef_ana_grup_id:_utgAnaGrupId||null,hedef_alt_grup_id:(_utgTip==='urun'?(_utgAltGrupId||null):null),
       durum:'bekliyor',olusturma_ts:Date.now()
     });
     if(e1)throw e1;
