@@ -81,47 +81,43 @@ function utgBilesenRender(){
   const kapsamStok=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
   const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun'&&u.aktif!==false);
   if(!_utgBilesenler.length){el.innerHTML='<div class="bos">Henüz malzeme eklenmedi.</div>';return;}
-  const satirlar=_utgBilesenler.map(b=>{
+  el.innerHTML=_utgBilesenler.map(b=>{
     const secBirim=birimler.find(x=>x.id===b.birimId);
-    let malzemeTd, birimTd;
+    let malzemeAlan, birimAlan;
     if(b.tip==='yeni'){
-      malzemeTd=`<input type="text" value="${b.yeniAd}" oninput="utgBilesenAlanGuncelle(${b.id},'yeniAd',this.value)" placeholder="Yeni malzemenin adı..." style="width:100%">`;
-      birimTd=`<select onchange="utgBilesenAlanGuncelle(${b.id},'birimId',this.value)" style="width:100%">
-        <option value="">Seçin...</option>${birimler.filter(x=>x.temel!==false).map(x=>`<option value="${x.id}"${x.id===b.birimId?' selected':''}>${x.kisaltma}</option>`).join('')}
+      malzemeAlan=`<input type="text" value="${b.yeniAd}" oninput="utgBilesenAlanGuncelle(${b.id},'yeniAd',this.value)" placeholder="Yeni malzemenin adı..." style="width:100%">`;
+      birimAlan=`<select onchange="utgBilesenAlanGuncelle(${b.id},'birimId',this.value)" style="width:100%">
+        <option value="">Birim seçin...</option>${birimler.filter(x=>x.temel!==false).map(x=>`<option value="${x.id}"${x.id===b.birimId?' selected':''}>${x.kisaltma}</option>`).join('')}
       </select>`;
     }else{
       const liste=b.tip==='stok'?kapsamStok:kapsamYm;
       const secili=liste.find(x=>x.id===b.kaynakId);
-      malzemeTd=`<div style="position:relative">
+      malzemeAlan=`<div style="position:relative">
         <input type="text" autocomplete="off" value="${secili?secili.ad:''}"
           oninput="utgBilesenAramaFiltrele(${b.id},this.value)"
           onfocus="utgBilesenAramaFiltrele(${b.id},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('utg-oneri-${b.id}');if(d)d.style.display='none';},150)"
           placeholder="Yazarak arayın..." style="width:100%">
-        <div id="utg-oneri-${b.id}" style="display:none;position:absolute;z-index:50;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15);margin-top:2px"></div>
+        <div id="utg-oneri-${b.id}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:260px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:3px"></div>
       </div>`;
-      birimTd=`<div style="padding:6px 8px;font-size:12px;color:var(--yazi2);white-space:nowrap">${secBirim?.kisaltma||(secili?'—':'—')}</div>`;
+      birimAlan=`<div style="padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:var(--krem);font-size:13px;color:var(--yazi2)">${secBirim?.kisaltma||'—'}</div>`;
     }
-    return `<tr class="excel-satir">
-      <td style="padding:6px 4px;width:78px">
-        <select onchange="utgBilesenTipDegis(${b.id},this.value)" style="width:100%;font-size:11px;padding:4px 6px">
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:.7rem;margin-bottom:.6rem">
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start">
+        <select onchange="utgBilesenTipDegis(${b.id},this.value)" style="width:112px;flex-shrink:0;font-size:12px;padding:8px 6px">
           <option value="stok"${b.tip==='stok'?' selected':''}>Hammadde</option>
           <option value="ara_urun"${b.tip==='ara_urun'?' selected':''}>Yarı Mamul</option>
           <option value="yeni"${b.tip==='yeni'?' selected':''}>Listede Yok</option>
         </select>
-      </td>
-      <td style="padding:6px 4px;min-width:180px">${malzemeTd}</td>
-      <td style="padding:6px 4px;width:90px">${birimTd}</td>
-      <td style="padding:6px 4px;width:90px"><input type="number" step="any" value="${b.miktar}" oninput="utgBilesenAlanGuncelle(${b.id},'miktar',this.value)" placeholder="0" style="width:100%"></td>
-      <td style="padding:6px 4px;width:30px"><button type="button" class="btn ghost sm" onclick="utgBilesenSil(${b.id})">✕</button></td>
-    </tr>`;
+        <div style="flex:1">${malzemeAlan}</div>
+        <button type="button" class="btn ghost sm" style="flex-shrink:0" onclick="utgBilesenSil(${b.id})">✕</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">${birimAlan}</div>
+        <div style="flex:1"><input type="number" step="any" value="${b.miktar}" oninput="utgBilesenAlanGuncelle(${b.id},'miktar',this.value)" placeholder="Miktar" style="width:100%"></div>
+      </div>
+    </div>`;
   }).join('');
-  el.innerHTML=`<div class="tw"><table style="width:100%">
-    <thead><tr>
-      <th style="text-align:left">Tip</th><th style="text-align:left">Malzeme</th><th style="text-align:left">Birim</th><th style="text-align:left">Miktar</th><th></th>
-    </tr></thead>
-    <tbody>${satirlar}</tbody>
-  </table></div>`;
 }
 
 window.utgGonder=async function(){
