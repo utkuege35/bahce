@@ -96,7 +96,7 @@ function utgBilesenRender(){
     if(b.tip==='yeni'){
       malzemeAlan=`<input type="text" value="${b.yeniAd}" oninput="utgBilesenAlanGuncelle(${b.id},'yeniAd',this.value)" placeholder="Yeni malzeme adı" style="${inputStil};padding:4px 2px;font-size:12px" onfocus="this.style.borderBottomColor='var(--yesil)'" onblur="this.style.borderBottomColor='transparent'">`;
       birimAlan=`<select onchange="utgBilesenAlanGuncelle(${b.id},'birimId',this.value)" style="${selectStil};padding:4px 0;font-size:11px;color:var(--yazi2)">
-        <option value="">—</option>${birimler.filter(x=>x.temel!==false).map(x=>`<option value="${x.id}"${x.id===b.birimId?' selected':''}>${x.kisaltma}</option>`).join('')}
+        <option value="">—</option>${birimler.filter(x=>['b2','mtwwejo6yszi','b5'].includes(x.id)).map(x=>`<option value="${x.id}"${x.id===b.birimId?' selected':''}>${x.kisaltma}</option>`).join('')}
       </select>`;
     }else{
       const liste=b.tip==='stok'?kapsamStok:kapsamYm;
