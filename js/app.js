@@ -86,6 +86,7 @@ function uygulamaAc(){
     document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     document.getElementById('nav-yetkiler')?.style && (document.getElementById('nav-yetkiler').style.display='');
     document.getElementById('nav-kul-yetkiler')?.style && (document.getElementById('nav-kul-yetkiler').style.display='');
+    document.getElementById('nav-btn-utg-gonderdiklerim')?.style && (document.getElementById('nav-btn-utg-gonderdiklerim').style.display='none');
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-stok-excel-yukle','btn-stok-cift-excel','btn-yeni-urun-grup','btn-yeni-urun','btn-yeni-yarimamul-grup','btn-yeni-yarimamul'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
     // Kullanıcılar ve Şirket&İşyerleri butonlarını gizle
