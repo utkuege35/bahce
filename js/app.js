@@ -7,12 +7,14 @@ window.darkToggle=function(){
   const isDark=document.body.classList.toggle('dark');
   localStorage.setItem('sv-dark', isDark?'1':'0');
   const btn=document.getElementById('dark-toggle-btn');
-  if(btn)btn.textContent=isDark?'🌙':'☀️';
+  if(btn)btn.textContent=isDark?'☀️':'🌙';
 };
-// Sayfa yüklenince buton ikonunu ayarla
+// Sayfa yüklenince buton ikonunu ayarla — ikon, tıklanınca geçilecek
+// modu gösterir (aydınlıktayken ay = karanlığa geç, karanlıktayken
+// güneş = aydınlığa geç)
 document.addEventListener('DOMContentLoaded',function(){
   const btn=document.getElementById('dark-toggle-btn');
-  if(btn)btn.textContent=document.body.classList.contains('dark')?'🌙':'☀️';
+  if(btn)btn.textContent=document.body.classList.contains('dark')?'☀️':'🌙';
 });
 
 // ===== MODALLARı BODY'E TAŞI =====
