@@ -1,4 +1,3 @@
-
 body.dark{
   --yesil:#5b9ec9;--grup-bg-0:rgba(91,158,201,.38);--grup-bg-1:rgba(91,158,201,.22);--grup-bg-2:rgba(91,158,201,.11);--grup-kenar-0:#5b9ec9;--grup-kenar-1:#4080a8;--grup-kenar-2:#2d5a7a;--grup-kenar-3:#1e3d52;--yesil-ac:#7ab8d9;--yesil-cok-ac:#1a2e3d;
   --turuncu:#e07b4a;--turuncu-ac:#e8956d;--turuncu-cok-ac:#2d1a10;
@@ -73,7 +72,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
 
 .sync{font-size:10px;padding:2px 8px;border-radius:20px}
 .sync.ok{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9)}.sync.err{background:rgba(255,80,80,.3);color:#ffd}.sync.load{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
-.nav{width:150px;background:var(--beyaz);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;z-index:100;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding:.5rem 0}
+.nav{width:190px;background:var(--beyaz);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;z-index:100;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;padding:.5rem 0}
 .nav::-webkit-scrollbar{display:none}
 .nav button{width:100%;padding:.7rem 1rem;border:none;background:transparent;color:var(--yazi2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-left:3px solid transparent;transition:all .2s;white-space:nowrap;text-align:left}
 .nav button.active{color:var(--yesil);border-left-color:var(--yesil);background:var(--yesil-cok-ac);font-weight:500}
@@ -104,12 +103,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--krem);color:var(--yazi);m
   .hamburger{display:none!important}
   .nav-overlay{display:none!important}
 }
-.page{display:none;padding:1rem 1.5rem;max-width:980px;margin:0 auto;padding-bottom:2rem;margin-left:150px}
+.page{display:none;padding:1rem 1.5rem;max-width:980px;margin:0 auto;padding-bottom:2rem;margin-left:190px}
 @media(max-width:768px){.page{margin-left:0;padding:.85rem}}
 /* Geniş tablolu düz liste ekranları — sağda boşluk kalmasın, kolonlar sıkışmasın */
 #stok-liste.page,#urun-liste.page,#ym-liste.page{max-width:1500px}
 .page.active{display:block}
-.uyari-bant{background:var(--sari-ac);border-bottom:1px solid #ffd60a33;padding:.45rem 1.25rem;display:none;cursor:pointer;margin-left:150px}
+.uyari-bant{background:var(--sari-ac);border-bottom:1px solid #ffd60a33;padding:.45rem 1.25rem;display:none;cursor:pointer;margin-left:190px}
 @media(max-width:768px){.uyari-bant{margin-left:0}}
 .uyari-bant .ub-ic{font-size:12px;color:var(--sari)}
 .card{background:var(--beyaz);border:1px solid var(--border);border-radius:12px;padding:1.1rem;margin-bottom:.9rem}
