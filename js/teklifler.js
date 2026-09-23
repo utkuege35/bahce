@@ -199,7 +199,7 @@ window.utgGonder=async function(){
     ${anaGrupAdi?`<div style="font-size:12px;color:var(--yazi2);margin-bottom:6px">🗂 ${anaGrupAdi}${altGrupAdi?' / '+altGrupAdi:''}</div>`:''}
     ${malzemeSatirlari}
     ${not_?`<div style="margin-top:6px;font-size:12px;color:var(--yazi2)">📝 ${not_}</div>`:''}
-    <div style="margin-top:8px;font-size:11px;color:var(--yazi3)">Bu bilgileri kontrol ettin mi? Onaylarsan yöneticine gönderilecek.</div>
+    <div style="margin-top:8px;font-size:11px;color:var(--yazi3)">Yeni ürün bu bilgilerle gönderilecektir. Onaylıyor musunuz?</div>
   </div>`;
   const onaylandi=await onay(ozetHtml,'📝');
   if(!onaylandi)return;
@@ -240,7 +240,7 @@ let _utCozum={};
 
 async function teklifleriYukle(){
   const durum=document.getElementById('ut-durum-filtre')?.value||'bekliyor';
-  let q=sb.from('urun_teklifleri').select('*').order('olusturma_ts',{ascending:false});
+  let q=sb.from('urun_teklifleri').select('*').eq('isyeri_id',aktifIsyeri?.id).order('olusturma_ts',{ascending:false});
   if(durum!=='hepsi')q=q.eq('durum',durum);
   const {data:teklifler}=await q;
   if(!teklifler){_teklifListesi=[];return;}
