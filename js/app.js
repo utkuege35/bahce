@@ -127,6 +127,10 @@ function uygulamaAc(){
       const baslik=grup.querySelector('.nav-grup-baslik');
       if(baslik)baslik.style.display=gorunenBtnSayisi>0?'':'none';
     });
+    // "Gönderdiklerim" butonunun görünürlüğünü "Yeni Ürün/Reçete" ile eşitle
+    const orijinalUtgBtn=document.querySelector(".nav button[onclick=\"gp('urun-teklif-gonder')\"]");
+    const yeniUtgBtn=document.getElementById('nav-btn-utg-gonderdiklerim');
+    if(orijinalUtgBtn&&yeniUtgBtn)yeniUtgBtn.style.display=orijinalUtgBtn.style.display;
     // Panel ekranı — sadece admin veya işyeri düzeyinde yönetici/admin
     // rolüne sahip kullanıcılar görsün. Diğerleri butonu göremesin ve
     // varsayılan açılış ekranı olarak Panel yerine yetkili oldukları
@@ -299,6 +303,7 @@ window.gp=function(id){
     if(typeof renderYmSayimOzeti==='function')renderYmSayimOzeti();
   }
   if(id==='urun-teklifleri'&&typeof renderUrunTeklifleri==='function')renderUrunTeklifleri();
+  if(id==='urun-teklif-gonderdiklerim'&&typeof renderUtgGonderdiklerim==='function')renderUtgGonderdiklerim();
   if(id==='urun-teklif-gonder'&&typeof utgBaslat==='function')utgBaslat();
   if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
 };
