@@ -142,6 +142,31 @@ window.utgGonder=async function(){
   });
   if(!gecerli.length){hataEl.textContent='En az bir malzeme eklemelisin (miktar girilmiş olmalı).';hataEl.style.display='block';return;}
 
+  // Göndermeden önce özet göster ve onay iste — kaydet/kontrol et/gönder akışı
+  const kapsamStok=isyeriFiltre(stoklar);
+  const kapsamYm=isyeriFiltre(urunler).filter(u=>u.tip==='ara_urun');
+  const malzemeSatirlari=gecerli.map(b=>{
+    let ad;
+    if(b.tip==='yeni'){ad=b.yeniAd.trim()+' <span style="color:var(--turuncu)">(yeni)</span>';}
+    else{
+      const liste=b.tip==='stok'?kapsamStok:kapsamYm;
+      const k=liste.find(x=>x.id===b.kaynakId);
+      ad=k?k.ad:'?';
+    }
+    const birim=birimler.find(x=>x.id===b.birimId)?.kisaltma||'';
+    return `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px">
+      <span>${ad}</span><span style="color:var(--yazi2)">${b.miktar} ${birim}</span>
+    </div>`;
+  }).join('');
+  const ozetHtml=`<div style="text-align:left">
+    <div style="font-weight:600;margin-bottom:4px">${urunAdi} <span style="font-size:11px;color:var(--yazi3);font-weight:400">(${_utgTip==='ara_urun'?'Yarı Mamul':'Ürün'})</span></div>
+    ${malzemeSatirlari}
+    ${not_?`<div style="margin-top:6px;font-size:12px;color:var(--yazi2)">📝 ${not_}</div>`:''}
+    <div style="margin-top:8px;font-size:11px;color:var(--yazi3)">Bu bilgileri kontrol ettin mi? Onaylarsan yöneticine gönderilecek.</div>
+  </div>`;
+  const onaylandi=await onay(ozetHtml,'📝');
+  if(!onaylandi)return;
+
   const btn=document.getElementById('utg-gonder-btn');
   btn.disabled=true;btn.textContent='Gönderiliyor...';
   try{
@@ -388,4 +413,57 @@ window.teklifIceriAktar=async function(teklifId){
   if(typeof renderStoklar==='function')renderStoklar();
   if(typeof renderUrunler==='function')renderUrunler();
   renderUrunTeklifleri();
+};
+
+// ===== GÖNDERDİKLERİM (aşçı ekranı — kendi gönderdiklerini salt okunur görür) =====
+// Nav butonu ve sayfa artık index.html içinde native olarak tanımlı
+// ("nav-btn-utg-gonderdiklerim" ve "urun-teklif-gonderdiklerim").
+
+async function _utgKendiTekliflerimYukle(){
+  if(!aktifIsyeri||!aktifKullanici)return[];
+  const {data:teklifler}=await sb.from('urun_teklifleri').select('*').eq('isyeri_id',aktifIsyeri.id).order('olusturma_ts',{ascending:false});
+  const kendi=(teklifler||[]).filter(t=>t.olusturan_ad===(aktifKullanici.ad||''));
+  const ids=kendi.map(t=>t.id);
+  let bilesenler=[];
+  if(ids.length){
+    const {data}=await sb.from('urun_teklif_bilesenleri').select('*').in('teklif_id',ids).order('sira');
+    bilesenler=data||[];
+  }
+  return kendi.map(t=>({...t,bilesenler:bilesenler.filter(b=>b.teklif_id===t.id)}));
+}
+
+window.renderUtgGonderdiklerim=async function(){
+  const el=document.getElementById('utg-gonderdiklerim-liste');if(!el)return;
+  el.innerHTML='<div class="bos">Yükleniyor...</div>';
+  const liste=await _utgKendiTekliflerimYukle();
+  if(!liste.length){el.innerHTML='<div class="bos">Henüz gönderdiğin bir ürün/reçete yok.</div>';return;}
+  el.innerHTML=liste.map(t=>{
+    const tipAd=t.tip==='ara_urun'?'Yarı Mamul':'Ürün';
+    const durumRenk=t.durum==='bekliyor'?'var(--turuncu)':t.durum==='onaylandı'?'var(--yesil)':'var(--yazi3)';
+    const tarihStr=t.olusturma_ts?new Date(t.olusturma_ts).toLocaleString('tr-TR'):'';
+    const bilesenSatirlari=t.bilesenler.map(b=>{
+      const birim=birimler.find(x=>x.id===b.birim_id)?.kisaltma||'';
+      let ad;
+      if(b.kaynak_turu==='yeni')ad=(b.yeni_ad||'?')+' (yeni)';
+      else{
+        const kaynak=b.kaynak_turu==='stok'?stoklar.find(x=>x.id===b.kaynak_id):urunler.find(x=>x.id===b.kaynak_id);
+        ad=kaynak?kaynak.ad:'(bulunamadı)';
+      }
+      return `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid var(--krem2)">
+        <span>${ad}</span><span style="color:var(--yazi2)">${parseFloat(b.miktar).toLocaleString('tr-TR',{maximumFractionDigits:3})} ${birim}</span>
+      </div>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <span class="badge ${t.tip==='ara_urun'?'m':'u'}">${tipAd}</span>
+          <strong style="margin-left:6px">${t.urun_adi}</strong>
+          <span style="font-size:11px;color:var(--yazi3);margin-left:8px">${tarihStr}</span>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:${durumRenk}">${t.durum}</span>
+      </div>
+      ${t.not_?`<div style="font-size:12px;color:var(--yazi2);margin-bottom:6px">📝 ${t.not_}</div>`:''}
+      ${bilesenSatirlari}
+    </div>`;
+  }).join('');
 };
