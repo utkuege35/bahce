@@ -35,13 +35,22 @@ window.islemGorunumForm=function(sekmeId){
  const formEl=document.getElementById('tp-'+sekmeId+'-form');
  if(listeEl)listeEl.style.display='none';
  if(formEl)formEl.style.display='';
+ document.body.classList.add('islem-form-acik');
 };
 window.islemGorunumListe=function(sekmeId){
  const listeEl=document.getElementById('tp-'+sekmeId+'-liste');
  const formEl=document.getElementById('tp-'+sekmeId+'-form');
  if(formEl)formEl.style.display='none';
  if(listeEl)listeEl.style.display='';
+ document.body.classList.remove('islem-form-acik');
  if(typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(sekmeId);
+};
+// Form açıkken ekrandan çıkmanın TEK yolu — önce onay ister. Onaylanırsa
+// (Evet) girilen veriler kaydedilmeden listeye dönülür, reddedilirse
+// (Hayır) formda kalınır. Bu, "← Listeye Dön" butonu için de kullanılır.
+window.islemKaydetmedenCik=async function(sekmeId){
+ const ok=await onay('İşlem kaydedilmeyecektir. Emin misiniz?','⚠️','Evet','Hayır');
+ if(ok&&typeof islemGorunumListe==='function')islemGorunumListe(sekmeId);
 };
 
 // ===== ÜRETİM MALİYET =====
