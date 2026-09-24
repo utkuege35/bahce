@@ -642,11 +642,11 @@ window.stTurDegis=function(){
 window.yeniFisBaslat=function(){
   if(typeof islemGorunumForm==='function')islemGorunumForm(_aktifIslemTab);
   if(_aktifIslemTab==='hammadde'){
-    hmSatirListesi=[];hmSatirRender();hmSatirEkle();
+    hmSatirListesi=[];hmSatirListesiDoldur();
     document.getElementById('hm-belge').value='';document.getElementById('hm-not').value='';
     bil('Yeni Alış fişi başlatıldı ✓');
   }else if(_aktifIslemTab==='satis'){
-    stSatirListesi=[];stSatirRender();stSatirEkle();
+    stSatirListesi=[];stSatirListesiDoldur();
     document.getElementById('st-belge').value='';document.getElementById('st-not').value='';
     bil('Yeni Satış fişi başlatıldı ✓');
   }else if(_aktifIslemTab==='sayim'){
@@ -661,7 +661,7 @@ window.yeniFisBaslat=function(){
     document.getElementById('ur-miktar').value='';document.getElementById('ur-not').value='';
     bil('Yeni Üretim kaydı başlatıldı ✓');
   }else if(_aktifIslemTab==='devir'){
-    dvSatirListesi=[];dvSatirEkle();
+    dvSatirListesi=[];dvSatirListesiDoldur();
     document.getElementById('dv-not').value='';
     bil('Yeni Devir fişi başlatıldı ✓');
   }
@@ -674,6 +674,13 @@ let dvSatirListesi=[];
 let _dvHoverIndex=null;
 window.dvSatirSilHover=function(){if(_dvHoverIndex===null||!dvSatirListesi[_dvHoverIndex]){bil('Önce bir satır seçin','err');return;}dvSatirListesi.splice(_dvHoverIndex,1);dvSatirRender();};
 window.dvSatirEkle=function(){dvSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:''});dvSatirRender();};
+// Excel gibi: yeni fiş açılırken tek tek "+ Satır Ekle"ye basmaya gerek
+// kalmadan önceden hazır birden fazla boş satır gösterir.
+window.dvSatirListesiDoldur=function(n){
+  n=n||15;
+  for(let i=0;i<n;i++)dvSatirListesi.push({stokId:'',birimId:'',miktar:'',fiyat:'',tutar:''});
+  dvSatirRender();
+};
 function dvSecimOpts(seciliId){
   return '<option value="">Stok seçin...</option>'+isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false).map(k=>`<option value="${k.id}"${k.id===seciliId?' selected':''}>${k.ad}</option>`).join('');
 }
@@ -801,6 +808,13 @@ window.dvExcelIndir=function(){
 
 window.hmSatirEkle=function(){
   hmSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',cari_id:'',odeme_tipi:'pesin',manuel:''});
+  hmSatirRender();
+};
+// Excel gibi: yeni fiş açılırken tek tek "+ Satır Ekle"ye basmaya gerek
+// kalmadan önceden hazır birden fazla boş satır gösterir.
+window.hmSatirListesiDoldur=function(n){
+  n=n||15;
+  for(let i=0;i<n;i++)hmSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',cari_id:'',odeme_tipi:'pesin',manuel:''});
   hmSatirRender();
 };
 
@@ -1019,6 +1033,13 @@ function birimHafizaOku(secimId){try{const k=localStorage.getItem('birim_'+secim
 function birimHafizaYaz(secimId,birimId){try{if(secimId&&birimId)localStorage.setItem('birim_'+secimId,birimId);}catch{}}
 
 window.stSatirEkle=function(){stSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',cari_id:'',odeme_tipi:'pesin',manuel:''});stSatirRender();};
+// Excel gibi: yeni fiş açılırken tek tek "+ Satır Ekle"ye basmaya gerek
+// kalmadan önceden hazır birden fazla boş satır gösterir.
+window.stSatirListesiDoldur=function(n){
+  n=n||15;
+  for(let i=0;i<n;i++)stSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',cari_id:'',odeme_tipi:'pesin',manuel:''});
+  stSatirRender();
+};
 
 function stUrunOpts(seciliId){
   const tip=document.getElementById('st-tip')?.value||'urun';
