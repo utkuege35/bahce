@@ -225,3 +225,10 @@ tr:hover td{background:var(--krem)}
 .grup-satir:last-child{border-bottom:none}
 .kolon-filtre{width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--krem);color:var(--yazi)}
 .filtre-satir th{padding:3px 6px;background:var(--krem)}
+
+/* Excel benzeri gerçek tablo görünümü — işlem giriş tabloları (Alış, Satış,
+   Devir, Sayım vb.) için hücre kenarlıkları görünür, boş hücreler de tablo
+   çizgileriyle belli olur */
+.excel-tablo{border-collapse:collapse}
+.excel-tablo td,.excel-tablo th{border:1px solid var(--border)}
+.excel-tablo td input,.excel-tablo td select{background:transparent}
