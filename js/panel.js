@@ -282,6 +282,123 @@ function renderPanel(){
   }
 }
 
+// ===== ORTAK BELGE GRUPLAMA / SATIR ÇİZİMİ =====
+// Hem "İşlem Listesi" (renderIslemListe) hem de her sekmenin günlük özet
+// görünümü (renderIslemGunSekmesi) aynı belge gruplama ve satır html'ini
+// kullanır — kod tekrarını önlemek için buraya çıkarıldı.
+
+function _belgeleriGrupla(liste){
+  const belgeler = [];
+  const belgeMap = {};
+  liste.forEach(i => {
+    const key = i.belge_id || i.id;
+    if (!belgeMap[key]) {
+      belgeMap[key] = {key, satirlar: [], tarih: i.tarih, tur: i.tur, cari_id: i.cari_id, odeme_tipi: i.odeme_tipi, kullanici: i.kullanici, aciklama: i.aciklama, belge_no: i.belge_no, aciklama_not: i.aciklama_not, ts: i.ts};
+      belgeler.push(belgeMap[key]);
+    }
+    belgeMap[key].satirlar.push(i);
+  });
+  return belgeler;
+}
+
+// acikId: o an açık olan belge key'i (accordion). toggleFn: satıra
+// tıklanınca çağrılacak JS ifadesi (string, onclick içine yazılır).
+function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin){
+  const acik = acikId === belge.key;
+  const satirlar = belge.satirlar;
+  const turler = [...new Set(satirlar.map(i => i.tur))];
+  let gosterimSatirlari = satirlar;
+  if (turler.length === 1 && turler[0] === 'sayim') {
+    const grup = {}; const sira = [];
+    satirlar.forEach(i => {
+      const key = i.stok_id || i.id;
+      if (!grup[key]) { grup[key] = { ...i, miktar: 0, tutar: 0 }; sira.push(key); }
+      grup[key].miktar += parseFloat(i.miktar || 0);
+      grup[key].tutar += parseFloat(i.tutar || 0);
+    });
+    gosterimSatirlari = sira.map(k => grup[k]);
+  }
+  const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
+  const topMiktar = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].miktar ? parseFloat(gosterimSatirlari[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(gosterimSatirlari[0].birim_id) : '') : gosterimSatirlari.length + ' kalem';
+  const turAd = turler.length === 1 ? (ISLEM_TUR_ADLARI[turler[0]] || turler[0]) : 'Karma';
+  const badgeCls = turler[0]==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
+  const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
+  const aciklama = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].aciklama || gosterimSatirlari[0].kat || '') : (gosterimSatirlari[0].aciklama || '') + (gosterimSatirlari.length > 1 ? ` +${gosterimSatirlari.length-1}` : '');
+  const tutarRenk = turler[0]==='satis'?'var(--yesil)':['gider','giris'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
+
+  const detaySatirlar = gosterimSatirlari.map((i, si) => {
+    const stok = stoklar.find(s => s.id === i.stok_id);
+    const urun = urunler.find(u => u.id === i.urun_id);
+    const kalem = typeof giderKalemleri !== 'undefined' ? giderKalemleri.find(k => k.id === i.gider_kalem_id) : null;
+    const ad = stok ? stok.ad : urun ? urun.ad : kalem ? kalem.ad : i.aciklama || '—';
+    const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris','satis_sarfiyat'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
+    const satirNotGoster = turler.length===1&&turler[0]==='sayim' ? '' : (i.satir_not||'');
+    return `<tr style="background:var(--krem);font-size:11px">
+      <td style="padding:6px 8px;color:var(--yazi3)">${si+1}</td>
+      <td style="padding:6px 8px">${ad}</td>
+      <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi3)">${birimAd(i.birim_id)||'—'}</td>
+      <td style="padding:6px 8px;text-align:right;white-space:nowrap">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}):''}</td>
+      <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi2)">${i.fiyat?para(i.fiyat):'—'}</td>
+      <td style="padding:6px 8px;text-align:right;font-weight:500;white-space:nowrap;color:${iturRenk}">${i.tutar?para(i.tutar):''}</td>
+      <td style="padding:6px 8px;font-size:10px;color:var(--yazi3)">${satirNotGoster}</td>
+      <td colspan="2" style="padding:6px 8px;text-align:right;white-space:nowrap">
+        ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button>`:''}
+        ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const logSayisi = satirlar.reduce((s,i) => s + (typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===i.id).length, 0);
+  const altSatir = acik ? `<tr><td colspan="10" style="padding:0">
+    <div style="background:var(--krem);border-top:2px solid var(--yesil-ac);padding:0">
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="background:var(--krem2);font-size:10px;color:var(--yazi3)">
+          <th style="padding:4px 8px;text-align:left;width:24px">#</th>
+          <th style="padding:4px 8px;text-align:left">MALZEME / ÜRÜN</th>
+          <th style="padding:4px 8px;text-align:right">BİRİM</th>
+          <th style="padding:4px 8px;text-align:right">MİKTAR</th>
+          <th style="padding:4px 8px;text-align:right">FİYAT</th>
+          <th style="padding:4px 8px;text-align:right">TUTAR</th>
+          <th style="padding:4px 8px">AÇIKLAMA</th>
+          <th style="padding:4px 8px" colspan="2"></th>
+        </tr>
+        ${detaySatirlar}
+      </table>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
+          <button class="btn sm sec" onclick="event.stopPropagation();belgeExcelIndir('${belge.key}')">📤 Excel'e Aktar</button>
+          ${turler.length===1&&turler[0]==='sayim'&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" onclick="event.stopPropagation();sayimFisiDuzenleAc('${belge.key}')">✏ Fişi Düzenle</button>`:''}
+          ${!(turler.length===1&&turler[0]==='sayim')&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button>`:''}
+          ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--yesil)">Toplam: ${para(topTutar)}</span>
+      </div>
+    </div>
+  </td></tr>` : '';
+
+  return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="${toggleFnAdi}('${belge.key}')">
+    <td style="white-space:nowrap;font-size:12px">${belge.tarih||''}</td>
+    <td><span class="badge ${badgeCls}">${turAd}</span></td>
+    <td style="font-size:11px;max-width:180px">
+      <div>${aciklama}</div>
+      ${belge.belge_no?`<div style="color:var(--yazi3);font-size:10px">📄 ${belge.belge_no}</div>`:''}
+      ${belge.aciklama_not?`<div style="color:var(--yazi3);font-size:10px;font-style:italic">${belge.aciklama_not}</div>`:''}
+    </td>
+    <td style="font-size:11px">${cari?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--krem2);white-space:nowrap">${cari.ad}</span>`:''}</td>
+    <td style="text-align:right;font-size:11px;white-space:nowrap">${topMiktar}</td>
+    <td style="text-align:right;font-weight:500;white-space:nowrap;color:${tutarRenk}">${para(topTutar)}</td>
+    <td style="font-size:10px;white-space:nowrap">${turler[0]==='sayim'?'':(belge.odeme_tipi==='cari'?'📋 Cari':belge.odeme_tipi==='pesin'?'💵 Peşin':'')}</td>
+    <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${belge.kullanici||''}</td>
+    <td colspan="2" style="text-align:right">
+      ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏</button>`:''}
+      ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemBelgeSilListe('${satirlar.map(s=>s.id).join(',')}')" title="Tüm fişi sil">✕</button>`:''}
+      ${satirlar.length>1?`<span style="font-size:10px;background:var(--krem2);padding:1px 6px;border-radius:10px;color:var(--yazi3)">${satirlar.length} satır</span> `:''}
+      <span style="font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</span>
+    </td>
+  </tr>${altSatir}`;
+}
+
 // ===== İŞLEM LİSTESİ =====
 window.renderIslemListe=function(){
   const isAdmin=aktifKullanici?.rol==='admin';
@@ -307,123 +424,13 @@ window.renderIslemListe=function(){
   // SONRA sayfalamayı belge sayısına göre uygula. (Sayfalama ham satırlara
   // uygulanırsa, çok satırlı tek bir fiş — örn. büyük bir sayım fişi — sayfa
   // sınırında ikiye bölünüp aynı fiş birden fazla özet satırı gibi görünür.)
-  const belgeler = [];
-  const belgeMap = {};
-  liste.forEach(i => {
-    const key = i.belge_id || i.id;
-    if (!belgeMap[key]) {
-      belgeMap[key] = {key, satirlar: [], tarih: i.tarih, tur: i.tur, cari_id: i.cari_id, odeme_tipi: i.odeme_tipi, kullanici: i.kullanici, aciklama: i.aciklama, belge_no: i.belge_no, aciklama_not: i.aciklama_not, ts: i.ts};
-      belgeler.push(belgeMap[key]);
-    }
-    belgeMap[key].satirlar.push(i);
-  });
+  const belgeler = _belgeleriGrupla(liste);
 
   const topSayfa=Math.max(1,Math.ceil(belgeler.length/IL_SAYFA_BOY));
   if(_ilSayfa>topSayfa)_ilSayfa=1;
   const pBelgeler=belgeler.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
 
-  const rows = pBelgeler.map(belge => {
-    const acik = _ilAcikId === belge.key;
-    const satirlar = belge.satirlar;
-    const turler = [...new Set(satirlar.map(i => i.tur))];
-    // Sayım fişlerinde aynı stok birden fazla YM/Ürün'den (kaynaktan)
-    // gelmiş olabilir — veritabanında ayrı ayrı satır olarak durur (Sayım
-    // Raporu'ndaki "Kaynak Dökümü" bunu kullanır), ama BU ekranda (fişin
-    // kendisinde) hangi kaynaktan geldiğini göstermeye gerek yok — aynı
-    // stok tek satırda, miktarları toplanmış halde gösterilir.
-    let gosterimSatirlari = satirlar;
-    if (turler.length === 1 && turler[0] === 'sayim') {
-      const grup = {}; const sira = [];
-      satirlar.forEach(i => {
-        const key = i.stok_id || i.id;
-        if (!grup[key]) { grup[key] = { ...i, miktar: 0, tutar: 0 }; sira.push(key); }
-        grup[key].miktar += parseFloat(i.miktar || 0);
-        grup[key].tutar += parseFloat(i.tutar || 0);
-      });
-      gosterimSatirlari = sira.map(k => grup[k]);
-    }
-    const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
-    const topMiktar = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].miktar ? parseFloat(gosterimSatirlari[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(gosterimSatirlari[0].birim_id) : '') : gosterimSatirlari.length + ' kalem';
-    const turAd = turler.length === 1 ? (ISLEM_TUR_ADLARI[turler[0]] || turler[0]) : 'Karma';
-    const badgeCls = turler[0]==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
-    const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
-    const aciklama = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].aciklama || gosterimSatirlari[0].kat || '') : (gosterimSatirlari[0].aciklama || '') + (gosterimSatirlari.length > 1 ? ` +${gosterimSatirlari.length-1}` : '');
-    const tutarRenk = turler[0]==='satis'?'var(--yesil)':['gider','giris'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
-
-    // Detay satırları
-    const detaySatirlar = gosterimSatirlari.map((i, si) => {
-      const stok = stoklar.find(s => s.id === i.stok_id);
-      const urun = urunler.find(u => u.id === i.urun_id);
-      const kalem = typeof giderKalemleri !== 'undefined' ? giderKalemleri.find(k => k.id === i.gider_kalem_id) : null;
-      const ad = stok ? stok.ad : urun ? urun.ad : kalem ? kalem.ad : i.aciklama || '—';
-      const mik = i.miktar ? parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}) + ' ' + birimAd(i.birim_id) : '—';
-      const iturRenk = i.tur==='satis'?'var(--yesil)':['gider','giris','satis_sarfiyat'].includes(i.tur)?'var(--turuncu)':'var(--yazi2)';
-      const satirNotGoster = turler.length===1&&turler[0]==='sayim' ? '' : (i.satir_not||''); // sayımda kaynak notu bu ekranda gösterilmez
-      return `<tr style="background:var(--krem);font-size:11px">
-        <td style="padding:6px 8px;color:var(--yazi3)">${si+1}</td>
-        <td style="padding:6px 8px">${ad}</td>
-        <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi3)">${birimAd(i.birim_id)||'—'}</td>
-        <td style="padding:6px 8px;text-align:right;white-space:nowrap">${i.miktar?parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:4}):''}</td>
-        <td style="padding:6px 8px;text-align:right;white-space:nowrap;color:var(--yazi2)">${i.fiyat?para(i.fiyat):'—'}</td>
-        <td style="padding:6px 8px;text-align:right;font-weight:500;white-space:nowrap;color:${iturRenk}">${i.tutar?para(i.tutar):''}</td>
-        <td style="padding:6px 8px;font-size:10px;color:var(--yazi3)">${satirNotGoster}</td>
-        <td colspan="2" style="padding:6px 8px;text-align:right;white-space:nowrap">
-          ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${i.id}')">✏</button>`:''}
-          ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemSilListe('${i.id}')">✕</button>`:''}
-        </td>
-      </tr>`;
-    }).join('');
-
-    const logSayisi = satirlar.reduce((s,i) => s + (typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===i.id).length, 0);
-    const altSatir = acik ? `<tr><td colspan="10" style="padding:0">
-      <div style="background:var(--krem);border-top:2px solid var(--yesil-ac);padding:0">
-        <table style="width:100%;border-collapse:collapse">
-          <tr style="background:var(--krem2);font-size:10px;color:var(--yazi3)">
-            <th style="padding:4px 8px;text-align:left;width:24px">#</th>
-            <th style="padding:4px 8px;text-align:left">MALZEME / ÜRÜN</th>
-            <th style="padding:4px 8px;text-align:right">BİRİM</th>
-            <th style="padding:4px 8px;text-align:right">MİKTAR</th>
-            <th style="padding:4px 8px;text-align:right">FİYAT</th>
-            <th style="padding:4px 8px;text-align:right">TUTAR</th>
-            <th style="padding:4px 8px">AÇIKLAMA</th>
-            <th style="padding:4px 8px" colspan="2"></th>
-          </tr>
-          ${detaySatirlar}
-        </table>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
-            <button class="btn sm sec" onclick="event.stopPropagation();belgeExcelIndir('${belge.key}')">📤 Excel'e Aktar</button>
-            ${turler.length===1&&turler[0]==='sayim'&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" onclick="event.stopPropagation();sayimFisiDuzenleAc('${belge.key}')">✏ Fişi Düzenle</button>`:''}
-            ${!(turler.length===1&&turler[0]==='sayim')&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏ Düzenle</button>`:''}
-            ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" onclick="event.stopPropagation();islemSilListe('${satirlar[0].id}')">✕ Sil</button>`:''}
-          </div>
-          <span style="font-size:13px;font-weight:600;color:var(--yesil)">Toplam: ${para(topTutar)}</span>
-        </div>
-      </div>
-    </td></tr>` : '';
-
-    return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="ilToggle('${belge.key}')">
-      <td style="white-space:nowrap;font-size:12px">${belge.tarih||''}</td>
-      <td><span class="badge ${badgeCls}">${turAd}</span></td>
-      <td style="font-size:11px;max-width:180px">
-        <div>${aciklama}</div>
-        ${belge.belge_no?`<div style="color:var(--yazi3);font-size:10px">📄 ${belge.belge_no}</div>`:''}
-        ${belge.aciklama_not?`<div style="color:var(--yazi3);font-size:10px;font-style:italic">${belge.aciklama_not}</div>`:''}
-      </td>
-      <td style="font-size:11px">${cari?`<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--krem2);white-space:nowrap">${cari.ad}</span>`:''}</td>
-      <td style="text-align:right;font-size:11px;white-space:nowrap">${topMiktar}</td>
-      <td style="text-align:right;font-weight:500;white-space:nowrap;color:${tutarRenk}">${para(topTutar)}</td>
-      <td style="font-size:10px;white-space:nowrap">${turler[0]==='sayim'?'':(belge.odeme_tipi==='cari'?'📋 Cari':belge.odeme_tipi==='pesin'?'💵 Peşin':'')}</td>
-      <td style="font-size:11px;color:var(--yazi3);white-space:nowrap">${belge.kullanici||''}</td>
-      <td colspan="2" style="text-align:right">
-        ${isAdmin||yetkiVar('islem_liste','duzenle')?`<button class="btn sm" style="font-size:10px" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏</button>`:''}
-        ${isAdmin||yetkiVar('islem_liste','sil')?`<button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();islemBelgeSilListe('${satirlar.map(s=>s.id).join(',')}')" title="Tüm fişi sil">✕</button>`:''}
-        ${satirlar.length>1?`<span style="font-size:10px;background:var(--krem2);padding:1px 6px;border-radius:10px;color:var(--yazi3)">${satirlar.length} satır</span> `:''}
-        <span style="font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</span>
-      </td>
-    </tr>${altSatir}`;
-  }).join('');
+  const rows = pBelgeler.map(belge => _belgeSatirHtml(belge,_ilAcikId,'ilToggle',isAdmin)).join('');
     document.getElementById('il-tb').innerHTML=rows||'<tr><td colspan="10" class="bos">İşlem bulunamadı</td></tr>';
 
   let sayf='';
@@ -444,12 +451,63 @@ window.ilFiltreTemizle=function(){
   const t=document.getElementById('il-tur');if(t)t.value='';
   _ilSayfa=1;renderIslemListe();
 };
+
+// ===== SEKME İÇİ GÜNLÜK ÖZET (Alış/Satış/Kasa/Üretim/Sayım/Devir sekmeleri) =====
+// Her sekme açıldığında, giriş formu yerine o güne ait fişlerin özet
+// listesini gösterir. "+ Yeni Fiş" ile form görünümüne geçilir.
+const _ISLEM_SEKME_TUR={
+  hammadde:['giris','gider'], // Alış sekmesi: malzeme(giris) + hizmet/diğer(gider)
+  satis:['satis'],
+  kasa:['kasa'],
+  uretim:['uretim'],
+  sayim:['sayim'],
+  devir:['devir']
+};
+const _ISLEM_SEKME_PREFIX={hammadde:'hm',satis:'st',kasa:'ks',uretim:'ur',sayim:'sy',devir:'dv'};
+let _gunlukAcikId={}; // prefix -> açık belge key
+
+window.renderIslemGunSekmesi=function(sekmeId){
+  const turler=_ISLEM_SEKME_TUR[sekmeId];const prefix=_ISLEM_SEKME_PREFIX[sekmeId];
+  if(!turler||!prefix)return;
+  const tarihEl=document.getElementById(prefix+'-liste-tarih');
+  if(tarihEl&&!tarihEl.value)tarihEl.value=bugun();
+  const tarih=tarihEl?.value||bugun();
+  const isAdmin=aktifKullanici?.rol==='admin';
+
+  let liste=islemler.filter(i=>turler.includes(i.tur)&&i.tarih===tarih);
+  // İç tüketim / özet satırlarını (Satış Sarfiyatı, Üretim Sarfiyatı, YM Sayım Özeti) gizle
+  liste=liste.filter(i=>i.tur!=='satis_sarfiyat'&&i.tur!=='uretim_sarfiyat'&&i.kat!=='YM Sayım Özeti');
+  liste.sort((a,b)=>(b.ts||0)-(a.ts||0));
+
+  const topTutar=liste.reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const belgeler=_belgeleriGrupla(liste);
+  const ozEl=document.getElementById(prefix+'-liste-ozet');
+  if(ozEl)ozEl.textContent=belgeler.length?`${belgeler.length} fiş · ${para(topTutar)}`:'';
+
+  const tbEl=document.getElementById(prefix+'-liste-tb');
+  if(!tbEl)return;
+  if(!belgeler.length){tbEl.innerHTML='<div class="bos">Bu tarihte kayıt yok.</div>';return;}
+  const acikId=_gunlukAcikId[prefix]||null;
+  const rows=belgeler.map(b=>_belgeSatirHtml(b,acikId,`_gunlukToggle_${prefix}`,isAdmin)).join('');
+  tbEl.innerHTML=`<div class="tw"><table><thead><tr>
+    <th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Cari</th><th style="text-align:right">Miktar</th><th style="text-align:right">Tutar</th><th>Ödeme</th><th>Kullanıcı</th><th colspan="2"></th>
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
+  // Her prefix için ayrı toggle fonksiyonu (aynı anda birden fazla sekmenin
+  // state'i karışmasın diye) — global'e tanımlanıyor.
+  window[`_gunlukToggle_${prefix}`]=function(key){
+    _gunlukAcikId[prefix]=_gunlukAcikId[prefix]===key?null:key;
+    renderIslemGunSekmesi(sekmeId);
+  };
+};
+
 window.islemSilListe=async function(id){
   if(!(await onay('Bu işlemi silmek istiyor musunuz?<br><small>Veritabanında kalır, ekranda görünmez.</small>','🗑️')))return;
   await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',id);
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
   if(data)islemler=data.filter(i=>!i.silindi);
-  renderIslemListe();renderPanel();kontolUyari();bil('İşlem silindi ✓');
+  renderIslemListe();renderPanel();kontolUyari();
+  if(typeof _aktifIslemTab!=='undefined'&&typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(_aktifIslemTab);
+  bil('İşlem silindi ✓');
 };
 window.islemBelgeSilListe=async function(idsCsv){
   const ids=idsCsv.split(',').filter(Boolean);
@@ -462,7 +520,9 @@ window.islemBelgeSilListe=async function(idsCsv){
   }
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
   if(data)islemler=data.filter(i=>!i.silindi);
-  renderIslemListe();renderPanel();kontolUyari();bil(ids.length>1?'Fiş silindi ✓':'İşlem silindi ✓');
+  renderIslemListe();renderPanel();kontolUyari();
+  if(typeof _aktifIslemTab!=='undefined'&&typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(_aktifIslemTab);
+  bil(ids.length>1?'Fiş silindi ✓':'İşlem silindi ✓');
 };
 
 // ===== İŞLEM GEÇMİŞİ =====
@@ -549,6 +609,7 @@ window.islemKaydet=async function(){
   const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
   modalKapat('modal-islem-duzenle');renderPanel();
   if(document.getElementById('islem-liste')?.classList.contains('active'))renderIslemListe();
+  if(typeof _aktifIslemTab!=='undefined'&&typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(_aktifIslemTab);
   kontolUyari();bil(degisti?'İşlem güncellendi ✓':'Değişiklik yok');
 };
 
