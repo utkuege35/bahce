@@ -52,12 +52,14 @@ window.bil=function(msg,tip='ok'){
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.style.display='none',400);},3000);
 };
 
-window.onay=function(mesaj,ikon='❓'){
+window.onay=function(mesaj,ikon='❓',tamamMetin='Tamam',iptalMetin='İptal'){
   return new Promise(resolve=>{
     const el=document.getElementById('modal-onay');
     if(!el){resolve(confirm(mesaj));return;}
     document.getElementById('onay-mesaj').innerHTML=mesaj;
     const ikonEl=document.getElementById('onay-ikon');if(ikonEl)ikonEl.textContent=ikon;
+    const tamamBtn=document.getElementById('onay-tamam-btn');if(tamamBtn)tamamBtn.textContent=tamamMetin;
+    const iptalBtn=document.getElementById('onay-iptal-btn');if(iptalBtn)iptalBtn.textContent=iptalMetin;
     el.classList.add('open');
     document.body.style.overflow='hidden';
     const temizle=()=>{el.classList.remove('open');document.body.style.overflow='';window._onayTamam=null;window._onayIptal=null;};
