@@ -226,6 +226,17 @@ tr:hover td{background:var(--krem)}
 .kolon-filtre{width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--krem);color:var(--yazi)}
 .filtre-satir th{padding:3px 6px;background:var(--krem)}
 
+/* İşlem formu açıkken (Alış/Satış/... giriş ekranı) — kaydetmeden başka
+   bir yere geçilmesin diye sol menü ve İşlem sekmeleri pasifleştirilir.
+   Tek çıkış yolu formun kendi "Kaydetmeden Çık" / "Listeye Dön" butonları. */
+body.islem-form-acik .nav button,
+body.islem-form-acik .nav-grup-baslik,
+body.islem-form-acik #islem .tabs button{
+  opacity:.4;
+  pointer-events:none;
+  cursor:not-allowed;
+}
+
 /* Excel benzeri gerçek tablo görünümü — işlem giriş tabloları (Alış, Satış,
    Devir, Sayım vb.) için hücre kenarlıkları görünür, boş hücreler de tablo
    çizgileriyle belli olur */
