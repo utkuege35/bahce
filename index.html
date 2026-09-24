@@ -270,32 +270,40 @@
         <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
         <div class="fg"><label>Tür</label>
           <select id="hm-tur" onchange="hmTurDegis()">
-            <option value="malzeme">🧱 Malzeme (Stok)</option>
-            <option value="hizmet">🔧 Hizmet</option>
-            <option value="diger">📝 Diğer</option>
+            <option value="malzeme">Malzeme (Stok)</option>
+            <option value="hizmet">Hizmet</option>
+            <option value="diger">Diğer</option>
           </select>
         </div>
         <div class="fg"><label>Belge / Fatura No</label><input type="text" id="hm-belge" placeholder="FAT-001..."></div>
         <div class="fg"><label>Not</label><input type="text" id="hm-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Ödeme Tipi</label>
+          <select id="hm-odeme-ust" onchange="hmOdemeUstDegis()">
+            <option value="pesin">Peşin</option>
+            <option value="cari">Cari</option>
+          </select>
+        </div>
+        <div class="fg" id="hm-cari-ust-fg" style="display:none"><label>Cari</label><select id="hm-cari-ust"><option value="">— Cari seçin —</option></select></div>
+        <div class="fg" id="hm-kasa-ust-fg"><label>Kasa</label><select id="hm-kasa-ust"><option value="">— Kasa seçin —</option></select></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
         <table class="excel-tablo" style="font-size:13px">
           <thead><tr id="hm-baslik">
             <th style="min-width:160px" id="hm-th-secim">Stok</th>
             <th style="width:80px">Birim</th>
-            <th style="width:75px">Miktar</th>
+            <th style="width:100px">Miktar</th>
             <th style="width:85px">B.Fiyat (₺)</th>
-            <th style="width:85px">Tutar (₺)</th>
+            <th style="width:110px">Tutar (₺)</th>
             <th style="min-width:130px" id="hm-th-alt">Açıklama</th>
-            <th style="min-width:110px">Cari</th>
-            <th style="min-width:120px">Ödeme</th>
             <th style="width:36px"></th>
           </tr></thead>
           <tbody id="hm-satirlar"></tbody>
           <tfoot><tr>
             <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
             <td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td>
-            <td colspan="4"></td>
+            <td colspan="2"></td>
           </tr></tfoot>
         </table>
       </div>
