@@ -807,14 +807,14 @@ window.dvExcelIndir=function(){
 };
 
 window.hmSatirEkle=function(){
-  hmSatirListesi.push({tip:'malzeme',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
+  hmSatirListesi.push({tip:'',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
   hmSatirRender();
 };
 // Excel gibi: yeni fiş açılırken tek tek "+ Satır Ekle"ye basmaya gerek
 // kalmadan önceden hazır birden fazla boş satır gösterir.
 window.hmSatirListesiDoldur=function(n){
   n=n||15;
-  for(let i=0;i<n;i++)hmSatirListesi.push({tip:'malzeme',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
+  for(let i=0;i<n;i++)hmSatirListesi.push({tip:'',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
   hmSatirRender();
 };
 
@@ -839,7 +839,8 @@ window.hmSatirTipDegis=function(i,tip){
 function hmSatirRender(){
   const el=document.getElementById('hm-satirlar');if(!el)return;
   el.innerHTML=hmSatirListesi.map((s,i)=>{
-    const tip=s.tip||'malzeme';
+    const hamTip=s.tip===undefined?'':s.tip; // '' = henüz belirlenmedi (Tür boş görünür)
+    const tip=hamTip||'malzeme'; // görsel/işlevsel olarak boşken malzeme gibi davran
     let secimTd;
     if(tip==='diger'){
       secimTd=`<input type="text" data-satir-ana="1" value="${s.manuel||''}" onblur="hmSatirGuncelle(${i},'manuel',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`;
@@ -848,7 +849,7 @@ function hmSatirRender(){
       secimTd=`<div style="position:relative">
         <input type="text" data-satir-ana="1" autocomplete="off" value="${secili?secili.ad:''}"
           oninput="hmStokAramaFiltrele(${i},this.value)"
-          onfocus="_hmHoverIndex=${i};hmStokAramaFiltrele(${i},this.value)"
+          onfocus="_hmHoverIndex=${i};hmStokAramaFiltrele(${i},this.value);hmSatirTipOtomatikBelirle(${i})"
           onblur="setTimeout(()=>{const d=document.getElementById('hm-oneri-${i}');if(d)d.style.display='none';},150)"
           onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">
         <div id="hm-oneri-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
@@ -858,10 +859,11 @@ function hmSatirRender(){
     }
     return `<tr>
     <td>
-      <select onchange="hmSatirTipDegis(${i},this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 2px;font-size:11px;background:var(--beyaz)">
-        <option value="malzeme"${tip==='malzeme'?' selected':''}>Malzeme</option>
-        <option value="hizmet"${tip==='hizmet'?' selected':''}>Hizmet</option>
-        <option value="diger"${tip==='diger'?' selected':''}>Diğer</option>
+      <select id="hm-tur-${i}" onchange="hmSatirTipDegis(${i},this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 2px;font-size:11px;background:var(--beyaz)">
+        <option value=""${hamTip===''?' selected':''}></option>
+        <option value="malzeme"${hamTip==='malzeme'?' selected':''}>Malzeme</option>
+        <option value="hizmet"${hamTip==='hizmet'?' selected':''}>Hizmet</option>
+        <option value="diger"${hamTip==='diger'?' selected':''}>Diğer</option>
       </select>
     </td>
     <td>${secimTd}</td>
@@ -878,6 +880,17 @@ function hmSatirRender(){
   }).join('');
   hmToplamGuncelle();
 }
+// Malzeme adı alanına odaklanınca, Tür henüz belirlenmemişse (boşsa)
+// otomatik olarak "Malzeme" seçili hale getirir — sadece görsel select'i
+// (DOM'u) günceller, satırı yeniden çizmez ki imleç kaybolmasın.
+window.hmSatirTipOtomatikBelirle=function(i){
+  const s=hmSatirListesi[i];if(!s)return;
+  if(!s.tip){
+    s.tip='malzeme';
+    const sel=document.getElementById('hm-tur-'+i);
+    if(sel)sel.value='malzeme';
+  }
+};
 function hmToplamGuncelle(){const t=hmSatirListesi.reduce((s,r)=>s+parseFloat(r.tutar||0),0);const el=document.getElementById('hm-toplam');if(el)el.textContent='₺'+t.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 // Stok arama kutusu (malzeme türünde) — isim içinde herhangi bir yerde
 // geçen harflerle arar, seçince birim/fiyat otomatik dolar.
@@ -896,7 +909,7 @@ window.hmStokSecildi=function(i,stokId){
   hmSatirListesi[i].birimId=k.varsayilan_birim_id||k.birim_id||'';
   if(k.maliyet)hmSatirListesi[i].fiyat=k.maliyet.toString();
   const sonSatirMi=i===hmSatirListesi.length-1;
-  if(sonSatirMi)hmSatirListesi.push({tip:'malzeme',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
+  if(sonSatirMi)hmSatirListesi.push({tip:'',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
   hmSatirRender();
 };
 // Fiş seviyesinde tek Ödeme Tipi — Cari/Kasa alanlarının görünürlüğünü ayarlar
@@ -922,7 +935,7 @@ window.hmSatirGuncelle=function(i,alan,deger){
   // Excel gibi: en alttaki satır dolduruldu mu, doldurulduysa altına otomatik boş satır ekle
   const sonSatirMi=i===hmSatirListesi.length-1;
   const doldu=(alan==='secimId'||alan==='manuel')&&deger;
-  if(sonSatirMi&&doldu)hmSatirListesi.push({tip:'malzeme',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
+  if(sonSatirMi&&doldu)hmSatirListesi.push({tip:'',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
   if(alan==='secimId'&&hmSatirListesi[i].tip==='hizmet'){
     const k=giderKalemleri.find(x=>x.id===deger);
     hmSatirListesi[i].birimId=k?.varsayilan_birim_id||'';
