@@ -287,9 +287,9 @@ window.gp=function(id){
   if(id==='rapor')renderRapor();if(id==='kullanicilar')renderKullanicilar();if(id==='isyerleri'&&typeof renderIsyerleri==='function')renderIsyerleri();if(id==='yetkiler'&&typeof renderYetkiler==='function'){sablonYetkiTabloOlustur();renderYetkiler();}
   if(id==='kul-yetkiler'&&typeof renderKulYetkiler==='function')renderKulYetkiler();
   if(id==='islem'){
-    if(hmSatirListesi.length===0)setTimeout(()=>hmSatirEkle(),100);
-    if(stSatirListesi.length===0)setTimeout(()=>stSatirEkle(),150);
-    if(typeof dvSatirListesi!=='undefined'&&dvSatirListesi.length===0)setTimeout(()=>dvSatirEkle(),160);
+    if(hmSatirListesi.length===0&&typeof hmSatirListesiDoldur==='function')setTimeout(()=>hmSatirListesiDoldur(),100);
+    if(stSatirListesi.length===0&&typeof stSatirListesiDoldur==='function')setTimeout(()=>stSatirListesiDoldur(),150);
+    if(typeof dvSatirListesi!=='undefined'&&dvSatirListesi.length===0&&typeof dvSatirListesiDoldur==='function')setTimeout(()=>dvSatirListesiDoldur(),160);
     if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
     if(typeof sySatirRender==='function')sySatirRender();
     setTimeout(()=>{if(typeof ksTurDegis==='function')ksTurDegis();const ksT=document.getElementById('ks-tarih');if(ksT&&!ksT.value)ksT.value=bugun();const syT=document.getElementById('sy-tarih');if(syT&&!syT.value)syT.value=bugun();const dvT=document.getElementById('dv-tarih');if(dvT&&!dvT.value)dvT.value=bugun();if(typeof syFisKontrol==='function')syFisKontrol();},200);
