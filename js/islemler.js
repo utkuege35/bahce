@@ -2,22 +2,28 @@
 // Excel'deki gibi: bir hücrede aşağı ok tuşuna basınca, bir alt satırın
 // aynı sütunundaki (hücredeki) giriş alanına odaklanır.
 window.satirAsagiGec=function(e){
- if(e.key!=='ArrowDown')return;
- const el=e.target;
- const td=el.closest('td');const tr=td?.closest('tr');
- if(!tr||!td)return;
- const tds=Array.from(tr.children);
- const colIdx=tds.indexOf(td);
- const nextTr=tr.nextElementSibling;
- if(!nextTr)return;
- const nextTd=nextTr.children[colIdx];
- if(!nextTd)return;
- const odaklanacak=nextTd.querySelector('input,select');
- if(odaklanacak){
- e.preventDefault();
- odaklanacak.focus();
- if(typeof odaklanacak.select==='function')odaklanacak.select();
- }
+  if(e.key!=='ArrowDown')return;
+  const el=e.target;
+  const td=el.closest('td');const tr=td?.closest('tr');
+  if(!tr||!td)return;
+  const nextTr=tr.nextElementSibling;
+  if(!nextTr)return;
+  // Öncelik: satırdaki "ana" alan (malzeme/ürün/stok adı) — hangi sütunda
+  // olursak olalım, aşağı ok tuşu her zaman bir sonraki satırın bu alanına gider.
+  let odaklanacak=nextTr.querySelector('[data-satir-ana="1"]');
+  if(!odaklanacak){
+    // Ana alan işaretli değilse (ör. Sayım/Devir gibi tablolarda), eski
+    // davranışa dön: aynı sütundaki (hücredeki) alana odaklan.
+    const tds=Array.from(tr.children);
+    const colIdx=tds.indexOf(td);
+    const nextTd=nextTr.children[colIdx];
+    odaklanacak=nextTd?.querySelector('input,select');
+  }
+  if(odaklanacak){
+    e.preventDefault();
+    odaklanacak.focus();
+    if(typeof odaklanacak.select==='function')odaklanacak.select();
+  }
 };
 
 // ===== SEKME GÖRÜNÜM GEÇİŞİ (liste ↔ form) =====
@@ -686,7 +692,7 @@ function dvBirimOpts(stokId,seciliId){
 function dvSatirRender(){
  const el=document.getElementById('dv-satirlar');if(!el)return;
  el.innerHTML=dvSatirListesi.map((s,i)=>`<tr onmouseenter="_dvHoverIndex=${i}">
- <td><select onchange="dvSatirGuncelle(${i},'stokId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${dvSecimOpts(s.stokId)}</select></td>
+ <td><select data-satir-ana="1" onchange="dvSatirGuncelle(${i},'stokId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${dvSecimOpts(s.stokId)}</select></td>
  <td><select onchange="dvSatirGuncelle(${i},'birimId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${dvBirimOpts(s.stokId,s.birimId)}</select></td>
  <td><input type="number" value="${s.miktar||''}" onblur="dvSatirHesapla(${i},'miktar',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
  <td><input type="number" value="${s.fiyat||''}" onblur="dvSatirHesapla(${i},'fiyat',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
@@ -836,11 +842,11 @@ function hmSatirRender(){
     const tip=s.tip||'malzeme';
     let secimTd;
     if(tip==='diger'){
-      secimTd=`<input type="text" value="${s.manuel||''}" onblur="hmSatirGuncelle(${i},'manuel',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`;
+      secimTd=`<input type="text" data-satir-ana="1" value="${s.manuel||''}" onblur="hmSatirGuncelle(${i},'manuel',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`;
     }else if(tip==='malzeme'){
       const secili=stoklar.find(x=>x.id===s.secimId);
       secimTd=`<div style="position:relative">
-        <input type="text" autocomplete="off" value="${secili?secili.ad:''}"
+        <input type="text" data-satir-ana="1" autocomplete="off" value="${secili?secili.ad:''}"
           oninput="hmStokAramaFiltrele(${i},this.value)"
           onfocus="_hmHoverIndex=${i};hmStokAramaFiltrele(${i},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('hm-oneri-${i}');if(d)d.style.display='none';},150)"
@@ -848,7 +854,7 @@ function hmSatirRender(){
         <div id="hm-oneri-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
       </div>`;
     }else{
-      secimTd=`<select onchange="hmSatirGuncelle(${i},'secimId',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${hmSecimOpts(tip,s.secimId)}</select>`;
+      secimTd=`<select data-satir-ana="1" onchange="hmSatirGuncelle(${i},'secimId',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${hmSecimOpts(tip,s.secimId)}</select>`;
     }
     return `<tr>
     <td>
@@ -1075,11 +1081,11 @@ function stSatirRender(){
   el.innerHTML=stSatirListesi.map((s,i)=>{
     let secimTd;
     if(tip==='diger'){
-      secimTd=`<input type="text" value="${s.manuel||''}" onblur="stSatirGuncelle(${i},'manuel',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`;
+      secimTd=`<input type="text" data-satir-ana="1" value="${s.manuel||''}" onblur="stSatirGuncelle(${i},'manuel',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`;
     }else{
       const kaynak=tip==='urun'?urunler.find(x=>x.id===s.secimId):stoklar.find(x=>x.id===s.secimId);
       secimTd=`<div style="position:relative">
-        <input type="text" autocomplete="off" value="${kaynak?kaynak.ad:''}"
+        <input type="text" data-satir-ana="1" autocomplete="off" value="${kaynak?kaynak.ad:''}"
           oninput="stUrunAramaFiltrele(${i},this.value)"
           onfocus="_stHoverIndex=${i};stUrunAramaFiltrele(${i},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('st-oneri-${i}');if(d)d.style.display='none';},150)"
