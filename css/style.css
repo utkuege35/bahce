@@ -231,4 +231,18 @@ tr:hover td{background:var(--krem)}
    çizgileriyle belli olur */
 .excel-tablo{border-collapse:collapse}
 .excel-tablo td,.excel-tablo th{border:1px solid var(--border)}
-.excel-tablo td input,.excel-tablo td select{background:transparent}
+.excel-tablo td input,.excel-tablo td select{
+  border:none!important;
+  outline:none!important;
+  background:transparent!important;
+  border-radius:0!important;
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  padding:4px 6px;
+  font-family:inherit;
+  font-size:12px;
+}
+.excel-tablo td input:focus,.excel-tablo td select:focus{
+  background:var(--yesil-cok-ac)!important;
+}
