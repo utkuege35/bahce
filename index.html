@@ -263,7 +263,7 @@
       </div>
     </div>
     <div id="tp-hammadde-form" style="display:none">
-      <div class="card"><div class="card-title">Alış Kaydı<button class="btn sm ghost" onclick="islemGorunumListe('hammadde')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Alış Kaydı<button class="btn sm ghost" onclick="islemKaydetmedenCik('hammadde')">← Listeye Dön</button></div>
       <div class="fgrid c3" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
         <div class="fg"><label>Belge / Fatura No</label><input type="text" id="hm-belge" placeholder="FAT-001..."></div>
@@ -304,6 +304,7 @@
           <button class="btn sm sec" onclick="hmSatirEkle()">+ Satır Ekle</button>
           <button id="btn-hm-sil" class="btn sm ghost" onclick="hmSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
         </div>
+        <button class="btn ghost" onclick="islemKaydetmedenCik('hammadde')">Kaydetmeden Çık</button>
         <button class="btn pri" onclick="kaydetHammadde()">Kaydet</button>
       </div>
     </div>
@@ -324,12 +325,12 @@
       </div>
     </div>
     <div id="tp-uretim-form" style="display:none">
-      <div class="card"><div class="card-title">Üretim Kaydı<button class="btn sm ghost" onclick="islemGorunumListe('uretim')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Üretim Kaydı<button class="btn sm ghost" onclick="islemKaydetmedenCik('uretim')">← Listeye Dön</button></div>
       <div class="fgrid c2"><div class="fg"><label>Tarih</label><input type="date" id="ur-tarih"></div><div class="fg"><label>Ürün / Ara Ürün</label><select id="ur-urun" onchange="uretimBilesenGoster()"><option value="">Seçin...</option></select></div></div>
       <div class="fgrid c2"><div class="fg"><label>Üretim Miktarı</label><input type="number" id="ur-miktar" placeholder="1" min="0" step="any" oninput="uretimMaliyetHesapla()"></div><div class="fg"><label>Tahmini Maliyet</label><input type="text" id="ur-maliyet" readonly style="background:var(--krem2)"></div></div>
       <div id="ur-bilesen-bilgi" style="margin:8px 0;padding:10px;background:var(--krem);border-radius:8px;font-size:12px;color:var(--yazi2);display:none"></div>
       <div class="fgrid c1"><div class="fg"><label>Not</label><input type="text" id="ur-not" placeholder="Parti no..."></div></div>
-      <div class="btn-row"><button class="btn pri" onclick="kaydetUretim()">Üretimi Kaydet</button></div>
+      <div class="btn-row"><button class="btn ghost" onclick="islemKaydetmedenCik('uretim')">Kaydetmeden Çık</button><button class="btn pri" onclick="kaydetUretim()">Üretimi Kaydet</button></div>
     </div>
     </div>
   </div>
@@ -348,7 +349,7 @@
       </div>
     </div>
     <div id="tp-satis-form" style="display:none">
-      <div class="card"><div class="card-title">Satış Kaydı<button class="btn sm ghost" onclick="islemGorunumListe('satis')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Satış Kaydı<button class="btn sm ghost" onclick="islemKaydetmedenCik('satis')">← Listeye Dön</button></div>
       <div class="fgrid c4" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="st-tarih"></div>
         <div class="fg"><label>Satış Tipi</label><select id="st-tip" onchange="stTurDegis()"><option value="urun">Ürün</option><option value="stok">Hammadde / Stok</option><option value="diger">Diğer</option></select></div>
@@ -376,6 +377,7 @@
           <button class="btn sm sec" onclick="stSatirEkle()">+ Satır Ekle</button>
           <button id="btn-st-sil" class="btn sm ghost" onclick="stSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
         </div>
+        <button class="btn ghost" onclick="islemKaydetmedenCik('satis')">Kaydetmeden Çık</button>
         <button class="btn pri" onclick="kaydetSatis()">Kaydet</button>
       </div>
     </div>
@@ -396,7 +398,7 @@
       </div>
     </div>
     <div id="tp-kasa-form" style="display:none">
-      <div class="card"><div class="card-title">Kasa İşlemi<button class="btn sm ghost" onclick="islemGorunumListe('kasa')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Kasa İşlemi<button class="btn sm ghost" onclick="islemKaydetmedenCik('kasa')">← Listeye Dön</button></div>
       <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Borç ödemesi veya alacak tahsilatı için cari seçip işlem girin. Doğrudan kasa girişi/çıkışı için cari seçmeden de ekleyebilirsiniz.</div>
       <div class="fgrid c2">
         <div class="fg"><label>Tarih</label><input type="date" id="ks-tarih"></div>
@@ -419,7 +421,7 @@
         <div class="fg"><label>Tutar (₺)</label><input type="number" id="ks-tutar" placeholder="0.00" min="0" step="0.01"></div>
       </div>
       <div class="fgrid c1"><div class="fg"><label>Açıklama</label><input type="text" id="ks-aciklama" placeholder="Ödeme nedeni, fatura no..."></div></div>
-      <div class="btn-row"><button class="btn pri" onclick="kaydetKasa()">Kaydet</button></div>
+      <div class="btn-row"><button class="btn ghost" onclick="islemKaydetmedenCik('kasa')">Kaydetmeden Çık</button><button class="btn pri" onclick="kaydetKasa()">Kaydet</button></div>
     </div>
     </div>
   </div>
@@ -438,7 +440,7 @@
       </div>
     </div>
     <div id="tp-sayim-form" style="display:none">
-      <div class="card"><div class="card-title">Sayım Fişi (Hammadde)<button class="btn sm ghost" onclick="islemGorunumListe('sayim')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Sayım Fişi (Hammadde)<button class="btn sm ghost" onclick="islemKaydetmedenCik('sayim')">← Listeye Dön</button></div>
       <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Bu fiş sadece hammaddeleri (stok) gösterir. Bir Yarı Mamul veya Ürün saydıysanız "YM/Ürün Sayımı" ekranından girin — reçetesi otomatik hesaplanıp ilgili hammadde satırlarına yansıtılır. Bu kayıtlar stok miktarını değiştirmez, sadece bilgi amaçlıdır.</div>
       <div class="fgrid c3" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="sy-tarih" onchange="syFisKontrol()"></div>
@@ -470,6 +472,7 @@
       </div>
       <div style="display:flex;justify-content:flex-end;align-items:center">
         <button id="btn-sy-sil" class="btn sm ghost" onclick="sySatirSilHover()" title="Üzerine gelinen satırı sil" style="margin-right:auto">🗑 Satırı Sil</button>
+        <button class="btn ghost" onclick="islemKaydetmedenCik('sayim')">Kaydetmeden Çık</button>
         <button id="btn-sayim-kaydet" class="btn pri" onclick="kaydetSayim()">Sayımı Kaydet</button>
       </div>
     </div>
@@ -490,7 +493,7 @@
       </div>
     </div>
     <div id="tp-devir-form" style="display:none">
-      <div class="card"><div class="card-title">Devir Fişi (Dönemsel Açılış — Hammadde)<button class="btn sm ghost" onclick="islemGorunumListe('devir')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Devir Fişi (Dönemsel Açılış — Hammadde)<button class="btn sm ghost" onclick="islemKaydetmedenCik('devir')">← Listeye Dön</button></div>
       <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Bir dönem başında elinizde bulunan hammadde stoklarını açılış (devir) olarak girmek için kullanılır. Girilen miktarlar stok miktarına Alış gibi eklenir.</div>
       <div class="fgrid c2" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="dv-tarih"></div>
@@ -524,6 +527,7 @@
           <button class="btn sm sec" onclick="dvSatirEkle()">+ Satır Ekle</button>
           <button id="btn-dv-sil" class="btn sm ghost" onclick="dvSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
         </div>
+        <button class="btn ghost" onclick="islemKaydetmedenCik('devir')">Kaydetmeden Çık</button>
         <button class="btn pri" onclick="kaydetDevir()">Devri Kaydet</button>
       </div>
     </div>
