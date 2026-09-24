@@ -124,19 +124,34 @@
       <button onclick="gp('alt-birimler')">Alt Birimler</button>
       <button onclick="gp('merkezler')">Masraf & Gelir Merkezleri</button>
       <button onclick="gp('depolar')">Depolar</button>
-      <button id="nav-isyerleri" onclick="gp('isyerleri')" style="display:none">Şirket & İşyerleri</button>
     </div>
   </div>
-  <button onclick="gp('rapor')">Rapor</button>
-  <button onclick="gp('sayim-raporu')">Sayım Raporu</button>
-  <button onclick="gp('recete-kullanim-raporu')">Reçetelerde Kullanım</button>
-  <button onclick="gp('ym-sayim-ozeti')">YM/Ürün Sayım Özeti</button>
-  <button onclick="gp('urun-teklifleri')">🍳 Yeni Ürün Teklifleri</button>
-  <button onclick="gp('urun-teklif-gonder')">➕ Yeni Ürün/Reçete Öner</button>
-  <button id="nav-btn-utg-gonderdiklerim" onclick="gp('urun-teklif-gonderdiklerim')">📋 Gönderdiklerim</button>
-  <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
-  <button id="nav-yetkiler" onclick="gp('yetkiler')" style="display:none">Yetki Şablonları</button>
-  <button id="nav-kul-yetkiler" onclick="gp('kul-yetkiler')" style="display:none">Kullanıcı Yetkileri</button>
+  <div class="nav-grup">
+    <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Raporlar ▾</button>
+    <div class="nav-grup-icerik">
+      <button onclick="gp('rapor')">Rapor</button>
+      <button onclick="gp('sayim-raporu')">Sayım Raporu</button>
+      <button onclick="gp('recete-kullanim-raporu')">Reçetelerde Kullanım</button>
+      <button onclick="gp('ym-sayim-ozeti')">YM/Ürün Sayım Özeti</button>
+    </div>
+  </div>
+  <div class="nav-grup">
+    <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün Teklifleri ▾</button>
+    <div class="nav-grup-icerik">
+      <button onclick="gp('urun-teklifleri')">🍳 Yeni Ürün Teklifleri</button>
+      <button onclick="gp('urun-teklif-gonder')">➕ Yeni Ürün/Reçete Öner</button>
+      <button id="nav-btn-utg-gonderdiklerim" onclick="gp('urun-teklif-gonderdiklerim')">📋 Gönderdiklerim</button>
+    </div>
+  </div>
+  <div class="nav-grup">
+    <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Yönetim ▾</button>
+    <div class="nav-grup-icerik">
+      <button id="nav-isyerleri" onclick="gp('isyerleri')" style="display:none">Şirket & İşyerleri</button>
+      <button id="nav-kullanicilar" onclick="gp('kullanicilar')" style="display:none">Kullanıcılar</button>
+      <button id="nav-yetkiler" onclick="gp('yetkiler')" style="display:none">Yetki Şablonları</button>
+      <button id="nav-kul-yetkiler" onclick="gp('kul-yetkiler')" style="display:none">Kullanıcı Yetkileri</button>
+    </div>
+  </div>
 </nav>
 <div id="uyari-bant" class="uyari-bant" onclick="gp('stok')"><div class="ub-ic">⚠ <span id="uyari-txt"></span> — Stoklar →</div></div>
 
