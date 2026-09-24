@@ -1,3 +1,21 @@
+// ===== SEKME GÖRÜNÜM GEÇİŞİ (liste ↔ form) =====
+// Her İşlem sekmesi varsayılan olarak o günün özet listesini gösterir.
+// "+ Yeni Fiş" veya "Fişi Düzenle" gibi eylemler form görünümüne geçer;
+// kaydettikten veya "← Listeye Dön" ile geri dönülünce tekrar listeye döner.
+window.islemGorunumForm=function(sekmeId){
+  const listeEl=document.getElementById('tp-'+sekmeId+'-liste');
+  const formEl=document.getElementById('tp-'+sekmeId+'-form');
+  if(listeEl)listeEl.style.display='none';
+  if(formEl)formEl.style.display='';
+};
+window.islemGorunumListe=function(sekmeId){
+  const listeEl=document.getElementById('tp-'+sekmeId+'-liste');
+  const formEl=document.getElementById('tp-'+sekmeId+'-form');
+  if(formEl)formEl.style.display='none';
+  if(listeEl)listeEl.style.display='';
+  if(typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(sekmeId);
+};
+
 // ===== ÜRETİM MALİYET =====
 // _derinlik: döngüsel referanslara (A -> B -> A) karşı güvenlik sınırı
 function hesaplaUrunMaliyeti(urunId,miktar,_derinlik){
@@ -68,6 +86,7 @@ window.kaydetUretim=async function(){
   document.getElementById('ur-miktar').value='';document.getElementById('ur-not').value='';
   document.getElementById('ur-bilesen-bilgi').style.display='none';document.getElementById('ur-maliyet').value='';
   bil(`${urun.ad} üretimi kaydedildi ✓`);
+  if(typeof islemGorunumListe==='function')islemGorunumListe('uretim');
 };
 
 // ===== SATIŞ ANINDA REÇETE BAZLI HAMMADDE DÜŞÜMÜ =====
@@ -320,6 +339,7 @@ window.ymSayimTumunuYansit=function(){
   document.getElementById('tp-sayim')?.classList.add('active');
   document.getElementById('islem-tab-sayim')?.classList.add('active');
   _aktifIslemTab='sayim';
+  if(typeof islemGorunumForm==='function')islemGorunumForm('sayim');
   sySatirRender();
   if(hatali)bil(`${yansitilan} kalem sayım fişine yansıtıldı. ${hatali} kalemin reçetesi tanımlı değildi, atlandı.`,'uyari');
   else bil(`${yansitilan} kalem sayım fişine yansıtıldı ✓`);
@@ -474,6 +494,7 @@ window.sayimFisiDuzenleAc=function(belgeKey){
   document.getElementById('tp-sayim')?.classList.add('active');
   document.getElementById('islem-tab-sayim')?.classList.add('active');
   _aktifIslemTab='sayim';
+  if(typeof islemGorunumForm==='function')islemGorunumForm('sayim');
   document.getElementById('sy-tarih').value=ilk.tarih;
   document.getElementById('sy-depo').value=ilk.depo_id;
   document.getElementById('sy-not').value=ilk.aciklama_not||'';
@@ -568,6 +589,7 @@ window.kaydetSayim=async function(){
   const btn=document.getElementById('btn-sayim-kaydet');
   if(btn)btn.textContent='Sayımı Kaydet';
   bil(duzenlemeMi?`✓ Fiş güncellendi (${gecerli.length} kalem)`:`${gecerli.length} kalem sayımı kaydedildi ✓`);
+  if(typeof islemGorunumListe==='function')islemGorunumListe('sayim');
 };
 
 // ===== ALIŞ =====
@@ -594,9 +616,9 @@ window.stTurDegis=function(){
 };
 
 // "+ Yeni Fiş" — o an aktif olan sekmenin (Alış/Satış/Sayım) satırlarını
-// temizleyip sıfırdan boş bir fiş başlatır. Tarih/depo gibi seçimlere
-// dokunmaz (art arda aynı gün/depo için birden çok fiş girmek kolay olsun diye).
+// temizleyip sıfırdan boş bir fiş başlatır, ve form görünümüne geçer.
 window.yeniFisBaslat=function(){
+  if(typeof islemGorunumForm==='function')islemGorunumForm(_aktifIslemTab);
   if(_aktifIslemTab==='hammadde'){
     hmSatirListesi=[];hmSatirRender();hmSatirEkle();
     document.getElementById('hm-belge').value='';document.getElementById('hm-not').value='';
@@ -697,6 +719,7 @@ window.kaydetDevir=async function(){
   if(typeof renderStoklar==='function')renderStoklar();
   if(typeof kontolUyari==='function')kontolUyari();
   bil(`${gecerli.length} kalem devir fişi olarak kaydedildi ✓`);
+  if(typeof islemGorunumListe==='function')islemGorunumListe('devir');
 };
 
 // ---- Excel'den içe aktar (Kod | Miktar | Birim | Birim Fiyat) ----
@@ -913,6 +936,7 @@ window.kaydetHammadde=async function(){
   document.getElementById('hm-not').value='';
   const hmBelgeEl=document.getElementById('hm-belge');if(hmBelgeEl)hmBelgeEl.value='';
   bil(`${n} kalem kaydedildi ✓`);
+  if(typeof islemGorunumListe==='function')islemGorunumListe('hammadde');
 };
 
 // ===== KASA İŞLEMİ =====
@@ -959,6 +983,7 @@ window.kaydetKasa=async function(){
   document.getElementById('ks-tutar').value='';document.getElementById('ks-aciklama').value='';
   if(cariId){const {data:ch}=await sb.from('cari_hareketler').select('*').order('tarih',{ascending:true});if(ch&&typeof cariHareketler!=='undefined')cariHareketler=ch;}
   renderPanel();bil('Kasa işlemi kaydedildi ✓');
+  if(typeof islemGorunumListe==='function')islemGorunumListe('kasa');
 };
 
 // ===== SATIŞ =====
@@ -1097,6 +1122,7 @@ window.kaydetSatis=async function(){
   document.getElementById('st-not').value='';
   const stBelgeEl=document.getElementById('st-belge');if(stBelgeEl)stBelgeEl.value='';
   bil(`${n} kalem satış kaydedildi ✓`);
+  if(typeof islemGorunumListe==='function')islemGorunumListe('satis');
 };
 
 // ===== GİDER =====
