@@ -308,6 +308,7 @@ window.gp=function(id){
   }
   if(id==='urun-teklifleri'&&typeof renderUrunTeklifleri==='function')renderUrunTeklifleri();
   if(id==='urun-teklif-gonderdiklerim'&&typeof renderUtgGonderdiklerim==='function')renderUtgGonderdiklerim();
+  if(id==='irsaliyeler'&&typeof irsGorunumListe==='function')irsGorunumListe(typeof _aktifIrsTab!=='undefined'?_aktifIrsTab:'alis');
   if(id==='urun-teklif-gonder'&&typeof utgBaslat==='function')utgBaslat();
   if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
 };
