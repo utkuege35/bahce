@@ -246,3 +246,19 @@ window.irsSil=async function(tur,id){
   bil('İrsaliye silindi ✓');
   renderIrsGunSekmesi(tur);
 };
+
+// ===== SATIR TAMAMLANMA KONTROLÜNE KAYIT =====
+// islemler.js'teki genel _satirKayitEkle sistemine üç sekmeyi de kaydeder —
+// malzeme/birim/miktar/fiyat/tutar tamamlanmadan alt satıra geçilemez.
+['alis','satis','iade'].forEach(tur=>{
+  if(typeof _satirKayitEkle==='function'){
+    _satirKayitEkle('irs-'+tur,
+      (i)=>irsSatirListesi[tur][i],
+      (s)=>{
+        if(!s)return false;
+        const miktar=parseFloat(s.miktar)||0,fiyat=parseFloat(s.fiyat)||0,tutar=parseFloat(s.tutar)||0;
+        return !!(s.kaynakId&&s.birimId&&miktar>0&&fiyat>0&&tutar>0);
+      }
+    );
+  }
+});
