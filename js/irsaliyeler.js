@@ -45,7 +45,7 @@ window.irsGorunumListe=function(tur){
   if(typeof renderIrsGunSekmesi==='function')renderIrsGunSekmesi(tur);
 };
 window.irsKaydetmedenCik=async function(tur){
-  const ok=await onay('İşlem kaydedilmeyecektir. Emin misiniz?','⚠️','Evet','Hayır');
+  const ok=await onay('Kaydetmeden çıkmak istiyor musunuz?','⚠️','Evet','Hayır');
   if(ok)irsGorunumListe(tur);
 };
 
