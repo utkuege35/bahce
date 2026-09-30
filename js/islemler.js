@@ -1,6 +1,15 @@
 // ===== SATIRDA AŞAĞI OK TUŞU İLE GEZİNME =====
 // Excel'deki gibi: bir hücrede aşağı ok tuşuna basınca, bir alt satırın
 // aynı sütunundaki (hücredeki) giriş alanına odaklanır.
+// ===== SATIR TAMAMLANMA KONTROLÜ (genel/yeniden kullanılabilir kayıt sistemi) =====
+// Her tablo türü (hm, st, dv, irs-alis, ileride fatura/stok işlemleri...)
+// kendi "satırı oku" ve "satır tamam mı" fonksiyonlarını buraya kaydeder.
+// Yeni bir ekran eklenince sadece bir _satirKayitEkle(...) çağrısı yeterli.
+window._satirTabloKayit={};
+window._satirKayitEkle=function(tabloAdi,getSatir,tamamMi){
+  window._satirTabloKayit[tabloAdi]={getSatir,tamamMi};
+};
+
 window.satirAsagiGec=function(e){
   if(e.key!=='ArrowDown')return;
   const el=e.target;
@@ -8,6 +17,21 @@ window.satirAsagiGec=function(e){
   if(!tr||!td)return;
   const nextTr=tr.nextElementSibling;
   if(!nextTr)return;
+
+  // Satır, alt satıra geçmeden önce tamamlanmış olmalı (kayıtlı tablolarda)
+  const tabloAdi=tr.dataset.tablo;
+  if(tabloAdi&&window._satirTabloKayit[tabloAdi]){
+    const {getSatir,tamamMi}=window._satirTabloKayit[tabloAdi];
+    const tbody=tr.parentElement;
+    const rowIdx=Array.from(tbody.children).indexOf(tr);
+    const satir=getSatir(rowIdx);
+    if(!tamamMi(satir)){
+      e.preventDefault();
+      bil('Alt satıra geçmeden önce bu satırı tamamlayın (malzeme, birim, miktar, fiyat, tutar)','err');
+      return;
+    }
+  }
+
   // Öncelik: satırdaki "ana" alan (malzeme/ürün/stok adı) — hangi sütunda
   // olursak olalım, aşağı ok tuşu her zaman bir sonraki satırın bu alanına gider.
   let odaklanacak=nextTr.querySelector('[data-satir-ana="1"]');
@@ -25,6 +49,38 @@ window.satirAsagiGec=function(e){
     if(typeof odaklanacak.select==='function')odaklanacak.select();
   }
 };
+
+// Alış (hm), Satış (st), Devir (dv) satırlarının tamamlanma kuralları
+_satirKayitEkle('hm',
+  (i)=>hmSatirListesi[i],
+  (s)=>{
+    if(!s)return false;
+    const miktar=parseFloat(s.miktar)||0,fiyat=parseFloat(s.fiyat)||0,tutar=parseFloat(s.tutar)||0;
+    if(!(miktar>0&&fiyat>0&&tutar>0))return false;
+    const tip=s.tip||'malzeme';
+    const secimVar=tip==='diger'?!!s.manuel:!!s.secimId;
+    return secimVar&&!!s.birimId;
+  }
+);
+_satirKayitEkle('st',
+  (i)=>stSatirListesi[i],
+  (s)=>{
+    if(!s)return false;
+    const miktar=parseFloat(s.miktar)||0,fiyat=parseFloat(s.fiyat)||0,tutar=parseFloat(s.tutar)||0;
+    if(!(miktar>0&&fiyat>0&&tutar>0))return false;
+    const tip=document.getElementById('st-tip')?.value||'urun';
+    const secimVar=tip==='diger'?!!s.manuel:!!s.secimId;
+    return secimVar&&!!s.birimId;
+  }
+);
+_satirKayitEkle('dv',
+  (i)=>dvSatirListesi[i],
+  (s)=>{
+    if(!s)return false;
+    const miktar=parseFloat(s.miktar)||0,fiyat=parseFloat(s.fiyat)||0,tutar=parseFloat(s.tutar)||0;
+    return !!(s.stokId&&s.birimId&&miktar>0&&fiyat>0&&tutar>0);
+  }
+);
 
 // ===== SEKME GÖRÜNÜM GEÇİŞİ (liste ↔ form) =====
 // Her İşlem sekmesi varsayılan olarak o günün özet listesini gösterir.
@@ -700,7 +756,7 @@ function dvBirimOpts(stokId,seciliId){
 }
 function dvSatirRender(){
  const el=document.getElementById('dv-satirlar');if(!el)return;
- el.innerHTML=dvSatirListesi.map((s,i)=>`<tr onmouseenter="_dvHoverIndex=${i}">
+ el.innerHTML=dvSatirListesi.map((s,i)=>`<tr data-tablo="dv" onmouseenter="_dvHoverIndex=${i}">
  <td><select data-satir-ana="1" onchange="dvSatirGuncelle(${i},'stokId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${dvSecimOpts(s.stokId)}</select></td>
  <td><select onchange="dvSatirGuncelle(${i},'birimId',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${dvBirimOpts(s.stokId,s.birimId)}</select></td>
  <td><input type="number" value="${s.miktar||''}" onblur="dvSatirHesapla(${i},'miktar',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
@@ -866,7 +922,7 @@ function hmSatirRender(){
     }else{
       secimTd=`<select data-satir-ana="1" onchange="hmSatirGuncelle(${i},'secimId',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${hmSecimOpts(tip,s.secimId)}</select>`;
     }
-    return `<tr>
+    return `<tr data-tablo="hm">
     <td>
       <select id="hm-tur-${i}" onchange="hmSatirTipDegis(${i},this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 2px;font-size:11px;background:var(--beyaz)">
         <option value=""${hamTip===''?' selected':''}></option>
@@ -924,14 +980,10 @@ window.hmStokSecildi=function(i,stokId){
 // Fiş seviyesinde tek Ödeme Tipi — Cari/Kasa alanlarının görünürlüğünü ayarlar
 window.hmOdemeUstDegis=function(){
   const odeme=document.getElementById('hm-odeme-ust')?.value||'pesin';
-  const cariFg=document.getElementById('hm-cari-ust-fg');
   const kasaFg=document.getElementById('hm-kasa-ust-fg');
-  if(cariFg)cariFg.style.display=odeme==='cari'?'':'none';
   if(kasaFg)kasaFg.style.display=odeme==='cari'?'none':'';
-  if(odeme==='cari'){
-    const cariSel=document.getElementById('hm-cari-ust');
-    if(cariSel)cariSel.innerHTML='<option value="">— Cari seçin —</option>'+(typeof cariOpts==='function'?cariOpts('',''):'');
-  }
+  const cariSel=document.getElementById('hm-cari-ust');
+  if(cariSel)cariSel.innerHTML='<option value="">— Cari seçin —</option>'+(typeof cariOpts==='function'?cariOpts('',''):'');
 };
 
 window.hmBirimSec=function(i,birimId){
@@ -977,8 +1029,8 @@ window.kaydetHammadde=async function(){
     return secimVar&&tutarVar;
   });
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  if(!cariId){bil('Cari seçimi zorunlu!','err');return;}
   if(odeme==='pesin'&&!kasaId){bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;}
-  if(odeme==='cari'&&!cariId){bil('Cari ödeme seçiliyse cari seçimi zorunlu!','err');return;}
   let n=0;
   for(const s of gecerli){
     const tip=s.tip||'malzeme';
@@ -1115,7 +1167,7 @@ function stSatirRender(){
         <div id="st-oneri-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
       </div>`;
     }
-    return `<tr>
+    return `<tr data-tablo="st">
     <td>${secimTd}</td>
     <td><select onchange="stSatirBirimSec(${i},this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${stBirimOpts(s.secimId,s.birimId)}</select></td>
     <td><input type="number" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
@@ -1157,14 +1209,10 @@ window.stUrunSecildi=function(i,id){
 // Fiş seviyesinde tek Ödeme Tipi — Alıcı/Kasa alanlarının görünürlüğünü ayarlar
 window.stOdemeUstDegis=function(){
   const odeme=document.getElementById('st-odeme-ust')?.value||'pesin';
-  const cariFg=document.getElementById('st-cari-ust-fg');
   const kasaFg=document.getElementById('st-kasa-ust-fg');
-  if(cariFg)cariFg.style.display=odeme==='cari'?'':'none';
   if(kasaFg)kasaFg.style.display=odeme==='cari'?'none':'';
-  if(odeme==='cari'){
-    const cariSel=document.getElementById('st-cari-ust');
-    if(cariSel)cariSel.innerHTML='<option value="">— Alıcı seçin —</option>'+(typeof cariOpts==='function'?cariOpts('alici',''):'');
-  }
+  const cariSel=document.getElementById('st-cari-ust');
+  if(cariSel)cariSel.innerHTML='<option value="">— Alıcı seçin —</option>'+(typeof cariOpts==='function'?cariOpts('alici',''):'');
 };
 
 window.stSatirBirimSec=function(i,birimId){
@@ -1199,8 +1247,8 @@ window.kaydetSatis=async function(){
     ?stSatirListesi.filter(s=>s.manuel&&parseFloat(s.tutar)>0||(parseFloat(s.miktar)>0&&parseFloat(s.fiyat)>0))
     :stSatirListesi.filter(s=>s.secimId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  if(!cariId){bil('Alıcı seçimi zorunlu!','err');return;}
   if(odeme==='pesin'&&!kasaId){bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;}
-  if(odeme==='cari'&&!cariId){bil('Cari ödeme seçiliyse alıcı seçimi zorunlu!','err');return;}
   let n=0;
   for(const s of gecerli){
     const mik=parseFloat(s.miktar)||0;const fiy=parseFloat(s.fiyat)||0;const tut=parseFloat(s.tutar)||(mik*fiy)||0;const bId=s.birimId||'';
