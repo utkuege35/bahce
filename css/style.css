@@ -231,7 +231,7 @@ tr:hover td{background:var(--krem)}
    Tek çıkış yolu formun kendi "Kaydetmeden Çık" / "Listeye Dön" butonları. */
 body.islem-form-acik .nav button,
 body.islem-form-acik .nav-grup-baslik,
-body.islem-form-acik #islem .tabs button{
+body.islem-form-acik .page.active .tabs button{
   opacity:.4;
   pointer-events:none;
   cursor:not-allowed;
