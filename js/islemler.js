@@ -105,7 +105,7 @@ window.islemGorunumListe=function(sekmeId){
 // (Evet) girilen veriler kaydedilmeden listeye dönülür, reddedilirse
 // (Hayır) formda kalınır. Bu, "← Listeye Dön" butonu için de kullanılır.
 window.islemKaydetmedenCik=async function(sekmeId){
- const ok=await onay('İşlem kaydedilmeyecektir. Emin misiniz?','⚠️','Evet','Hayır');
+ const ok=await onay('Kaydetmeden çıkmak istiyor musunuz?','⚠️','Evet','Hayır');
  if(ok&&typeof islemGorunumListe==='function')islemGorunumListe(sekmeId);
 };
 
