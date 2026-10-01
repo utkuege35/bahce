@@ -97,7 +97,6 @@ window.irsSatirRender=function(tur){
       <td><input type="number" value="${s.fiyat||''}" onblur="irsSatirHesapla('${tur}',${i},'fiyat',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
       <td><input type="number" value="${s.tutar||''}" onblur="irsSatirHesapla('${tur}',${i},'tutar',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
       ${tur==='alis'?_irsKdvHucreleri(tur,i,s):''}
-      <td></td>
     </tr>`;
   }).join('');
   irsToplamGuncelle(tur);
