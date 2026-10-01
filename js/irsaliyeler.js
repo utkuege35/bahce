@@ -109,8 +109,8 @@ function _irsKdvHucreleri(tur,i,s){
       <option value=""></option>
       ${kdvOranlari.map(k=>`<option value="${k.id}"${k.id===s.kdvOraniId?' selected':''}>${k.ad} (%${k.oran})</option>`).join('')}
     </select></td>
-    <td id="irs-kdvtutar-${tur}-${i}" style="text-align:right;color:var(--yazi3)">${kdvTutar>0?para(kdvTutar):'—'}</td>
-    <td id="irs-kdvdahil-${tur}-${i}" style="text-align:right;font-weight:500">${dahil>0?para(dahil):'—'}</td>`;
+    <td id="irs-kdvtutar-${tur}-${i}" style="text-align:right;color:var(--yazi3)">${kdvTutar>0?para(kdvTutar):''}</td>
+    <td id="irs-kdvdahil-${tur}-${i}" style="text-align:right;font-weight:500">${dahil>0?para(dahil):''}</td>`;
 }
 function irsBirimOpts(kaynakTur,kaynakId,seciliId){
   let tbId=null;
@@ -157,8 +157,8 @@ window.irsBirimSec=function(tur,i,birimId){
 window.irsKdvSec=function(tur,i,kdvOraniId){
   irsSatirListesi[tur][i].kdvOraniId=kdvOraniId;
   const {kdvTutar,dahil}=_irsKdvHesapla(irsSatirListesi[tur][i]);
-  const tEl=document.getElementById(`irs-kdvtutar-${tur}-${i}`);if(tEl)tEl.textContent=kdvTutar>0?para(kdvTutar):'—';
-  const dEl=document.getElementById(`irs-kdvdahil-${tur}-${i}`);if(dEl)dEl.textContent=dahil>0?para(dahil):'—';
+  const tEl=document.getElementById(`irs-kdvtutar-${tur}-${i}`);if(tEl)tEl.textContent=kdvTutar>0?para(kdvTutar):'';
+  const dEl=document.getElementById(`irs-kdvdahil-${tur}-${i}`);if(dEl)dEl.textContent=dahil>0?para(dahil):'';
 };
 window.irsSatirHesapla=function(tur,i,kaynak,val){
   const s=irsSatirListesi[tur][i];
@@ -169,8 +169,8 @@ window.irsSatirHesapla=function(tur,i,kaynak,val){
   else if(kaynak==='tutar'){if(mik>0&&tut>0){const y=(tut/mik).toFixed(2);s.fiyat=y;if(inputs[1])inputs[1].value=y;}}
   if(tur==='alis'){
     const {kdvTutar,dahil}=_irsKdvHesapla(s);
-    const tEl=document.getElementById(`irs-kdvtutar-${tur}-${i}`);if(tEl)tEl.textContent=kdvTutar>0?para(kdvTutar):'—';
-    const dEl=document.getElementById(`irs-kdvdahil-${tur}-${i}`);if(dEl)dEl.textContent=dahil>0?para(dahil):'—';
+    const tEl=document.getElementById(`irs-kdvtutar-${tur}-${i}`);if(tEl)tEl.textContent=kdvTutar>0?para(kdvTutar):'';
+    const dEl=document.getElementById(`irs-kdvdahil-${tur}-${i}`);if(dEl)dEl.textContent=dahil>0?para(dahil):'';
   }
   irsToplamGuncelle(tur);
 };
