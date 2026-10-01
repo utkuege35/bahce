@@ -253,6 +253,7 @@ window.stokModalAc=function(ustId,tip){
   document.getElementById('sm-aciklama').value='';
   document.getElementById('sm-recete-birim').value='';
   document.getElementById('sm-varsayilan-birim').value='';
+  if(typeof doldurKdvOranSecenekleri==='function')doldurKdvOranSecenekleri('sm-kdv-orani','');
   if(tip==='grup'){
     document.getElementById('sm-title').textContent=ustId?'Alt Grup Ekle':'Ana Grup Ekle';
     document.getElementById('sm-stok-alanlar').style.display='none';
@@ -267,6 +268,7 @@ window.stokModalAc=function(ustId,tip){
   }
   document.getElementById('sm-kod').disabled=false;
   doldurBirimSecleri();doldurMerkezSecleri();
+  if(typeof stokKdvBilgiGuncelle==='function')setTimeout(stokKdvBilgiGuncelle,0);
   modalAc('modal-stok');
 };
 window.stokGoruntule=function(id){stokDuzenle(id,'goruntule');};
@@ -278,6 +280,7 @@ window.stokDuzenle=function(id,mod='duzenle'){
   document.getElementById('sm-ad').value=s.ad;document.getElementById('sm-kod').value=s.kod;
 
   document.getElementById('sm-kod').disabled=hv;
+  if(typeof doldurKdvOranSecenekleri==='function')doldurKdvOranSecenekleri('sm-kdv-orani',s.kdv_orani_id||'');
   if(s.tip==='grup'){
     document.getElementById('sm-stok-alanlar').style.display='none';document.getElementById('sm-birim-fg').style.display='none';
     document.getElementById('sm-aktif-satir').style.display='none';
@@ -297,6 +300,7 @@ window.stokDuzenle=function(id,mod='duzenle'){
   }
   const ust=stoklar.find(x=>x.id===s.ust_id);
   document.getElementById('sm-ust-bilgi').textContent=ust?`Üst: ${ust.ikon||''} ${ust.ad} [${ust.kod}]`:'Ana grup';
+  if(typeof stokKdvBilgiGuncelle==='function')setTimeout(stokKdvBilgiGuncelle,0);
   const loglar=isimLoglari.filter(l=>l.tablo==='stoklar'&&l.kayit_id===id);
   if(loglar.length){document.getElementById('sm-log').style.display='block';document.getElementById('sm-log-liste').innerHTML=loglar.map(l=>`<div class="log-item"><span class="log-eski">${l.eski_ad}</span> → <span class="log-yeni">${l.yeni_ad}</span><span style="color:var(--yazi3);font-size:10px;float:right">${new Date(l.tarih).toLocaleDateString('tr-TR')} — ${l.degistiren||'?'}</span></div>`).join('');}
   else document.getElementById('sm-log').style.display='none';
@@ -330,6 +334,7 @@ window.kaydetStok=async function(){
   if(mevcut&&mevcut.ad!==ad)await sb.from('isim_loglari').insert({tablo:'stoklar',kayit_id:id,eski_ad:mevcut.ad,yeni_ad:ad,degistiren:aktifKullanici?.ad||''});
   const data={id,ad,tip};
   if(!hv)data.kod=kod;
+  data.kdv_orani_id=document.getElementById('sm-kdv-orani').value||null;
   if(tip==='stok'){
     const bId=document.getElementById('sm-birim').value||null;
     if(!bId){bil('Birim zorunlu!','err');return;}
