@@ -81,3 +81,23 @@ window.kdvOraniDegeri=function(kdvOraniId){
   const k=kdvOranlari.find(x=>x.id===kdvOraniId);
   return k?parseFloat(k.oran)||0:0;
 };
+
+// ===== STOK KARTI MODALI — KDV ALANI =====
+window.doldurKdvOranSecenekleri=function(selectId,seciliId){
+  const el=document.getElementById(selectId);if(!el)return;
+  el.innerHTML='<option value="">— Seçilmedi —</option>'+kdvOranlari.filter(k=>k.aktif!==false).map(k=>`<option value="${k.id}"${k.id===seciliId?' selected':''}>${k.ad} (%${k.oran})</option>`).join('');
+};
+// Stok/grup kartının kendi KDV alanı boşsa, üst gruptan hangi oranın
+// devralınacağını küçük bir ipucu olarak gösterir.
+window.stokKdvBilgiGuncelle=function(){
+  const sel=document.getElementById('sm-kdv-orani');
+  const bilgiEl=document.getElementById('sm-kdv-bilgi');
+  if(!sel||!bilgiEl)return;
+  if(sel.value){bilgiEl.textContent='';return;}
+  const ustBilgi=document.getElementById('sm-ust-bilgi')?.textContent||'';
+  const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
+  const ust=ustKod?stoklar.find(s=>s.kod===ustKod):null;
+  const devralinanId=ust?stokKdvOraniId(ust.id):null;
+  const k=devralinanId?kdvOranlari.find(x=>x.id===devralinanId):null;
+  bilgiEl.textContent=k?`Üstten devralınacak: ${k.ad} (%${k.oran})`:'';
+};
