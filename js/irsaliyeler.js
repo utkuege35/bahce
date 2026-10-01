@@ -82,7 +82,7 @@ window.irsSatirRender=function(tur){
           oninput="irsMalzemeAramaFiltrele('${tur}',${i},this.value)"
           onfocus="_irsHoverIndex['${tur}']=${i};irsMalzemeAramaFiltrele('${tur}',${i},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('irs-oneri-${tur}-${i}');if(d)d.style.display='none';},150)"
-          onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">
+          onkeydown="_oneriTusVurusu(event,'irs-oneri-${tur}-${i}')" style="width:100%;padding:3px 6px;font-size:12px">
         <div id="irs-oneri-${tur}-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
       </div></td>
       <td><select onchange="irsBirimSec('${tur}',${i},this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)"><option value=""></option>${irsBirimOpts(s.kaynakTur,s.kaynakId,s.birimId)}</select></td>
@@ -111,8 +111,9 @@ window.irsMalzemeAramaFiltrele=function(tur,i,val){
   const q=(val||'').trim().toLocaleLowerCase('tr');
   const kapsam=_irsKapsam(tur);
   const secenekler=(q?kapsam.filter(k=>k.kaynak.ad.toLocaleLowerCase('tr').includes(q)):kapsam).slice(0,30);
+  kutu.dataset.vurgu='-1';
   if(!secenekler.length){kutu.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--yazi3)">Sonuç bulunamadı</div>';kutu.style.display='block';return;}
-  kutu.innerHTML=secenekler.map(k=>`<div onclick="irsMalzemeSecildi('${tur}',${i},'${k.kaynakTur}','${k.kaynak.id}')" style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--krem2)" onmouseover="this.style.background='var(--krem2)'" onmouseout="this.style.background=''">${k.kaynak.ad}${tur==='iade'?` <span style="font-size:9px;color:var(--yazi3)">[${k.kaynakTur==='stok'?'Hammadde':'Ürün'}]</span>`:''}</div>`).join('');
+  kutu.innerHTML=secenekler.map(k=>`<div class="oneri-item" onclick="irsMalzemeSecildi('${tur}',${i},'${k.kaynakTur}','${k.kaynak.id}')" style="padding:8px 10px;font-size:12px;border-bottom:1px solid var(--krem2)">${k.kaynak.ad}${tur==='iade'?` <span style="font-size:9px;color:var(--yazi3)">[${k.kaynakTur==='stok'?'Hammadde':'Ürün'}]</span>`:''}</div>`).join('');
   kutu.style.display='block';
 };
 window.irsMalzemeSecildi=function(tur,i,kaynakTur,kaynakId){
