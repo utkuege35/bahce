@@ -106,6 +106,7 @@
     <div class="nav-grup-icerik">
       <button onclick="gp('stok')">Stoklar</button>
       <button onclick="gp('stok-liste')">Stok Listesi</button>
+      <button onclick="gp('kdv-tanimlari')">KDV Tanımları</button>
       <div class="nav-grup">
         <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürünler ▾</button>
         <div class="nav-grup-icerik">
@@ -244,6 +245,32 @@
     <tbody id="il-tb"></tbody></table>
   </div>
   <div id="il-sayfalama" style="display:flex;justify-content:center;gap:6px;margin-top:.75rem;flex-wrap:wrap"></div>
+</div>
+<div id="kdv-tanimlari" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">KDV Tanımları</div>
+    <button class="btn pri sm" onclick="kdvYeniAc()">+ Yeni KDV Tanımı</button>
+  </div>
+  <div id="kdv-form-card" class="card" style="display:none">
+    <div class="card-title" id="kdv-form-baslik">Yeni KDV Tanımı</div>
+    <div class="fgrid c3">
+      <div class="fg"><label>Ad</label><input type="text" id="kdv-ad" placeholder="Genel Oran, İndirimli Oran..."></div>
+      <div class="fg"><label>Oran (%)</label><input type="number" id="kdv-oran" placeholder="20" min="0" step="0.01"></div>
+      <div class="fg" style="display:flex;align-items:flex-end;gap:6px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="kdv-aktif" checked> Aktif</label></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="kdvFormKapat()">Vazgeç</button>
+      <button class="btn pri" onclick="kdvKaydet()">Kaydet</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tw">
+      <table>
+        <thead><tr><th>Ad</th><th style="text-align:right">Oran</th><th>Durum</th><th style="width:90px"></th></tr></thead>
+        <tbody id="kdv-tb"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 <div id="islem" class="page">
   <div class="tabs">
@@ -575,12 +602,18 @@
             <th style="width:100px">Miktar</th>
             <th style="width:85px">B.Fiyat (₺)</th>
             <th style="width:110px">Tutar (₺)</th>
+            <th style="width:100px">KDV Oran</th>
+            <th style="width:100px">KDV Tutar (₺)</th>
+            <th style="width:120px">KDV Dahil (₺)</th>
             <th style="width:36px"></th>
           </tr></thead>
           <tbody id="irs-alis-satirlar"></tbody>
           <tfoot><tr>
             <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
             <td id="irs-alis-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td>
+            <td></td>
+            <td></td>
+            <td id="irs-alis-kdv-dahil-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:13px;color:var(--yazi2);padding:10px 9px">₺0,00</td>
             <td></td>
           </tr></tfoot>
         </table>
@@ -1881,6 +1914,7 @@
 <script src="js/cari.js"></script>
 <script src="js/rapor.js"></script>
 <script src="js/teklifler.js"></script>
+<script src="js/kdv.js"></script>
 <script src="js/irsaliyeler.js"></script>
 
 </body>
