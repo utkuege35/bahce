@@ -66,9 +66,16 @@ window.irsYeniBaslat=function(tur){
 
 window.irsSatirListesiDoldur=function(tur,n){
   n=n||15;
-  for(let i=0;i<n;i++)irsSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:''});
+  for(let i=0;i<n;i++)irsSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
   irsSatirRender(tur);
 };
+// Satırın tutarı ve seçili KDV oranına göre KDV tutarı/KDV dahil tutarı hesaplar.
+function _irsKdvHesapla(s){
+  const tutar=parseFloat(s.tutar)||0;
+  const oran=typeof kdvOraniDegeri==='function'?kdvOraniDegeri(s.kdvOraniId):0;
+  const kdvTutar=tutar*oran/100;
+  return {kdvTutar,dahil:tutar+kdvTutar};
+}
 
 // ===== SATIR RENDER =====
 window.irsSatirRender=function(tur){
@@ -89,11 +96,22 @@ window.irsSatirRender=function(tur){
       <td><input type="number" value="${s.miktar||''}" onblur="irsSatirHesapla('${tur}',${i},'miktar',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
       <td><input type="number" value="${s.fiyat||''}" onblur="irsSatirHesapla('${tur}',${i},'fiyat',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
       <td><input type="number" value="${s.tutar||''}" onblur="irsSatirHesapla('${tur}',${i},'tutar',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
+      ${tur==='alis'?_irsKdvHucreleri(tur,i,s):''}
       <td></td>
     </tr>`;
   }).join('');
   irsToplamGuncelle(tur);
 };
+// Sadece Alış sekmesinde gösterilen KDV Oran / KDV Tutar / KDV Dahil hücreleri.
+function _irsKdvHucreleri(tur,i,s){
+  const {kdvTutar,dahil}=_irsKdvHesapla(s);
+  return `<td><select id="irs-kdv-${tur}-${i}" onchange="irsKdvSec('${tur}',${i},this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">
+      <option value=""></option>
+      ${kdvOranlari.map(k=>`<option value="${k.id}"${k.id===s.kdvOraniId?' selected':''}>${k.ad} (%${k.oran})</option>`).join('')}
+    </select></td>
+    <td id="irs-kdvtutar-${tur}-${i}" style="text-align:right;color:var(--yazi3)">${kdvTutar>0?para(kdvTutar):'—'}</td>
+    <td id="irs-kdvdahil-${tur}-${i}" style="text-align:right;font-weight:500">${dahil>0?para(dahil):'—'}</td>`;
+}
 function irsBirimOpts(kaynakTur,kaynakId,seciliId){
   let tbId=null;
   if(kaynakTur==='stok'){const s=stoklar.find(x=>x.id===kaynakId);tbId=s?.birim_id;}
@@ -105,6 +123,11 @@ function irsToplamGuncelle(tur){
   const t=irsSatirListesi[tur].reduce((s,r)=>s+parseFloat(r.tutar||0),0);
   const el=document.getElementById('irs-'+tur+'-toplam');
   if(el)el.textContent='₺'+t.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(tur==='alis'){
+    const dahilToplam=irsSatirListesi[tur].reduce((s,r)=>s+_irsKdvHesapla(r).dahil,0);
+    const dEl=document.getElementById('irs-alis-kdv-dahil-toplam');
+    if(dEl)dEl.textContent='₺'+dahilToplam.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
 }
 window.irsMalzemeAramaFiltrele=function(tur,i,val){
   const kutu=document.getElementById(`irs-oneri-${tur}-${i}`);if(!kutu)return;
@@ -122,13 +145,20 @@ window.irsMalzemeSecildi=function(tur,i,kaynakTur,kaynakId){
   const s=irsSatirListesi[tur][i];
   s.kaynakTur=kaynakTur;s.kaynakId=kaynakId;
   s.birimId=kaynak.varsayilan_birim_id||kaynak.birim_id||'';
+  if(kaynakTur==='stok'&&typeof stokKdvOraniId==='function')s.kdvOraniId=stokKdvOraniId(kaynakId)||'';
   const sonSatirMi=i===irsSatirListesi[tur].length-1;
-  if(sonSatirMi)irsSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:''});
+  if(sonSatirMi)irsSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
   irsSatirRender(tur);
   document.getElementById(`irs-birim-${tur}-${i}`)?.focus();
 };
 window.irsBirimSec=function(tur,i,birimId){
   irsSatirListesi[tur][i].birimId=birimId;
+};
+window.irsKdvSec=function(tur,i,kdvOraniId){
+  irsSatirListesi[tur][i].kdvOraniId=kdvOraniId;
+  const {kdvTutar,dahil}=_irsKdvHesapla(irsSatirListesi[tur][i]);
+  const tEl=document.getElementById(`irs-kdvtutar-${tur}-${i}`);if(tEl)tEl.textContent=kdvTutar>0?para(kdvTutar):'—';
+  const dEl=document.getElementById(`irs-kdvdahil-${tur}-${i}`);if(dEl)dEl.textContent=dahil>0?para(dahil):'—';
 };
 window.irsSatirHesapla=function(tur,i,kaynak,val){
   const s=irsSatirListesi[tur][i];
@@ -137,6 +167,11 @@ window.irsSatirHesapla=function(tur,i,kaynak,val){
   const row=document.querySelectorAll(`#irs-${tur}-satirlar tr`)[i];if(!row)return;const inputs=row.querySelectorAll('input[type="number"]');
   if(kaynak==='miktar'||kaynak==='fiyat'){if(mik>0&&fiy>0){const y=(mik*fiy).toFixed(2);s.tutar=y;if(inputs[2])inputs[2].value=y;}}
   else if(kaynak==='tutar'){if(mik>0&&tut>0){const y=(tut/mik).toFixed(2);s.fiyat=y;if(inputs[1])inputs[1].value=y;}}
+  if(tur==='alis'){
+    const {kdvTutar,dahil}=_irsKdvHesapla(s);
+    const tEl=document.getElementById(`irs-kdvtutar-${tur}-${i}`);if(tEl)tEl.textContent=kdvTutar>0?para(kdvTutar):'—';
+    const dEl=document.getElementById(`irs-kdvdahil-${tur}-${i}`);if(dEl)dEl.textContent=dahil>0?para(dahil):'—';
+  }
   irsToplamGuncelle(tur);
 };
 
@@ -156,16 +191,23 @@ window.kaydetIrsaliye=async function(tur){
       durum:'acik',kullanici:aktifKullanici?.ad||'',ts:Date.now()
     }).select().single();
     if(e1)throw e1;
-    const kalemler=gecerli.map((s,i)=>({
-      irsaliye_id:irs.id,
-      stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
-      urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
-      birim_id:s.birimId||null,
-      miktar:parseFloat(s.miktar)||0,
-      fiyat:parseFloat(s.fiyat)||0,
-      tutar:parseFloat(s.tutar)||(parseFloat(s.miktar)||0)*(parseFloat(s.fiyat)||0),
-      sira:i
-    }));
+    const kalemler=gecerli.map((s,i)=>{
+      const {kdvTutar,dahil}=_irsKdvHesapla(s);
+      return {
+        irsaliye_id:irs.id,
+        stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
+        urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
+        birim_id:s.birimId||null,
+        miktar:parseFloat(s.miktar)||0,
+        fiyat:parseFloat(s.fiyat)||0,
+        tutar:parseFloat(s.tutar)||(parseFloat(s.miktar)||0)*(parseFloat(s.fiyat)||0),
+        kdv_orani_id:tur==='alis'?(s.kdvOraniId||null):null,
+        kdv_orani:tur==='alis'?(typeof kdvOraniDegeri==='function'?kdvOraniDegeri(s.kdvOraniId):null):null,
+        kdv_tutar:tur==='alis'?kdvTutar:null,
+        kdv_dahil_tutar:tur==='alis'?dahil:null,
+        sira:i
+      };
+    });
     const {error:e2}=await sb.from('irsaliye_kalemleri').insert(kalemler);
     if(e2)throw e2;
     bil(`✓ İrsaliye kaydedildi (${gecerli.length} kalem, ${para(toplam)})`);
@@ -213,16 +255,17 @@ window.renderIrsGunSekmesi=async function(tur){
     const acik=acikId===x.id;
     const durumRenk=x.durum==='faturalandi'?'var(--yesil)':x.durum==='iptal'?'var(--yazi3)':'var(--turuncu)';
     const durumAd=x.durum==='faturalandi'?'Faturalandı':x.durum==='iptal'?'İptal':'Açık';
+    const kdvGoster=tur==='alis';
     const detay=acik?`<tr><td colspan="6" style="padding:0">
       <div style="background:var(--krem);border-top:2px solid var(--yesil-ac)">
         <table style="width:100%;border-collapse:collapse">
           <tr style="background:var(--krem2);font-size:10px;color:var(--yazi3)">
-            <th style="padding:4px 8px;text-align:left">MALZEME/ÜRÜN</th><th style="padding:4px 8px;text-align:right">MİKTAR</th><th style="padding:4px 8px;text-align:right">FİYAT</th><th style="padding:4px 8px;text-align:right">TUTAR</th>
+            <th style="padding:4px 8px;text-align:left">MALZEME/ÜRÜN</th><th style="padding:4px 8px;text-align:right">MİKTAR</th><th style="padding:4px 8px;text-align:right">FİYAT</th><th style="padding:4px 8px;text-align:right">TUTAR</th>${kdvGoster?'<th style="padding:4px 8px;text-align:right">KDV</th><th style="padding:4px 8px;text-align:right">KDV DAHİL</th>':''}
           </tr>
           ${kl.map(k=>{
             const stok=stoklar.find(s=>s.id===k.stok_id);const urun=urunler.find(u=>u.id===k.urun_id);
             const ad=stok?stok.ad:urun?urun.ad:'(bulunamadı)';
-            return `<tr style="font-size:11px"><td style="padding:5px 8px">${ad}</td><td style="padding:5px 8px;text-align:right">${parseFloat(k.miktar).toLocaleString('tr-TR',{maximumFractionDigits:3})} ${birimAd(k.birim_id)}</td><td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.fiyat?para(k.fiyat):'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${para(k.tutar)}</td></tr>`;
+            return `<tr style="font-size:11px"><td style="padding:5px 8px">${ad}</td><td style="padding:5px 8px;text-align:right">${parseFloat(k.miktar).toLocaleString('tr-TR',{maximumFractionDigits:3})} ${birimAd(k.birim_id)}</td><td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.fiyat?para(k.fiyat):'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${para(k.tutar)}</td>${kdvGoster?`<td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.kdv_tutar?para(k.kdv_tutar)+' (%'+(k.kdv_orani||0)+')':'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${k.kdv_dahil_tutar?para(k.kdv_dahil_tutar):'—'}</td>`:''}</tr>`;
           }).join('')}
         </table>
         ${x.durum==='acik'?`<div style="padding:8px 12px"><button class="btn sm ghost" onclick="event.stopPropagation();irsSil('${tur}','${x.id}')">✕ Sil</button></div>`:''}
