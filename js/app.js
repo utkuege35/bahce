@@ -152,7 +152,7 @@ async function baslat(){
   document.getElementById('sync').textContent='⟳';document.getElementById('sync').className='sync load';
   // İşyeri bazlı filtre — herkes (admin dahil) sadece aktif işyerini çeker
   const isyFil=q=>q.or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`);
-  const [b,s,u,ub,k,il,mz,gk,ilog,ks,dp]=await Promise.all([
+  const [b,s,u,ub,k,il,mz,gk,ilog,ks,dp,kdv]=await Promise.all([
     sb.from('birimler').select('*'),
     isyFil(sb.from('stoklar').select('*')).order('kod'),
     isyFil(sb.from('urunler').select('*')).order('kod'),
@@ -163,12 +163,13 @@ async function baslat(){
     isyFil(sb.from('gider_kalemleri').select('*')).order('kod'),
     sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
     isyFil(sb.from('kasalar').select('*')).order('kod'),
-    isyFil(sb.from('depolar').select('*')).order('ad')
+    isyFil(sb.from('depolar').select('*')).order('ad'),
+    sb.from('kdv_oranlari').select('*').order('sira')
   ]);
   if(b.data)birimler=b.data;if(s.data)stoklar=s.data;if(u.data)urunler=u.data;
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)islemLoglari=il.data;
   if(mz.data)merkezler=mz.data;if(gk.data)giderKalemleri=gk.data;if(ilog.data)islemLoglari=ilog.data;
-  if(ks.data)kasalar_list=ks.data;if(dp.data)depolar=dp.data;
+  if(ks.data)kasalar_list=ks.data;if(dp.data)depolar=dp.data;if(kdv.data)kdvOranlari=kdv.data;
   const islemQ=sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
   // Yetki tablolarını yükle
   const [{data:ysData},{data:kysData}] = await Promise.all([
@@ -194,7 +195,7 @@ async function baslat(){
   realtimeKanallar=[stokK,urunK,islemK];
   doldurBirimSecleri();doldurStokFil();doldurUrunFil();if(typeof doldurYariMamulFil==='function')doldurYariMamulFil();doldurIslemSecleri();doldurMerkezSecleri();if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
   await cariYukle();
-  renderPanel();renderStoklar();renderUrunler();renderYariMamuller();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();if(typeof renderDepolar==='function')renderDepolar();if(typeof yetkiButonlariUygula==='function')yetkiButonlariUygula();kontolUyari();
+  renderPanel();renderStoklar();renderUrunler();renderYariMamuller();renderBirimler();renderMerkezler();renderGiderKalemTree();renderKullanicilar();if(typeof renderIsyerleri==='function')renderIsyerleri();if(typeof renderDepolar==='function')renderDepolar();if(typeof renderKdvTanimlari==='function')renderKdvTanimlari();if(typeof yetkiButonlariUygula==='function')yetkiButonlariUygula();kontolUyari();
   // Satır listelerini cari yüklendikten sonra yenile
   if(hmSatirListesi.length)hmSatirRender();
   if(stSatirListesi.length)stSatirRender();
