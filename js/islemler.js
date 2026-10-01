@@ -843,7 +843,6 @@ function dvSatirRender(){
  <td><input type="number" value="${s.miktar||''}" onblur="dvSatirHesapla(${i},'miktar',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
  <td><input type="number" value="${s.fiyat||''}" onblur="dvSatirHesapla(${i},'fiyat',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
  <td><input type="number" value="${s.tutar||''}" onblur="dvSatirHesapla(${i},'tutar',this.value)" onfocus="_dvHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
- <td></td>
  </tr>`).join('');
  dvToplamGuncelle();
 }
@@ -1021,7 +1020,6 @@ function hmSatirRender(){
       ?`<select onchange="hmSatirGuncelle(${i},'merkez_id',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)"><option value=""></option>${merkezler.filter(m=>m.tip==='masraf'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
       :`<input type="text" value="${s.satir_not||''}" onblur="hmSatirGuncelle(${i},'satir_not',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`
     }</td>
-    <td></td>
   </tr>`;
   }).join('');
   hmToplamGuncelle();
@@ -1262,7 +1260,6 @@ function stSatirRender(){
       ?`<select onchange="stSatirGuncelle(${i},'merkez_id',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)"><option value=""></option>${merkezler.filter(m=>m.tip==='gelir'&&m.aktif!==false).map(m=>`<option value="${m.id}"${m.id===s.merkez_id?' selected':''}>${m.ad}</option>`).join('')}</select>`
       :`<input type="text" value="${s.satir_not||''}" onblur="stSatirGuncelle(${i},'satir_not',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px">`
     }</td>
-    <td></td>
   </tr>`;
   }).join('');
   stToplamGuncelle();
