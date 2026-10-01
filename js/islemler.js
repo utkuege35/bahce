@@ -1013,7 +1013,7 @@ function hmSatirRender(){
       </select>
     </td>
     <td>${secimTd}</td>
-    <td><select onchange="hmBirimSec(${i},this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)"><option value=""></option>${hmBirimOpts(tip,s.secimId,s.birimId)}</select></td>
+    <td><select id="hm-birim-${i}" onchange="hmBirimSec(${i},this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)"><option value=""></option>${hmBirimOpts(tip,s.secimId,s.birimId)}</select></td>
     <td><input type="number" value="${s.miktar||''}" onblur="hmSatirHesapla(${i},'miktar',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
     <td><input type="number" value="${s.fiyat||''}" onblur="hmSatirHesapla(${i},'fiyat',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
     <td><input type="number" value="${s.tutar||''}" onblur="hmSatirHesapla(${i},'tutar',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
@@ -1058,6 +1058,9 @@ window.hmStokSecildi=function(i,stokId){
   const sonSatirMi=i===hmSatirListesi.length-1;
   if(sonSatirMi)hmSatirListesi.push({tip:'',secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
   hmSatirRender();
+  // Seçim sonrası Birim alanına odaklan — buradan Tab ile sırayla
+  // Miktar → Fiyat → Tutar'a geçilebilsin.
+  document.getElementById('hm-birim-'+i)?.focus();
 };
 // Fiş seviyesinde tek Ödeme Tipi — Cari/Kasa alanlarının görünürlüğünü ayarlar
 window.hmOdemeUstDegis=function(){
@@ -1251,7 +1254,7 @@ function stSatirRender(){
     }
     return `<tr data-tablo="st">
     <td>${secimTd}</td>
-    <td><select onchange="stSatirBirimSec(${i},this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${stBirimOpts(s.secimId,s.birimId)}</select></td>
+    <td><select id="st-birim-${i}" onchange="stSatirBirimSec(${i},this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${stBirimOpts(s.secimId,s.birimId)}</select></td>
     <td><input type="number" value="${s.miktar||''}" onblur="stSatirHesapla(${i},'miktar',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
     <td><input type="number" value="${s.fiyat||''}" onblur="stSatirHesapla(${i},'fiyat',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
     <td><input type="number" value="${s.tutar||''}" onblur="stSatirHesapla(${i},'tutar',this.value)" onfocus="_stHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil)"></td>
@@ -1288,6 +1291,7 @@ window.stUrunSecildi=function(i,id){
   const sonSatirMi=i===stSatirListesi.length-1;
   if(sonSatirMi)stSatirListesi.push({secimId:'',birimId:'',miktar:'',fiyat:'',tutar:'',satir_not:'',manuel:''});
   stSatirRender();
+  document.getElementById('st-birim-'+i)?.focus();
 };
 // Fiş seviyesinde tek Ödeme Tipi — Alıcı/Kasa alanlarının görünürlüğünü ayarlar
 window.stOdemeUstDegis=function(){
