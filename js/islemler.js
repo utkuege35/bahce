@@ -37,7 +37,13 @@ window._oneriTusVurusu=function(e,kutuId){
   if(e.key==='Escape'&&kutu)kutu.style.display='none';
 };
 function _oneriVurguAyarla(kutu,idx){
-  Array.from(kutu.children).forEach((el,i)=>el.classList.toggle('oneri-aktif',i===idx));
+  Array.from(kutu.children).forEach((el,i)=>{
+    el.classList.toggle('oneri-aktif',i===idx);
+    // Harici CSS'e bağımlı kalmamak için vurguyu doğrudan satır içi style
+    // ile de uyguluyoruz — bu dosya güncellenince kesin görünür olsun diye.
+    el.style.background=i===idx?'rgba(91,158,201,.35)':'';
+    el.style.outline=i===idx?'1px solid rgba(91,158,201,.6)':'none';
+  });
   kutu.dataset.vurgu=String(idx);
   kutu.children[idx]?.scrollIntoView({block:'nearest'});
 }
