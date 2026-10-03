@@ -89,15 +89,9 @@ window.doldurKdvOranSecenekleri=function(selectId,seciliId){
 };
 // Stok/grup kartının kendi KDV alanı boşsa, üst gruptan hangi oranın
 // devralınacağını küçük bir ipucu olarak gösterir.
+// Artık üst gruptan gelen oran doğrudan KDV kutusunda seçili geldiği için
+// ayrıca bir "devralınacak" ipucuna gerek yok; eski çağrılar zarar görmesin diye boş bırakıldı.
 window.stokKdvBilgiGuncelle=function(){
-  const sel=document.getElementById('sm-kdv-orani');
   const bilgiEl=document.getElementById('sm-kdv-bilgi');
-  if(!sel||!bilgiEl)return;
-  if(sel.value){bilgiEl.textContent='';return;}
-  const ustBilgi=document.getElementById('sm-ust-bilgi')?.textContent||'';
-  const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
-  const ust=ustKod?stoklar.find(s=>s.kod===ustKod):null;
-  const devralinanId=ust?stokKdvOraniId(ust.id):null;
-  const k=devralinanId?kdvOranlari.find(x=>x.id===devralinanId):null;
-  bilgiEl.textContent=k?`Üstten devralınacak: %${k.oran}`:'';
+  if(bilgiEl)bilgiEl.textContent='';
 };
