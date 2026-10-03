@@ -85,7 +85,7 @@ window.kdvOraniDegeri=function(kdvOraniId){
 // ===== STOK KARTI MODALI — KDV ALANI =====
 window.doldurKdvOranSecenekleri=function(selectId,seciliId){
   const el=document.getElementById(selectId);if(!el)return;
-  el.innerHTML='<option value="">— Seçilmedi —</option>'+kdvOranlari.filter(k=>k.aktif!==false).map(k=>`<option value="${k.id}"${k.id===seciliId?' selected':''}>${k.ad} (%${k.oran})</option>`).join('');
+  el.innerHTML='<option value="">— Seçilmedi —</option>'+kdvOranlari.filter(k=>k.aktif!==false).map(k=>`<option value="${k.id}"${k.id===seciliId?' selected':''}>%${k.oran}</option>`).join('');
 };
 // Stok/grup kartının kendi KDV alanı boşsa, üst gruptan hangi oranın
 // devralınacağını küçük bir ipucu olarak gösterir.
@@ -99,5 +99,5 @@ window.stokKdvBilgiGuncelle=function(){
   const ust=ustKod?stoklar.find(s=>s.kod===ustKod):null;
   const devralinanId=ust?stokKdvOraniId(ust.id):null;
   const k=devralinanId?kdvOranlari.find(x=>x.id===devralinanId):null;
-  bilgiEl.textContent=k?`Üstten devralınacak: ${k.ad} (%${k.oran})`:'';
+  bilgiEl.textContent=k?`Üstten devralınacak: %${k.oran}`:'';
 };
