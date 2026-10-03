@@ -106,7 +106,7 @@ function _irsKdvHucreleri(tur,i,s){
   const {kdvTutar,dahil}=_irsKdvHesapla(s);
   return `<td><select id="irs-kdv-${tur}-${i}" onchange="irsKdvSec('${tur}',${i},this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">
       <option value=""></option>
-      ${kdvOranlari.map(k=>`<option value="${k.id}"${k.id===s.kdvOraniId?' selected':''}>${k.ad} (%${k.oran})</option>`).join('')}
+      ${kdvOranlari.map(k=>`<option value="${k.id}"${k.id===s.kdvOraniId?' selected':''}>%${k.oran}</option>`).join('')}
     </select></td>
     <td id="irs-kdvtutar-${tur}-${i}" style="text-align:right;color:var(--yazi3)">${kdvTutar>0?para(kdvTutar):''}</td>
     <td id="irs-kdvdahil-${tur}-${i}" style="text-align:right;font-weight:500">${dahil>0?para(dahil):''}</td>`;
