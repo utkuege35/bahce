@@ -269,7 +269,7 @@ window.renderIrsGunSekmesi=async function(tur){
             return `<tr style="font-size:11px"><td style="padding:5px 8px">${ad}</td><td style="padding:5px 8px;text-align:right">${parseFloat(k.miktar).toLocaleString('tr-TR',{maximumFractionDigits:3})} ${birimAd(k.birim_id)}</td><td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.fiyat?para(k.fiyat):'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${para(k.tutar)}</td>${kdvGoster?`<td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.kdv_tutar?para(k.kdv_tutar)+' (%'+(k.kdv_orani||0)+')':'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${k.kdv_dahil_tutar?para(k.kdv_dahil_tutar):'—'}</td>`:''}</tr>`;
           }).join('')}
         </table>
-        ${x.durum==='acik'?`<div style="padding:8px 12px"><button class="btn sm ghost" onclick="event.stopPropagation();irsSil('${tur}','${x.id}')">✕ Sil</button></div>`:''}
+        ${x.durum==='acik'?`<div style="padding:8px 12px;display:flex;gap:8px"><button class="btn sm" onclick="event.stopPropagation();irsFaturaDonustur('${tur}','${x.id}')">🧾 Faturaya Dönüştür</button><button class="btn sm ghost" onclick="event.stopPropagation();irsSil('${tur}','${x.id}')">✕ Sil</button></div>`:''}
       </div>
     </td></tr>`:'';
     return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="irsToggle('${tur}','${x.id}')">
@@ -308,3 +308,10 @@ window.irsSil=async function(tur,id){
     );
   }
 });
+
+// Açık bir irsaliyeyi, aynı türdeki Faturalar sekmesinde yeni fatura olarak açar.
+window.irsFaturaDonustur=function(tur,id){
+  gp('faturalar');
+  fatTabSec(tur);
+  fatYeniBaslat(tur,[id]);
+};
