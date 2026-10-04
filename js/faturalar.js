@@ -147,6 +147,7 @@ function _fatKdvHucreGuncelle(tur,i){
 }
 window.fatKdvSec=function(tur,i,kdvOraniId){
   fatSatirListesi[tur][i].kdvOraniId=kdvOraniId;
+  const kdvEl=document.getElementById(`fat-kdv-${tur}-${i}`);if(kdvEl&&kdvOraniId)kdvEl.style.outline='';
   _fatKdvHucreGuncelle(tur,i);
   fatToplamGuncelle(tur);
 };
@@ -237,6 +238,22 @@ window.kaydetFatura=async function(tur){
   if(odeme==='pesin'&&!kasaId){bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;}
   const gecerli=fatSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  // KDV oranı her satırda zorunlu. KDV'siz (0) satır için KDV Tanımları'nda
+  // "%0" bir oran tanımlanıp seçilmelidir. (Muafiyet nedeni seçimi ileride eklenecek.)
+  document.querySelectorAll(`#fat-${tur}-satirlar select[id^="fat-kdv-"]`).forEach(el=>el.style.outline='');
+  const kdvEksik=gecerli.filter(s=>!s.kdvOraniId);
+  if(kdvEksik.length){
+    kdvEksik.forEach(s=>{
+      const idx=fatSatirListesi[tur].indexOf(s);
+      const el=document.getElementById(`fat-kdv-${tur}-${idx}`);
+      if(el)el.style.outline='2px solid #e76f51';
+    });
+    const ilkIdx=fatSatirListesi[tur].indexOf(kdvEksik[0]);
+    document.getElementById(`fat-kdv-${tur}-${ilkIdx}`)?.focus();
+    const adlar=kdvEksik.slice(0,3).map(s=>{const k=s.kaynakTur==='stok'?stoklar.find(x=>x.id===s.kaynakId):urunler.find(x=>x.id===s.kaynakId);return k?.ad||'?';}).join(', ');
+    bil(`KDV oranı seçilmemiş ${kdvEksik.length} satır var: ${adlar}${kdvEksik.length>3?'...':''}. KDV'siz kalemler için KDV Tanımları'nda "%0" oranı tanımlayıp seçin.`,'err');
+    return;
+  }
   let net=0,kdv=0;
   gecerli.forEach(s=>{net+=parseFloat(s.tutar)||0;kdv+=_irsKdvHesapla(s).kdvTutar;});
   try{
