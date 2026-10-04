@@ -99,6 +99,7 @@
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlemler ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('irsaliyeler')">İrsaliyeler</button>
+      <button onclick="gp('faturalar')">Faturalar</button>
     </div>
   </div>
   <div class="nav-grup">
@@ -707,6 +708,181 @@
     </div>
   </div>
 </div>
+<div id="faturalar" class="page">
+  <div class="tabs">
+    <button class="tab active" data-tur="alis" onclick="fatTab('alis',this)">Alış Faturaları</button>
+    <button class="tab" data-tur="satis" onclick="fatTab('satis',this)">Satış Faturaları</button>
+    <button class="tab" data-tur="iade" onclick="fatTab('iade',this)">İade Faturaları</button>
+  </div>
+  <div id="tp-fat-alis" class="tab-panel active">
+    <div id="tp-fat-alis-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="fat-alis-liste-tarih" onchange="renderFatGunSekmesi('alis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="fatYeniBaslat('alis')">Yeni</button>
+          <div id="fat-alis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="fat-alis-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-fat-alis-form" style="display:none">
+      <div class="card"><div class="card-title">Alış Faturası<button class="btn sm ghost" onclick="fatKaydetmedenCik('alis')">← Listeye Dön</button></div>
+      <div class="fgrid c4" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="fat-alis-tarih"></div>
+        <div class="fg"><label>Fatura No</label><input type="text" id="fat-alis-no" placeholder="FAT-001..."></div>
+        <div class="fg"><label>Tedarikçi</label><select id="fat-alis-cari"><option value="">— Seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="fat-alis-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Ödeme Tipi</label>
+          <select id="fat-alis-odeme" onchange="fatOdemeDegis('alis')"><option value="pesin">Peşin</option><option value="cari">Cari</option></select>
+        </div>
+        <div class="fg" id="fat-alis-kasa-fg"><label>Kasa</label><select id="fat-alis-kasa"><option value="">— Kasa seçin —</option></select></div>
+        <div class="fg" style="display:flex;align-items:flex-end"><button class="btn sm sec" onclick="fatIrsaliyeModalAc('alis')">📥 İrsaliyeden Aktar</button></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:160px">Malzeme / Ürün</th>
+            <th style="width:80px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:85px">B.Fiyat</th>
+            <th style="width:110px">Tutar</th>
+            <th style="width:100px">KDV Oran</th>
+            <th style="width:100px">KDV Tutar</th>
+            <th style="width:120px">KDV Dahil</th>
+          </tr></thead>
+          <tbody id="fat-alis-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="fat-alis-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+            <td></td>
+            <td id="fat-alis-kdvtoplam" style="font-weight:600;font-size:13px;color:var(--yazi2);padding:10px 9px;text-align:right">0,00</td>
+            <td id="fat-alis-dahiltoplam" style="font-weight:600;font-family:'Lora',serif;font-size:13px;color:var(--yazi1);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="fatKaydetmedenCik('alis')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetFatura('alis')">Kaydet</button>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div id="tp-fat-satis" class="tab-panel">
+    <div id="tp-fat-satis-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="fat-satis-liste-tarih" onchange="renderFatGunSekmesi('satis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="fatYeniBaslat('satis')">Yeni</button>
+          <div id="fat-satis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="fat-satis-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-fat-satis-form" style="display:none">
+      <div class="card"><div class="card-title">Satış Faturası<button class="btn sm ghost" onclick="fatKaydetmedenCik('satis')">← Listeye Dön</button></div>
+      <div class="fgrid c4" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="fat-satis-tarih"></div>
+        <div class="fg"><label>Fatura No</label><input type="text" id="fat-satis-no" placeholder="FAT-001..."></div>
+        <div class="fg"><label>Alıcı</label><select id="fat-satis-cari"><option value="">— Seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="fat-satis-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Ödeme Tipi</label>
+          <select id="fat-satis-odeme" onchange="fatOdemeDegis('satis')"><option value="pesin">Peşin</option><option value="cari">Cari</option></select>
+        </div>
+        <div class="fg" id="fat-satis-kasa-fg"><label>Kasa</label><select id="fat-satis-kasa"><option value="">— Kasa seçin —</option></select></div>
+        <div class="fg" style="display:flex;align-items:flex-end"><button class="btn sm sec" onclick="fatIrsaliyeModalAc('satis')">📥 İrsaliyeden Aktar</button></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:160px">Malzeme / Ürün</th>
+            <th style="width:80px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:85px">B.Fiyat</th>
+            <th style="width:110px">Tutar</th>
+            <th style="width:100px">KDV Oran</th>
+            <th style="width:100px">KDV Tutar</th>
+            <th style="width:120px">KDV Dahil</th>
+          </tr></thead>
+          <tbody id="fat-satis-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="fat-satis-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+            <td></td>
+            <td id="fat-satis-kdvtoplam" style="font-weight:600;font-size:13px;color:var(--yazi2);padding:10px 9px;text-align:right">0,00</td>
+            <td id="fat-satis-dahiltoplam" style="font-weight:600;font-family:'Lora',serif;font-size:13px;color:var(--yazi1);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="fatKaydetmedenCik('satis')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetFatura('satis')">Kaydet</button>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div id="tp-fat-iade" class="tab-panel">
+    <div id="tp-fat-iade-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="fat-iade-liste-tarih" onchange="renderFatGunSekmesi('iade')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="fatYeniBaslat('iade')">Yeni</button>
+          <div id="fat-iade-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="fat-iade-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-fat-iade-form" style="display:none">
+      <div class="card"><div class="card-title">İade Faturası<button class="btn sm ghost" onclick="fatKaydetmedenCik('iade')">← Listeye Dön</button></div>
+      <div class="fgrid c4" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="fat-iade-tarih"></div>
+        <div class="fg"><label>Fatura No</label><input type="text" id="fat-iade-no" placeholder="FAT-001..."></div>
+        <div class="fg"><label>Cari</label><select id="fat-iade-cari"><option value="">— Seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="fat-iade-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Ödeme Tipi</label>
+          <select id="fat-iade-odeme" onchange="fatOdemeDegis('iade')"><option value="pesin">Peşin</option><option value="cari">Cari</option></select>
+        </div>
+        <div class="fg" id="fat-iade-kasa-fg"><label>Kasa</label><select id="fat-iade-kasa"><option value="">— Kasa seçin —</option></select></div>
+        <div class="fg" style="display:flex;align-items:flex-end"><button class="btn sm sec" onclick="fatIrsaliyeModalAc('iade')">📥 İrsaliyeden Aktar</button></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:160px">Malzeme / Ürün</th>
+            <th style="width:80px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:85px">B.Fiyat</th>
+            <th style="width:110px">Tutar</th>
+            <th style="width:100px">KDV Oran</th>
+            <th style="width:100px">KDV Tutar</th>
+            <th style="width:120px">KDV Dahil</th>
+          </tr></thead>
+          <tbody id="fat-iade-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="fat-iade-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+            <td></td>
+            <td id="fat-iade-kdvtoplam" style="font-weight:600;font-size:13px;color:var(--yazi2);padding:10px 9px;text-align:right">0,00</td>
+            <td id="fat-iade-dahiltoplam" style="font-weight:600;font-family:'Lora',serif;font-size:13px;color:var(--yazi1);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="fatKaydetmedenCik('iade')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetFatura('iade')">Kaydet</button>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
 <div id="stok" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stoklar</div>
@@ -1308,6 +1484,17 @@
 </div>
 </div>
 
+<!-- MODAL: FATURAYA İRSALİYE AKTAR -->
+<div id="modal-fat-irsaliye" class="overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hdr"><h3>İrsaliyeden Aktar</h3><button class="btn sm" onclick="modalKapat('modal-fat-irsaliye')">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Faturalanmamış (açık) irsaliyeler listelenir. Cari seçiliyse sadece o cariye ait olanlar gelir. Aynı cariye ait birden fazla irsaliye seçebilirsiniz.</div>
+      <div id="fat-irs-liste" style="max-height:340px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-fat-irsaliye')">Vazgeç</button><button class="btn pri" onclick="fatIrsaliyeAktarSecilen()">Aktar</button></div>
+  </div>
+</div>
 <!-- MODAL: STOK ÇİFT EXCEL (Grup Şablonu + Stok Şablonu) -->
 <div id="modal-stok-cift-excel" class="overlay">
   <div class="modal" style="max-width:480px">
@@ -1911,6 +2098,7 @@
 <script src="js/teklifler.js"></script>
 <script src="js/kdv.js"></script>
 <script src="js/irsaliyeler.js"></script>
+<script src="js/faturalar.js"></script>
 
 </body>
 </html>
