@@ -62,6 +62,7 @@ window.fatYeniBaslat=async function(tur,irsaliyeIds){
   }
   if(typeof kasaSelectDoldur==='function')kasaSelectDoldur('fat-'+tur+'-kasa',true);
   fatOdemeDegis(tur);
+  if(typeof depoSecenekleri==='function')depoSecenekleri('fat-'+tur+'-depo','');
   fatGorunumForm(tur);
   if(irsaliyeIds&&irsaliyeIds.length)await fatIrsaliyeleriYukle(tur,irsaliyeIds);
 };
@@ -238,6 +239,10 @@ window.kaydetFatura=async function(tur){
   if(odeme==='pesin'&&!kasaId){bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;}
   const gecerli=fatSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  // İrsaliyesiz kesilen ALIŞ faturası stoğa girer (irsaliyeden dönüşenlerde stok zaten irsaliyede girmiştir)
+  const depoId=document.getElementById('fat-'+tur+'-depo')?.value||null;
+  const stoguGirecek=tur==='alis'&&!_fatIrsaliyeIds[tur].length;
+  if(stoguGirecek&&!depoId){bil('Depo seçimi zorunlu! (İrsaliyesiz alış faturası seçilen depoya stok girişi yapar)','err');return;}
   // KDV oranı her satırda zorunlu. KDV'siz (0) satır için KDV Tanımları'nda
   // "%0" bir oran tanımlanıp seçilmelidir. (Muafiyet nedeni seçimi ileride eklenecek.)
   document.querySelectorAll(`#fat-${tur}-satirlar select[id^="fat-kdv-"]`).forEach(el=>el.style.outline='');
@@ -259,7 +264,7 @@ window.kaydetFatura=async function(tur){
   try{
     const {data:fat,error:e1}=await sb.from('faturalar').insert({
       isyeri_id:aktifIsyeri?.id||null,tur,fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,
-      odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,
+      odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,depo_id:stoguGirecek?depoId:null,
       toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,muhasebe_durumu:'bekliyor',
       kullanici:aktifKullanici?.ad||'',ts:Date.now()
     }).select().single();
@@ -286,7 +291,8 @@ window.kaydetFatura=async function(tur){
       const {error:e3}=await sb.from('irsaliyeler').update({durum:'faturalandi',fatura_id:fat.id}).in('id',_fatIrsaliyeIds[tur]);
       if(e3)throw e3;
     }
-    bil(`✓ Fatura kaydedildi (${gecerli.length} kalem, ${_irsSayi(net+kdv)})`);
+    if(stoguGirecek)await stokGirisYaz(gecerli,{tarih,depoId,cariId,not:an,belgeNo:faturaNo,kat:'Alış Faturası',belgeId:fat.id,faturaId:fat.id});
+    bil(`✓ Fatura kaydedildi (${gecerli.length} kalem, ${_irsSayi(net+kdv)})${stoguGirecek?' — stok girişi yapıldı':''}`);
     fatGorunumListe(tur);
   }catch(err){
     bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
@@ -347,6 +353,7 @@ window.fatToggle=function(tur,id){_fatAcikId[tur]=_fatAcikId[tur]===id?null:id;r
 window.fatSil=async function(tur,id){
   if(!(await onay('Bu faturayı silmek istiyor musunuz?<br><small>Bağlı irsaliyeler tekrar açık duruma döner.</small>','🗑️')))return;
   await sb.from('faturalar').update({silindi:true}).eq('id',id);
+  await stokHareketiGeriAl({faturaId:id}); // irsaliyesiz faturanın stok girişi varsa geri al
   await sb.from('irsaliyeler').update({durum:'acik',fatura_id:null}).eq('fatura_id',id);
   bil('Fatura silindi ✓');
   renderFatGunSekmesi(tur);
