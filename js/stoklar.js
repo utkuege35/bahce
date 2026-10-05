@@ -1,9 +1,80 @@
 // ===== STOK MİKTAR =====
-function stokMiktar(stokId){
-  let m=0;const s=stoklar.find(x=>x.id===stokId);if(s)m+=parseFloat(s.baslangic||0);
-  islemler.forEach(i=>{if(i.stok_id===stokId){const c=birimTemelCarp(i.birim_id);const mik=parseFloat(i.miktar||0)*c;if(i.tur==='giris'||i.tur==='devir')m+=mik;else if(['cikis','satis','uretim_sarfiyat','satis_sarfiyat'].includes(i.tur))m-=mik;}});
+// Hareket türlerinin stoğa etkisi (tek yerde tanımlı — raporlar da buna dayanır).
+// Bileşen satırları "<tur>_sarfiyat" adıyla tutulur (ürün satılınca/ikram edilince
+// reçetesinden düşen hammaddeler).
+const STOK_ARTI=['giris','devir','transfer_giris'];
+const STOK_EKSI=['cikis','satis','ikram','odenmez','hasar','atik',
+  'uretim_sarfiyat','satis_sarfiyat','ikram_sarfiyat','odenmez_sarfiyat','hasar_sarfiyat','atik_sarfiyat',
+  'transfer_cikis'];
+// Ana depo: Depolar tanımında "ana_depo" işaretli depo. Depo bilgisi olmayan
+// eski hareketler ve başlangıç stoğu ana depoya aittir.
+window.anaDepoId=function(){return depolar.find(d=>d.ana_depo)?.id||null;};
+// depoId verilmezse tüm depoların toplamı (transferler birbirini götürdüğü için hesaba katılmaz).
+// depoId verilirse sadece o deponun stoğu.
+function stokMiktar(stokId,depoId){
+  let m=0;const s=stoklar.find(x=>x.id===stokId);
+  const ana=anaDepoId();
+  if(s&&(!depoId||depoId===ana))m+=parseFloat(s.baslangic||0);
+  islemler.forEach(i=>{
+    if(i.stok_id!==stokId)return;
+    const tr=i.tur;
+    const arti=STOK_ARTI.includes(tr),eksi=STOK_EKSI.includes(tr);
+    if(!arti&&!eksi)return;
+    const efektifDepo=i.depo_id||ana;
+    if(depoId){if(efektifDepo!==depoId)return;}
+    else if(tr==='transfer_giris'||tr==='transfer_cikis')return;
+    const mik=parseFloat(i.miktar||0)*birimTemelCarp(i.birim_id);
+    m+=arti?mik:-mik;
+  });
   return m;
 }
+// Depo seçim kutusunu doldurur (aktif depolar).
+window.depoSecenekleri=function(selectId,seciliId){
+  const el=document.getElementById(selectId);if(!el)return;
+  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
+  el.innerHTML='<option value="">— Depo seçin —</option>'+kapsam.filter(d=>d.aktif!==false).map(d=>`<option value="${d.id}"${d.id===seciliId?' selected':''}>${d.ad}${d.ana_depo?' (Ana Depo)':''}</option>`).join('');
+};
+// Dış alım (irsaliye / irsaliyesiz fatura) kalemlerini stoğa "giris" olarak yazar.
+// satirlar: [{kaynakTur,kaynakId,birimId,miktar,fiyat,tutar}] — sadece stok kalemleri işlenir.
+// b: {tarih,depoId,cariId,not,belgeNo,kat,belgeId,irsaliyeId,faturaId}
+window.stokGirisYaz=async function(satirlar,b){
+  const sat=satirlar.filter(x=>x.kaynakTur==='stok'&&x.kaynakId&&parseFloat(x.miktar)>0);
+  if(!sat.length)return;
+  const baz=Date.now();
+  const rows=sat.map((x,i)=>{
+    const kart=stoklar.find(k=>k.id===x.kaynakId);
+    const mik=parseFloat(x.miktar)||0,fiy=parseFloat(x.fiyat)||0,tut=parseFloat(x.tutar)||(mik*fiy);
+    return {tur:'giris',tarih:b.tarih,stok_id:x.kaynakId,birim_id:x.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,
+      aciklama:`${kart?.ad||''} alışı`,kat:b.kat,aciklama_not:b.not||null,belge_no:b.belgeNo||null,belge_id:b.belgeId,
+      irsaliye_id:b.irsaliyeId||null,fatura_id:b.faturaId||null,cari_id:b.cariId||null,depo_id:b.depoId||null,
+      kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:baz+i};
+  });
+  const {error}=await sb.from('islemler').insert(rows);
+  if(error)throw error;
+  // Ortalama maliyeti güncelle (eski Alış ekranındaki mantıkla aynı)
+  for(const x of sat){
+    const mik=parseFloat(x.miktar)||0,tut=parseFloat(x.tutar)||(mik*(parseFloat(x.fiyat)||0));
+    const hFiy=mik>0?tut/mik:0;
+    if(hFiy>0){
+      const kart=stoklar.find(k=>k.id===x.kaynakId);
+      const yeniM=hFiy/(birimTemelCarp(x.birimId)||1);
+      const eski=parseFloat(kart?.maliyet||0);
+      await sb.from('stoklar').update({maliyet:eski>0?(eski+yeniM)/2:yeniM}).eq('id',x.kaynakId);
+    }
+  }
+  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
+};
+// Bir irsaliye/faturaya bağlı stok girişlerini geri alır (yumuşak silme).
+window.stokHareketiGeriAl=async function(filtre){
+  const guncel={silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()};
+  let q=sb.from('islemler').update(guncel);
+  if(filtre.irsaliyeId)q=q.eq('irsaliye_id',filtre.irsaliyeId);
+  else if(filtre.faturaId)q=q.eq('fatura_id',filtre.faturaId);
+  else return;
+  await q;
+  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+};
 function urunStok(urunId){
   const u=urunler.find(x=>x.id===urunId);return parseFloat(u?.stok||0);
 }
