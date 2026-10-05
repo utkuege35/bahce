@@ -61,6 +61,7 @@ window.irsYeniBaslat=function(tur){
     const tip=tur==='alis'?'satici':tur==='satis'?'alici':'';
     cariSel.innerHTML='<option value="">— Seçin —</option>'+(typeof cariOpts==='function'?cariOpts(tip,''):'');
   }
+  if(typeof depoSecenekleri==='function')depoSecenekleri('irs-'+tur+'-depo','');
   irsGorunumForm(tur);
 };
 
@@ -185,10 +186,12 @@ window.kaydetIrsaliye=async function(tur){
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=irsSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  const depoId=document.getElementById('irs-'+tur+'-depo')?.value||null;
+  if(tur==='alis'&&!depoId){bil('Depo seçimi zorunlu! (Alış irsaliyesi seçilen depoya stok girişi yapar)','err');return;}
   const toplam=gecerli.reduce((t,s)=>t+(parseFloat(s.tutar)||0),0);
   try{
     const {data:irs,error:e1}=await sb.from('irsaliyeler').insert({
-      isyeri_id:aktifIsyeri?.id||null,tur,irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,
+      isyeri_id:aktifIsyeri?.id||null,tur,irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,depo_id:tur==='alis'?depoId:null,
       durum:'acik',kullanici:aktifKullanici?.ad||'',ts:Date.now()
     }).select().single();
     if(e1)throw e1;
@@ -211,7 +214,9 @@ window.kaydetIrsaliye=async function(tur){
     });
     const {error:e2}=await sb.from('irsaliye_kalemleri').insert(kalemler);
     if(e2)throw e2;
-    bil(`✓ İrsaliye kaydedildi (${gecerli.length} kalem, ${para(toplam)})`);
+    // Alış irsaliyesi seçilen depoya stok girişi yapar
+    if(tur==='alis')await stokGirisYaz(gecerli,{tarih,depoId,cariId,not:an,belgeNo:irsNo,kat:'Alış İrsaliyesi',belgeId:irs.id,irsaliyeId:irs.id});
+    bil(`✓ İrsaliye kaydedildi (${gecerli.length} kalem, ${para(toplam)})${tur==='alis'?' — stok girişi yapıldı':''}`);
     irsGorunumListe(tur);
   }catch(err){
     bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
@@ -289,6 +294,7 @@ window.irsToggle=function(tur,id){
 window.irsSil=async function(tur,id){
   if(!(await onay('Bu irsaliyeyi silmek istiyor musunuz?','🗑️')))return;
   await sb.from('irsaliyeler').update({silindi:true}).eq('id',id);
+  await stokHareketiGeriAl({irsaliyeId:id}); // bu irsaliyenin stok girişini geri al
   bil('İrsaliye silindi ✓');
   renderIrsGunSekmesi(tur);
 };
