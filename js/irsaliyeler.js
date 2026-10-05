@@ -61,17 +61,19 @@ window.irsYeniBaslat=function(tur){
     const tip=tur==='alis'?'satici':tur==='satis'?'alici':'';
     cariSel.innerHTML='<option value="">— Seçin —</option>'+(typeof cariOpts==='function'?cariOpts(tip,''):'');
   }
-  if(typeof depoSecenekleri==='function')depoSecenekleri('irs-'+tur+'-depo','');
+  if(tur==='alis'){girisDepoAnaYaz('irs-alis-depo');cikisDepoSecenekleri('irs-alis-cikis','');}
   irsGorunumForm(tur);
 };
 
 window.irsSatirListesiDoldur=function(tur,n){
   n=n||15;
-  for(let i=0;i<n;i++)irsSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
+  for(let i=0;i<n;i++)irsSatirListesi[tur].push(_irsYeniSatir(tur));
   irsSatirRender(tur);
 };
 // Giriş tablosunda para birimi sembolü olmadan, 2 ondalıklı gösterim
 function _irsSayi(n){return (parseFloat(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+// Yeni boş satır; Alış sekmesinde üstteki Çıkış Deposu seçimini devralır.
+function _irsYeniSatir(tur){return {kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:'',cikisDepoId:tur==='alis'?(document.getElementById('irs-alis-cikis')?.value||''):''};}
 // Satırın tutarı ve seçili KDV oranına göre KDV tutarı/KDV dahil tutarı hesaplar.
 function _irsKdvHesapla(s){
   const tutar=parseFloat(s.tutar)||0;
@@ -99,10 +101,21 @@ window.irsSatirRender=function(tur){
       <td><input type="number" value="${s.miktar||''}" onblur="irsSatirHesapla('${tur}',${i},'miktar',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;text-align:right"></td>
       <td><input type="number" value="${s.fiyat||''}" onblur="irsSatirHesapla('${tur}',${i},'fiyat',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;text-align:right"></td>
       <td><input type="number" value="${s.tutar||''}" onblur="irsSatirHesapla('${tur}',${i},'tutar',this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil);text-align:right"></td>
-      ${tur==='alis'?_irsKdvHucreleri(tur,i,s):''}
+      ${tur==='alis'?_irsKdvHucreleri(tur,i,s)+_irsCikisHucre(tur,i,s):''}
     </tr>`;
   }).join('');
   irsToplamGuncelle(tur);
+};
+// Alış sekmesinde satır bazlı Çıkış Deposu hücresi
+function _irsCikisHucre(tur,i,s){
+  return `<td><select onchange="irsCikisSec('${tur}',${i},this.value)" onfocus="_irsHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${cikisDepoOptHtml(s.cikisDepoId)}</select></td>`;
+}
+window.irsCikisSec=function(tur,i,depoId){irsSatirListesi[tur][i].cikisDepoId=depoId;};
+// Üstteki Çıkış Deposu seçilince tüm satırlara uygulanır (satırda tek tek değiştirilebilir).
+window.irsCikisUstDegis=function(tur){
+  const v=document.getElementById('irs-'+tur+'-cikis')?.value||'';
+  irsSatirListesi[tur].forEach(s=>{s.cikisDepoId=v;});
+  irsSatirRender(tur);
 };
 // Sadece Alış sekmesinde gösterilen KDV Oran / KDV Tutar / KDV Dahil hücreleri.
 function _irsKdvHucreleri(tur,i,s){
@@ -149,7 +162,7 @@ window.irsMalzemeSecildi=function(tur,i,kaynakTur,kaynakId){
   s.birimId=kaynak.varsayilan_birim_id||kaynak.birim_id||'';
   if(kaynakTur==='stok'&&typeof stokKdvOraniId==='function')s.kdvOraniId=stokKdvOraniId(kaynakId)||'';
   const sonSatirMi=i===irsSatirListesi[tur].length-1;
-  if(sonSatirMi)irsSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
+  if(sonSatirMi)irsSatirListesi[tur].push(_irsYeniSatir(tur));
   irsSatirRender(tur);
   document.getElementById(`irs-birim-${tur}-${i}`)?.focus();
 };
@@ -186,8 +199,8 @@ window.kaydetIrsaliye=async function(tur){
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=irsSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
-  const depoId=document.getElementById('irs-'+tur+'-depo')?.value||null;
-  if(tur==='alis'&&!depoId){bil('Depo seçimi zorunlu! (Alış irsaliyesi seçilen depoya stok girişi yapar)','err');return;}
+  const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
+  if(tur==='alis'&&!depoId){bil('Ana depo tanımlı değil! Alış irsaliyesi Ana Depo\'ya stok girişi yapar.','err');return;}
   const toplam=gecerli.reduce((t,s)=>t+(parseFloat(s.tutar)||0),0);
   try{
     const {data:irs,error:e1}=await sb.from('irsaliyeler').insert({
@@ -215,8 +228,13 @@ window.kaydetIrsaliye=async function(tur){
     const {error:e2}=await sb.from('irsaliye_kalemleri').insert(kalemler);
     if(e2)throw e2;
     // Alış irsaliyesi seçilen depoya stok girişi yapar
-    if(tur==='alis')await stokGirisYaz(gecerli,{tarih,depoId,cariId,not:an,belgeNo:irsNo,kat:'Alış İrsaliyesi',belgeId:irs.id,irsaliyeId:irs.id});
-    bil(`✓ İrsaliye kaydedildi (${gecerli.length} kalem, ${para(toplam)})${tur==='alis'?' — stok girişi yapıldı':''}`);
+    let cikisFis=0;
+    if(tur==='alis'){
+      const b={tarih,depoId,cariId,not:an,belgeNo:irsNo,kat:'Alış İrsaliyesi',belgeId:irs.id,irsaliyeId:irs.id};
+      await stokGirisYaz(gecerli,b);
+      cikisFis=await anaDepoCikisYaz(gecerli,b);
+    }
+    bil(`✓ İrsaliye kaydedildi (${gecerli.length} kalem, ${para(toplam)})${tur==='alis'?' — Ana Depo\'ya stok girişi yapıldı'+(cikisFis?`, ${cikisFis} Ana Depo Çıkış fişi oluştu`:''):''}`);
     irsGorunumListe(tur);
   }catch(err){
     bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
