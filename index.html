@@ -586,10 +586,11 @@
     </div>
     <div id="tp-irs-alis-form" style="display:none">
       <div class="card"><div class="card-title">Alış İrsaliyesi<button class="btn sm ghost" onclick="irsKaydetmedenCik('alis')">← Listeye Dön</button></div>
-      <div class="fgrid c4" style="margin-bottom:1rem">
+      <div class="fgrid c4" style="margin-bottom:1rem;grid-template-columns:repeat(5,1fr)">
         <div class="fg"><label>Tarih</label><input type="date" id="irs-alis-tarih"></div>
         <div class="fg"><label>İrsaliye No</label><input type="text" id="irs-alis-no" placeholder="İRS-001..."></div>
         <div class="fg"><label>Tedarikçi</label><select id="irs-alis-cari"><option value="">— Seçin —</option></select></div>
+        <div class="fg"><label>Depo</label><select id="irs-alis-depo"><option value="">— Depo seçin —</option></select></div>
         <div class="fg"><label>Not</label><input type="text" id="irs-alis-not" placeholder="Açıklama..."></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
@@ -734,11 +735,12 @@
         <div class="fg"><label>Tedarikçi</label><select id="fat-alis-cari"><option value="">— Seçin —</option></select></div>
         <div class="fg"><label>Not</label><input type="text" id="fat-alis-not" placeholder="Açıklama..."></div>
       </div>
-      <div class="fgrid c3" style="margin-bottom:1rem">
+      <div class="fgrid c3" style="margin-bottom:1rem;grid-template-columns:repeat(4,1fr)">
         <div class="fg"><label>Ödeme Tipi</label>
           <select id="fat-alis-odeme" onchange="fatOdemeDegis('alis')"><option value="pesin">Peşin</option><option value="cari">Cari</option></select>
         </div>
         <div class="fg" id="fat-alis-kasa-fg"><label>Kasa</label><select id="fat-alis-kasa"><option value="">— Kasa seçin —</option></select></div>
+        <div class="fg"><label>Depo <span style="font-weight:400;color:var(--yazi3)">(irsaliyesizse stoğa girer)</span></label><select id="fat-alis-depo"><option value="">— Depo seçin —</option></select></div>
         <div class="fg" style="display:flex;align-items:flex-end"><button class="btn sm sec" onclick="fatIrsaliyeModalAc('alis')">📥 İrsaliyeden Aktar</button></div>
       </div>
       <div class="tw" style="margin-bottom:.75rem">
