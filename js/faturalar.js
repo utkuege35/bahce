@@ -12,6 +12,8 @@ let _fatAcikId={alis:null,satis:null,iade:null};
 let _fatIrsaliyeIds={alis:[],satis:[],iade:[]};
 let _fatModalTur=null;
 
+// Yeni boş satır; Alış sekmesinde üstteki Çıkış Deposu seçimini devralır.
+function _fatYeniSatir(tur){return {kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:'',cikisDepoId:tur==='alis'?(document.getElementById('fat-alis-cikis')?.value||''):''};}
 window.fatTab=function(tur,btn){
   document.querySelectorAll('#faturalar .tab').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#faturalar .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -62,7 +64,7 @@ window.fatYeniBaslat=async function(tur,irsaliyeIds){
   }
   if(typeof kasaSelectDoldur==='function')kasaSelectDoldur('fat-'+tur+'-kasa',true);
   fatOdemeDegis(tur);
-  if(typeof depoSecenekleri==='function')depoSecenekleri('fat-'+tur+'-depo','');
+  if(tur==='alis'){girisDepoAnaYaz('fat-alis-depo');cikisDepoSecenekleri('fat-alis-cikis','');}
   fatGorunumForm(tur);
   if(irsaliyeIds&&irsaliyeIds.length)await fatIrsaliyeleriYukle(tur,irsaliyeIds);
 };
@@ -73,7 +75,7 @@ window.fatOdemeDegis=function(tur){
 };
 window.fatSatirListesiDoldur=function(tur,n){
   n=n||15;
-  for(let i=0;i<n;i++)fatSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
+  for(let i=0;i<n;i++)fatSatirListesi[tur].push(_fatYeniSatir(tur));
   fatSatirRender(tur);
 };
 
@@ -96,10 +98,19 @@ window.fatSatirRender=function(tur){
       <td><input type="number" value="${s.miktar||''}" onblur="fatSatirHesapla('${tur}',${i},'miktar',this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;text-align:right"></td>
       <td><input type="number" value="${s.fiyat||''}" onblur="fatSatirHesapla('${tur}',${i},'fiyat',this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;text-align:right"></td>
       <td><input type="number" value="${s.tutar||''}" onblur="fatSatirHesapla('${tur}',${i},'tutar',this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;font-weight:500;color:var(--yesil);text-align:right"></td>
-      ${_fatKdvHucreleri(tur,i,s)}
+      ${_fatKdvHucreleri(tur,i,s)}${tur==='alis'?_fatCikisHucre(tur,i,s):''}
     </tr>`;
   }).join('');
   fatToplamGuncelle(tur);
+};
+function _fatCikisHucre(tur,i,s){
+  return `<td><select onchange="fatCikisSec('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)">${cikisDepoOptHtml(s.cikisDepoId)}</select></td>`;
+}
+window.fatCikisSec=function(tur,i,depoId){fatSatirListesi[tur][i].cikisDepoId=depoId;};
+window.fatCikisUstDegis=function(tur){
+  const v=document.getElementById('fat-'+tur+'-cikis')?.value||'';
+  fatSatirListesi[tur].forEach(s=>{s.cikisDepoId=v;});
+  fatSatirRender(tur);
 };
 function _fatKdvHucreleri(tur,i,s){
   const {kdvTutar,dahil}=_irsKdvHesapla(s);
@@ -136,7 +147,7 @@ window.fatMalzemeSecildi=function(tur,i,kaynakTur,kaynakId){
   s.birimId=kaynak.varsayilan_birim_id||kaynak.birim_id||'';
   // Stoklarda KDV oranı kart/gruptan gelir; ürünlerde varsayılan yok, elle seçilir.
   s.kdvOraniId=(kaynakTur==='stok'&&typeof stokKdvOraniId==='function')?(stokKdvOraniId(kaynakId)||''):'';
-  if(i===fatSatirListesi[tur].length-1)fatSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
+  if(i===fatSatirListesi[tur].length-1)fatSatirListesi[tur].push(_fatYeniSatir(tur));
   fatSatirRender(tur);
   document.getElementById(`fat-birim-${tur}-${i}`)?.focus();
 };
@@ -185,7 +196,7 @@ window.fatIrsaliyeleriYukle=async function(tur,ids){
   });
   fatSatirListesi[tur]=fatSatirListesi[tur].filter(s=>s.kaynakId);
   fatSatirListesi[tur].push(...yeni);
-  for(let i=0;i<5;i++)fatSatirListesi[tur].push({kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:''});
+  for(let i=0;i<5;i++)fatSatirListesi[tur].push(_fatYeniSatir(tur));
   _fatIrsaliyeIds[tur]=[..._fatIrsaliyeIds[tur],...irsler.map(x=>x.id)];
   if(cariler[0]){const c=document.getElementById('fat-'+tur+'-cari');if(c)c.value=cariler[0];}
   const notEl=document.getElementById('fat-'+tur+'-not');
@@ -240,9 +251,9 @@ window.kaydetFatura=async function(tur){
   const gecerli=fatSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   // İrsaliyesiz kesilen ALIŞ faturası stoğa girer (irsaliyeden dönüşenlerde stok zaten irsaliyede girmiştir)
-  const depoId=document.getElementById('fat-'+tur+'-depo')?.value||null;
+  const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
   const stoguGirecek=tur==='alis'&&!_fatIrsaliyeIds[tur].length;
-  if(stoguGirecek&&!depoId){bil('Depo seçimi zorunlu! (İrsaliyesiz alış faturası seçilen depoya stok girişi yapar)','err');return;}
+  if(stoguGirecek&&!depoId){bil('Ana depo tanımlı değil! İrsaliyesiz alış faturası Ana Depo\'ya stok girişi yapar.','err');return;}
   // KDV oranı her satırda zorunlu. KDV'siz (0) satır için KDV Tanımları'nda
   // "%0" bir oran tanımlanıp seçilmelidir. (Muafiyet nedeni seçimi ileride eklenecek.)
   document.querySelectorAll(`#fat-${tur}-satirlar select[id^="fat-kdv-"]`).forEach(el=>el.style.outline='');
@@ -291,8 +302,13 @@ window.kaydetFatura=async function(tur){
       const {error:e3}=await sb.from('irsaliyeler').update({durum:'faturalandi',fatura_id:fat.id}).in('id',_fatIrsaliyeIds[tur]);
       if(e3)throw e3;
     }
-    if(stoguGirecek)await stokGirisYaz(gecerli,{tarih,depoId,cariId,not:an,belgeNo:faturaNo,kat:'Alış Faturası',belgeId:fat.id,faturaId:fat.id});
-    bil(`✓ Fatura kaydedildi (${gecerli.length} kalem, ${_irsSayi(net+kdv)})${stoguGirecek?' — stok girişi yapıldı':''}`);
+    let cikisFis=0;
+    if(stoguGirecek){
+      const b={tarih,depoId,cariId,not:an,belgeNo:faturaNo,kat:'Alış Faturası',belgeId:fat.id,faturaId:fat.id};
+      await stokGirisYaz(gecerli,b);
+      cikisFis=await anaDepoCikisYaz(gecerli,b);
+    }
+    bil(`✓ Fatura kaydedildi (${gecerli.length} kalem, ${_irsSayi(net+kdv)})${stoguGirecek?' — Ana Depo\'ya stok girişi yapıldı'+(cikisFis?`, ${cikisFis} Ana Depo Çıkış fişi oluştu`:''):''}`);
     fatGorunumListe(tur);
   }catch(err){
     bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
