@@ -138,6 +138,7 @@
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Raporlar ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('rapor')">Rapor</button>
+      <button onclick="gp('depo-stok')">Depo Stok Durumu</button>
       <button onclick="gp('sayim-raporu')">Sayım Raporu</button>
       <button onclick="gp('recete-kullanim-raporu')">Reçetelerde Kullanım</button>
       <button onclick="gp('ym-sayim-ozeti')">YM/Ürün Sayım Özeti</button>
@@ -927,6 +928,20 @@
       <div id="stok-kart-liste" style="max-height:480px;overflow-y:auto"></div>
     </div>
   </div>
+</div>
+<!-- DEPO BAZLI STOK DURUMU -->
+<div id="depo-stok" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Depo Stok Durumu</div>
+    <button class="btn sm sec" onclick="depoStokExcelIndir()">📤 Excel'e Aktar</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+    <select id="ds-depo" onchange="renderDepoStok()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm depolar</option></select>
+    <input type="text" id="ds-ara" oninput="renderDepoStok()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:180px" placeholder="🔍 Stok ara...">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--yazi2);cursor:pointer"><input type="checkbox" id="ds-gizle" checked onchange="renderDepoStok()"> Stoğu olmayanları gizle</label>
+    <div id="ds-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+  </div>
+  <div class="card"><div class="tw"><table><thead id="ds-th"></thead><tbody id="ds-tb"></tbody></table></div></div>
 </div>
 <!-- STOK LİSTESİ (düz tablo) -->
 <div id="stok-liste" class="page">
@@ -2113,6 +2128,7 @@
 <script src="js/kdv.js"></script>
 <script src="js/irsaliyeler.js"></script>
 <script src="js/faturalar.js"></script>
+<script src="js/depostok.js"></script>
 
 </body>
 </html>
