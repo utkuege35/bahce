@@ -173,11 +173,11 @@ window.belgeDegisimKontrol=function(alan,belgeId,yeniSatirlar){
   }
   return null;
 };
-// Bir transfer fişi kaldırılırsa (silme / düzenleme) hiçbir depoda stok eksiye düşmemeli.
+// Bir transfer/devir fişi kaldırılırsa (silme / düzenleme) hiçbir depoda stok eksiye düşmemeli.
 // Fişin dokunduğu her (stok, depo) için fiş hariç bakiye >= 0 olmalı. Hata metni ya da null döner.
 window.fisKaldirmaKontrol=function(fisId){
   const ana=anaDepoId();
-  const satirlar=islemler.filter(i=>i.belge_id===fisId&&(i.tur==='transfer_cikis'||i.tur==='transfer_giris'));
+  const satirlar=islemler.filter(i=>i.belge_id===fisId&&(i.tur==='transfer_cikis'||i.tur==='transfer_giris'||i.tur==='devir'));
   const ciftler=new Set(satirlar.map(i=>i.stok_id+'|'+(i.depo_id||ana)));
   for(const c of ciftler){
     const [sid,d]=c.split('|');
