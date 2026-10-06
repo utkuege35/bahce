@@ -56,9 +56,9 @@ window.cikisDepoOptHtml=function(seciliId){
 window.anaDepoCikisYaz=async function(satirlar,b){
   const ana=anaDepoId();if(!ana)return 0;
   const grup={};
-  satirlar.forEach(x=>{
+  satirlar.forEach((x,idx)=>{
     if(x.kaynakTur==='stok'&&x.kaynakId&&x.cikisDepoId&&x.cikisDepoId!==ana&&parseFloat(x.miktar)>0)
-      (grup[x.cikisDepoId]=grup[x.cikisDepoId]||[]).push(x);
+      (grup[x.cikisDepoId]=grup[x.cikisDepoId]||[]).push({x,idx}); // idx = belgedeki kalem sırası
   });
   const hedefler=Object.keys(grup);
   if(!hedefler.length)return 0;
@@ -66,7 +66,7 @@ window.anaDepoCikisYaz=async function(satirlar,b){
   hedefler.forEach(hedef=>{
     const fisId=crypto.randomUUID();
     const depoAd=depolar.find(d=>d.id===hedef)?.ad||'';
-    grup[hedef].forEach(x=>{
+    grup[hedef].forEach(({x,idx})=>{
       const kart=stoklar.find(k=>k.id===x.kaynakId);
       const mik=parseFloat(x.miktar)||0,fiy=parseFloat(x.fiyat)||0,tut=parseFloat(x.tutar)||(mik*fiy);
       const ortak={tarih:b.tarih,stok_id:x.kaynakId,birim_id:x.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,
@@ -113,25 +113,48 @@ window.stokGirisYaz=async function(satirlar,b){
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
   const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
 };
-// Düzenlemede, belgenin Ana Depo girişi değişince Ana Depo stoğunun EKSİYE düşüp düşmeyeceğini
-// kontrol eder (ör. girilen miktar azaltılmış ama o mal çoktan başka yere çıkmış olabilir).
-// Hata varsa açıklama metni, yoksa null döner.
-window.girisDegisimKontrol=function(alan,belgeId,yeniSatirlar){
+// Düzenlemede, belgenin giriş ve Ana Depo Çıkış hareketleri yeniden yazılacağı için
+// stokların Ana Depo'da veya hedef depolarda EKSİYE düşüp düşmeyeceğini kontrol eder
+// (mal çoktan başka yere çıkmış olabilir). Hata varsa açıklama metni, yoksa null döner.
+// alan: 'irsaliye_id' | 'fatura_id'
+window.belgeDegisimKontrol=function(alan,belgeId,yeniSatirlar){
   const ana=anaDepoId();if(!ana)return null;
-  const eski={},yeni={};
-  islemler.filter(i=>i[alan]===belgeId&&i.tur==='giris').forEach(i=>{
-    eski[i.stok_id]=(eski[i.stok_id]||0)+(parseFloat(i.miktar)||0)*birimTemelCarp(i.birim_id);
+  const carp=(mik,birim)=>(parseFloat(mik)||0)*birimTemelCarp(birim);
+  const eskiG={},eskiC={};
+  islemler.filter(i=>i[alan]===belgeId).forEach(i=>{
+    const m=carp(i.miktar,i.birim_id);
+    if(i.tur==='giris')eskiG[i.stok_id]=(eskiG[i.stok_id]||0)+m;
+    else if(i.tur==='transfer_cikis'&&i.alt_tur==='ana_depo_cikis'){
+      const o=eskiC[i.stok_id]=eskiC[i.stok_id]||{};
+      o[i.hedef_depo_id]=(o[i.hedef_depo_id]||0)+m;
+    }
   });
+  const yeniG={},yeniC={};
   yeniSatirlar.filter(x=>x.kaynakTur==='stok'&&x.kaynakId).forEach(x=>{
-    yeni[x.kaynakId]=(yeni[x.kaynakId]||0)+(parseFloat(x.miktar)||0)*birimTemelCarp(x.birimId);
+    const m=carp(x.miktar,x.birimId);
+    yeniG[x.kaynakId]=(yeniG[x.kaynakId]||0)+m;
+    if(x.cikisDepoId&&x.cikisDepoId!==ana){
+      const o=yeniC[x.kaynakId]=yeniC[x.kaynakId]||{};
+      o[x.cikisDepoId]=(o[x.cikisDepoId]||0)+m;
+    }
   });
-  for(const sid of new Set([...Object.keys(eski),...Object.keys(yeni)])){
-    const fark=(yeni[sid]||0)-(eski[sid]||0);
-    if(fark>=0)continue; // artış stoğu eksiltmez
-    const bakiye=stokMiktar(sid,ana)+fark;
-    if(bakiye<-0.0005){
-      const ad=stoklar.find(x=>x.id===sid)?.ad||'';
-      return `${ad}: bu değişiklikle Ana Depo stoğu eksiye düşer (${bakiye.toLocaleString('tr-TR',{maximumFractionDigits:3})}). Bu mal başka yere çıkmış olabilir.`;
+  const ad=sid=>stoklar.find(x=>x.id===sid)?.ad||'';
+  const f=n=>n.toLocaleString('tr-TR',{maximumFractionDigits:3});
+  const topla=o=>Object.values(o||{}).reduce((a,b)=>a+b,0);
+  for(const sid of new Set([...Object.keys(eskiG),...Object.keys(yeniG),...Object.keys(eskiC),...Object.keys(yeniC)])){
+    // Ana Depo: giriş farkı eksi çıkış farkı
+    const anaDelta=((yeniG[sid]||0)-(eskiG[sid]||0))-(topla(yeniC[sid])-topla(eskiC[sid]));
+    if(anaDelta<0){
+      const sonuc=stokMiktar(sid,ana)+anaDelta;
+      if(sonuc<-0.0005)return `${ad(sid)}: bu değişiklikle Ana Depo stoğu eksiye düşer (${f(sonuc)}).`;
+    }
+    // Hedef depolar: çıkış azalıyorsa o depoda yeterli bakiye olmalı
+    for(const h of new Set([...Object.keys(eskiC[sid]||{}),...Object.keys(yeniC[sid]||{})])){
+      const d=((yeniC[sid]||{})[h]||0)-((eskiC[sid]||{})[h]||0);
+      if(d<0&&stokMiktar(sid,h)+d<-0.0005){
+        const dAd=depolar.find(x=>x.id===h)?.ad||'';
+        return `${ad(sid)}: ${dAd} deposundaki mal başka yere çıkmış, çıkış miktarı bu kadar azaltılamaz.`;
+      }
     }
   }
   return null;
