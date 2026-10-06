@@ -422,7 +422,7 @@ window.fatSil=async function(tur,id){
   const x=_fatListeVeri[tur]?.[id];
   if(x&&x.muhasebe_durumu!=='bekliyor'){bil('Muhasebeleşmiş fatura silinemez','err');return;}
   if(islemler.some(i=>i.fatura_id===id&&i.alt_tur==='ana_depo_cikis')){
-    bil('Bu faturaya bağlı Ana Depo Çıkış fişi var. Silmek için önce çıkış fişini silin (Görüntüle ekranından).','err');return;
+    bil('Bu faturaya bağlı Ana Depo Çıkış fişi var. Silmek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
   if(islemler.some(i=>i.fatura_id===id&&i.tur==='giris')){ // irsaliyesiz alış faturasının stok girişi var
     const hata=belgeDegisimKontrol('fatura_id',id,[]);if(hata){bil(hata,'err');return;}
@@ -456,7 +456,7 @@ window.fatGoruntule=function(tur,id){return fatDuzenleAc(tur,id,true);};
 window.fatDuzenleAc=async function(tur,id,salt){
   // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli. (Görüntülemede engel yok)
   if(!salt&&islemler.some(i=>i.fatura_id===id&&i.alt_tur==='ana_depo_cikis')){
-    bil('Bu faturaya bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce çıkış fişini silin.','err');return;
+    bil('Bu faturaya bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
   const {data:fat}=await sb.from('faturalar').select('*').eq('id',id).single();
   if(!fat){bil('Kayıt bulunamadı','err');return;}
