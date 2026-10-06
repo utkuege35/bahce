@@ -113,6 +113,64 @@ window.stokGirisYaz=async function(satirlar,b){
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
   const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
 };
+// Düzenlemede, belgenin Ana Depo girişi değişince Ana Depo stoğunun EKSİYE düşüp düşmeyeceğini
+// kontrol eder (ör. girilen miktar azaltılmış ama o mal çoktan başka yere çıkmış olabilir).
+// Hata varsa açıklama metni, yoksa null döner.
+window.girisDegisimKontrol=function(alan,belgeId,yeniSatirlar){
+  const ana=anaDepoId();if(!ana)return null;
+  const eski={},yeni={};
+  islemler.filter(i=>i[alan]===belgeId&&i.tur==='giris').forEach(i=>{
+    eski[i.stok_id]=(eski[i.stok_id]||0)+(parseFloat(i.miktar)||0)*birimTemelCarp(i.birim_id);
+  });
+  yeniSatirlar.filter(x=>x.kaynakTur==='stok'&&x.kaynakId).forEach(x=>{
+    yeni[x.kaynakId]=(yeni[x.kaynakId]||0)+(parseFloat(x.miktar)||0)*birimTemelCarp(x.birimId);
+  });
+  for(const sid of new Set([...Object.keys(eski),...Object.keys(yeni)])){
+    const fark=(yeni[sid]||0)-(eski[sid]||0);
+    if(fark>=0)continue; // artış stoğu eksiltmez
+    const bakiye=stokMiktar(sid,ana)+fark;
+    if(bakiye<-0.0005){
+      const ad=stoklar.find(x=>x.id===sid)?.ad||'';
+      return `${ad}: bu değişiklikle Ana Depo stoğu eksiye düşer (${bakiye.toLocaleString('tr-TR',{maximumFractionDigits:3})}). Bu mal başka yere çıkmış olabilir.`;
+    }
+  }
+  return null;
+};
+// Bir irsaliye/faturaya bağlı Ana Depo Çıkış fişlerini gösteren küçük blok (silme butonlu).
+// alan: 'irsaliye_id' | 'fatura_id'; kind: 'irs' | 'fat'
+window.bagliCikisFisleriHtml=function(alan,belgeIliskiId,kind,tur){
+  const rows=islemler.filter(i=>i[alan]===belgeIliskiId&&i.alt_tur==='ana_depo_cikis'&&i.tur==='transfer_cikis');
+  if(!rows.length)return '';
+  const fisler={};
+  rows.forEach(r=>{(fisler[r.belge_id]=fisler[r.belge_id]||[]).push(r);});
+  return `<div style="padding:8px 12px;font-size:11px;color:var(--yazi2);border-top:1px solid var(--krem2)">
+    🏬 <strong>Bağlı Ana Depo Çıkış fişleri</strong> <span style="color:var(--yazi3)">(düzenleme için önce silinmeli)</span>
+    ${Object.entries(fisler).map(([fid,l])=>{
+      const depoAd=depolar.find(d=>d.id===l[0].hedef_depo_id)?.ad||'?';
+      return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span>→ ${depoAd} · ${l.length} kalem</span><button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();cikisFisiSilUI('${fid}','${kind}','${tur}')">✕ Fişi Sil</button></div>`;
+    }).join('')}
+  </div>`;
+};
+// Ana Depo Çıkış fişini siler. Hedef depodaki mal başka yere çıkmışsa (bakiye eksiye düşecekse) izin vermez.
+window.cikisFisiSilUI=async function(fisId,kind,tur){
+  const satirlar=islemler.filter(i=>i.belge_id===fisId&&i.alt_tur==='ana_depo_cikis');
+  const giris=satirlar.filter(i=>i.tur==='transfer_giris');
+  const hedef=giris[0]?.depo_id;
+  const toplam={};
+  giris.forEach(g=>{toplam[g.stok_id]=(toplam[g.stok_id]||0)+(parseFloat(g.miktar)||0)*birimTemelCarp(g.birim_id);});
+  for(const [sid,mik] of Object.entries(toplam)){
+    if(stokMiktar(sid,hedef)-mik<-0.0005){
+      const ad=stoklar.find(x=>x.id===sid)?.ad||'';
+      bil(`${ad}: hedef depoda yeterli stok kalmadığı için (başka yere çıkmış) bu fiş silinemez.`,'err');return;
+    }
+  }
+  if(!(await onay('Bu Ana Depo Çıkış fişi silinsin mi?<br><small>Mallar Ana Depo\'ya geri döner.</small>','🗑️')))return;
+  const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).eq('alt_tur','ana_depo_cikis');
+  if(error){bil('Silinemedi: '+error.message,'err');return;}
+  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  bil('Çıkış fişi silindi ✓');
+  if(kind==='irs')renderIrsGunSekmesi(tur);else renderFatGunSekmesi(tur);
+};
 // Bir irsaliye/faturaya bağlı stok girişlerini geri alır (yumuşak silme).
 window.stokHareketiGeriAl=async function(filtre){
   const guncel={silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()};
