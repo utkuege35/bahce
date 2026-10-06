@@ -88,6 +88,7 @@ function uygulamaAc(){
     document.getElementById('nav-isyerleri')?.style && (document.getElementById('nav-isyerleri').style.display='');
     document.getElementById('nav-yetkiler')?.style && (document.getElementById('nav-yetkiler').style.display='');
     document.getElementById('nav-kul-yetkiler')?.style && (document.getElementById('nav-kul-yetkiler').style.display='');
+    document.getElementById('nav-loglar')?.style && (document.getElementById('nav-loglar').style.display='');
     document.getElementById('nav-btn-utg-gonderdiklerim')?.style && (document.getElementById('nav-btn-utg-gonderdiklerim').style.display='none');
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-stok-excel-yukle','btn-stok-cift-excel','btn-yeni-urun-grup','btn-yeni-urun','btn-yeni-yarimamul-grup','btn-yeni-yarimamul'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
@@ -96,6 +97,7 @@ function uygulamaAc(){
     const navIsy=document.getElementById('nav-isyerleri');if(navIsy)navIsy.style.display='none';
     const navYtk=document.getElementById('nav-yetkiler');if(navYtk)navYtk.style.display='none';
     const navKY=document.getElementById('nav-kul-yetkiler');if(navKY)navKY.style.display='none';
+    const navLG=document.getElementById('nav-loglar');if(navLG)navLG.style.display='none';
     // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
       'islem':'gp(\'islem\')', 'islem_liste':'gp(\'islem-liste\')',
@@ -312,6 +314,7 @@ window.gp=function(id){
   if(id==='irsaliyeler'&&typeof irsGorunumListe==='function')irsGorunumListe(typeof _aktifIrsTab!=='undefined'?_aktifIrsTab:'alis');
   if(id==='depo-stok'&&typeof renderDepoStok==='function')renderDepoStok();
   if(id==='stok-islemleri'&&typeof skAcilis==='function')skAcilis();
+  if(id==='kullanici-loglari'&&typeof renderLogEkrani==='function')renderLogEkrani(true);
   if(id==='faturalar'&&typeof fatGorunumListe==='function')fatGorunumListe(typeof _aktifFatTab!=='undefined'?_aktifFatTab:'alis');
   if(id==='urun-teklif-gonder'&&typeof utgBaslat==='function')utgBaslat();
   if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
