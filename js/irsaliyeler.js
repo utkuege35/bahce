@@ -373,7 +373,7 @@ window.irsSil=async function(tur,id){
   const x=_irsListeVeri[tur]?.[id];
   if(x&&x.durum!=='acik'){bil('Faturalanmış irsaliye silinemez. Önce faturayı silin.','err');return;}
   if(islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
-    bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Silmek için önce çıkış fişini silin (Görüntüle ekranından).','err');return;
+    bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Silmek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
   if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',id,[]);if(hata){bil(hata,'err');return;}}
   if(!(await onay('Bu irsaliyeyi silmek istiyor musunuz?','🗑️')))return;
@@ -413,7 +413,7 @@ window.irsGoruntule=function(tur,id){return irsDuzenleAc(tur,id,true);};
 window.irsDuzenleAc=async function(tur,id,salt){
   // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli. (Görüntülemede engel yok)
   if(!salt&&islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
-    bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce çıkış fişini silin.','err');return;
+    bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
   const {data:irs}=await sb.from('irsaliyeler').select('*').eq('id',id).single();
   if(!irs){bil('Kayıt bulunamadı','err');return;}
