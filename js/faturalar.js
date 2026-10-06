@@ -17,6 +17,7 @@ let _fatSeciliId={alis:null,satis:null,iade:null};
 let _fatListeVeri={alis:{},satis:{},iade:{}};
 let _fatGoruntuleme={alis:false,satis:false,iade:false};
 let _fatGoruntulenenKayit={alis:null,satis:null,iade:null};
+let _fatEskiSnapshot={alis:null,satis:null,iade:null}; // düzenleme öncesi hali (log için)
 function _fatBaslikYaz(tur,duzenleme,salt){
   const el=document.querySelector('#tp-fat-'+tur+'-form .card-title');
   if(el&&el.firstChild)el.firstChild.textContent=FAT_FORM_BASLIK[tur]+(duzenleme?(salt?' — Görüntüleme':' — Düzenleme'):'');
@@ -364,6 +365,8 @@ window.kaydetFatura=async function(tur){
       cikisFis=await anaDepoCikisYaz(gecerli,b);
     }
     bil(`✓ Fatura ${duzenlenen?'güncellendi':'kaydedildi'} (${gecerli.length} kalem, ${_irsSayi(net+kdv)})${stoguGirecek?' — Ana Depo\'ya stok girişi yapıldı'+(cikisFis?`, ${cikisFis} Ana Depo Çıkış fişi oluştu`:''):''}`);
+    await logYaz({islem:duzenlenen?'duzenle':'olustur',belgeTuru:'fatura',altTur:tur,belgeId:fat.id,belgeNo:faturaNo,belgeTarihi:tarih,cariId,tutar:net+kdv,
+      eski:duzenlenen?_fatEskiSnapshot[tur]:null,yeni:belgeSnapshotKur({tarih,no:faturaNo,cariId,not:an,odeme,kasaId},gecerli),faturaId:fat.id});
     fatGorunumListe(tur);
   }catch(err){
     bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
@@ -416,6 +419,7 @@ window.fatListeIslem=function(tur,islem){
     if(x&&x.muhasebe_durumu!=='bekliyor'){bil('Muhasebeleşmiş fatura düzenlenemez','err');return;}
     fatDuzenleAc(tur,id);
   }else if(islem==='sil')fatSil(tur,id);
+  else if(islem==='log')belgeLogGoster('fatura',id,'Fatura Logu');
 };
 // Faturayı siler (yumuşak silme) ve bağlı irsaliyeleri tekrar "açık" duruma döndürür.
 window.fatSil=async function(tur,id){
@@ -428,10 +432,13 @@ window.fatSil=async function(tur,id){
     const hata=belgeDegisimKontrol('fatura_id',id,[]);if(hata){bil(hata,'err');return;}
   }
   if(!(await onay('Bu faturayı silmek istiyor musunuz?<br><small>Bağlı irsaliyeler tekrar açık duruma döner.</small>','🗑️')))return;
+  const {data:silKl}=await sb.from('fatura_kalemleri').select('*').eq('fatura_id',id).order('sira');
+  const silSnap=belgeSnapshotKur({tarih:x?.tarih,no:x?.fatura_no,cariId:x?.cari_id,not:x?.aciklama,odeme:x?.odeme_tipi,kasaId:x?.kasa_id},(silKl||[]).map(k=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id,miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id,cikisDepoId:k.cikis_depo_id})));
   await sb.from('faturalar').update({silindi:true}).eq('id',id);
   await stokHareketiGeriAl({faturaId:id}); // irsaliyesiz faturanın stok girişi varsa geri al
   await sb.from('irsaliyeler').update({durum:'acik',fatura_id:null}).eq('fatura_id',id);
   _fatSeciliId[tur]=null;
+  await logYaz({islem:'sil',belgeTuru:'fatura',altTur:tur,belgeId:id,belgeNo:x?.fatura_no,belgeTarihi:x?.tarih,cariId:x?.cari_id,tutar:x?.genel_toplam,eski:silSnap,faturaId:id});
   bil('Fatura silindi ✓');
   renderFatGunSekmesi(tur);
 };
@@ -474,6 +481,7 @@ window.fatDuzenleAc=async function(tur,id,salt){
   if(fat.kasa_id)set('kasa',fat.kasa_id);
   const cikislar=(kl||[]).map(k=>k.cikis_depo_id||'');
   fatSatirListesi[tur]=(kl||[]).map((k,n)=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id||'',miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id||'',cikisDepoId:cikislar[n]||''}));
+  if(!salt)_fatEskiSnapshot[tur]=belgeSnapshotKur({tarih:fat.tarih,no:fat.fatura_no,cariId:fat.cari_id,not:fat.aciklama,odeme:fat.odeme_tipi,kasaId:fat.kasa_id},fatSatirListesi[tur]);
   const farkli=[...new Set(cikislar.filter(Boolean))];
   const ustEl=document.getElementById('fat-alis-cikis');
   if(tur==='alis'&&ustEl&&farkli.length===1&&cikislar.every(Boolean))ustEl.value=farkli[0];
