@@ -256,13 +256,14 @@ window.kaydetIrsaliye=async function(tur){
   const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
   if(tur==='alis'&&!depoId){bil('Ana depo tanımlı değil! Alış irsaliyesi Ana Depo\'ya stok girişi yapar.','err');return;}
   const toplam=gecerli.reduce((t,s)=>t+(parseFloat(s.tutar)||0),0);
+  const kdvToplam=gecerli.reduce((t,s)=>t+_irsKdvHesapla(s).kdvTutar,0);
   try{
     const duzenlenen=_irsDuzenlenenId[tur];
     let irs;
     if(duzenlenen){
       // Düzenleme: önce stok eksiye düşer mi kontrol et, sonra başlık/kalem/stok girişini yeniden yaz
       if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
-      const {error:eu}=await sb.from('irsaliyeler').update({irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an}).eq('id',duzenlenen);
+      const {error:eu}=await sb.from('irsaliyeler').update({irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,toplam,kdv_toplam:kdvToplam,genel_toplam:toplam+kdvToplam,kalem_sayisi:gecerli.length}).eq('id',duzenlenen);
       if(eu)throw eu;
       const {error:ed}=await sb.from('irsaliye_kalemleri').delete().eq('irsaliye_id',duzenlenen);
       if(ed)throw ed;
@@ -271,6 +272,7 @@ window.kaydetIrsaliye=async function(tur){
     }else{
       const {data:irsYeni,error:e1}=await sb.from('irsaliyeler').insert({
       isyeri_id:aktifIsyeri?.id||null,tur,irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,depo_id:tur==='alis'?depoId:null,
+      toplam,kdv_toplam:kdvToplam,genel_toplam:toplam+kdvToplam,kalem_sayisi:gecerli.length,
       durum:'acik',kullanici:aktifKullanici?.ad||'',ts:Date.now()
     }).select().single();
     if(e1)throw e1;
@@ -331,8 +333,7 @@ window.renderIrsGunSekmesi=async function(tur){
   }
   irsListe.forEach(x=>{_irsListeVeri[tur][x.id]=x;});
   if(!_irsListeVeri[tur][_irsSeciliId[tur]])_irsSeciliId[tur]=null;
-  const {data:kalemler}=await sb.from('irsaliye_kalemleri').select('irsaliye_id,tutar').in('irsaliye_id',irsListe.map(x=>x.id));
-  const tutarOf=id=>(kalemler||[]).filter(k=>k.irsaliye_id===id).reduce((s,k)=>s+parseFloat(k.tutar||0),0);
+  const tutarOf=id=>parseFloat(_irsListeVeri[tur][id]?.toplam||0); // başlıktaki toplam (kalemleri çekmeye gerek yok)
   const toplam=irsListe.reduce((t,x)=>t+tutarOf(x.id),0);
   if(ozEl)ozEl.textContent=`${irsListe.length} irsaliye · ${para(toplam)}`;
   tbEl.innerHTML=`<div class="tw"><table><thead><tr>
