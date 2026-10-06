@@ -311,6 +311,7 @@ window.gp=function(id){
   if(id==='urun-teklif-gonderdiklerim'&&typeof renderUtgGonderdiklerim==='function')renderUtgGonderdiklerim();
   if(id==='irsaliyeler'&&typeof irsGorunumListe==='function')irsGorunumListe(typeof _aktifIrsTab!=='undefined'?_aktifIrsTab:'alis');
   if(id==='depo-stok'&&typeof renderDepoStok==='function')renderDepoStok();
+  if(id==='stok-islemleri'&&typeof skAcilis==='function')skAcilis();
   if(id==='faturalar'&&typeof fatGorunumListe==='function')fatGorunumListe(typeof _aktifFatTab!=='undefined'?_aktifFatTab:'alis');
   if(id==='urun-teklif-gonder'&&typeof utgBaslat==='function')utgBaslat();
   if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
