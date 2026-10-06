@@ -258,6 +258,8 @@ window.kaydetFatura=async function(tur){
   if(odeme==='pesin'&&!kasaId){bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;}
   const gecerli=fatSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  const mukerrer=await belgeMukerrerMi('faturalar','fatura_no',tur,cariId,faturaNo,_fatDuzenlenenId[tur]);
+  if(mukerrer){bil(`Bu ${MUKERRER_KISI[tur]} ait "${faturaNo}" numaralı fatura zaten kayıtlı (${mukerrer.tarih}). Aynı belge ikinci kez işlenemez.`,'err');return;}
   // İrsaliyesiz kesilen ALIŞ faturası stoğa girer (irsaliyeden dönüşenlerde stok zaten irsaliyede girmiştir)
   const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
   const stoguGirecek=tur==='alis'&&!_fatIrsaliyeIds[tur].length;
