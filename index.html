@@ -929,18 +929,67 @@
 </div>
 <div id="stok-islemleri" class="page">
   <div class="tabs">
-    <button class="tab" onclick="skTab('devir',this)">Devir</button>
-    <button class="tab active" onclick="skTab('transfer',this)">Transfer</button>
+    <button class="tab active" onclick="skTab('devir',this)">Devir</button>
+    <button class="tab" onclick="skTab('transfer',this)">Transfer</button>
     <button class="tab" onclick="skTab('satis',this)">Satış</button>
     <button class="tab" onclick="skTab('ikram',this)">İkram</button>
     <button class="tab" onclick="skTab('odenmez',this)">Ödenmez</button>
     <button class="tab" onclick="skTab('hasar',this)">Hasar</button>
     <button class="tab" onclick="skTab('atik',this)">Atık</button>
   </div>
-  <div id="tp-sk-devir" class="tab-panel">
-    <div class="card"><div class="bos">Devir sekmesi bir sonraki aşamada eklenecek. Şimdilik İşlem → Devir ekranı kullanılabilir.</div></div>
+  <div id="tp-sk-devir" class="tab-panel active">
+    <div id="tp-sk-devir-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="dvr-liste-tarih" onchange="renderDevirListe()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="dvrYeniBaslat()">Yeni</button>
+          <button class="btn sm" onclick="dvrListeIslem('goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="dvrListeIslem('duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="dvrListeIslem('sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm ghost" onclick="dvrListeIslem('log')" title="Seçili kaydın işlem geçmişi">📜 Log</button>
+          <div id="dvr-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="dvr-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-sk-devir-form" style="display:none">
+      <div class="card"><div class="card-title">Devir Fişi<button class="btn sm ghost" onclick="dvrKaydetmedenCik()">← Listeye Dön</button></div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Seçilen depoya açılış (devir) stoğu girer. Girilen miktarlar o deponun stok miktarına eklenir.</div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="dvr-tarih"></div>
+        <div class="fg"><label>Depo</label><select id="dvr-depo"><option value="">— Depo seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="dvr-not" placeholder="Dönem açılışı, yıl sonu devir..."></div>
+      </div>
+      <div class="dvr-araclar" style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:.75rem;flex-wrap:wrap">
+        <input type="file" id="dvr-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="dvrExcelSecildi(this)">
+        <button class="btn sm sec" onclick="document.getElementById('dvr-excel-input').click()" title="Kolonlar: Kod | Miktar | Birim | Birim Fiyat">📥 Excel'den İçe Aktar</button>
+        <button class="btn sm sec" onclick="dvrExcelIndir()">📤 Excel'e Aktar</button>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:200px">Malzeme</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:110px">Miktar</th>
+            <th style="width:110px">Birim Fiyat</th>
+            <th style="width:120px">Tutar</th>
+          </tr></thead>
+          <tbody id="dvr-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="dvr-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="dvrKaydetmedenCik()">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetDevirFisi()">Kaydet</button>
+      </div>
+    </div>
+    </div>
   </div>
-  <div id="tp-sk-transfer" class="tab-panel active">
+  <div id="tp-sk-transfer" class="tab-panel">
     <div id="tp-sk-transfer-liste">
       <div class="card">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
@@ -1017,7 +1066,7 @@
       <option value="">Tüm işlemler</option><option value="olustur">Oluşturuldu</option><option value="duzenle">Düzenlendi</option><option value="sil">Silindi</option>
     </select>
     <select id="lg-tur" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-      <option value="">Tüm belgeler</option><option value="irsaliye">İrsaliye</option><option value="fatura">Fatura</option><option value="transfer">Transfer</option>
+      <option value="">Tüm belgeler</option><option value="irsaliye">İrsaliye</option><option value="fatura">Fatura</option><option value="transfer">Transfer</option><option value="devir">Devir</option>
     </select>
     <label style="font-size:12px;color:var(--yazi2)">Tarih:</label>
     <input type="date" id="lg-bas" onchange="renderLogEkrani(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
@@ -2274,6 +2323,7 @@
 <script src="js/irsaliyeler.js"></script>
 <script src="js/faturalar.js"></script>
 <script src="js/stokislem.js"></script>
+<script src="js/stokdevir.js"></script>
 <script src="js/loglar.js"></script>
 <script src="js/depostok.js"></script>
 
