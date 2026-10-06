@@ -317,7 +317,7 @@ window.kaydetFatura=async function(tur){
       if(stoguGirecek){const hata=belgeDegisimKontrol('fatura_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
       const {error:eu}=await sb.from('faturalar').update({
         fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,
-        depo_id:stoguGirecek?depoId:null,toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv
+        depo_id:stoguGirecek?depoId:null,toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,kalem_sayisi:gecerli.length
       }).eq('id',duzenlenen);
       if(eu)throw eu;
       const {error:ed}=await sb.from('fatura_kalemleri').delete().eq('fatura_id',duzenlenen);
@@ -328,7 +328,7 @@ window.kaydetFatura=async function(tur){
     const {data:fatYeni,error:e1}=await sb.from('faturalar').insert({
       isyeri_id:aktifIsyeri?.id||null,tur,fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,
       odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,depo_id:stoguGirecek?depoId:null,
-      toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,muhasebe_durumu:'bekliyor',
+      toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,kalem_sayisi:gecerli.length,muhasebe_durumu:'bekliyor',
       kullanici:aktifKullanici?.ad||'',ts:Date.now()
     }).select().single();
     if(e1)throw e1;
