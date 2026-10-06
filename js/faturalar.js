@@ -19,7 +19,7 @@ function _fatBaslikYaz(tur,duzenleme){
 }
 
 // Yeni boş satır; Alış sekmesinde üstteki Çıkış Deposu seçimini devralır.
-function _fatYeniSatir(tur){return {kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:'',cikisDepoId:tur==='alis'?(document.getElementById('fat-alis-cikis')?.value||''):''};}
+function _fatYeniSatir(tur){return {kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:'',cikisDepoId:''};}
 window.fatTab=function(tur,btn){
   document.querySelectorAll('#faturalar .tab').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#faturalar .tab-panel').forEach(p=>p.classList.remove('active'));
@@ -100,7 +100,7 @@ window.fatSatirRender=function(tur){
           onfocus="_fatHoverIndex['${tur}']=${i};fatMalzemeAramaFiltrele('${tur}',${i},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('fat-oneri-${tur}-${i}');if(d)d.style.display='none';},150)"
           onkeydown="_oneriTusVurusu(event,'fat-oneri-${tur}-${i}')" style="width:100%;padding:3px 6px;font-size:12px">
-        <div id="fat-oneri-${tur}-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
+        <div id="fat-oneri-${tur}-${i}" onmousedown="event.preventDefault()" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
       </div></td>
       <td><select id="fat-birim-${tur}-${i}" onchange="fatBirimSec('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz)"><option value=""></option>${irsBirimOpts(s.kaynakTur,s.kaynakId,s.birimId)}</select></td>
       <td><input type="number" value="${s.miktar||''}" onblur="fatSatirHesapla('${tur}',${i},'miktar',this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;text-align:right"></td>
@@ -117,7 +117,7 @@ function _fatCikisHucre(tur,i,s){
 window.fatCikisSec=function(tur,i,depoId){fatSatirListesi[tur][i].cikisDepoId=depoId;};
 window.fatCikisUstDegis=function(tur){
   const v=document.getElementById('fat-'+tur+'-cikis')?.value||'';
-  fatSatirListesi[tur].forEach(s=>{s.cikisDepoId=v;});
+  fatSatirListesi[tur].forEach(s=>{if(s.kaynakId)s.cikisDepoId=v;}); // sadece dolu satırlara uygula
   fatSatirRender(tur);
 };
 function _fatKdvHucreleri(tur,i,s){
@@ -141,7 +141,7 @@ window.fatMalzemeAramaFiltrele=function(tur,i,val){
   const kutu=document.getElementById(`fat-oneri-${tur}-${i}`);if(!kutu)return;
   const q=(val||'').trim().toLocaleLowerCase('tr');
   const kapsam=_irsKapsam(tur);
-  const secenekler=(q?kapsam.filter(k=>k.kaynak.ad.toLocaleLowerCase('tr').includes(q)):kapsam).slice(0,30);
+  const secenekler=_oneriSirala(q?kapsam.filter(k=>k.kaynak.ad.toLocaleLowerCase('tr').includes(q)):kapsam,q,k=>k.kaynak.ad);
   kutu.dataset.vurgu='-1';
   if(!secenekler.length){kutu.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--yazi3)">Sonuç bulunamadı</div>';kutu.style.display='block';return;}
   kutu.innerHTML=secenekler.map(k=>`<div class="oneri-item" onclick="fatMalzemeSecildi('${tur}',${i},'${k.kaynakTur}','${k.kaynak.id}')" style="padding:8px 10px;font-size:12px;border-bottom:1px solid var(--krem2)">${k.kaynak.ad}${tur==='iade'?` <span style="font-size:9px;color:var(--yazi3)">[${k.kaynakTur==='stok'?'Hammadde':'Ürün'}]</span>`:''}</div>`).join('');
@@ -153,6 +153,8 @@ window.fatMalzemeSecildi=function(tur,i,kaynakTur,kaynakId){
   const s=fatSatirListesi[tur][i];
   s.kaynakTur=kaynakTur;s.kaynakId=kaynakId;
   s.birimId=kaynak.varsayilan_birim_id||kaynak.birim_id||'';
+  // Satır dolunca üstteki Çıkış Deposu seçimini devral (satırda daha önce seçilmediyse)
+  if(tur==='alis'&&!s.cikisDepoId)s.cikisDepoId=document.getElementById('fat-alis-cikis')?.value||'';
   // Stoklarda KDV oranı kart/gruptan gelir; ürünlerde varsayılan yok, elle seçilir.
   s.kdvOraniId=(kaynakTur==='stok'&&typeof stokKdvOraniId==='function')?(stokKdvOraniId(kaynakId)||''):'';
   if(i===fatSatirListesi[tur].length-1)fatSatirListesi[tur].push(_fatYeniSatir(tur));
