@@ -580,6 +580,10 @@
           <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
           <input type="date" id="irs-alis-liste-tarih" onchange="renderIrsGunSekmesi('alis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="irsYeniBaslat('alis')">Yeni</button>
+          <button class="btn sm" onclick="irsListeIslem('alis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="irsListeIslem('alis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="irsListeIslem('alis','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm sec" onclick="irsListeIslem('alis','fatura')" title="Seçili irsaliyeyi faturaya dönüştür">🧾 Faturaya Dönüştür</button>
           <div id="irs-alis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
         </div>
         <div id="irs-alis-liste-tb"></div>
@@ -636,6 +640,10 @@
           <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
           <input type="date" id="irs-satis-liste-tarih" onchange="renderIrsGunSekmesi('satis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="irsYeniBaslat('satis')">Yeni</button>
+          <button class="btn sm" onclick="irsListeIslem('satis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="irsListeIslem('satis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="irsListeIslem('satis','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm sec" onclick="irsListeIslem('satis','fatura')" title="Seçili irsaliyeyi faturaya dönüştür">🧾 Faturaya Dönüştür</button>
           <div id="irs-satis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
         </div>
         <div id="irs-satis-liste-tb"></div>
@@ -679,6 +687,10 @@
           <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
           <input type="date" id="irs-iade-liste-tarih" onchange="renderIrsGunSekmesi('iade')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="irsYeniBaslat('iade')">Yeni</button>
+          <button class="btn sm" onclick="irsListeIslem('iade','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="irsListeIslem('iade','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="irsListeIslem('iade','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm sec" onclick="irsListeIslem('iade','fatura')" title="Seçili irsaliyeyi faturaya dönüştür">🧾 Faturaya Dönüştür</button>
           <div id="irs-iade-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
         </div>
         <div id="irs-iade-liste-tb"></div>
@@ -729,6 +741,9 @@
           <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
           <input type="date" id="fat-alis-liste-tarih" onchange="renderFatGunSekmesi('alis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="fatYeniBaslat('alis')">Yeni</button>
+          <button class="btn sm" onclick="fatListeIslem('alis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="fatListeIslem('alis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="fatListeIslem('alis','sil')" title="Seçili kaydı sil">✕ Sil</button>
           <div id="fat-alis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
         </div>
         <div id="fat-alis-liste-tb"></div>
@@ -792,6 +807,9 @@
           <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
           <input type="date" id="fat-satis-liste-tarih" onchange="renderFatGunSekmesi('satis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="fatYeniBaslat('satis')">Yeni</button>
+          <button class="btn sm" onclick="fatListeIslem('satis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="fatListeIslem('satis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="fatListeIslem('satis','sil')" title="Seçili kaydı sil">✕ Sil</button>
           <div id="fat-satis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
         </div>
         <div id="fat-satis-liste-tb"></div>
@@ -848,6 +866,9 @@
           <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
           <input type="date" id="fat-iade-liste-tarih" onchange="renderFatGunSekmesi('iade')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="fatYeniBaslat('iade')">Yeni</button>
+          <button class="btn sm" onclick="fatListeIslem('iade','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="fatListeIslem('iade','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="fatListeIslem('iade','sil')" title="Seçili kaydı sil">✕ Sil</button>
           <div id="fat-iade-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
         </div>
         <div id="fat-iade-liste-tb"></div>
