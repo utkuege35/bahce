@@ -4,7 +4,7 @@
 // eski/yeni değerlerin anlık görüntüsü (snapshot) ile okunabilir "değişiklik" listesi bulunur.
 const LOG_ISLEM_ADLARI={olustur:'Oluşturuldu',duzenle:'Düzenlendi',sil:'Silindi'};
 const LOG_ISLEM_RENK={olustur:'var(--yesil)',duzenle:'var(--sari)',sil:'#c62828'};
-const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir'};
+const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık'};
 const _logEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // Bir belgenin (irsaliye/fatura) o anki halinin okunabilir özeti.
@@ -49,6 +49,17 @@ window.devirSnapshotKur=function(tarih,depoId,not,satirlar){
       'Malzeme':stoklar.find(x=>x.id===s.stokId)?.ad||'','Birim':birimAd(s.birimId)||'','Miktar':+(parseFloat(s.miktar)||0),
       'Fiyat':+(parseFloat(s.fiyat)||0),'Tutar':+(parseFloat(s.tutar)||0)
     }))
+  };
+};
+// Satış/İkram/Ödenmez/Hasar/Atık fişinin özeti. satirlar: [{kaynakTur,kaynakId,birimId,miktar,fiyat,tutar}]
+window.stokCikisSnapshotKur=function(tarih,depoId,not,satirlar){
+  return {
+    baslik:{'Tarih':tarih||'','Depo':depolar.find(d=>d.id===depoId)?.ad||'','Not':not||''},
+    kalemler:(satirlar||[]).filter(s=>s.kaynakId).map(s=>{
+      const kart=s.kaynakTur==='stok'?stoklar.find(x=>x.id===s.kaynakId):urunler.find(x=>x.id===s.kaynakId);
+      return {'Malzeme':kart?.ad||'','Tür':s.kaynakTur==='urun'?'Ürün':'Hammadde','Birim':birimAd(s.birimId)||'','Miktar':+(parseFloat(s.miktar)||0),
+        'Fiyat':+(parseFloat(s.fiyat)||0),'Tutar':+(parseFloat(s.tutar)||0)};
+    })
   };
 };
 // İki özet arasındaki farkı okunabilir cümlelerle çıkarır.
