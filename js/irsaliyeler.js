@@ -26,6 +26,7 @@ let _irsSeciliId={alis:null,satis:null,iade:null};      // listede seçili kayı
 let _irsListeVeri={alis:{},satis:{},iade:{}};            // listedeki kayıtlar (id → satır)
 let _irsGoruntuleme={alis:false,satis:false,iade:false}; // form salt okunur (görüntüleme) modunda mı
 let _irsGoruntulenenKayit={alis:null,satis:null,iade:null};
+let _irsEskiSnapshot={alis:null,satis:null,iade:null}; // düzenleme öncesi hali (log için)
 function _irsBaslikYaz(tur,duzenleme,salt){
   const el=document.querySelector('#tp-irs-'+tur+'-form .card-title');
   if(el&&el.firstChild)el.firstChild.textContent=IRS_FORM_BASLIK[tur]+(duzenleme?(salt?' — Görüntüleme':' — Düzenleme'):'');
@@ -306,6 +307,8 @@ window.kaydetIrsaliye=async function(tur){
       cikisFis=await anaDepoCikisYaz(gecerli,b);
     }
     bil(`✓ İrsaliye ${duzenlenen?'güncellendi':'kaydedildi'} (${gecerli.length} kalem, ${para(toplam)})${tur==='alis'?' — Ana Depo\'ya stok girişi yapıldı'+(cikisFis?`, ${cikisFis} Ana Depo Çıkış fişi oluştu`:''):''}`);
+    await logYaz({islem:duzenlenen?'duzenle':'olustur',belgeTuru:'irsaliye',altTur:tur,belgeId:irs.id,belgeNo:irsNo,belgeTarihi:tarih,cariId,tutar:toplam,
+      eski:duzenlenen?_irsEskiSnapshot[tur]:null,yeni:belgeSnapshotKur({tarih,no:irsNo,cariId,not:an},gecerli)});
     irsGorunumListe(tur);
   }catch(err){
     bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
@@ -365,6 +368,7 @@ window.irsListeIslem=function(tur,islem){
     if(x&&x.durum!=='acik'){bil('Faturalanmış irsaliye düzenlenemez. Önce faturayı silin.','err');return;}
     irsDuzenleAc(tur,id);
   }else if(islem==='sil')irsSil(tur,id);
+  else if(islem==='log')belgeLogGoster('irsaliye',id,'İrsaliye Logu');
   else if(islem==='fatura'){
     if(x&&x.durum!=='acik'){bil('Bu irsaliye zaten faturalandı','err');return;}
     irsFaturaDonustur(tur,id);
@@ -378,9 +382,12 @@ window.irsSil=async function(tur,id){
   }
   if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',id,[]);if(hata){bil(hata,'err');return;}}
   if(!(await onay('Bu irsaliyeyi silmek istiyor musunuz?','🗑️')))return;
+  const {data:silKl}=await sb.from('irsaliye_kalemleri').select('*').eq('irsaliye_id',id).order('sira');
+  const silSnap=belgeSnapshotKur({tarih:x?.tarih,no:x?.irsaliye_no,cariId:x?.cari_id,not:x?.aciklama},(silKl||[]).map(k=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id,miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id,cikisDepoId:k.cikis_depo_id})));
   await sb.from('irsaliyeler').update({silindi:true}).eq('id',id);
   await stokHareketiGeriAl({irsaliyeId:id}); // bu irsaliyenin stok girişini geri al
   _irsSeciliId[tur]=null;
+  await logYaz({islem:'sil',belgeTuru:'irsaliye',altTur:tur,belgeId:id,belgeNo:x?.irsaliye_no,belgeTarihi:x?.tarih,cariId:x?.cari_id,tutar:x?.toplam,eski:silSnap});
   bil('İrsaliye silindi ✓');
   renderIrsGunSekmesi(tur);
 };
@@ -427,6 +434,7 @@ window.irsDuzenleAc=async function(tur,id,salt){
   set('tarih',irs.tarih||'');set('no',irs.irsaliye_no||'');set('cari',irs.cari_id||'');set('not',irs.aciklama||'');
   const cikislar=(kl||[]).map(k=>k.cikis_depo_id||'');
   irsSatirListesi[tur]=(kl||[]).map((k,n)=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id||'',miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id||'',cikisDepoId:cikislar[n]||''}));
+  if(!salt)_irsEskiSnapshot[tur]=belgeSnapshotKur({tarih:irs.tarih,no:irs.irsaliye_no,cariId:irs.cari_id,not:irs.aciklama},irsSatirListesi[tur]);
   // Tüm kalemler aynı çıkış deposuna gidiyorsa üstteki Çıkış Deposu kutusunu da o depoya ayarla
   const farkli=[...new Set(cikislar.filter(Boolean))];
   const ustEl=document.getElementById('irs-alis-cikis');
