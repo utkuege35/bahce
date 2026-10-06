@@ -285,7 +285,7 @@ window.kaydetFatura=async function(tur){
     let fat;
     if(duzenlenen){
       // Düzenleme: irsaliyesiz alış faturasında stok girişi değişiyorsa eksiye düşme kontrolü
-      if(stoguGirecek){const hata=girisDegisimKontrol('fatura_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
+      if(stoguGirecek){const hata=belgeDegisimKontrol('fatura_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
       const {error:eu}=await sb.from('faturalar').update({
         fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,
         depo_id:stoguGirecek?depoId:null,toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv
@@ -318,6 +318,7 @@ window.kaydetFatura=async function(tur){
         kdv_orani_id:s.kdvOraniId||null,
         kdv_orani:s.kdvOraniId?kdvOraniDegeri(s.kdvOraniId):null,
         kdv_tutar:kdvTutar,kdv_dahil_tutar:dahil,
+        cikis_depo_id:stoguGirecek?(s.cikisDepoId||null):null,
         sira:i
       };
     });
@@ -415,8 +416,10 @@ window.fatSil=async function(tur,id){
   }
 });
 
-// Muhasebeleşmemiş bir faturayı düzenlemek üzere forma yükler. Bağlı Ana Depo Çıkış fişi varsa izin vermez.
+// Muhasebeleşmemiş bir faturayı, KAYDEDİLDİĞİ HALİYLE (çıkış depoları dahil) düzenlemek üzere forma yükler.
+// Bağlı Ana Depo Çıkış fişi varsa izin vermez; çıkış fişi silinince çıkış depoları kalemlerden geri gelir.
 window.fatDuzenleAc=async function(tur,id){
+  // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli.
   if(islemler.some(i=>i.fatura_id===id&&i.alt_tur==='ana_depo_cikis')){
     bil('Bu faturaya bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce çıkış fişini silin.','err');return;
   }
@@ -433,7 +436,11 @@ window.fatDuzenleAc=async function(tur,id){
   set('odeme',fat.odeme_tipi||'pesin');fatOdemeDegis(tur);
   if(typeof kasaSelectDoldur==='function')await kasaSelectDoldur('fat-'+tur+'-kasa',true);
   if(fat.kasa_id)set('kasa',fat.kasa_id);
-  fatSatirListesi[tur]=(kl||[]).map(k=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id||'',miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id||'',cikisDepoId:''}));
+  const cikislar=(kl||[]).map(k=>k.cikis_depo_id||'');
+  fatSatirListesi[tur]=(kl||[]).map((k,n)=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id||'',miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id||'',cikisDepoId:cikislar[n]||''}));
+  const farkli=[...new Set(cikislar.filter(Boolean))];
+  const ustEl=document.getElementById('fat-alis-cikis');
+  if(tur==='alis'&&ustEl&&farkli.length===1&&cikislar.every(Boolean))ustEl.value=farkli[0];
   for(let n=0;n<5;n++)fatSatirListesi[tur].push(_fatYeniSatir(tur));
   fatSatirRender(tur);
 };
