@@ -8,7 +8,10 @@ const STOK_EKSI=['cikis','satis','ikram','odenmez','hasar','atik',
   'transfer_cikis'];
 // Ana depo: Depolar tanımında "ana_depo" işaretli depo. Depo bilgisi olmayan
 // eski hareketler ve başlangıç stoğu ana depoya aittir.
-window.anaDepoId=function(){return depolar.find(d=>d.ana_depo)?.id||null;};
+window.anaDepoId=function(){
+  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
+  return kapsam.find(d=>d.ana_depo)?.id||null;
+};
 // depoId verilmezse tüm depoların toplamı (transferler birbirini götürdüğü için hesaba katılmaz).
 // depoId verilirse sadece o deponun stoğu.
 function stokMiktar(stokId,depoId){
@@ -37,7 +40,7 @@ window.depoSecenekleri=function(selectId,seciliId){
 // Alış belgelerinde "Giriş Deposu" alanı: her zaman Ana Depo, kilitli.
 window.girisDepoAnaYaz=function(selectId){
   const el=document.getElementById(selectId);if(!el)return;
-  const ana=depolar.find(d=>d.ana_depo);
+  const ana=depolar.find(d=>d.id===anaDepoId());
   el.innerHTML=ana?`<option value="${ana.id}">${ana.ad} (Ana Depo)</option>`:'<option value="">Ana depo tanımlı değil!</option>';
   el.disabled=true;
 };
