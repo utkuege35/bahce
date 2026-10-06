@@ -195,7 +195,8 @@ window.cikisFisiSilUI=async function(fisId,kind,tur){
   if(error){bil('Silinemedi: '+error.message,'err');return;}
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
   bil('Çıkış fişi silindi ✓');
-  if(kind==='irs')renderIrsGunSekmesi(tur);else renderFatGunSekmesi(tur);
+  if(kind==='irs'){renderIrsGunSekmesi(tur);if(typeof irsBilgiBlokYenile==='function')irsBilgiBlokYenile(tur);}
+  else{renderFatGunSekmesi(tur);if(typeof fatBilgiBlokYenile==='function')fatBilgiBlokYenile(tur);}
 };
 // Bir irsaliye/faturaya bağlı stok girişlerini geri alır (yumuşak silme).
 window.stokHareketiGeriAl=async function(filtre){
