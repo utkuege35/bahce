@@ -215,7 +215,7 @@ window.kaydetIrsaliye=async function(tur){
     let irs;
     if(duzenlenen){
       // Düzenleme: önce stok eksiye düşer mi kontrol et, sonra başlık/kalem/stok girişini yeniden yaz
-      if(tur==='alis'){const hata=girisDegisimKontrol('irsaliye_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
+      if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
       const {error:eu}=await sb.from('irsaliyeler').update({irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an}).eq('id',duzenlenen);
       if(eu)throw eu;
       const {error:ed}=await sb.from('irsaliye_kalemleri').delete().eq('irsaliye_id',duzenlenen);
@@ -244,6 +244,7 @@ window.kaydetIrsaliye=async function(tur){
         kdv_orani:tur==='alis'?(typeof kdvOraniDegeri==='function'?kdvOraniDegeri(s.kdvOraniId):null):null,
         kdv_tutar:tur==='alis'?kdvTutar:null,
         kdv_dahil_tutar:tur==='alis'?dahil:null,
+        cikis_depo_id:tur==='alis'?(s.cikisDepoId||null):null,
         sira:i
       };
     });
@@ -363,8 +364,10 @@ window.irsFaturaDonustur=function(tur,id){
   fatYeniBaslat(tur,[id]);
 };
 
-// Açık bir irsaliyeyi düzenlemek üzere forma yükler. Bağlı Ana Depo Çıkış fişi varsa izin vermez.
+// Açık bir irsaliyeyi, KAYDEDİLDİĞİ HALİYLE (çıkış depoları dahil) düzenlemek üzere forma yükler.
+// Bağlı Ana Depo Çıkış fişi varsa izin vermez; çıkış fişi silinince çıkış depoları kalemlerden geri gelir.
 window.irsDuzenleAc=async function(tur,id){
+  // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli.
   if(islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
     bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce çıkış fişini silin.','err');return;
   }
@@ -376,7 +379,12 @@ window.irsDuzenleAc=async function(tur,id){
   _irsBaslikYaz(tur,true);
   const set=(k,v)=>{const el=document.getElementById('irs-'+tur+'-'+k);if(el)el.value=v;};
   set('tarih',irs.tarih||'');set('no',irs.irsaliye_no||'');set('cari',irs.cari_id||'');set('not',irs.aciklama||'');
-  irsSatirListesi[tur]=(kl||[]).map(k=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id||'',miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id||'',cikisDepoId:''}));
+  const cikislar=(kl||[]).map(k=>k.cikis_depo_id||'');
+  irsSatirListesi[tur]=(kl||[]).map((k,n)=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id||'',miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id||'',cikisDepoId:cikislar[n]||''}));
+  // Tüm kalemler aynı çıkış deposuna gidiyorsa üstteki Çıkış Deposu kutusunu da o depoya ayarla
+  const farkli=[...new Set(cikislar.filter(Boolean))];
+  const ustEl=document.getElementById('irs-alis-cikis');
+  if(tur==='alis'&&ustEl&&farkli.length===1&&cikislar.every(Boolean))ustEl.value=farkli[0];
   for(let n=0;n<5;n++)irsSatirListesi[tur].push(_irsYeniSatir(tur));
   irsSatirRender(tur);
 };
