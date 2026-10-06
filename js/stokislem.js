@@ -6,7 +6,7 @@
 // İrsaliye/faturadan doğan Ana Depo Çıkış fişleri burada listelenir ve SİLİNEBİLİR ama DÜZENLENEMEZ
 // (düzenleme ilgili irsaliye/faturadan yapılır). Elle girilen fişler düzenlenebilir.
 const TRF_TIP_ADLARI={ana_depo_cikis:'Ana Depo Çıkış',ana_depoya_iade:'Ana Depoya İade',depolar_arasi:'Depolar Arası Transfer'};
-let _aktifSkTab='transfer';
+let _aktifSkTab='devir';
 let trfSatirListesi=[];
 let _trfDuzenlenenId=null;   // düzenlenen (eski) fişin belge_id'si
 let _trfGoruntuleme=false;
@@ -20,8 +20,12 @@ window.skTab=function(id,btn){
   btn.classList.add('active');
   _aktifSkTab=id;
   if(id==='transfer')trfGorunumListe();
+  if(id==='devir'&&typeof dvrGorunumListe==='function')dvrGorunumListe();
 };
-window.skAcilis=function(){if(_aktifSkTab==='transfer')trfGorunumListe();};
+window.skAcilis=function(){
+  if(_aktifSkTab==='transfer')trfGorunumListe();
+  else if(_aktifSkTab==='devir'&&typeof dvrGorunumListe==='function')dvrGorunumListe();
+};
 
 const _depoAd=id=>depolar.find(d=>d.id===id)?.ad||'—';
 const _trfSayi=n=>(+n).toLocaleString('tr-TR',{maximumFractionDigits:3});
