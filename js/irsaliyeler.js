@@ -1,3 +1,17 @@
+// ===== MÜKERRER BELGE KONTROLÜ =====
+// Aynı işyeri + aynı tür + aynı cari + aynı belge numarası (büyük/küçük harf ve baştaki/sondaki
+// boşluk farkı yok sayılır) ikinci kez işlenemez. Silinmiş kayıtlar sayılmaz; düzenlemede
+// belgenin kendisi (haricId) hariç tutulur. Belge no veya cari boşsa kontrol yapılmaz.
+window.belgeMukerrerMi=async function(tablo,noKolon,tur,cariId,no,haricId){
+  const n=(no||'').trim();
+  if(!n||!cariId)return null;
+  let q=sb.from(tablo).select('id,tarih,'+noKolon).eq('tur',tur).eq('cari_id',cariId).eq('silindi',false).ilike(noKolon,n);
+  if(aktifIsyeri?.id)q=q.eq('isyeri_id',aktifIsyeri.id);
+  const {data}=await q;
+  return (data||[]).find(x=>x.id!==haricId&&(x[noKolon]||'').trim().toLowerCase()===n.toLowerCase())||null;
+};
+const MUKERRER_KISI={alis:'tedarikçiye',satis:'alıcıya',iade:'cariye'};
+
 // ===== İRSALİYELER =====
 // Üç sekme (Alış/Satış/İade) aynı yapıyı paylaştığı için tüm state ve
 // render fonksiyonları "tur" parametresiyle genelleştirildi — kod üç kez
@@ -207,6 +221,8 @@ window.kaydetIrsaliye=async function(tur){
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=irsSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
+  const mukerrer=await belgeMukerrerMi('irsaliyeler','irsaliye_no',tur,cariId,irsNo,_irsDuzenlenenId[tur]);
+  if(mukerrer){bil(`Bu ${MUKERRER_KISI[tur]} ait "${irsNo}" numaralı irsaliye zaten kayıtlı (${mukerrer.tarih}). Aynı belge ikinci kez işlenemez.`,'err');return;}
   const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
   if(tur==='alis'&&!depoId){bil('Ana depo tanımlı değil! Alış irsaliyesi Ana Depo\'ya stok girişi yapar.','err');return;}
   const toplam=gecerli.reduce((t,s)=>t+(parseFloat(s.tutar)||0),0);
