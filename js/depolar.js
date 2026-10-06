@@ -19,21 +19,13 @@ async function _depolariYenile(){
 window.kaydetDepo=async function(){
   const ad=document.getElementById('dp-ad').value.trim();
   const kod=document.getElementById('dp-kod').value.trim();
-  const ana=document.getElementById('dp-ana')?.checked||false;
   if(!ad){bil('Depo adı zorunlu!','err');return;}
   const dup=depolar.find(d=>d.ad.trim().toLowerCase()===ad.toLowerCase()&&(d.isyeri_id||null)===(aktifIsyeri?.id||null));
   if(dup){bil(`"${ad}" adında zaten bir depo var!`,'err');return;}
-  if(ana){
-    const mevcut=_mevcutAnaDepo();
-    if(mevcut&&!(await onay(`Mevcut ana depo "${mevcut.ad}" yerine bu depo ana depo olsun mu?`,'🏬')))return;
-    const hata=await _anaDepoIsaretiniKaldir();
-    if(hata){bil('Ana depo güncellenemedi: '+hata.message,'err');return;}
-  }
-  const {error}=await sb.from('depolar').insert({ad,kod:kod||null,isyeri_id:aktifIsyeri?.id||null,aktif:true,ana_depo:ana});
+  const {error}=await sb.from('depolar').insert({ad,kod:kod||null,isyeri_id:aktifIsyeri?.id||null,aktif:true,ana_depo:false});
   if(error){bil('Kaydedilemedi: '+error.message,'err');return;}
   await _depolariYenile();
   document.getElementById('dp-ad').value='';document.getElementById('dp-kod').value='';
-  const anaEl=document.getElementById('dp-ana');if(anaEl)anaEl.checked=false;
   renderDepolar();if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
   bil('Depo eklendi ✓');
 };
