@@ -67,10 +67,11 @@ window.anaDepoCikisYaz=async function(satirlar,b){
   });
   const hedefler=Object.keys(grup);
   if(!hedefler.length)return 0;
-  const baz=Date.now()+1000;let n=0;const rows=[];
+  const baz=Date.now()+1000;let n=0;const rows=[];const basliklar=[];
   hedefler.forEach(hedef=>{
     const fisId=crypto.randomUUID();
     const depoAd=depolar.find(d=>d.id===hedef)?.ad||'';
+    let fisTutar=0;
     grup[hedef].forEach(({x,idx})=>{
       const kart=stoklar.find(k=>k.id===x.kaynakId);
       const mik=parseFloat(x.miktar)||0,fiy=parseFloat(x.fiyat)||0,tut=parseFloat(x.tutar)||(mik*fiy);
@@ -78,12 +79,20 @@ window.anaDepoCikisYaz=async function(satirlar,b){
         aciklama:`${kart?.ad||''} → ${depoAd}`,kat:'Ana Depo Çıkış',alt_tur:'ana_depo_cikis',aciklama_not:b.not||null,
         belge_no:b.belgeNo||null,belge_id:fisId,irsaliye_id:b.irsaliyeId||null,fatura_id:b.faturaId||null,
         hedef_depo_id:hedef,kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null};
+      fisTutar+=tut;
       rows.push({...ortak,tur:'transfer_cikis',depo_id:ana,ts:baz+(n++)});
       rows.push({...ortak,tur:'transfer_giris',depo_id:hedef,ts:baz+(n++)});
     });
+    basliklar.push({id:fisId,isyeri_id:aktifIsyeri?.id||null,fis_turu:'transfer',alt_tur:'ana_depo_cikis',tarih:b.tarih,
+      depo_id:ana,hedef_depo_id:hedef,irsaliye_id:b.irsaliyeId||null,fatura_id:b.faturaId||null,
+      kalem_sayisi:grup[hedef].length,toplam_tutar:Math.round(fisTutar*100)/100,aciklama:b.not||null,
+      kullanici:aktifKullanici?.ad||'',ts:baz});
   });
+  // Önce fiş başlıkları, sonra satırlar; satırlar yazılamazsa başlıklar geri alınır.
+  const {error:eb}=await sb.from('stok_fisleri').insert(basliklar);
+  if(eb)throw eb;
   const {error}=await sb.from('islemler').insert(rows);
-  if(error)throw error;
+  if(error){await sb.from('stok_fisleri').delete().in('id',basliklar.map(x=>x.id));throw error;}
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
   return hedefler.length;
 };
@@ -212,6 +221,7 @@ window.cikisFisiSilUI=async function(fisId,kind,tur){
   if(!(await onay('Bu Ana Depo Çıkış fişi silinsin mi?<br><small>Mallar Ana Depo\'ya geri döner.</small>','🗑️')))return;
   const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).eq('alt_tur','ana_depo_cikis');
   if(error){bil('Silinemedi: '+error.message,'err');return;}
+  await sb.from('stok_fisleri').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',fisId);
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
   bil('Çıkış fişi silindi ✓');
   if(kind==='irs'){renderIrsGunSekmesi(tur);if(typeof irsBilgiBlokYenile==='function')irsBilgiBlokYenile(tur);}
@@ -225,6 +235,10 @@ window.stokHareketiGeriAl=async function(filtre){
   else if(filtre.faturaId)q=q.eq('fatura_id',filtre.faturaId);
   else return;
   await q;
+  // Bu belgeye bağlı fiş başlıkları (Ana Depo Çıkış fişleri) da silinir
+  let qb=sb.from('stok_fisleri').update(guncel);
+  qb=filtre.irsaliyeId?qb.eq('irsaliye_id',filtre.irsaliyeId):qb.eq('fatura_id',filtre.faturaId);
+  await qb;
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
 };
 function urunStok(urunId){
