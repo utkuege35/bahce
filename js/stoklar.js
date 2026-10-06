@@ -51,7 +51,7 @@ window.cikisDepoSecenekleri=function(selectId,seciliId){
 };
 window.cikisDepoOptHtml=function(seciliId){
   const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
-  return '<option value="">— Çıkış yok —</option>'+kapsam.filter(d=>d.aktif!==false&&!d.ana_depo).map(d=>`<option value="${d.id}"${d.id===seciliId?' selected':''}>${d.ad}</option>`).join('');
+  return '<option value=""></option>'+kapsam.filter(d=>d.aktif!==false&&!d.ana_depo).map(d=>`<option value="${d.id}"${d.id===seciliId?' selected':''}>${d.ad}</option>`).join('');
 };
 // Satırlarda çıkış deposu seçilmişse, her çıkış deposu için AYRI bir "Ana Depo Çıkış"
 // fişi oluşturur: Ana Depo'dan çıkış (transfer_cikis) + hedef depoya giriş (transfer_giris).
