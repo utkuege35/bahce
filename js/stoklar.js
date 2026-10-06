@@ -222,6 +222,10 @@ window.cikisFisiSilUI=async function(fisId,kind,tur){
   const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).eq('alt_tur','ana_depo_cikis');
   if(error){bil('Silinemedi: '+error.message,'err');return;}
   await sb.from('stok_fisleri').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',fisId);
+  const cikisSat=satirlar.filter(i=>i.tur==='transfer_cikis');
+  await logYaz({islem:'sil',belgeTuru:'transfer',altTur:'ana_depo_cikis',belgeId:fisId,belgeTarihi:cikisSat[0]?.tarih,
+    tutar:cikisSat.reduce((a,r)=>a+(parseFloat(r.tutar)||0),0),irsaliyeId:cikisSat[0]?.irsaliye_id,faturaId:cikisSat[0]?.fatura_id,
+    eski:transferSnapshotKur(cikisSat[0]?.tarih,'ana_depo_cikis',cikisSat[0]?.depo_id,cikisSat[0]?.hedef_depo_id,cikisSat[0]?.aciklama_not,cikisSat.map(r=>({stokId:r.stok_id,birimId:r.birim_id,miktar:r.miktar})))});
   const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
   bil('Çıkış fişi silindi ✓');
   if(kind==='irs'){renderIrsGunSekmesi(tur);if(typeof irsBilgiBlokYenile==='function')irsBilgiBlokYenile(tur);}
