@@ -1,3 +1,11 @@
+// Öneri listesi sıralaması: yazılan harflerle BAŞLAYANLAR önce, sonra içinde geçenler.
+// Sınırsız liste döner (tüm kalemler kaydırılarak görülebilir).
+window._oneriSirala=function(liste,q,adFn){
+  if(!q)return liste;
+  const bas=[],ic=[];
+  liste.forEach(x=>{(adFn(x).toLocaleLowerCase('tr').startsWith(q)?bas:ic).push(x);});
+  return bas.concat(ic);
+};
 // ===== ARAMA KUTUSU (ÖNERİ LİSTESİ) KLAVYE GEZİNMESİ =====
 // Malzeme/ürün arama kutularında (Alış, Satış, İrsaliyeler...) öneri
 // listesi açıkken aşağı/yukarı ok ile üzerinde gezinme, Enter ile üzerinde
@@ -997,7 +1005,7 @@ function hmSatirRender(){
           onfocus="_hmHoverIndex=${i};hmStokAramaFiltrele(${i},this.value);hmSatirTipOtomatikBelirle(${i})"
           onblur="setTimeout(()=>{const d=document.getElementById('hm-oneri-${i}');if(d)d.style.display='none';},150)"
           onkeydown="_oneriTusVurusu(event,'hm-oneri-${i}')" style="width:100%;padding:3px 6px;font-size:12px">
-        <div id="hm-oneri-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
+        <div id="hm-oneri-${i}" onmousedown="event.preventDefault()" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
       </div>`;
     }else{
       secimTd=`<select data-satir-ana="1" onchange="hmSatirGuncelle(${i},'secimId',this.value)" onfocus="_hmHoverIndex=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px;background:var(--beyaz)">${hmSecimOpts(tip,s.secimId)}</select>`;
@@ -1042,10 +1050,10 @@ window.hmStokAramaFiltrele=function(i,val){
   const kutu=document.getElementById('hm-oneri-'+i);if(!kutu)return;
   const q=(val||'').trim().toLocaleLowerCase('tr');
   const kapsam=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
-  const secenekler=q?kapsam.filter(x=>x.ad.toLocaleLowerCase('tr').includes(q)):kapsam.slice(0,30);
+  const secenekler=_oneriSirala(q?kapsam.filter(x=>x.ad.toLocaleLowerCase('tr').includes(q)):kapsam,q,x=>x.ad);
   kutu.dataset.vurgu='-1';
   if(!secenekler.length){kutu.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--yazi3)">Sonuç bulunamadı</div>';kutu.style.display='block';return;}
-  kutu.innerHTML=secenekler.slice(0,30).map(x=>`<div class="oneri-item" onclick="hmStokSecildi(${i},'${x.id}')" style="padding:8px 10px;font-size:12px">${x.ad}</div>`).join('');
+  kutu.innerHTML=secenekler.map(x=>`<div class="oneri-item" onclick="hmStokSecildi(${i},'${x.id}')" style="padding:8px 10px;font-size:12px">${x.ad}</div>`).join('');
   kutu.style.display='block';
 };
 window.hmStokSecildi=function(i,stokId){
@@ -1247,7 +1255,7 @@ function stSatirRender(){
           onfocus="_stHoverIndex=${i};stUrunAramaFiltrele(${i},this.value)"
           onblur="setTimeout(()=>{const d=document.getElementById('st-oneri-${i}');if(d)d.style.display='none';},150)"
           onkeydown="_oneriTusVurusu(event,'st-oneri-${i}')" style="width:100%;padding:3px 6px;font-size:12px">
-        <div id="st-oneri-${i}" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
+        <div id="st-oneri-${i}" onmousedown="event.preventDefault()" style="display:none;position:absolute;z-index:80;top:100%;left:0;right:0;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25);margin-top:2px"></div>
       </div>`;
     }
     return `<tr data-tablo="st">
@@ -1272,10 +1280,10 @@ window.stUrunAramaFiltrele=function(i,val){
   const tip=document.getElementById('st-tip')?.value||'urun';
   const q=(val||'').trim().toLocaleLowerCase('tr');
   const kapsam=tip==='urun'?urunler.filter(u=>u.tip==='urun'&&u.aktif!==false):stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false);
-  const secenekler=q?kapsam.filter(x=>x.ad.toLocaleLowerCase('tr').includes(q)):kapsam.slice(0,30);
+  const secenekler=_oneriSirala(q?kapsam.filter(x=>x.ad.toLocaleLowerCase('tr').includes(q)):kapsam,q,x=>x.ad);
   kutu.dataset.vurgu='-1';
   if(!secenekler.length){kutu.innerHTML='<div style="padding:8px 10px;font-size:12px;color:var(--yazi3)">Sonuç bulunamadı</div>';kutu.style.display='block';return;}
-  kutu.innerHTML=secenekler.slice(0,30).map(x=>`<div class="oneri-item" onclick="stUrunSecildi(${i},'${x.id}')" style="padding:8px 10px;font-size:12px">${x.ad}</div>`).join('');
+  kutu.innerHTML=secenekler.map(x=>`<div class="oneri-item" onclick="stUrunSecildi(${i},'${x.id}')" style="padding:8px 10px;font-size:12px">${x.ad}</div>`).join('');
   kutu.style.display='block';
 };
 window.stUrunSecildi=function(i,id){
