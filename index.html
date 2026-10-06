@@ -224,7 +224,7 @@
       <option value="satis">Satış</option>
       <option value="uretim">Üretim</option>
       <option value="sayim">Sayım</option>
-      <option value="devir">Devir</option>
+      <option value="devir">Devir</option><option value="satis">Satış</option><option value="ikram">İkram</option><option value="odenmez">Ödenmez</option><option value="hasar">Hasar</option><option value="atik">Atık</option>
       <option value="kasa">Kasa</option>
     </select>
     <input type="date" id="il-bas" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
@@ -1039,49 +1039,246 @@
     </div>
   </div>
   <div id="tp-sk-satis" class="tab-panel">
-    <div class="card"><div class="bos">Satış sekmesi bir sonraki aşamada eklenecek.</div></div>
+    <div id="tp-sk-satis-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="sc-satis-liste-tarih" onchange="renderScListe('satis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="scYeniBaslat('satis')">Yeni</button>
+          <button class="btn sm" onclick="scListeIslem('satis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="scListeIslem('satis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="scListeIslem('satis','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm ghost" onclick="scListeIslem('satis','log')" title="Seçili kaydın işlem geçmişi">📜 Log</button>
+          <div id="sc-satis-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="sc-satis-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-sk-satis-form" style="display:none">
+      <div class="card"><div class="card-title">Satış Fişi<button class="btn sm ghost" onclick="scKaydetmedenCik('satis')">← Listeye Dön</button></div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Seçilen depodan stok çıkışı yapar. Ürün girilirse reçetesindeki hammaddeler (iç içe yarı mamuller dahil) otomatik olarak stoktan düşülür; fişte ürün olarak görünür.</div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="sc-satis-tarih"></div>
+        <div class="fg"><label>Çıkış Deposu</label><select id="sc-satis-depo"><option value="">— Depo seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="sc-satis-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:200px">Malzeme / Ürün</th>
+            <th style="width:80px">Tür</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:100px">Birim Fiyat</th>
+            <th style="width:110px">Tutar</th>
+          </tr></thead>
+          <tbody id="sc-satis-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="sc-satis-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="scKaydetmedenCik('satis')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetStokCikis('satis')">Kaydet</button>
+      </div>
+    </div>
+    </div>
   </div>
   <div id="tp-sk-ikram" class="tab-panel">
-    <div class="card"><div class="bos">İkram sekmesi bir sonraki aşamada eklenecek.</div></div>
+    <div id="tp-sk-ikram-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="sc-ikram-liste-tarih" onchange="renderScListe('ikram')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="scYeniBaslat('ikram')">Yeni</button>
+          <button class="btn sm" onclick="scListeIslem('ikram','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="scListeIslem('ikram','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="scListeIslem('ikram','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm ghost" onclick="scListeIslem('ikram','log')" title="Seçili kaydın işlem geçmişi">📜 Log</button>
+          <div id="sc-ikram-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="sc-ikram-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-sk-ikram-form" style="display:none">
+      <div class="card"><div class="card-title">İkram Fişi<button class="btn sm ghost" onclick="scKaydetmedenCik('ikram')">← Listeye Dön</button></div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Seçilen depodan stok çıkışı yapar. Ürün girilirse reçetesindeki hammaddeler (iç içe yarı mamuller dahil) otomatik olarak stoktan düşülür; fişte ürün olarak görünür.</div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="sc-ikram-tarih"></div>
+        <div class="fg"><label>Çıkış Deposu</label><select id="sc-ikram-depo"><option value="">— Depo seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="sc-ikram-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:200px">Malzeme / Ürün</th>
+            <th style="width:80px">Tür</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:100px">Birim Fiyat</th>
+            <th style="width:110px">Tutar</th>
+          </tr></thead>
+          <tbody id="sc-ikram-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="sc-ikram-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="scKaydetmedenCik('ikram')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetStokCikis('ikram')">Kaydet</button>
+      </div>
+    </div>
+    </div>
   </div>
   <div id="tp-sk-odenmez" class="tab-panel">
-    <div class="card"><div class="bos">Ödenmez sekmesi bir sonraki aşamada eklenecek.</div></div>
+    <div id="tp-sk-odenmez-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="sc-odenmez-liste-tarih" onchange="renderScListe('odenmez')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="scYeniBaslat('odenmez')">Yeni</button>
+          <button class="btn sm" onclick="scListeIslem('odenmez','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="scListeIslem('odenmez','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="scListeIslem('odenmez','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm ghost" onclick="scListeIslem('odenmez','log')" title="Seçili kaydın işlem geçmişi">📜 Log</button>
+          <div id="sc-odenmez-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="sc-odenmez-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-sk-odenmez-form" style="display:none">
+      <div class="card"><div class="card-title">Ödenmez Fişi<button class="btn sm ghost" onclick="scKaydetmedenCik('odenmez')">← Listeye Dön</button></div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Seçilen depodan stok çıkışı yapar. Ürün girilirse reçetesindeki hammaddeler (iç içe yarı mamuller dahil) otomatik olarak stoktan düşülür; fişte ürün olarak görünür.</div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="sc-odenmez-tarih"></div>
+        <div class="fg"><label>Çıkış Deposu</label><select id="sc-odenmez-depo"><option value="">— Depo seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="sc-odenmez-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:200px">Malzeme / Ürün</th>
+            <th style="width:80px">Tür</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:100px">Birim Fiyat</th>
+            <th style="width:110px">Tutar</th>
+          </tr></thead>
+          <tbody id="sc-odenmez-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="sc-odenmez-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="scKaydetmedenCik('odenmez')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetStokCikis('odenmez')">Kaydet</button>
+      </div>
+    </div>
+    </div>
   </div>
   <div id="tp-sk-hasar" class="tab-panel">
-    <div class="card"><div class="bos">Hasar sekmesi bir sonraki aşamada eklenecek.</div></div>
+    <div id="tp-sk-hasar-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="sc-hasar-liste-tarih" onchange="renderScListe('hasar')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="scYeniBaslat('hasar')">Yeni</button>
+          <button class="btn sm" onclick="scListeIslem('hasar','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="scListeIslem('hasar','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="scListeIslem('hasar','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm ghost" onclick="scListeIslem('hasar','log')" title="Seçili kaydın işlem geçmişi">📜 Log</button>
+          <div id="sc-hasar-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="sc-hasar-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-sk-hasar-form" style="display:none">
+      <div class="card"><div class="card-title">Hasar Fişi<button class="btn sm ghost" onclick="scKaydetmedenCik('hasar')">← Listeye Dön</button></div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Seçilen depodan stok çıkışı yapar. Ürün girilirse reçetesindeki hammaddeler (iç içe yarı mamuller dahil) otomatik olarak stoktan düşülür; fişte ürün olarak görünür.</div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="sc-hasar-tarih"></div>
+        <div class="fg"><label>Çıkış Deposu</label><select id="sc-hasar-depo"><option value="">— Depo seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="sc-hasar-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:200px">Malzeme / Ürün</th>
+            <th style="width:80px">Tür</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:100px">Birim Fiyat</th>
+            <th style="width:110px">Tutar</th>
+          </tr></thead>
+          <tbody id="sc-hasar-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="sc-hasar-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="scKaydetmedenCik('hasar')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetStokCikis('hasar')">Kaydet</button>
+      </div>
+    </div>
+    </div>
   </div>
   <div id="tp-sk-atik" class="tab-panel">
-    <div class="card"><div class="bos">Atık sekmesi bir sonraki aşamada eklenecek.</div></div>
+    <div id="tp-sk-atik-liste">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <input type="date" id="sc-atik-liste-tarih" onchange="renderScListe('atik')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="scYeniBaslat('atik')">Yeni</button>
+          <button class="btn sm" onclick="scListeIslem('atik','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="scListeIslem('atik','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="scListeIslem('atik','sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <button class="btn sm ghost" onclick="scListeIslem('atik','log')" title="Seçili kaydın işlem geçmişi">📜 Log</button>
+          <div id="sc-atik-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+        </div>
+        <div id="sc-atik-liste-tb"></div>
+      </div>
+    </div>
+    <div id="tp-sk-atik-form" style="display:none">
+      <div class="card"><div class="card-title">Atık Fişi<button class="btn sm ghost" onclick="scKaydetmedenCik('atik')">← Listeye Dön</button></div>
+      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Seçilen depodan stok çıkışı yapar. Ürün girilirse reçetesindeki hammaddeler (iç içe yarı mamuller dahil) otomatik olarak stoktan düşülür; fişte ürün olarak görünür.</div>
+      <div class="fgrid c3" style="margin-bottom:1rem">
+        <div class="fg"><label>Tarih</label><input type="date" id="sc-atik-tarih"></div>
+        <div class="fg"><label>Çıkış Deposu</label><select id="sc-atik-depo"><option value="">— Depo seçin —</option></select></div>
+        <div class="fg"><label>Not</label><input type="text" id="sc-atik-not" placeholder="Açıklama..."></div>
+      </div>
+      <div class="tw" style="margin-bottom:.75rem">
+        <table class="excel-tablo" style="font-size:13px">
+          <thead><tr>
+            <th style="min-width:200px">Malzeme / Ürün</th>
+            <th style="width:80px">Tür</th>
+            <th style="width:90px">Birim</th>
+            <th style="width:100px">Miktar</th>
+            <th style="width:100px">Birim Fiyat</th>
+            <th style="width:110px">Tutar</th>
+          </tr></thead>
+          <tbody id="sc-atik-satirlar"></tbody>
+          <tfoot><tr>
+            <td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
+            <td id="sc-atik-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn ghost" onclick="scKaydetmedenCik('atik')">Kaydetmeden Çık</button>
+        <button class="btn pri" onclick="kaydetStokCikis('atik')">Kaydet</button>
+      </div>
+    </div>
+    </div>
   </div>
-</div>
-<div id="kullanici-loglari" class="page">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
-    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Kullanıcı Logları</div>
-    <div id="lg-ozet" style="font-size:12px;color:var(--yazi3)"></div>
   </div>
-  <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Belgelerde (irsaliye, fatura, transfer fişi) yapılan oluşturma, düzenleme ve silme işlemleri. Bu kayıtlar değiştirilemez ve silinemez.</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
-    <select id="lg-kullanici" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm kullanıcılar</option></select>
-    <select id="lg-islem" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-      <option value="">Tüm işlemler</option><option value="olustur">Oluşturuldu</option><option value="duzenle">Düzenlendi</option><option value="sil">Silindi</option>
-    </select>
-    <select id="lg-tur" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-      <option value="">Tüm belgeler</option><option value="irsaliye">İrsaliye</option><option value="fatura">Fatura</option><option value="transfer">Transfer</option><option value="devir">Devir</option>
-    </select>
-    <label style="font-size:12px;color:var(--yazi2)">Tarih:</label>
-    <input type="date" id="lg-bas" onchange="renderLogEkrani(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-    <input type="date" id="lg-bit" onchange="renderLogEkrani(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-    <input type="text" id="lg-no" oninput="renderLogEkrani(true)" placeholder="🔍 Belge no..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:140px">
-    <button class="btn sm ghost" onclick="logFiltreTemizle()">✕ Temizle</button>
-  </div>
-  <div class="card">
-    <div class="tw"><table>
-      <thead><tr><th>Tarih / Saat</th><th>Kullanıcı</th><th>İşlem</th><th>Belge</th><th>Belge No</th><th>Belge Tarihi</th><th>Özet</th><th></th></tr></thead>
-      <tbody id="lg-tb"></tbody>
-    </table></div>
-    <div id="lg-daha" style="text-align:center;margin-top:.75rem"></div>
-  </div>
-</div>
 <div id="stok" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stoklar</div>
@@ -2324,6 +2521,7 @@
 <script src="js/faturalar.js"></script>
 <script src="js/stokislem.js"></script>
 <script src="js/stokdevir.js"></script>
+<script src="js/stokcikis.js"></script>
 <script src="js/loglar.js"></script>
 <script src="js/depostok.js"></script>
 
