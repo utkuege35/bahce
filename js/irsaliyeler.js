@@ -22,10 +22,35 @@ let _irsHoverIndex={alis:null,satis:null,iade:null};
 let _irsAcikId={alis:null,satis:null,iade:null};
 let _irsDuzenlenenId={alis:null,satis:null,iade:null};
 const IRS_FORM_BASLIK={alis:'Alış İrsaliyesi',satis:'Satış İrsaliyesi',iade:'İade İrsaliyesi'};
-function _irsBaslikYaz(tur,duzenleme){
+let _irsSeciliId={alis:null,satis:null,iade:null};      // listede seçili kayıt
+let _irsListeVeri={alis:{},satis:{},iade:{}};            // listedeki kayıtlar (id → satır)
+let _irsGoruntuleme={alis:false,satis:false,iade:false}; // form salt okunur (görüntüleme) modunda mı
+let _irsGoruntulenenKayit={alis:null,satis:null,iade:null};
+function _irsBaslikYaz(tur,duzenleme,salt){
   const el=document.querySelector('#tp-irs-'+tur+'-form .card-title');
-  if(el&&el.firstChild)el.firstChild.textContent=IRS_FORM_BASLIK[tur]+(duzenleme?' — Düzenleme':'');
+  if(el&&el.firstChild)el.firstChild.textContent=IRS_FORM_BASLIK[tur]+(duzenleme?(salt?' — Görüntüleme':' — Düzenleme'):'');
 }
+// Formu salt okunur (görüntüleme) ya da düzenlenebilir yapar.
+function _irsSaltOkunur(tur,salt){
+  const form=document.getElementById('tp-irs-'+tur+'-form');if(!form)return;
+  form.querySelectorAll('input,select').forEach(el=>{el.disabled=salt;});
+  form.querySelectorAll('.fgrid button').forEach(b=>{b.disabled=salt;});
+  const kaydet=form.querySelector('button[onclick^="kaydetIrsaliye"]');if(kaydet)kaydet.style.display=salt?'none':'';
+  form.querySelectorAll('button[onclick^="irsKaydetmedenCik"]').forEach(b=>{
+    if(b.textContent.includes('Kaydetmeden')||b.textContent==='Kapat')b.textContent=salt?'Kapat':'Kaydetmeden Çık';
+  });
+  if(!salt)document.getElementById('irs-'+tur+'-goruntu-bilgi')?.remove();
+}
+// Görüntüleme modunda formun üstünde durum + bağlı çıkış fişleri (silme butonlu) bloğu.
+window.irsBilgiBlokYenile=function(tur){
+  const form=document.getElementById('tp-irs-'+tur+'-form');if(!form)return;
+  let el=document.getElementById('irs-'+tur+'-goruntu-bilgi');
+  if(!_irsGoruntuleme[tur]){el?.remove();return;}
+  const x=_irsGoruntulenenKayit[tur];if(!x)return;
+  if(!el){el=document.createElement('div');el.id='irs-'+tur+'-goruntu-bilgi';form.querySelector('.card-title').after(el);}
+  const durumAd=x.durum==='faturalandi'?'Faturalandı':x.durum==='iptal'?'İptal':'Açık';
+  el.innerHTML=`<div style="font-size:12px;color:var(--yazi2);margin-bottom:.5rem">Durum: <strong>${durumAd}</strong></div>`+(tur==='alis'?bagliCikisFisleriHtml('irsaliye_id',x.id,'irs',tur):'');
+};
 
 const IRS_BASLIK={alis:'Alış İrsaliyeleri',satis:'Satış İrsaliyeleri',iade:'İade İrsaliyeleri'};
 
@@ -58,6 +83,7 @@ window.irsGorunumForm=function(tur){
 };
 window.irsGorunumListe=function(tur){
   _irsDuzenlenenId[tur]=null;_irsBaslikYaz(tur,false);
+  _irsGoruntuleme[tur]=false;_irsSaltOkunur(tur,false);
   const listeEl=document.getElementById('tp-irs-'+tur+'-liste');
   const formEl=document.getElementById('tp-irs-'+tur+'-form');
   if(formEl)formEl.style.display='none';
@@ -66,6 +92,7 @@ window.irsGorunumListe=function(tur){
   if(typeof renderIrsGunSekmesi==='function')renderIrsGunSekmesi(tur);
 };
 window.irsKaydetmedenCik=async function(tur){
+  if(_irsGoruntuleme[tur]){irsGorunumListe(tur);return;} // görüntülemede onay gerekmez
   const ok=await onay('Kaydetmeden çıkmak istiyor musunuz?','⚠️','Evet','Hayır');
   if(ok)irsGorunumListe(tur);
 };
@@ -73,6 +100,7 @@ window.irsKaydetmedenCik=async function(tur){
 // ===== FORM BAŞLATMA =====
 window.irsYeniBaslat=function(tur){
   _irsDuzenlenenId[tur]=null;_irsBaslikYaz(tur,false);
+  _irsGoruntuleme[tur]=false;_irsSaltOkunur(tur,false);
   irsSatirListesi[tur]=[];
   irsSatirListesiDoldur(tur);
   const tarihEl=document.getElementById('irs-'+tur+'-tarih');if(tarihEl)tarihEl.value=bugun();
@@ -290,71 +318,68 @@ window.renderIrsGunSekmesi=async function(tur){
   const tbEl=document.getElementById('irs-'+tur+'-liste-tb');
   if(!tbEl)return;
   tbEl.innerHTML='<div class="bos">Yükleniyor...</div>';
-
   let q=sb.from('irsaliyeler').select('*').eq('tur',tur).eq('tarih',tarih).eq('silindi',false).order('ts',{ascending:false});
   if(aktifIsyeri?.id)q=q.eq('isyeri_id',aktifIsyeri.id);
   const {data:irsListe}=await q;
   const ozEl=document.getElementById('irs-'+tur+'-liste-ozet');
-
+  _irsListeVeri[tur]={};
   if(!irsListe||!irsListe.length){
     tbEl.innerHTML='<div class="bos">Bu tarihte kayıt yok.</div>';
     if(ozEl)ozEl.textContent='';
+    _irsSeciliId[tur]=null;
     return;
   }
-  const ids=irsListe.map(x=>x.id);
-  const {data:kalemler}=await sb.from('irsaliye_kalemleri').select('*').in('irsaliye_id',ids).order('sira');
-
-  const toplam=irsListe.reduce((t,x)=>{
-    const kl=(kalemler||[]).filter(k=>k.irsaliye_id===x.id);
-    return t+kl.reduce((s,k)=>s+parseFloat(k.tutar||0),0);
-  },0);
+  irsListe.forEach(x=>{_irsListeVeri[tur][x.id]=x;});
+  if(!_irsListeVeri[tur][_irsSeciliId[tur]])_irsSeciliId[tur]=null;
+  const {data:kalemler}=await sb.from('irsaliye_kalemleri').select('irsaliye_id,tutar').in('irsaliye_id',irsListe.map(x=>x.id));
+  const tutarOf=id=>(kalemler||[]).filter(k=>k.irsaliye_id===id).reduce((s,k)=>s+parseFloat(k.tutar||0),0);
+  const toplam=irsListe.reduce((t,x)=>t+tutarOf(x.id),0);
   if(ozEl)ozEl.textContent=`${irsListe.length} irsaliye · ${para(toplam)}`;
-
-  const acikId=_irsAcikId[tur];
   tbEl.innerHTML=`<div class="tw"><table><thead><tr>
-    <th>Tarih</th><th>İrsaliye No</th><th>Cari</th><th style="text-align:right">Tutar</th><th>Durum</th><th></th>
+    <th>Tarih</th><th>İrsaliye No</th><th>Cari</th><th style="text-align:right">Tutar</th><th>Durum</th>
   </tr></thead><tbody>${irsListe.map(x=>{
-    const kl=(kalemler||[]).filter(k=>k.irsaliye_id===x.id);
-    const xToplam=kl.reduce((s,k)=>s+parseFloat(k.tutar||0),0);
     const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===x.cari_id):null;
-    const acik=acikId===x.id;
     const durumRenk=x.durum==='faturalandi'?'var(--yesil)':x.durum==='iptal'?'var(--yazi3)':'var(--turuncu)';
     const durumAd=x.durum==='faturalandi'?'Faturalandı':x.durum==='iptal'?'İptal':'Açık';
-    const kdvGoster=tur==='alis';
-    const detay=acik?`<tr><td colspan="6" style="padding:0">
-      <div style="background:var(--krem);border-top:2px solid var(--yesil-ac)">
-        <table style="width:100%;border-collapse:collapse">
-          <tr style="background:var(--krem2);font-size:10px;color:var(--yazi3)">
-            <th style="padding:4px 8px;text-align:left">MALZEME/ÜRÜN</th><th style="padding:4px 8px;text-align:right">MİKTAR</th><th style="padding:4px 8px;text-align:right">FİYAT</th><th style="padding:4px 8px;text-align:right">TUTAR</th>${kdvGoster?'<th style="padding:4px 8px;text-align:right">KDV</th><th style="padding:4px 8px;text-align:right">KDV DAHİL</th>':''}
-          </tr>
-          ${kl.map(k=>{
-            const stok=stoklar.find(s=>s.id===k.stok_id);const urun=urunler.find(u=>u.id===k.urun_id);
-            const ad=stok?stok.ad:urun?urun.ad:'(bulunamadı)';
-            return `<tr style="font-size:11px"><td style="padding:5px 8px">${ad}</td><td style="padding:5px 8px;text-align:right">${parseFloat(k.miktar).toLocaleString('tr-TR',{maximumFractionDigits:3})} ${birimAd(k.birim_id)}</td><td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.fiyat?para(k.fiyat):'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${para(k.tutar)}</td>${kdvGoster?`<td style="padding:5px 8px;text-align:right;color:var(--yazi3)">${k.kdv_tutar?para(k.kdv_tutar)+' (%'+(k.kdv_orani||0)+')':'—'}</td><td style="padding:5px 8px;text-align:right;font-weight:500">${k.kdv_dahil_tutar?para(k.kdv_dahil_tutar):'—'}</td>`:''}</tr>`;
-          }).join('')}
-        </table>
-        ${tur==='alis'?bagliCikisFisleriHtml('irsaliye_id',x.id,'irs',tur):''}
-        ${x.durum==='acik'?`<div style="padding:8px 12px;display:flex;gap:8px"><button class="btn sm" onclick="event.stopPropagation();irsDuzenleAc('${tur}','${x.id}')">✏ Düzenle</button><button class="btn sm" onclick="event.stopPropagation();irsFaturaDonustur('${tur}','${x.id}')">🧾 Faturaya Dönüştür</button><button class="btn sm ghost" onclick="event.stopPropagation();irsSil('${tur}','${x.id}')">✕ Sil</button></div>`:''}
-      </div>
-    </td></tr>`:'';
-    return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="irsToggle('${tur}','${x.id}')">
+    return `<tr data-id="${x.id}" onclick="irsSec('${tur}','${x.id}')" ondblclick="irsGoruntule('${tur}','${x.id}')" style="cursor:pointer;${_irsSeciliId[tur]===x.id?'background:var(--yesil-cok-ac);':''}">
       <td style="font-size:12px">${x.tarih}</td>
       <td style="font-size:12px">${x.irsaliye_no||'—'}</td>
       <td style="font-size:12px">${cari?cari.ad:'—'}</td>
-      <td style="text-align:right;font-weight:500">${para(xToplam)}</td>
+      <td style="text-align:right;font-weight:500">${para(tutarOf(x.id))}</td>
       <td style="font-size:11px;font-weight:600;color:${durumRenk}">${durumAd}</td>
-      <td style="text-align:right;font-size:12px;color:var(--yazi3)">${acik?'▲':'▼'}</td>
-    </tr>${detay}`;
+    </tr>`;
   }).join('')}</tbody></table></div>`;
 };
-window.irsToggle=function(tur,id){
-  _irsAcikId[tur]=_irsAcikId[tur]===id?null:id;
-  renderIrsGunSekmesi(tur);
+// Listede satıra tıklayınca seçer (vurgular); Görüntüle/Düzenle/Sil butonları seçili kayda uygulanır.
+window.irsSec=function(tur,id){
+  _irsSeciliId[tur]=id;
+  document.querySelectorAll(`#irs-${tur}-liste-tb tr[data-id]`).forEach(tr=>{tr.style.background=tr.dataset.id===id?'var(--yesil-cok-ac)':'';});
+};
+window.irsListeIslem=function(tur,islem){
+  const id=_irsSeciliId[tur];
+  if(!id){bil('Önce listeden bir kayıt seçin','err');return;}
+  const x=_irsListeVeri[tur]?.[id];
+  if(islem==='goruntule')irsGoruntule(tur,id);
+  else if(islem==='duzenle'){
+    if(x&&x.durum!=='acik'){bil('Faturalanmış irsaliye düzenlenemez. Önce faturayı silin.','err');return;}
+    irsDuzenleAc(tur,id);
+  }else if(islem==='sil')irsSil(tur,id);
+  else if(islem==='fatura'){
+    if(x&&x.durum!=='acik'){bil('Bu irsaliye zaten faturalandı','err');return;}
+    irsFaturaDonustur(tur,id);
+  }
 };
 window.irsSil=async function(tur,id){
+  const x=_irsListeVeri[tur]?.[id];
+  if(x&&x.durum!=='acik'){bil('Faturalanmış irsaliye silinemez. Önce faturayı silin.','err');return;}
+  if(islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
+    bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Silmek için önce çıkış fişini silin (Görüntüle ekranından).','err');return;
+  }
+  if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',id,[]);if(hata){bil(hata,'err');return;}}
   if(!(await onay('Bu irsaliyeyi silmek istiyor musunuz?','🗑️')))return;
   await sb.from('irsaliyeler').update({silindi:true}).eq('id',id);
   await stokHareketiGeriAl({irsaliyeId:id}); // bu irsaliyenin stok girişini geri al
+  _irsSeciliId[tur]=null;
   bil('İrsaliye silindi ✓');
   renderIrsGunSekmesi(tur);
 };
@@ -384,17 +409,19 @@ window.irsFaturaDonustur=function(tur,id){
 
 // Açık bir irsaliyeyi, KAYDEDİLDİĞİ HALİYLE (çıkış depoları dahil) düzenlemek üzere forma yükler.
 // Bağlı Ana Depo Çıkış fişi varsa izin vermez; çıkış fişi silinince çıkış depoları kalemlerden geri gelir.
-window.irsDuzenleAc=async function(tur,id){
-  // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli.
-  if(islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
+window.irsGoruntule=function(tur,id){return irsDuzenleAc(tur,id,true);};
+window.irsDuzenleAc=async function(tur,id,salt){
+  // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli. (Görüntülemede engel yok)
+  if(!salt&&islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
     bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce çıkış fişini silin.','err');return;
   }
   const {data:irs}=await sb.from('irsaliyeler').select('*').eq('id',id).single();
-  if(!irs||irs.durum!=='acik'){bil('Sadece açık irsaliyeler düzenlenebilir','err');return;}
+  if(!irs){bil('Kayıt bulunamadı','err');return;}
+  if(!salt&&irs.durum!=='acik'){bil('Sadece açık irsaliyeler düzenlenebilir','err');return;}
   const {data:kl}=await sb.from('irsaliye_kalemleri').select('*').eq('irsaliye_id',id).order('sira');
   irsYeniBaslat(tur);
-  _irsDuzenlenenId[tur]=id;
-  _irsBaslikYaz(tur,true);
+  _irsDuzenlenenId[tur]=salt?null:id;
+  _irsBaslikYaz(tur,true,!!salt);
   const set=(k,v)=>{const el=document.getElementById('irs-'+tur+'-'+k);if(el)el.value=v;};
   set('tarih',irs.tarih||'');set('no',irs.irsaliye_no||'');set('cari',irs.cari_id||'');set('not',irs.aciklama||'');
   const cikislar=(kl||[]).map(k=>k.cikis_depo_id||'');
@@ -403,6 +430,11 @@ window.irsDuzenleAc=async function(tur,id){
   const farkli=[...new Set(cikislar.filter(Boolean))];
   const ustEl=document.getElementById('irs-alis-cikis');
   if(tur==='alis'&&ustEl&&farkli.length===1&&cikislar.every(Boolean))ustEl.value=farkli[0];
-  for(let n=0;n<5;n++)irsSatirListesi[tur].push(_irsYeniSatir(tur));
+  if(!salt)for(let n=0;n<5;n++)irsSatirListesi[tur].push(_irsYeniSatir(tur));
   irsSatirRender(tur);
+  if(salt){ // görüntüleme: tüm alanlar kilitli, kaydet yok, durum + çıkış fişleri bloğu
+    _irsGoruntuleme[tur]=true;_irsGoruntulenenKayit[tur]=irs;
+    _irsSaltOkunur(tur,true);
+    irsBilgiBlokYenile(tur);
+  }
 };
