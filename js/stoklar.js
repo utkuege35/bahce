@@ -14,12 +14,14 @@ window.anaDepoId=function(){
 };
 // depoId verilmezse tüm depoların toplamı (transferler birbirini götürdüğü için hesaba katılmaz).
 // depoId verilirse sadece o deponun stoğu.
-function stokMiktar(stokId,depoId){
+// haricBelgeId verilirse o belgenin (fişin) hareketleri hesaba katılmaz (düzenleme/silme öncesi kontroller için)
+function stokMiktar(stokId,depoId,haricBelgeId){
   let m=0;const s=stoklar.find(x=>x.id===stokId);
   const ana=anaDepoId();
   if(s&&(!depoId||depoId===ana))m+=parseFloat(s.baslangic||0);
   islemler.forEach(i=>{
     if(i.stok_id!==stokId)return;
+    if(haricBelgeId&&i.belge_id===haricBelgeId)return;
     const tr=i.tur;
     const arti=STOK_ARTI.includes(tr),eksi=STOK_EKSI.includes(tr);
     if(!arti&&!eksi)return;
@@ -158,6 +160,23 @@ window.belgeDegisimKontrol=function(alan,belgeId,yeniSatirlar){
         const dAd=depolar.find(x=>x.id===h)?.ad||'';
         return `${ad(sid)}: ${dAd} deposundaki mal başka yere çıkmış, çıkış miktarı bu kadar azaltılamaz.`;
       }
+    }
+  }
+  return null;
+};
+// Bir transfer fişi kaldırılırsa (silme / düzenleme) hiçbir depoda stok eksiye düşmemeli.
+// Fişin dokunduğu her (stok, depo) için fiş hariç bakiye >= 0 olmalı. Hata metni ya da null döner.
+window.fisKaldirmaKontrol=function(fisId){
+  const ana=anaDepoId();
+  const satirlar=islemler.filter(i=>i.belge_id===fisId&&(i.tur==='transfer_cikis'||i.tur==='transfer_giris'));
+  const ciftler=new Set(satirlar.map(i=>i.stok_id+'|'+(i.depo_id||ana)));
+  for(const c of ciftler){
+    const [sid,d]=c.split('|');
+    const bak=stokMiktar(sid,d,fisId);
+    if(bak<-0.0005){
+      const ad=stoklar.find(x=>x.id===sid)?.ad||'';
+      const dAd=depolar.find(x=>x.id===d)?.ad||'';
+      return `${ad}: ${dAd} deposundaki mal başka yere çıkmış/kullanılmış, bu fiş kaldırılamaz.`;
     }
   }
   return null;
