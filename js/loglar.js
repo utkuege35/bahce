@@ -4,7 +4,7 @@
 // eski/yeni değerlerin anlık görüntüsü (snapshot) ile okunabilir "değişiklik" listesi bulunur.
 const LOG_ISLEM_ADLARI={olustur:'Oluşturuldu',duzenle:'Düzenlendi',sil:'Silindi'};
 const LOG_ISLEM_RENK={olustur:'var(--yesil)',duzenle:'var(--sari)',sil:'#c62828'};
-const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık'};
+const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',kasa:'Kasa'};
 const _logEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // Bir belgenin (irsaliye/fatura) o anki halinin okunabilir özeti.
@@ -62,6 +62,13 @@ window.stokCikisSnapshotKur=function(tarih,depoId,not,satirlar){
     })
   };
 };
+// Kasa fişinin özeti (tek satırlı fiş: kalem yok, tüm bilgi başlıkta)
+window.kasaSnapshotKur=function(o){
+  const kasa=typeof kasalar_list!=='undefined'?kasalar_list.find(k=>k.id===o.kasaId):null;
+  const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===o.cariId):null;
+  return {baslik:{'Tarih':o.tarih||'','Kasa':kasa?.ad||'','Tür':(typeof KI_ALT_ADLARI!=='undefined'&&KI_ALT_ADLARI[o.tip])||o.tip||'',
+    'Cari':cari?cari.ad:'','Belge No':o.belgeNo||'','Açıklama':o.aciklama||'','Tutar':+(parseFloat(o.tutar)||0)},kalemler:[]};
+};
 // İki özet arasındaki farkı okunabilir cümlelerle çıkarır.
 window.belgeFarkiUret=function(eski,yeni){
   const f=[];
@@ -90,8 +97,8 @@ window.logYaz=async function(o){
   try{
     let degisiklikler=[];
     if(o.islem==='duzenle'&&o.eski&&o.yeni)degisiklikler=belgeFarkiUret(o.eski,o.yeni);
-    else if(o.islem==='olustur'&&o.yeni)degisiklikler=[`${(o.yeni.kalemler||[]).length} kalem kaydedildi`];
-    else if(o.islem==='sil'&&o.eski)degisiklikler=[`${(o.eski.kalemler||[]).length} kalemli belge silindi`];
+    else if(o.islem==='olustur'&&o.yeni)degisiklikler=[(o.yeni.kalemler||[]).length?`${o.yeni.kalemler.length} kalem kaydedildi`:'Kayıt oluşturuldu'];
+    else if(o.islem==='sil'&&o.eski)degisiklikler=[(o.eski.kalemler||[]).length?`${o.eski.kalemler.length} kalemli belge silindi`:'Kayıt silindi'];
     if(o.islem==='duzenle'&&!degisiklikler.length)return; // gerçek bir değişiklik yoksa log yazma
     const {error}=await sb.from('belge_loglari').insert({
       isyeri_id:aktifIsyeri?.id||null,
@@ -114,7 +121,7 @@ window.logYaz=async function(o){
 function _logKartHtml(l,detayliBaslik){
   const tarihSaat=new Date(l.ts).toLocaleString('tr-TR');
   const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===l.cari_id):null;
-  const turAd=(LOG_TUR_ADLARI[l.belge_turu]||l.belge_turu)+(l.alt_tur?` (${(typeof TRF_TIP_ADLARI!=='undefined'&&TRF_TIP_ADLARI[l.alt_tur])||({alis:'Alış',satis:'Satış',iade:'İade',manuel:'Manuel',donem_devri:'Dönem Devri'}[l.alt_tur])||l.alt_tur})`:'');
+  const turAd=(LOG_TUR_ADLARI[l.belge_turu]||l.belge_turu)+(l.alt_tur?` (${(typeof TRF_TIP_ADLARI!=='undefined'&&TRF_TIP_ADLARI[l.alt_tur])||({alis:'Alış',satis:'Satış',iade:'İade',manuel:'Manuel',donem_devri:'Dönem Devri',alici_tahsilat:'Alıcı Tahsilatı',diger_giris:'Diğer Giriş',satici_odeme:'Satıcı Ödemesi',diger_cikis:'Diğer Çıkış'}[l.alt_tur])||l.alt_tur})`:'');
   const d=(l.degisiklikler||[]);
   return `<div style="border:1px solid var(--krem2);border-radius:8px;padding:10px 12px;margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;gap:8px;flex-wrap:wrap">
@@ -165,7 +172,7 @@ window.renderLogEkrani=async function(sifirla){
   const oz=document.getElementById('lg-ozet');
   if(oz)oz.textContent=`${_logSonListe.length} kayıt${_logSonListe.length>=_logLimit?' (daha fazlası olabilir)':''}`;
   tb.innerHTML=_logSonListe.map((l,i)=>{
-    const turAd=(LOG_TUR_ADLARI[l.belge_turu]||l.belge_turu)+(l.alt_tur?` · ${(typeof TRF_TIP_ADLARI!=='undefined'&&TRF_TIP_ADLARI[l.alt_tur])||({alis:'Alış',satis:'Satış',iade:'İade',manuel:'Manuel',donem_devri:'Dönem Devri'}[l.alt_tur])||l.alt_tur}`:'');
+    const turAd=(LOG_TUR_ADLARI[l.belge_turu]||l.belge_turu)+(l.alt_tur?` · ${(typeof TRF_TIP_ADLARI!=='undefined'&&TRF_TIP_ADLARI[l.alt_tur])||({alis:'Alış',satis:'Satış',iade:'İade',manuel:'Manuel',donem_devri:'Dönem Devri',alici_tahsilat:'Alıcı Tahsilatı',diger_giris:'Diğer Giriş',satici_odeme:'Satıcı Ödemesi',diger_cikis:'Diğer Çıkış'}[l.alt_tur])||l.alt_tur}`:'');
     const ozet=(l.degisiklikler||[]);
     return `<tr>
       <td style="font-size:11px;white-space:nowrap">${new Date(l.ts).toLocaleString('tr-TR')}</td>
