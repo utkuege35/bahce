@@ -55,24 +55,25 @@ window.cikisDepoOptHtml=function(seciliId){
   const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
   return '<option value=""></option>'+kapsam.filter(d=>d.aktif!==false&&!d.ana_depo).map(d=>`<option value="${d.id}"${d.id===seciliId?' selected':''}>${d.ad}</option>`).join('');
 };
-// Satırlarda çıkış deposu seçilmişse, her çıkış deposu için AYRI bir "Ana Depo Çıkış"
-// fişi oluşturur: Ana Depo'dan çıkış (transfer_cikis) + hedef depoya giriş (transfer_giris).
-// satirlar: [{kaynakTur,kaynakId,birimId,miktar,fiyat,tutar,cikisDepoId}]. Dönüş: oluşan fiş sayısı.
-window.anaDepoCikisYaz=async function(satirlar,b){
-  const ana=anaDepoId();if(!ana)return 0;
+// Satırlarda çıkış deposu seçilmişse, her çıkış deposu için AYRI bir "Ana Depo Çıkış" fişi HAZIRLAR (yazmaz):
+// [{baslik:{stok_fisleri alanları}, satirlar:[islemler satırları]}, ...]. Her kalem için kaynak depoda
+// "transfer_cikis", hedef depoda "transfer_giris" hareketi üretilir. Yazma işi veritabanı fonksiyonundadır
+// (irsaliye_yaz / fatura_yaz), böylece belgeyle birlikte tek işlemde kaydedilir.
+// satirlar: [{kaynakTur,kaynakId,birimId,miktar,fiyat,tutar,cikisDepoId}]
+// b: {tarih,cariId,not,belgeNo,irsaliyeId,faturaId}
+window.anaDepoCikisHazirla=function(satirlar,b){
+  const ana=anaDepoId();if(!ana)return [];
   const grup={};
-  satirlar.forEach((x,idx)=>{
+  satirlar.forEach(x=>{
     if(x.kaynakTur==='stok'&&x.kaynakId&&x.cikisDepoId&&x.cikisDepoId!==ana&&parseFloat(x.miktar)>0)
-      (grup[x.cikisDepoId]=grup[x.cikisDepoId]||[]).push({x,idx}); // idx = belgedeki kalem sırası
+      (grup[x.cikisDepoId]=grup[x.cikisDepoId]||[]).push(x);
   });
-  const hedefler=Object.keys(grup);
-  if(!hedefler.length)return 0;
-  const baz=Date.now()+1000;let n=0;const rows=[];const basliklar=[];
-  hedefler.forEach(hedef=>{
+  const baz=Date.now()+1000;let n=0;const sonuc=[];
+  Object.keys(grup).forEach(hedef=>{
     const fisId=crypto.randomUUID();
     const depoAd=depolar.find(d=>d.id===hedef)?.ad||'';
-    let fisTutar=0;
-    grup[hedef].forEach(({x,idx})=>{
+    let fisTutar=0;const rows=[];
+    grup[hedef].forEach(x=>{
       const kart=stoklar.find(k=>k.id===x.kaynakId);
       const mik=parseFloat(x.miktar)||0,fiy=parseFloat(x.fiyat)||0,tut=parseFloat(x.tutar)||(mik*fiy);
       const ortak={tarih:b.tarih,stok_id:x.kaynakId,birim_id:x.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,
@@ -83,112 +84,31 @@ window.anaDepoCikisYaz=async function(satirlar,b){
       rows.push({...ortak,tur:'transfer_cikis',depo_id:ana,ts:baz+(n++)});
       rows.push({...ortak,tur:'transfer_giris',depo_id:hedef,ts:baz+(n++)});
     });
-    basliklar.push({id:fisId,isyeri_id:aktifIsyeri?.id||null,fis_turu:'transfer',alt_tur:'ana_depo_cikis',tarih:b.tarih,
+    sonuc.push({baslik:{id:fisId,isyeri_id:aktifIsyeri?.id||null,fis_turu:'transfer',alt_tur:'ana_depo_cikis',tarih:b.tarih,
       depo_id:ana,hedef_depo_id:hedef,irsaliye_id:b.irsaliyeId||null,fatura_id:b.faturaId||null,
       kalem_sayisi:grup[hedef].length,toplam_tutar:Math.round(fisTutar*100)/100,aciklama:b.not||null,
-      kullanici:aktifKullanici?.ad||'',ts:baz});
+      kullanici:aktifKullanici?.ad||'',ts:baz},satirlar:rows});
   });
-  // Önce fiş başlıkları, sonra satırlar; satırlar yazılamazsa başlıklar geri alınır.
-  const {error:eb}=await sb.from('stok_fisleri').insert(basliklar);
-  if(eb)throw eb;
-  const {error}=await sb.from('islemler').insert(rows);
-  if(error){await sb.from('stok_fisleri').delete().in('id',basliklar.map(x=>x.id));throw error;}
-  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
-  return hedefler.length;
+  return sonuc;
 };
-// Dış alım (irsaliye / irsaliyesiz fatura) kalemlerini stoğa "giris" olarak yazar.
+// Dış alım (irsaliye / irsaliyesiz fatura) kalemlerini stoğa "giris" olarak HAZIRLAR (yazmaz).
+// Dönüş: {rows: islemler satırları, maliyetler: [{stok_id, maliyet}] (ortalama maliyet güncellemesi için)}
 // satirlar: [{kaynakTur,kaynakId,birimId,miktar,fiyat,tutar}] — sadece stok kalemleri işlenir.
 // b: {tarih,depoId,cariId,not,belgeNo,kat,belgeId,irsaliyeId,faturaId}
-window.stokGirisYaz=async function(satirlar,b){
+window.stokGirisHazirla=function(satirlar,b){
   const sat=satirlar.filter(x=>x.kaynakTur==='stok'&&x.kaynakId&&parseFloat(x.miktar)>0);
-  if(!sat.length)return;
-  const baz=Date.now();
+  const baz=Date.now();const maliyetler=[];
   const rows=sat.map((x,i)=>{
     const kart=stoklar.find(k=>k.id===x.kaynakId);
     const mik=parseFloat(x.miktar)||0,fiy=parseFloat(x.fiyat)||0,tut=parseFloat(x.tutar)||(mik*fiy);
+    const hFiy=mik>0?tut/mik:0;
+    if(hFiy>0)maliyetler.push({stok_id:x.kaynakId,maliyet:hFiy/(birimTemelCarp(x.birimId)||1)});
     return {tur:'giris',tarih:b.tarih,stok_id:x.kaynakId,birim_id:x.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,
       aciklama:`${kart?.ad||''} alışı`,kat:b.kat,aciklama_not:b.not||null,belge_no:b.belgeNo||null,belge_id:b.belgeId,
       irsaliye_id:b.irsaliyeId||null,fatura_id:b.faturaId||null,cari_id:b.cariId||null,depo_id:b.depoId||null,
       kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:baz+i};
   });
-  const {error}=await sb.from('islemler').insert(rows);
-  if(error)throw error;
-  // Ortalama maliyeti güncelle (eski Alış ekranındaki mantıkla aynı)
-  for(const x of sat){
-    const mik=parseFloat(x.miktar)||0,tut=parseFloat(x.tutar)||(mik*(parseFloat(x.fiyat)||0));
-    const hFiy=mik>0?tut/mik:0;
-    if(hFiy>0){
-      const kart=stoklar.find(k=>k.id===x.kaynakId);
-      const yeniM=hFiy/(birimTemelCarp(x.birimId)||1);
-      const eski=parseFloat(kart?.maliyet||0);
-      await sb.from('stoklar').update({maliyet:eski>0?(eski+yeniM)/2:yeniM}).eq('id',x.kaynakId);
-    }
-  }
-  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
-  const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
-};
-// Düzenlemede, belgenin giriş ve Ana Depo Çıkış hareketleri yeniden yazılacağı için
-// stokların Ana Depo'da veya hedef depolarda EKSİYE düşüp düşmeyeceğini kontrol eder
-// (mal çoktan başka yere çıkmış olabilir). Hata varsa açıklama metni, yoksa null döner.
-// alan: 'irsaliye_id' | 'fatura_id'
-window.belgeDegisimKontrol=function(alan,belgeId,yeniSatirlar){
-  const ana=anaDepoId();if(!ana)return null;
-  const carp=(mik,birim)=>(parseFloat(mik)||0)*birimTemelCarp(birim);
-  const eskiG={},eskiC={};
-  islemler.filter(i=>i[alan]===belgeId).forEach(i=>{
-    const m=carp(i.miktar,i.birim_id);
-    if(i.tur==='giris')eskiG[i.stok_id]=(eskiG[i.stok_id]||0)+m;
-    else if(i.tur==='transfer_cikis'&&i.alt_tur==='ana_depo_cikis'){
-      const o=eskiC[i.stok_id]=eskiC[i.stok_id]||{};
-      o[i.hedef_depo_id]=(o[i.hedef_depo_id]||0)+m;
-    }
-  });
-  const yeniG={},yeniC={};
-  yeniSatirlar.filter(x=>x.kaynakTur==='stok'&&x.kaynakId).forEach(x=>{
-    const m=carp(x.miktar,x.birimId);
-    yeniG[x.kaynakId]=(yeniG[x.kaynakId]||0)+m;
-    if(x.cikisDepoId&&x.cikisDepoId!==ana){
-      const o=yeniC[x.kaynakId]=yeniC[x.kaynakId]||{};
-      o[x.cikisDepoId]=(o[x.cikisDepoId]||0)+m;
-    }
-  });
-  const ad=sid=>stoklar.find(x=>x.id===sid)?.ad||'';
-  const f=n=>n.toLocaleString('tr-TR',{maximumFractionDigits:3});
-  const topla=o=>Object.values(o||{}).reduce((a,b)=>a+b,0);
-  for(const sid of new Set([...Object.keys(eskiG),...Object.keys(yeniG),...Object.keys(eskiC),...Object.keys(yeniC)])){
-    // Ana Depo: giriş farkı eksi çıkış farkı
-    const anaDelta=((yeniG[sid]||0)-(eskiG[sid]||0))-(topla(yeniC[sid])-topla(eskiC[sid]));
-    if(anaDelta<0){
-      const sonuc=stokMiktar(sid,ana)+anaDelta;
-      if(sonuc<-0.0005)return `${ad(sid)}: bu değişiklikle Ana Depo stoğu eksiye düşer (${f(sonuc)}).`;
-    }
-    // Hedef depolar: çıkış azalıyorsa o depoda yeterli bakiye olmalı
-    for(const h of new Set([...Object.keys(eskiC[sid]||{}),...Object.keys(yeniC[sid]||{})])){
-      const d=((yeniC[sid]||{})[h]||0)-((eskiC[sid]||{})[h]||0);
-      if(d<0&&stokMiktar(sid,h)+d<-0.0005){
-        const dAd=depolar.find(x=>x.id===h)?.ad||'';
-        return `${ad(sid)}: ${dAd} deposundaki mal başka yere çıkmış, çıkış miktarı bu kadar azaltılamaz.`;
-      }
-    }
-  }
-  return null;
-};
-// Bir transfer/devir fişi kaldırılırsa (silme / düzenleme) hiçbir depoda stok eksiye düşmemeli.
-// Fişin dokunduğu her (stok, depo) için fiş hariç bakiye >= 0 olmalı. Hata metni ya da null döner.
-window.fisKaldirmaKontrol=function(fisId){
-  const ana=anaDepoId();
-  const satirlar=islemler.filter(i=>i.belge_id===fisId&&(i.tur==='transfer_cikis'||i.tur==='transfer_giris'||i.tur==='devir'));
-  const ciftler=new Set(satirlar.map(i=>i.stok_id+'|'+(i.depo_id||ana)));
-  for(const c of ciftler){
-    const [sid,d]=c.split('|');
-    const bak=stokMiktar(sid,d,fisId);
-    if(bak<-0.0005){
-      const ad=stoklar.find(x=>x.id===sid)?.ad||'';
-      const dAd=depolar.find(x=>x.id===d)?.ad||'';
-      return `${ad}: ${dAd} deposundaki mal başka yere çıkmış/kullanılmış, bu fiş kaldırılamaz.`;
-    }
-  }
-  return null;
+  return {rows,maliyetler};
 };
 // Bir irsaliye/faturaya bağlı Ana Depo Çıkış fişlerini gösteren küçük blok (silme butonlu).
 // alan: 'irsaliye_id' | 'fatura_id'; kind: 'irs' | 'fat'
@@ -208,42 +128,17 @@ window.bagliCikisFisleriHtml=function(alan,belgeIliskiId,kind,tur){
 // Ana Depo Çıkış fişini siler. Hedef depodaki mal başka yere çıkmışsa (bakiye eksiye düşecekse) izin vermez.
 window.cikisFisiSilUI=async function(fisId,kind,tur){
   const satirlar=islemler.filter(i=>i.belge_id===fisId&&i.alt_tur==='ana_depo_cikis');
-  const giris=satirlar.filter(i=>i.tur==='transfer_giris');
-  const hedef=giris[0]?.depo_id;
-  const toplam={};
-  giris.forEach(g=>{toplam[g.stok_id]=(toplam[g.stok_id]||0)+(parseFloat(g.miktar)||0)*birimTemelCarp(g.birim_id);});
-  for(const [sid,mik] of Object.entries(toplam)){
-    if(stokMiktar(sid,hedef)-mik<-0.0005){
-      const ad=stoklar.find(x=>x.id===sid)?.ad||'';
-      bil(`${ad}: hedef depoda yeterli stok kalmadığı için (başka yere çıkmış) bu fiş silinemez.`,'err');return;
-    }
-  }
   if(!(await onay('Bu Ana Depo Çıkış fişi silinsin mi?<br><small>Mallar Ana Depo\'ya geri döner.</small>','🗑️')))return;
-  const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).eq('alt_tur','ana_depo_cikis');
-  if(error){bil('Silinemedi: '+error.message,'err');return;}
-  await sb.from('stok_fisleri').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',fisId);
+  // Tek işlemde silinir; hedef depodaki mal başka yere çıkmışsa (stok eksiye düşecekse) veritabanı hata verir.
+  try{await fisSilDb(fisId,true);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
   const cikisSat=satirlar.filter(i=>i.tur==='transfer_cikis');
   await logYaz({islem:'sil',belgeTuru:'transfer',altTur:'ana_depo_cikis',belgeId:fisId,belgeTarihi:cikisSat[0]?.tarih,
     tutar:cikisSat.reduce((a,r)=>a+(parseFloat(r.tutar)||0),0),irsaliyeId:cikisSat[0]?.irsaliye_id,faturaId:cikisSat[0]?.fatura_id,
     eski:transferSnapshotKur(cikisSat[0]?.tarih,'ana_depo_cikis',cikisSat[0]?.depo_id,cikisSat[0]?.hedef_depo_id,cikisSat[0]?.aciklama_not,cikisSat.map(r=>({stokId:r.stok_id,birimId:r.birim_id,miktar:r.miktar})))});
-  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  await islemleriYenile();
   bil('Çıkış fişi silindi ✓');
   if(kind==='irs'){renderIrsGunSekmesi(tur);if(typeof irsBilgiBlokYenile==='function')irsBilgiBlokYenile(tur);}
   else{renderFatGunSekmesi(tur);if(typeof fatBilgiBlokYenile==='function')fatBilgiBlokYenile(tur);}
-};
-// Bir irsaliye/faturaya bağlı stok girişlerini geri alır (yumuşak silme).
-window.stokHareketiGeriAl=async function(filtre){
-  const guncel={silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()};
-  let q=sb.from('islemler').update(guncel);
-  if(filtre.irsaliyeId)q=q.eq('irsaliye_id',filtre.irsaliyeId);
-  else if(filtre.faturaId)q=q.eq('fatura_id',filtre.faturaId);
-  else return;
-  await q;
-  // Bu belgeye bağlı fiş başlıkları (Ana Depo Çıkış fişleri) da silinir
-  let qb=sb.from('stok_fisleri').update(guncel);
-  qb=filtre.irsaliyeId?qb.eq('irsaliye_id',filtre.irsaliyeId):qb.eq('fatura_id',filtre.faturaId);
-  await qb;
-  const {data:id}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
 };
 function urunStok(urunId){
   const u=urunler.find(x=>x.id===urunId);return parseFloat(u?.stok||0);
