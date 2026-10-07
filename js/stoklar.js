@@ -1,38 +1,15 @@
 // ===== STOK MİKTAR =====
-// Hareket türlerinin stoğa etkisi (tek yerde tanımlı — raporlar da buna dayanır).
-// Bileşen satırları "<tur>_sarfiyat" adıyla tutulur (ürün satılınca/ikram edilince
-// reçetesinden düşen hammaddeler).
+// Stok bakiyeleri VERİTABANINDA hesaplanır (stok_bakiyeler fonksiyonu): tüm depoların toplamı, transferler hariç.
+// Bu fonksiyon sadece o sonuçları tutan önbellekten okur; yazma işlemlerinden sonra stokBakiyeToplamYenile() ile tazelenir.
+// Depo bazlı bakiye için stokBakiyelerDb(depoId, [stokIdleri]) kullanılır.
+function stokMiktar(stokId){return parseFloat(_stokBakiyeToplam[stokId])||0;}
+// Hareket türlerinin işareti (stok detayında + / − göstermek için; asıl sınıflandırma veritabanındadır)
 const STOK_ARTI=['giris','devir','transfer_giris'];
-const STOK_EKSI=['cikis','satis','ikram','odenmez','hasar','atik',
-  'uretim_sarfiyat','satis_sarfiyat','ikram_sarfiyat','odenmez_sarfiyat','hasar_sarfiyat','atik_sarfiyat',
-  'transfer_cikis'];
-// Ana depo: Depolar tanımında "ana_depo" işaretli depo. Depo bilgisi olmayan
-// eski hareketler ve başlangıç stoğu ana depoya aittir.
+// Ana depo: Depolar tanımında "ana_depo" işaretli depo. Depo bilgisi olmayan eski hareketler ve başlangıç stoğu ana depoya aittir.
 window.anaDepoId=function(){
   const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar;
   return kapsam.find(d=>d.ana_depo)?.id||null;
 };
-// depoId verilmezse tüm depoların toplamı (transferler birbirini götürdüğü için hesaba katılmaz).
-// depoId verilirse sadece o deponun stoğu.
-// haricBelgeId verilirse o belgenin (fişin) hareketleri hesaba katılmaz (düzenleme/silme öncesi kontroller için)
-function stokMiktar(stokId,depoId,haricBelgeId){
-  let m=0;const s=stoklar.find(x=>x.id===stokId);
-  const ana=anaDepoId();
-  if(s&&(!depoId||depoId===ana))m+=parseFloat(s.baslangic||0);
-  islemler.forEach(i=>{
-    if(i.stok_id!==stokId)return;
-    if(haricBelgeId&&i.belge_id===haricBelgeId)return;
-    const tr=i.tur;
-    const arti=STOK_ARTI.includes(tr),eksi=STOK_EKSI.includes(tr);
-    if(!arti&&!eksi)return;
-    const efektifDepo=i.depo_id||ana;
-    if(depoId){if(efektifDepo!==depoId)return;}
-    else if(tr==='transfer_giris'||tr==='transfer_cikis')return;
-    const mik=parseFloat(i.miktar||0)*birimTemelCarp(i.birim_id);
-    m+=arti?mik:-mik;
-  });
-  return m;
-}
 // Depo seçim kutusunu doldurur (aktif depolar).
 window.depoSecenekleri=function(selectId,seciliId){
   const el=document.getElementById(selectId);if(!el)return;
@@ -112,22 +89,20 @@ window.stokGirisHazirla=function(satirlar,b){
 };
 // Bir irsaliye/faturaya bağlı Ana Depo Çıkış fişlerini gösteren küçük blok (silme butonlu).
 // alan: 'irsaliye_id' | 'fatura_id'; kind: 'irs' | 'fat'
-window.bagliCikisFisleriHtml=function(alan,belgeIliskiId,kind,tur){
-  const rows=islemler.filter(i=>i[alan]===belgeIliskiId&&i.alt_tur==='ana_depo_cikis'&&i.tur==='transfer_cikis');
-  if(!rows.length)return '';
-  const fisler={};
-  rows.forEach(r=>{(fisler[r.belge_id]=fisler[r.belge_id]||[]).push(r);});
+window.bagliCikisFisleriHtml=async function(alan,belgeIliskiId,kind,tur){
+  const fisler=await bagliCikisFisleri(alan,belgeIliskiId);
+  if(!fisler.length)return '';
   return `<div style="padding:8px 12px;font-size:11px;color:var(--yazi2);border-top:1px solid var(--krem2)">
     🏬 <strong>Bağlı Ana Depo Çıkış fişleri</strong> <span style="color:var(--yazi3)">(düzenleme için önce silinmeli)</span>
-    ${Object.entries(fisler).map(([fid,l])=>{
-      const depoAd=depolar.find(d=>d.id===l[0].hedef_depo_id)?.ad||'?';
-      return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span>→ ${depoAd} · ${l.length} kalem</span><button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();cikisFisiSilUI('${fid}','${kind}','${tur}')">✕ Fişi Sil</button></div>`;
+    ${fisler.map(f=>{
+      const depoAd=depolar.find(d=>d.id===f.hedef_depo_id)?.ad||'?';
+      return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span>→ ${depoAd} · ${f.kalem_sayisi||0} kalem</span><button class="btn sm ghost" style="font-size:10px" onclick="event.stopPropagation();cikisFisiSilUI('${f.id}','${kind}','${tur}')">✕ Fişi Sil</button></div>`;
     }).join('')}
   </div>`;
 };
 // Ana Depo Çıkış fişini siler. Hedef depodaki mal başka yere çıkmışsa (bakiye eksiye düşecekse) izin vermez.
 window.cikisFisiSilUI=async function(fisId,kind,tur){
-  const satirlar=islemler.filter(i=>i.belge_id===fisId&&i.alt_tur==='ana_depo_cikis');
+  const satirlar=(await belgeSatirlari(fisId)).filter(i=>i.alt_tur==='ana_depo_cikis');
   if(!(await onay('Bu Ana Depo Çıkış fişi silinsin mi?<br><small>Mallar Ana Depo\'ya geri döner.</small>','🗑️')))return;
   // Tek işlemde silinir; hedef depodaki mal başka yere çıkmışsa (stok eksiye düşecekse) veritabanı hata verir.
   try{await fisSilDb(fisId,true);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
@@ -408,9 +383,9 @@ window.stokModalAc=function(ustId,tip){
   modalAc('modal-stok');
 };
 window.stokGoruntule=function(id){stokDuzenle(id,'goruntule');};
-window.stokDuzenle=function(id,mod='duzenle'){
+window.stokDuzenle=async function(id,mod='duzenle'){
   const s=stoklar.find(x=>x.id===id);if(!s)return;
-  const hv=islemler.some(i=>i.stok_id===id);
+  const hv=await stokHareketVarMi(id);
   document.getElementById('sm-id').value=s.id;document.getElementById('sm-tip-h').value=s.tip;
   document.getElementById('sm-title').textContent=s.tip==='grup'?'Grubu Düzenle':'Stok Kartını Düzenle';
   document.getElementById('sm-ad').value=s.ad;document.getElementById('sm-kod').value=s.kod;
@@ -466,7 +441,7 @@ window.kaydetStok=async function(){
   if(dupAd){bil(`"${ad}" adında zaten aynı seviyede bir stok/grup var! [${dupAd.kod}]`,'err');return;}
   const dupKod=kapsam.find(x=>x.id!==id&&x.kod===kod);
   if(dupKod){bil(`"${kod}" kodu zaten kullanımda! [${dupKod.ad}]`,'err');return;}
-  const hv=mevcut&&islemler.some(i=>i.stok_id===id);
+  const hv=mevcut&&await stokHareketVarMi(id);
   if(mevcut&&mevcut.ad!==ad)await sb.from('isim_loglari').insert({tablo:'stoklar',kayit_id:id,eski_ad:mevcut.ad,yeni_ad:ad,degistiren:aktifKullanici?.ad||''});
   const data={id,ad,tip};
   if(!hv)data.kod=kod;
@@ -496,7 +471,7 @@ window.kaydetStok=async function(){
   modalKapat('modal-stok');renderStoklar();doldurStokFil();doldurIslemSecleri();kontolUyari();bil('Stok kaydedildi ✓');
 };
 window.stokSil=async function(id){
-  const hv=islemler.some(i=>i.stok_id===id);
+  const hv=await stokHareketVarMi(id);
   if(hv){
     if(await onay('Bu stokta hareket kaydı var, silinemez.<br><small>Tamam\'a basarsan pasife alınır (kullanım dışı olur).</small>','⚠️'))
       await sb.from('stoklar').update({aktif:false}).eq('id',id);
@@ -586,13 +561,9 @@ let _slSonListe=[];
 // temel birimi cinsinden döner. Hiç alım/devir yoksa stok kartındaki kayıtlı
 // maliyete düşer.
 function stokSonAlimFiyati(stokId){
-  const kayitlar=islemler.filter(i=>i.stok_id===stokId&&(i.tur==='giris'||i.tur==='devir')&&parseFloat(i.fiyat)>0);
-  if(kayitlar.length){
-    kayitlar.sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')||(b.ts||0)-(a.ts||0));
-    const son=kayitlar[0];
-    const carpan=birimTemelCarp(son.birim_id)||1;
-    return (parseFloat(son.fiyat)||0)/carpan;
-  }
+  // Son alım/devir birim fiyatı (temel birim cinsinden) veritabanından gelir (stok_son_alim_fiyatlari); yoksa stok kartındaki maliyet.
+  const f=parseFloat(_stokSonAlim[stokId]);
+  if(f>0)return f;
   const s=stoklar.find(x=>x.id===stokId);
   return parseFloat(s?.maliyet||0);
 }
@@ -665,10 +636,12 @@ window.stokDetay=async function(id){
   document.getElementById('sd-ozet').innerHTML=`<div class="mg" style="grid-template-columns:repeat(3,1fr)"><div class="met"><div class="ml">Mevcut</div><div class="mv g">${mik.toLocaleString('tr-TR',{maximumFractionDigits:2})} ${tb?.kisaltma||''}</div></div><div class="met"><div class="ml">Ort. Maliyet</div><div class="mv k">${s.maliyet?para(s.maliyet):'—'}</div></div><div class="met"><div class="ml">Stok Değeri</div><div class="mv k">${s.maliyet?para(mik*(s.maliyet||0)):'—'}</div></div></div>`;
   const isAdmin=aktifKullanici?.rol==='admin';
   const thEl=document.getElementById('sd-islem-th');if(thEl)thEl.style.display=isAdmin?'':'none';
-  const rows=islemler.filter(i=>i.stok_id===id).map(i=>`<tr>
+  let hareketler=[];
+  try{hareketler=await islemlerStok(id);}catch(e){document.getElementById('sd-tb').innerHTML=`<tr><td colspan="7" class="bos">Hareketler okunamadı: ${e.message}</td></tr>`;modalAc('modal-stok-detay');return;}
+  const rows=hareketler.map(i=>`<tr>
     <td>${i.tarih}</td>
-    <td><span class="badge ${i.tur==='giris'?'g':'d'}">${{giris:'Giriş',satis:'Satış',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım'}[i.tur]||i.tur}</span></td>
-    <td style="color:${i.tur==='giris'?'var(--yesil)':'var(--turuncu)'}">${i.tur==='giris'?'+':'-'}${parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
+    <td><span class="badge ${STOK_ARTI.includes(i.tur)?'g':'d'}">${(typeof ENV_TUR_ADLARI!=='undefined'&&ENV_TUR_ADLARI[i.tur])||{giris:'Giriş',satis:'Satış',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım'}[i.tur]||i.tur}</span></td>
+    <td style="color:${i.tur==='sayim'?'var(--yazi2)':STOK_ARTI.includes(i.tur)?'var(--yesil)':'var(--turuncu)'}">${i.tur==='sayim'?'':STOK_ARTI.includes(i.tur)?'+':'-'}${parseFloat(i.miktar).toLocaleString('tr-TR',{maximumFractionDigits:2})}</td>
     <td>${birimAd(i.birim_id)}</td>
     <td>${i.tutar?para(i.tutar):''}</td>
     <td style="font-size:11px;color:var(--yazi3)">${i.satir_not||i.aciklama_not||'—'}</td>
