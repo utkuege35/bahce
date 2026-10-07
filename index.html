@@ -280,12 +280,9 @@
 </div>
 <div id="islem" class="page">
   <div class="tabs">
-    <button class="tab active" onclick="islemTab('hammadde',this)">Alış</button>
-    <button class="tab" onclick="islemTab('satis',this)">Satış</button>
-    <button class="tab" onclick="islemTab('kasa',this)">Kasa</button>
+    <button class="tab active" onclick="islemTab('hammadde',this)">Hizmet / Gider</button>
     <button class="tab" onclick="islemTab('uretim',this)">Üretim</button>
     <button id="islem-tab-sayim" class="tab" onclick="islemTab('sayim',this)">Sayım</button>
-    <button id="islem-tab-devir" class="tab" onclick="islemTab('devir',this)">Devir</button>
   </div>
 
   <!-- ALIŞ -->
@@ -302,7 +299,7 @@
       </div>
     </div>
     <div id="tp-hammadde-form" style="display:none">
-      <div class="card"><div class="card-title">Alış Kaydı<button class="btn sm ghost" onclick="islemKaydetmedenCik('hammadde')">← Listeye Dön</button></div>
+      <div class="card"><div class="card-title">Hizmet / Gider Alımı<button class="btn sm ghost" onclick="islemKaydetmedenCik('hammadde')">← Listeye Dön</button></div>
       <div class="fgrid c3" style="margin-bottom:1rem">
         <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
         <div class="fg"><label>Belge / Fatura No</label><input type="text" id="hm-belge" placeholder="FAT-001..."></div>
@@ -322,7 +319,7 @@
         <table class="excel-tablo" style="font-size:13px">
           <thead><tr id="hm-baslik">
             <th style="width:90px">Tür</th>
-            <th style="min-width:160px" id="hm-th-secim">Malzeme / Kalem</th>
+            <th style="min-width:160px" id="hm-th-secim">Gider Kalemi / Açıklama</th>
             <th style="width:80px">Birim</th>
             <th style="width:100px">Miktar</th>
             <th style="width:85px">B.Fiyat (₺)</th>
@@ -369,97 +366,6 @@
       <div id="ur-bilesen-bilgi" style="margin:8px 0;padding:10px;background:var(--krem);border-radius:8px;font-size:12px;color:var(--yazi2);display:none"></div>
       <div class="fgrid c1"><div class="fg"><label>Not</label><input type="text" id="ur-not" placeholder="Parti no..."></div></div>
       <div class="btn-row"><button class="btn ghost" onclick="islemKaydetmedenCik('uretim')">Kaydetmeden Çık</button><button class="btn pri" onclick="kaydetUretim()">Üretimi Kaydet</button></div>
-    </div>
-    </div>
-  </div>
-
-  <!-- SATIŞ -->
-  <div id="tp-satis" class="tab-panel">
-    <div id="tp-satis-liste">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
-          <input type="date" id="st-liste-tarih" onchange="renderIslemGunSekmesi('satis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-          <button class="btn sm pri" onclick="yeniFisBaslat()">Yeni</button>
-          <div id="st-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
-        </div>
-        <div id="st-liste-tb"></div>
-      </div>
-    </div>
-    <div id="tp-satis-form" style="display:none">
-      <div class="card"><div class="card-title">Satış Kaydı<button class="btn sm ghost" onclick="islemKaydetmedenCik('satis')">← Listeye Dön</button></div>
-      <div class="fgrid c4" style="margin-bottom:1rem">
-        <div class="fg"><label>Tarih</label><input type="date" id="st-tarih"></div>
-        <div class="fg"><label>Satış Tipi</label><select id="st-tip" onchange="stTurDegis()"><option value="urun">Ürün</option><option value="stok">Hammadde / Stok</option><option value="diger">Diğer</option></select></div>
-        <div class="fg"><label>Belge / Fatura No</label><input type="text" id="st-belge" placeholder="FAT-001..."></div>
-        <div class="fg"><label>Not</label><input type="text" id="st-not" placeholder="Açıklama..."></div>
-      </div>
-      <div class="fgrid c3" style="margin-bottom:1rem">
-        <div class="fg"><label>Ödeme Tipi</label>
-          <select id="st-odeme-ust" onchange="stOdemeUstDegis()">
-            <option value="pesin">Peşin</option>
-            <option value="cari">Cari</option>
-          </select>
-        </div>
-        <div class="fg" id="st-cari-ust-fg"><label>Alıcı</label><select id="st-cari-ust"><option value="">— Alıcı seçin —</option></select></div>
-        <div class="fg" id="st-kasa-ust-fg"><label>Kasa</label><select id="st-kasa-ust"><option value="">— Kasa seçin —</option></select></div>
-      </div>
-      <div class="tw" style="margin-bottom:.75rem">
-        <table class="excel-tablo" style="font-size:13px"><thead><tr><th style="min-width:160px">Ürün / Stok</th><th style="width:80px">Birim</th><th style="width:100px">Miktar</th><th style="width:85px">B.Fiyat (₺)</th><th style="width:110px">Tutar (₺)</th><th style="min-width:130px" id="st-th-alt">Açıklama</th></tr></thead>
-          <tbody id="st-satirlar"></tbody>
-          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td><td id="st-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td><td></td></tr></tfoot>
-        </table>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;gap:6px">
-          <button class="btn sm sec" onclick="stSatirEkle()">+ Satır Ekle</button>
-          <button id="btn-st-sil" class="btn sm ghost" onclick="stSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
-        </div>
-        <button class="btn ghost" onclick="islemKaydetmedenCik('satis')">Kaydetmeden Çık</button>
-        <button class="btn pri" onclick="kaydetSatis()">Kaydet</button>
-      </div>
-    </div>
-    </div>
-  </div>
-
-  <!-- KASA -->
-  <div id="tp-kasa" class="tab-panel">
-    <div id="tp-kasa-liste">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
-          <input type="date" id="ks-liste-tarih" onchange="renderIslemGunSekmesi('kasa')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-          <button class="btn sm pri" onclick="yeniFisBaslat()">Yeni</button>
-          <div id="ks-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
-        </div>
-        <div id="ks-liste-tb"></div>
-      </div>
-    </div>
-    <div id="tp-kasa-form" style="display:none">
-      <div class="card"><div class="card-title">Kasa İşlemi<button class="btn sm ghost" onclick="islemKaydetmedenCik('kasa')">← Listeye Dön</button></div>
-      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Borç ödemesi veya alacak tahsilatı için cari seçip işlem girin. Doğrudan kasa girişi/çıkışı için cari seçmeden de ekleyebilirsiniz.</div>
-      <div class="fgrid c2">
-        <div class="fg"><label>Tarih</label><input type="date" id="ks-tarih"></div>
-        <div class="fg"><label>Kasa</label><select id="ks-kasa"><option value="">— Kasa seçin —</option></select></div>
-      </div>
-      <div class="fgrid c2">
-        <div class="fg"><label>İşlem Türü</label>
-          <select id="ks-tur" onchange="ksTurDegis()">
-            <option value="odeme">💸 Borç Ödemesi (Satıcıya ödedik)</option>
-            <option value="tahsilat">💰 Alacak Tahsilatı (Alıcıdan tahsil)</option>
-            <option value="kasa-giris">➕ Kasa Girişi (Direkt)</option>
-            <option value="kasa-cikis">➖ Kasa Çıkışı (Direkt)</option>
-          </select>
-        </div>
-      </div>
-      <div class="fgrid c2">
-        <div class="fg" id="ks-cari-fg"><label id="ks-cari-label">Satıcı</label>
-          <select id="ks-cari"><option value="">— Cari seçin —</option></select>
-        </div>
-        <div class="fg"><label>Tutar (₺)</label><input type="number" id="ks-tutar" placeholder="0.00" min="0" step="0.01"></div>
-      </div>
-      <div class="fgrid c1"><div class="fg"><label>Açıklama</label><input type="text" id="ks-aciklama" placeholder="Ödeme nedeni, fatura no..."></div></div>
-      <div class="btn-row"><button class="btn ghost" onclick="islemKaydetmedenCik('kasa')">Kaydetmeden Çık</button><button class="btn pri" onclick="kaydetKasa()">Kaydet</button></div>
     </div>
     </div>
   </div>
@@ -517,58 +423,6 @@
     </div>
   </div>
 
-  <!-- DEVİR -->
-  <div id="tp-devir" class="tab-panel">
-    <div id="tp-devir-liste">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
-          <input type="date" id="dv-liste-tarih" onchange="renderIslemGunSekmesi('devir')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-          <button class="btn sm pri" onclick="yeniFisBaslat()">Yeni</button>
-          <div id="dv-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
-        </div>
-        <div id="dv-liste-tb"></div>
-      </div>
-    </div>
-    <div id="tp-devir-form" style="display:none">
-      <div class="card"><div class="card-title">Devir Fişi (Dönemsel Açılış — Hammadde)<button class="btn sm ghost" onclick="islemKaydetmedenCik('devir')">← Listeye Dön</button></div>
-      <div style="font-size:12px;color:var(--yazi3);margin-bottom:1rem">Bir dönem başında elinizde bulunan hammadde stoklarını açılış (devir) olarak girmek için kullanılır. Girilen miktarlar stok miktarına Alış gibi eklenir.</div>
-      <div class="fgrid c2" style="margin-bottom:1rem">
-        <div class="fg"><label>Tarih</label><input type="date" id="dv-tarih"></div>
-        <div class="fg"><label>Not</label><input type="text" id="dv-not" placeholder="Dönem açılışı, yıl sonu devir..."></div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:.75rem;flex-wrap:wrap">
-        <input type="file" id="dv-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="dvExcelSecildi(this)">
-        <button class="btn sm sec" onclick="document.getElementById('dv-excel-input').click()">📥 Excel'den İçe Aktar</button>
-        <button class="btn sm sec" onclick="dvExcelIndir()">📤 Excel'e Aktar</button>
-      </div>
-      <div class="tw" style="margin-bottom:.75rem">
-        <table class="excel-tablo" style="font-size:13px">
-          <thead><tr>
-            <th style="min-width:160px">Stok Adı</th>
-            <th style="width:80px">Birim</th>
-            <th style="width:75px">Miktar</th>
-            <th style="width:85px">Birim Fiyat (₺)</th>
-            <th style="width:85px">Tutar (₺)</th>
-          </tr></thead>
-          <tbody id="dv-satirlar"></tbody>
-          <tfoot><tr>
-            <td colspan="4" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
-            <td id="dv-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td>
-          </tr></tfoot>
-        </table>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;gap:6px">
-          <button class="btn sm sec" onclick="dvSatirEkle()">+ Satır Ekle</button>
-          <button id="btn-dv-sil" class="btn sm ghost" onclick="dvSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
-        </div>
-        <button class="btn ghost" onclick="islemKaydetmedenCik('devir')">Kaydetmeden Çık</button>
-        <button class="btn pri" onclick="kaydetDevir()">Devri Kaydet</button>
-      </div>
-    </div>
-    </div>
-  </div>
 </div>
 
 <div id="irsaliyeler" class="page">
