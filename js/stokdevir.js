@@ -6,9 +6,9 @@ let dvrSatirListesi=[];
 let _dvrDuzenlenenId=null,_dvrGoruntuleme=false,_dvrSeciliId=null,_dvrEskiSnapshot=null,_dvrFisListesi=[];
 const DVR_ALT_ADLARI={manuel:'Manuel',donem_devri:'Dönem Devri'};
 
+async function dvrSatirlariGetir(fisId){return (await belgeSatirlari(fisId)).filter(i=>i.tur==='devir');}
 function _dvrFisNesnesi(h){
-  const satirlar=islemler.filter(i=>i.belge_id===h.id&&i.tur==='devir').sort((a,b)=>(a.ts||0)-(b.ts||0));
-  return {id:h.id,tarih:h.tarih,alt_tur:h.alt_tur||'manuel',depo:h.depo_id||anaDepoId(),satirlar,kalem:h.kalem_sayisi||satirlar.length,
+  return {id:h.id,tarih:h.tarih,alt_tur:h.alt_tur||'manuel',depo:h.depo_id||anaDepoId(),kalem:h.kalem_sayisi||0,
     tutar:parseFloat(h.toplam_tutar)||0,not:h.aciklama||'',kullanici:h.kullanici||''};
 }
 // ===== LİSTE =====
@@ -177,9 +177,10 @@ window.kaydetDevirFisi=async function(){
   dvrGorunumListe();
 };
 // ===== DÜZENLE / GÖRÜNTÜLE / SİL =====
-window.dvrDuzenleAc=function(fisId,salt){
+window.dvrDuzenleAc=async function(fisId,salt){
   const fis=_dvrFisListesi.find(f=>f.id===fisId);
   if(!fis){bil('Fiş bulunamadı','err');return;}
+  fis.satirlar=await dvrSatirlariGetir(fisId);
   dvrYeniBaslat();
   document.getElementById('dvr-tarih').value=fis.tarih;
   document.getElementById('dvr-not').value=fis.not;
@@ -194,6 +195,7 @@ window.dvrDuzenleAc=function(fisId,salt){
 };
 window.dvrSil=async function(fisId){
   const fis=_dvrFisListesi.find(f=>f.id===fisId);if(!fis)return;
+  fis.satirlar=await dvrSatirlariGetir(fisId);
   if(!(await onay('Bu devir fişi silinsin mi?<br><small>Devir ile girilen stok miktarları geri alınır.</small>','🗑️')))return;
   // Tek işlemde silinir; devir ile girilen mal başka yere çıkmışsa (stok eksiye düşecekse) veritabanı hata verir.
   try{await fisSilDb(fisId,true);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
