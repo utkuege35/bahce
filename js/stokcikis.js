@@ -10,9 +10,9 @@ const SC_ETIKET={satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar'
 let scSatirListesi={},_scDuz={},_scGor={},_scSecili={},_scEski={},_scFisListesi={};
 SC_TURLER.forEach(t=>{scSatirListesi[t]=[];_scDuz[t]=null;_scGor[t]=false;_scSecili[t]=null;_scEski[t]=null;_scFisListesi[t]=[];});
 
+async function scSatirlariGetir(tur,fisId){return (await belgeSatirlari(fisId)).filter(i=>i.tur===tur);}
 function _scFisNesnesi(tur,h){
-  const satirlar=islemler.filter(i=>i.belge_id===h.id&&i.tur===tur).sort((a,b)=>(a.ts||0)-(b.ts||0));
-  return {id:h.id,tarih:h.tarih,depo:h.depo_id||anaDepoId(),satirlar,kalem:h.kalem_sayisi||satirlar.length,
+  return {id:h.id,tarih:h.tarih,depo:h.depo_id||anaDepoId(),kalem:h.kalem_sayisi||0,
     tutar:parseFloat(h.toplam_tutar)||0,not:h.aciklama||'',kullanici:h.kullanici||''};
 }
 // ===== LİSTE =====
@@ -240,9 +240,10 @@ window.kaydetStokCikis=async function(tur){
   scGorunumListe(tur);
 };
 // ===== DÜZENLE / GÖRÜNTÜLE / SİL =====
-window.scDuzenleAc=function(tur,fisId,salt){
+window.scDuzenleAc=async function(tur,fisId,salt){
   const fis=_scFisListesi[tur].find(f=>f.id===fisId);
   if(!fis){bil('Fiş bulunamadı','err');return;}
+  fis.satirlar=await scSatirlariGetir(tur,fisId);
   scYeniBaslat(tur);
   document.getElementById(`sc-${tur}-tarih`).value=fis.tarih;
   document.getElementById(`sc-${tur}-not`).value=fis.not;
@@ -257,6 +258,7 @@ window.scDuzenleAc=function(tur,fisId,salt){
 };
 window.scSil=async function(tur,fisId){
   const fis=_scFisListesi[tur].find(f=>f.id===fisId);if(!fis)return;
+  fis.satirlar=await scSatirlariGetir(tur,fisId);
   if(!(await onay(`Bu ${SC_ETIKET[tur].toLowerCase()} fişi silinsin mi?<br><small>Stoktan düşülen miktarlar geri alınır.</small>`,'🗑️')))return;
   try{await fisSilDb(fisId,false);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
   await logYaz({islem:'sil',belgeTuru:tur,altTur:'manuel',belgeId:fisId,belgeTarihi:fis.tarih,tutar:fis.tutar,
