@@ -140,6 +140,7 @@
     <div class="nav-grup-icerik">
       <button onclick="gp('rapor')">Rapor</button>
       <button onclick="gp('depo-stok')">Depo Stok Durumu</button>
+      <button onclick="gp('stok-envanter')">Stok Envanter Raporu</button>
       <button onclick="gp('sayim-raporu')">Sayım Raporu</button>
       <button onclick="gp('recete-kullanim-raporu')">Reçetelerde Kullanım</button>
       <button onclick="gp('ym-sayim-ozeti')">YM/Ürün Sayım Özeti</button>
@@ -1310,6 +1311,25 @@
     </div>
   </div>
 </div>
+<!-- STOK ENVANTER RAPORU -->
+<div id="stok-envanter" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stok Envanter Raporu</div>
+    <button class="btn sm sec" onclick="envanterExcelIndir()">📤 Excel'e Aktar</button>
+  </div>
+  <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Seçilen aralıkta her stoğun tüm hareketleri. <strong>Kalan = Dönem Öncesi + Devir + Giriş + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık.</strong> Satış, İkram vb. kolonlar ürünlerin reçetesinden düşen hammaddeleri de içerir. Miktarlar stoğun temel birimindedir. Sayım: aralıktaki son sayım; Fark = Sayım − o tarihteki sistem bakiyesi. Satıra tıklayınca hareket dökümü açılır.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+    <label style="font-size:12px;color:var(--yazi2)">Tarih:</label>
+    <input type="date" id="env-bas" onchange="renderEnvanter()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <input type="date" id="env-bit" onchange="renderEnvanter()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <select id="env-depo" onchange="renderEnvanter()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm depolar</option></select>
+    <select id="env-gorunum" onchange="renderEnvanter()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="miktar">Miktar</option><option value="tutar">Tutar</option></select>
+    <input type="text" id="env-ara" oninput="renderEnvanter()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px" placeholder="🔍 Stok ara...">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--yazi2);cursor:pointer"><input type="checkbox" id="env-gizle" checked onchange="renderEnvanter()"> Hareketsiz stokları gizle</label>
+    <div id="env-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
+  </div>
+  <div class="card"><div class="tw"><table><thead id="env-th"></thead><tbody id="env-tb"></tbody></table></div></div>
+</div>
 <!-- DEPO BAZLI STOK DURUMU -->
 <div id="depo-stok" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
@@ -1903,6 +1923,13 @@
       <div id="fat-irs-liste" style="max-height:340px;overflow-y:auto"></div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="modalKapat('modal-fat-irsaliye')">Vazgeç</button><button class="btn pri" onclick="fatIrsaliyeAktarSecilen()">Aktar</button></div>
+  </div>
+</div>
+<!-- MODAL: STOK ENVANTER HAREKET DÖKÜMÜ -->
+<div id="modal-envanter-detay" class="overlay">
+  <div class="modal" style="max-width:900px">
+    <div class="modal-hdr"><h3 id="env-detay-baslik">Hareket Dökümü</h3><button class="btn sm" onclick="modalKapat('modal-envanter-detay')">✕</button></div>
+    <div class="modal-body"><div id="env-detay-icerik"></div></div>
   </div>
 </div>
 <!-- MODAL: BELGE LOGU -->
@@ -2523,6 +2550,7 @@
 <script src="js/stokdevir.js"></script>
 <script src="js/stokcikis.js"></script>
 <script src="js/loglar.js"></script>
+<script src="js/envanter.js"></script>
 <script src="js/depostok.js"></script>
 
 </body>
