@@ -1,31 +1,25 @@
 // ===== DEPO BAZLI STOK DURUMU =====
-// Tek geçişte tüm stokların depo bazlı bakiyesini hesaplar. Kurallar stokMiktar()
-// ile aynıdır: depo bilgisi olmayan hareketler ve başlangıç stoğu Ana Depo'ya sayılır;
-// bakiyeler stoğun temel birimi cinsindendir.
-function depoStokHaritasi(){
-  const ana=anaDepoId();const h={};
-  stoklar.forEach(s=>{
-    if(s.tip!=='stok')return;
-    const b=parseFloat(s.baslangic||0);
-    if(b&&ana)h[s.id]={[ana]:b};
-  });
-  islemler.forEach(i=>{
-    if(!i.stok_id)return;
-    const arti=STOK_ARTI.includes(i.tur),eksi=STOK_EKSI.includes(i.tur);
-    if(!arti&&!eksi)return;
-    const d=i.depo_id||ana;if(!d)return;
-    const mik=parseFloat(i.miktar||0)*birimTemelCarp(i.birim_id);
-    const o=h[i.stok_id]||(h[i.stok_id]={});
-    o[d]=(o[d]||0)+(arti?mik:-mik);
-  });
+// Depo bazlı bakiyeler veritabanında (depo_stok_durumu fonksiyonu) hesaplanır; ekran sadece sonucu alır.
+// Filtre değişimlerinde yeniden sorgu yapılmaz (önbellek); sayfa açılışında ve "yenile" ile güncellenir.
+let _dsVeri=null,_dsIsyeri=null;
+async function depoStokVeriGetir(){
+  const {data,error}=await sb.rpc('depo_stok_durumu',{p_isyeri:aktifIsyeri?.id||null});
+  if(error)throw error;
+  const h={};
+  (data||[]).forEach(r=>{(h[r.stok_id]=h[r.stok_id]||{})[r.depo_id]=parseFloat(r.bakiye)||0;});
   return h;
 }
 let _dsSonSatirlar=[],_dsSonDepolar=[];
 const _dsSayi=n=>(+n).toLocaleString('tr-TR',{maximumFractionDigits:3});
 
-window.renderDepoStok=function(){
+window.renderDepoStok=async function(yenile){
   const thEl=document.getElementById('ds-th'),tbEl=document.getElementById('ds-tb');
   if(!thEl||!tbEl)return;
+  if(yenile===true||_dsVeri===null||_dsIsyeri!==(aktifIsyeri?.id||null)){
+    tbEl.innerHTML='<tr><td class="bos">Hesaplanıyor...</td></tr>';
+    try{_dsVeri=await depoStokVeriGetir();_dsIsyeri=aktifIsyeri?.id||null;}
+    catch(e){tbEl.innerHTML=`<tr><td class="bos">Stok bilgisi okunamadı: ${e.message}. Veritabanı fonksiyonları kurulu mu?</td></tr>`;return;}
+  }
   const depoKapsam=(typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar).filter(d=>d.aktif!==false);
   // Depo filtre kutusu
   const sel=document.getElementById('ds-depo');
@@ -36,7 +30,7 @@ window.renderDepoStok=function(){
   const ara=(document.getElementById('ds-ara').value||'').trim().toLocaleLowerCase('tr');
   const gizle=document.getElementById('ds-gizle').checked;
 
-  const harita=depoStokHaritasi();
+  const harita=_dsVeri||{};
   const kapsam=(typeof isyeriFiltre==='function'?isyeriFiltre(stoklar):stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
   const satirlar=[];
   kapsam.forEach(s=>{
