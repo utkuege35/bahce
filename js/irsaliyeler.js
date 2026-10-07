@@ -1,17 +1,3 @@
-// ===== MÜKERRER BELGE KONTROLÜ =====
-// Aynı işyeri + aynı tür + aynı cari + aynı belge numarası (büyük/küçük harf ve baştaki/sondaki
-// boşluk farkı yok sayılır) ikinci kez işlenemez. Silinmiş kayıtlar sayılmaz; düzenlemede
-// belgenin kendisi (haricId) hariç tutulur. Belge no veya cari boşsa kontrol yapılmaz.
-window.belgeMukerrerMi=async function(tablo,noKolon,tur,cariId,no,haricId){
-  const n=(no||'').trim();
-  if(!n||!cariId)return null;
-  let q=sb.from(tablo).select('id,tarih,'+noKolon).eq('tur',tur).eq('cari_id',cariId).eq('silindi',false).ilike(noKolon,n);
-  if(aktifIsyeri?.id)q=q.eq('isyeri_id',aktifIsyeri.id);
-  const {data}=await q;
-  return (data||[]).find(x=>x.id!==haricId&&(x[noKolon]||'').trim().toLowerCase()===n.toLowerCase())||null;
-};
-const MUKERRER_KISI={alis:'tedarikçiye',satis:'alıcıya',iade:'cariye'};
-
 // ===== İRSALİYELER =====
 // Üç sekme (Alış/Satış/İade) aynı yapıyı paylaştığı için tüm state ve
 // render fonksiyonları "tur" parametresiyle genelleştirildi — kod üç kez
@@ -252,67 +238,47 @@ window.kaydetIrsaliye=async function(tur){
   if(!tarih){bil('Tarih zorunlu!','err');return;}
   const gecerli=irsSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
-  const mukerrer=await belgeMukerrerMi('irsaliyeler','irsaliye_no',tur,cariId,irsNo,_irsDuzenlenenId[tur]);
-  if(mukerrer){bil(`Bu ${MUKERRER_KISI[tur]} ait "${irsNo}" numaralı irsaliye zaten kayıtlı (${mukerrer.tarih}). Aynı belge ikinci kez işlenemez.`,'err');return;}
+  // Mükerrer belge, düzenleme/silme kısıtları ve stok kontrolleri veritabanında (irsaliye_yaz) zorlanır.
   const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
   if(tur==='alis'&&!depoId){bil('Ana depo tanımlı değil! Alış irsaliyesi Ana Depo\'ya stok girişi yapar.','err');return;}
   const toplam=gecerli.reduce((t,s)=>t+(parseFloat(s.tutar)||0),0);
   const kdvToplam=gecerli.reduce((t,s)=>t+_irsKdvHesapla(s).kdvTutar,0);
-  try{
-    const duzenlenen=_irsDuzenlenenId[tur];
-    let irs;
-    if(duzenlenen){
-      // Düzenleme: önce stok eksiye düşer mi kontrol et, sonra başlık/kalem/stok girişini yeniden yaz
-      if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
-      const {error:eu}=await sb.from('irsaliyeler').update({irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,toplam,kdv_toplam:kdvToplam,genel_toplam:toplam+kdvToplam,kalem_sayisi:gecerli.length}).eq('id',duzenlenen);
-      if(eu)throw eu;
-      const {error:ed}=await sb.from('irsaliye_kalemleri').delete().eq('irsaliye_id',duzenlenen);
-      if(ed)throw ed;
-      irs={id:duzenlenen};
-      if(tur==='alis')await stokHareketiGeriAl({irsaliyeId:duzenlenen});
-    }else{
-      const {data:irsYeni,error:e1}=await sb.from('irsaliyeler').insert({
-      isyeri_id:aktifIsyeri?.id||null,tur,irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,depo_id:tur==='alis'?depoId:null,
-      toplam,kdv_toplam:kdvToplam,genel_toplam:toplam+kdvToplam,kalem_sayisi:gecerli.length,
-      durum:'acik',kullanici:aktifKullanici?.ad||'',ts:Date.now()
-    }).select().single();
-    if(e1)throw e1;
-      irs=irsYeni;
-    }
-    const kalemler=gecerli.map((s,i)=>{
-      const {kdvTutar,dahil}=_irsKdvHesapla(s);
-      return {
-        irsaliye_id:irs.id,
-        stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
-        urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
-        birim_id:s.birimId||null,
-        miktar:parseFloat(s.miktar)||0,
-        fiyat:parseFloat(s.fiyat)||0,
-        tutar:parseFloat(s.tutar)||(parseFloat(s.miktar)||0)*(parseFloat(s.fiyat)||0),
-        kdv_orani_id:tur==='alis'?(s.kdvOraniId||null):null,
-        kdv_orani:tur==='alis'?(typeof kdvOraniDegeri==='function'?kdvOraniDegeri(s.kdvOraniId):null):null,
-        kdv_tutar:tur==='alis'?kdvTutar:null,
-        kdv_dahil_tutar:tur==='alis'?dahil:null,
-        cikis_depo_id:tur==='alis'?(s.cikisDepoId||null):null,
-        sira:i
-      };
-    });
-    const {error:e2}=await sb.from('irsaliye_kalemleri').insert(kalemler);
-    if(e2)throw e2;
-    // Alış irsaliyesi seçilen depoya stok girişi yapar
-    let cikisFis=0;
-    if(tur==='alis'){
-      const b={tarih,depoId,cariId,not:an,belgeNo:irsNo,kat:'Alış İrsaliyesi',belgeId:irs.id,irsaliyeId:irs.id};
-      await stokGirisYaz(gecerli,b);
-      cikisFis=await anaDepoCikisYaz(gecerli,b);
-    }
-    bil(`✓ İrsaliye ${duzenlenen?'güncellendi':'kaydedildi'} (${gecerli.length} kalem, ${para(toplam)})${tur==='alis'?' — Ana Depo\'ya stok girişi yapıldı'+(cikisFis?`, ${cikisFis} Ana Depo Çıkış fişi oluştu`:''):''}`);
-    await logYaz({islem:duzenlenen?'duzenle':'olustur',belgeTuru:'irsaliye',altTur:tur,belgeId:irs.id,belgeNo:irsNo,belgeTarihi:tarih,cariId,tutar:toplam,
-      eski:duzenlenen?_irsEskiSnapshot[tur]:null,yeni:belgeSnapshotKur({tarih,no:irsNo,cariId,not:an},gecerli)});
-    irsGorunumListe(tur);
-  }catch(err){
-    bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
+  const duzenlenen=_irsDuzenlenenId[tur];
+  const id=duzenlenen||crypto.randomUUID();
+  const baslik={id,isyeri_id:aktifIsyeri?.id||null,tur,irsaliye_no:irsNo,tarih,cari_id:cariId,aciklama:an,depo_id:tur==='alis'?depoId:null,
+    toplam,kdv_toplam:kdvToplam,genel_toplam:toplam+kdvToplam,kalem_sayisi:gecerli.length,kullanici:aktifKullanici?.ad||'',ts:Date.now()};
+  const kalemler=gecerli.map((s,i)=>{
+    const {kdvTutar,dahil}=_irsKdvHesapla(s);
+    return {
+      stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
+      urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
+      birim_id:s.birimId||null,
+      miktar:parseFloat(s.miktar)||0,
+      fiyat:parseFloat(s.fiyat)||0,
+      tutar:parseFloat(s.tutar)||(parseFloat(s.miktar)||0)*(parseFloat(s.fiyat)||0),
+      kdv_orani_id:tur==='alis'?(s.kdvOraniId||null):null,
+      kdv_orani:tur==='alis'?(typeof kdvOraniDegeri==='function'?kdvOraniDegeri(s.kdvOraniId):null):null,
+      kdv_tutar:tur==='alis'?kdvTutar:null,
+      kdv_dahil_tutar:tur==='alis'?dahil:null,
+      cikis_depo_id:tur==='alis'?(s.cikisDepoId||null):null,
+      sira:i
+    };
+  });
+  // Alış irsaliyesi Ana Depo'ya stok girişi yapar; satırlarda çıkış deposu varsa her depo için ayrı Ana Depo Çıkış fişi üretilir.
+  let giris=[],cikislar=[],maliyetler=[];
+  if(tur==='alis'){
+    const b={tarih,depoId,cariId,not:an,belgeNo:irsNo,kat:'Alış İrsaliyesi',belgeId:id,irsaliyeId:id};
+    const g=stokGirisHazirla(gecerli,b);giris=g.rows;maliyetler=g.maliyetler;
+    cikislar=anaDepoCikisHazirla(gecerli,b);
   }
+  // Hepsi TEK işlemde yazılır; herhangi bir kural ihlal edilirse hiçbir şey kaydedilmez.
+  try{await irsaliyeYazDb(baslik,kalemler,giris,cikislar,maliyetler,duzenlenen);}
+  catch(err){bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');return;}
+  await islemleriYenile();
+  bil(`✓ İrsaliye ${duzenlenen?'güncellendi':'kaydedildi'} (${gecerli.length} kalem, ${para(toplam)})${tur==='alis'?' — Ana Depo\'ya stok girişi yapıldı'+(cikislar.length?`, ${cikislar.length} Ana Depo Çıkış fişi oluştu`:''):''}`);
+  await logYaz({islem:duzenlenen?'duzenle':'olustur',belgeTuru:'irsaliye',altTur:tur,belgeId:id,belgeNo:irsNo,belgeTarihi:tarih,cariId,tutar:toplam,
+    eski:duzenlenen?_irsEskiSnapshot[tur]:null,yeni:belgeSnapshotKur({tarih,no:irsNo,cariId,not:an},gecerli)});
+  irsGorunumListe(tur);
 };
 
 // ===== GÜNLÜK ÖZET LİSTESİ =====
@@ -380,12 +346,12 @@ window.irsSil=async function(tur,id){
   if(islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
     bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Silmek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
-  if(tur==='alis'){const hata=belgeDegisimKontrol('irsaliye_id',id,[]);if(hata){bil(hata,'err');return;}}
   if(!(await onay('Bu irsaliyeyi silmek istiyor musunuz?','🗑️')))return;
   const {data:silKl}=await sb.from('irsaliye_kalemleri').select('*').eq('irsaliye_id',id).order('sira');
   const silSnap=belgeSnapshotKur({tarih:x?.tarih,no:x?.irsaliye_no,cariId:x?.cari_id,not:x?.aciklama},(silKl||[]).map(k=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id,miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id,cikisDepoId:k.cikis_depo_id})));
-  await sb.from('irsaliyeler').update({silindi:true}).eq('id',id);
-  await stokHareketiGeriAl({irsaliyeId:id}); // bu irsaliyenin stok girişini geri al
+  // Tek işlemde silinir (kalemler, stok girişi dahil); mal başka yere çıkmışsa veritabanı hata verir.
+  try{await irsaliyeSilDb(id);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
+  await islemleriYenile();
   _irsSeciliId[tur]=null;
   await logYaz({islem:'sil',belgeTuru:'irsaliye',altTur:tur,belgeId:id,belgeNo:x?.irsaliye_no,belgeTarihi:x?.tarih,cariId:x?.cari_id,tutar:x?.toplam,eski:silSnap});
   bil('İrsaliye silindi ✓');
