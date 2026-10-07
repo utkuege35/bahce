@@ -1269,7 +1269,6 @@
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stok Envanter Raporu</div>
     <button class="btn sm sec" onclick="envanterExcelIndir()">📤 Excel'e Aktar</button>
   </div>
-  <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Başlangıç/bitiş tarihini ve <strong>bir, birden fazla ya da tüm depoları</strong> seçip <strong>Raporla</strong>'ya basın; basılmadan rapora rakam gelmez. Her alan <strong>Miktar | Tutar</strong> olarak yan yana gösterilir. <strong>Devir</strong> sadece başlangıç tarihinde devir fişi varsa görünür. <strong>Kalan</strong> bitiş tarihindeki bakiyedir (Devir + Giriş + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık). <strong>Sayım</strong> bitiş tarihinde yapılmış sayımdır; <strong>Fark = Sayım − Kalan</strong> (− eksik, + fazla). <strong>Detay</strong> tüm stokları, <strong>Grup</strong> stok gruplarını kümülatif toplamla gösterir (farklı birimler toplanamayacağı için grupta miktar sadece tek birimli gruplarda görünür, tutar her zaman). Satış, İkram vb. alanlar ürünlerin reçetesinden düşen hammaddeleri de içerir. Detayda satıra tıklayınca hareket dökümü açılır.</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.5rem;align-items:center">
     <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
     <input type="date" id="env-bas" onchange="envFiltreDegisti()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
@@ -1283,10 +1282,10 @@
       </div>
     </div>
     <select id="env-gorunum" onchange="renderEnvanter()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-      <option value="detay">Görünüm: Detay (tüm stoklar)</option>
-      <option value="grup1">Görünüm: Grup — ana gruplar (1. seviye)</option>
-      <option value="grup2">Görünüm: Grup — 2. seviyeye kadar</option>
-      <option value="grup3">Görünüm: Grup — tüm gruplar (3. seviye)</option>
+      <option value="detay">Detay (tüm stoklar)</option>
+      <option value="grup1">Grup — ana gruplar (1. seviye)</option>
+      <option value="grup2">Grup — 2. seviyeye kadar</option>
+      <option value="grup3">Grup — tüm gruplar (3. seviye)</option>
     </select>
     <button type="button" class="btn pri" onclick="envanterRaporla()">📊 Raporla</button>
   </div>
