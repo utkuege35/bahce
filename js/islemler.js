@@ -263,7 +263,7 @@ window.kaydetUretim=async function(){
  const ok=await sarfiyatKaydet(bilesenleri,mik);if(!ok)return;
  await sb.from('islemler').insert({tur:'uretim',tarih,urun_id:urunId,miktar:mik,birim_id:urun.birim_id,tutar:topMal,aciklama:`${urun.ad} üretimi`,kat:'Üretim',aciklama_not:an,kullanici:aktifKullanici?.ad||'',ts:Date.now()+1});
  await sb.from('urunler').update({stok:(parseFloat(urun.stok||0)+mik)}).eq('id',urunId);
- const {data:iData}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(iData)islemler=iData;
+ await stokBakiyeToplamYenile();
  const {data:ud}=await sb.from('urunler').select('*').order('kod');if(ud)urunler=ud;
  document.getElementById('ur-miktar').value='';document.getElementById('ur-not').value='';
  document.getElementById('ur-bilesen-bilgi').style.display='none';document.getElementById('ur-maliyet').value='';
@@ -630,7 +630,7 @@ window.sySatirSil=function(i){sayimSatirListesi.splice(i,1);sySatirRender();};
 // Aynı gün + aynı depo için zaten bir sayım fişi var mı kontrol eder.
 // Varsa uyarı bandı gösterir ve "Sayımı Kaydet" butonunu devre dışı bırakır
 // — sistem bir depoya bir günde SADECE TEK sayım fişine izin verir.
-window.syFisKontrol=function(){
+window.syFisKontrol=async function(){
  const tarih=document.getElementById('sy-tarih')?.value;
  const depoId=document.getElementById('sy-depo')?.value;
  const bant=document.getElementById('sy-uyari-bant');
@@ -638,7 +638,12 @@ window.syFisKontrol=function(){
  if(!bant||!btn)return false;
  if(!tarih||!depoId){bant.style.display='none';btn.disabled=false;btn.style.opacity='';return false;}
  // Düzenlenmekte olan fişin kendisi hariç, başka bir fiş var mı?
- const mevcut=islemler.some(i=>i.tur==='sayim'&&i.tarih===tarih&&i.depo_id===depoId&&(i.belge_id||i.id)!==_syDuzenlenenBelgeId);
+ // Aynı gün + aynı depo için (düzenlenen fişin kendisi hariç) başka sayım fişi var mı? — veritabanından sorgulanır
+ let mevcut=false;
+ try{
+ const {data}=await sb.from('islemler').select('id,belge_id').eq('tur','sayim').eq('tarih',tarih).eq('depo_id',depoId).eq('isyeri_id',aktifIsyeri?.id).or('silindi.is.null,silindi.eq.false').limit(50);
+ mevcut=(data||[]).some(i=>(i.belge_id||i.id)!==_syDuzenlenenBelgeId);
+ }catch(e){mevcut=false;}
  if(mevcut){
  const depo=depolar.find(d=>d.id===depoId);
  bant.textContent=`⚠️ Bu depo (${depo?.ad||''}) için ${tarih} tarihinde zaten bir sayım fişi var. Aynı depoya, aynı gün içinde ikinci bir sayım fişi girilemez.`;
@@ -653,8 +658,8 @@ window.syFisKontrol=function(){
 // Mevcut bir sayım fişini (İşlem Listesi'nden) düzenlemek üzere geri açar —
 // satırlar sayimSatirListesi / _ymSayimOzetListesi'ne yüklenir, kaydedince
 // aynı belge_id güncellenir (yeni fiş açılmaz).
-window.sayimFisiDuzenleAc=function(belgeKey){
- const satirlar=islemler.filter(i=>(i.belge_id||i.id)===belgeKey&&i.tur==='sayim');
+window.sayimFisiDuzenleAc=async function(belgeKey){
+ const satirlar=(await belgeSatirlari(belgeKey)).filter(i=>i.tur==='sayim');
  if(!satirlar.length){bil('Fiş bulunamadı','err');return;}
  sayimSatirListesi=[];_ymSayimOzetListesi=[];
  satirlar.forEach(i=>{
@@ -707,7 +712,9 @@ window.kaydetSayim=async function(){
  if(!depoId){bil('Depo seçimi zorunlu!','err');return;}
  // Aynı gün + aynı depo için zaten bir sayım fişi varsa KAYDETMEYİ REDDET —
  // AMA düzenlenmekte olan fişin kendisi bu kurala takılmaz (güncelleme).
- const baskaFisVar=islemler.some(i=>i.tur==='sayim'&&i.tarih===tarih&&i.depo_id===depoId&&(i.belge_id||i.id)!==_syDuzenlenenBelgeId);
+ let baskaFisVar=false;
+ {const {data:bf}=await sb.from('islemler').select('id,belge_id').eq('tur','sayim').eq('tarih',tarih).eq('depo_id',depoId).eq('isyeri_id',aktifIsyeri?.id).or('silindi.is.null,silindi.eq.false').limit(50);
+ baskaFisVar=(bf||[]).some(i=>(i.belge_id||i.id)!==_syDuzenlenenBelgeId);}
  if(baskaFisVar){
  bil('Bu depo için bu tarihte zaten bir sayım fişi var! Aynı depoya aynı gün ikinci fiş girilemez.','err');
  syFisKontrol();
@@ -761,7 +768,7 @@ window.kaydetSayim=async function(){
  kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()
  });
  }
- const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+ await stokBakiyeToplamYenile();
  sayimSatirListesi=[];sySatirRender();
  _ymSayimOzetListesi=[];
  _syDuzenlenenBelgeId=null;
@@ -895,7 +902,7 @@ window.kaydetDevir=async function(){
  });
  n++;
  }
- const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+ await stokBakiyeToplamYenile();
  dvSatirListesi=[];dvSatirEkle();
  document.getElementById('dv-not').value='';
  if(typeof renderStoklar==='function')renderStoklar();
@@ -1151,7 +1158,7 @@ window.kaydetHammadde=async function(){
     }
     n++;
   }
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+  await stokBakiyeToplamYenile();
   const {data:sd}=await sb.from('stoklar').select('*').order('kod');if(sd)stoklar=sd;
   hmSatirListesi=[];hmSatirRender();
   document.getElementById('hm-not').value='';
@@ -1200,7 +1207,7 @@ window.kaydetKasa=async function(){
  }else{
  await sb.from('islemler').insert({tur:'kasa',tarih,tutar,aciklama:aciklama||'Kasa çıkışı',kat:'Kasa',kasa_etkisi:-tutar,kasa_id:kasaId,kullanici:aktifKullanici?.ad||'',ts:Date.now()});
  }
- const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+ await stokBakiyeToplamYenile();
  document.getElementById('ks-tutar').value='';document.getElementById('ks-aciklama').value='';
  if(cariId){const {data:ch}=await sb.from('cari_hareketler').select('*').order('tarih',{ascending:true});if(ch&&typeof cariHareketler!=='undefined')cariHareketler=ch;}
  renderPanel();bil('Kasa işlemi kaydedildi ✓');
@@ -1370,7 +1377,7 @@ window.kaydetSatis=async function(){
     }
     n++;
   }
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+  await stokBakiyeToplamYenile();
   const {data:ud}=await sb.from('urunler').select('*').order('kod');if(ud)urunler=ud;
   stSatirListesi=[];stSatirRender();
   document.getElementById('st-not').value='';
@@ -1429,6 +1436,6 @@ window.kaydetGider=async function(){
  await sb.from('islemler').insert({tur:'gider',tarih,tutar,miktar:mik||null,birim_id:s.birimId||null,fiyat:fiy||null,kat,gider_kalem_id:s.kalemId||null,aciklama:kat,aciklama_not:an,satir_not:s.satir_not||null,cari_id:s.cari_id||null,merkez_id,kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()+n});
  n++;
  }
- const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+ await stokBakiyeToplamYenile();
  gdSatirListesi=[];gdSatirRender();document.getElementById('gd-genel-not').value='';bil(`${n} gider kaydedildi ✓`);
 };
