@@ -29,3 +29,27 @@ window.islemleriYenile=async function(){
   const {data}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
   if(data)islemler=data.filter(i=>!i.silindi);
 };
+
+// ===== İRSALİYE / FATURA (tek işlemde) =====
+// Başlık, kalemler, stok girişi, Ana Depo Çıkış fişleri ve irsaliye↔fatura bağlantısı birlikte yazılır/silinir.
+// Mükerrer belge, "çıkış fişi varken düzenleme/silme yok", "faturalanmış irsaliye değişmez" ve stok eksiye düşme
+// kuralları veritabanında zorlanır; hata mesajı olduğu gibi kullanıcıya gösterilir.
+window.irsaliyeYazDb=async function(baslik,kalemler,giris,cikislar,maliyetler,eskiId){
+  const {data,error}=await sb.rpc('irsaliye_yaz',{p_baslik:baslik,p_kalemler:kalemler,p_giris:giris||[],p_cikislar:cikislar||[],p_maliyetler:maliyetler||[],p_eski:eskiId||null});
+  if(error)throw error;
+  return data;
+};
+window.irsaliyeSilDb=async function(id){
+  const {error}=await sb.rpc('irsaliye_sil',{p_id:id,p_kullanici:aktifKullanici?.ad||''});
+  if(error)throw error;
+};
+window.faturaYazDb=async function(baslik,kalemler,giris,cikislar,maliyetler,irsaliyeIdler,eskiId){
+  const {data,error}=await sb.rpc('fatura_yaz',{p_baslik:baslik,p_kalemler:kalemler,p_giris:giris||[],p_cikislar:cikislar||[],p_maliyetler:maliyetler||[],
+    p_irsaliyeler:(irsaliyeIdler&&irsaliyeIdler.length)?irsaliyeIdler:null,p_eski:eskiId||null});
+  if(error)throw error;
+  return data;
+};
+window.faturaSilDb=async function(id){
+  const {error}=await sb.rpc('fatura_sil',{p_id:id,p_kullanici:aktifKullanici?.ad||''});
+  if(error)throw error;
+};
