@@ -1252,6 +1252,9 @@
 <!-- STOK ENVANTER RAPORU -->
 <div id="stok-envanter" class="page">
   <style>
+    /* Rapor tüm ekran genişliğini kullanır (genel sayfa sınırı 980px'dir; yan menü payı korunur) */
+    #stok-envanter.page{max-width:none;margin-right:0}
+    @media(max-width:768px){#stok-envanter.page{margin-left:0}}
     /* Excel benzeri hücreli tablo: kenarlıklı hücreler, sabit başlık ve sabit ilk iki sütun */
     #env-tablo{border-collapse:collapse;font-size:12px}
     #env-tablo th,#env-tablo td{border:1px solid var(--border);padding:3px 7px;white-space:nowrap}
