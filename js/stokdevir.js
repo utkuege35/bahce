@@ -153,8 +153,7 @@ window.kaydetDevirFisi=async function(){
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   if(gecerli.some(s=>!s.birimId)){bil('Tüm satırlarda birim seçilmeli!','err');return;}
   const haric=_dvrDuzenlenenId;
-  // Düzenlemede eski devir miktarı kaldırılınca bu depoda stok eksiye düşmemeli (mal başka yere çıkmış olabilir)
-  if(haric){const h=fisKaldirmaKontrol(haric);if(h){bil(h,'err');return;}}
+  // Düzenlemede eski devir miktarı kaldırılınca stok eksiye düşüyorsa veritabanı reddeder (stok_fisi_yaz).
   const fisId=haric||crypto.randomUUID();
   const baz=Date.now();
   const rows=gecerli.map((s,n)=>{
@@ -167,21 +166,12 @@ window.kaydetDevirFisi=async function(){
   const toplamTutar=Math.round(rows.reduce((a,r)=>a+r.tutar,0)*100)/100;
   const baslikVeri={isyeri_id:aktifIsyeri?.id||null,fis_turu:'devir',alt_tur:'manuel',tarih,depo_id:depo,
     kalem_sayisi:gecerli.length,toplam_tutar:toplamTutar,aciklama:not};
-  const eskiIdler=haric?islemler.filter(i=>i.belge_id===haric&&i.tur==='devir').map(i=>i.id):[];
-  if(!haric){
-    const {error:eb}=await sb.from('stok_fisleri').insert({id:fisId,...baslikVeri,kullanici:aktifKullanici?.ad||'',ts:baz});
-    if(eb){bil('Kaydedilemedi: '+eb.message,'err');return;}
-  }
-  const {error}=await sb.from('islemler').insert(rows);
-  if(error){if(!haric)await sb.from('stok_fisleri').delete().eq('id',fisId);bil('Kaydedilemedi: '+error.message,'err');return;}
-  if(haric){
-    await sb.from('stok_fisleri').update(baslikVeri).eq('id',haric);
-    const {error:e2}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).in('id',eskiIdler);
-    if(e2){bil('Eski satırlar kaldırılamadı: '+e2.message,'err');return;}
-  }
+  // Tek işlemde yazılır; stok eksiye düşecekse veritabanı hata verir ve hiçbir şey kaydedilmez.
+  try{await fisYazDb({id:fisId,...baslikVeri,kullanici:aktifKullanici?.ad||'',ts:baz},rows,haric,true);}
+  catch(e){bil('Kaydedilemedi: '+e.message,'err');return;}
   await logYaz({islem:haric?'duzenle':'olustur',belgeTuru:'devir',altTur:'manuel',belgeId:fisId,belgeTarihi:tarih,tutar:toplamTutar,
     eski:haric?_dvrEskiSnapshot:null,yeni:devirSnapshotKur(tarih,depo,not,gecerli)});
-  const {data:id}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  await islemleriYenile();
   bil(`✓ Devir fişi ${haric?'güncellendi':'kaydedildi'} (${gecerli.length} kalem)`);
   const tEl=document.getElementById('dvr-liste-tarih');if(tEl)tEl.value=tarih;
   dvrGorunumListe();
@@ -204,15 +194,12 @@ window.dvrDuzenleAc=function(fisId,salt){
 };
 window.dvrSil=async function(fisId){
   const fis=_dvrFisListesi.find(f=>f.id===fisId);if(!fis)return;
-  const h=fisKaldirmaKontrol(fisId);
-  if(h){bil(h,'err');return;}
   if(!(await onay('Bu devir fişi silinsin mi?<br><small>Devir ile girilen stok miktarları geri alınır.</small>','🗑️')))return;
-  const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).eq('tur','devir');
-  if(error){bil('Silinemedi: '+error.message,'err');return;}
-  await sb.from('stok_fisleri').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',fisId);
+  // Tek işlemde silinir; devir ile girilen mal başka yere çıkmışsa (stok eksiye düşecekse) veritabanı hata verir.
+  try{await fisSilDb(fisId,true);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
   await logYaz({islem:'sil',belgeTuru:'devir',altTur:fis.alt_tur,belgeId:fisId,belgeTarihi:fis.tarih,tutar:fis.tutar,
     eski:devirSnapshotKur(fis.tarih,fis.depo,fis.not,fis.satirlar.map(r=>({stokId:r.stok_id,birimId:r.birim_id,miktar:r.miktar,fiyat:r.fiyat,tutar:r.tutar})))});
-  const {data:id}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  await islemleriYenile();
   _dvrSeciliId=null;
   bil('Devir fişi silindi ✓');
   renderDevirListe();
