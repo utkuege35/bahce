@@ -35,9 +35,10 @@ const _trfSayi=n=>(+n).toLocaleString('tr-TR',{maximumFractionDigits:3});
 // Transfer fişleri "stok_fisleri" başlık tablosundan okunur (satırları gruplayıp toplamaya gerek yok).
 // Fiş satırları (kalemler) sadece fiş açılırken yerel islemler listesinden alınır.
 let _trfFisListesi=[];
+// Fiş satırları (kalemler) listede çekilmez; fiş açılırken/silinirken veritabanından alınır (trfSatirlariGetir).
+async function trfSatirlariGetir(fisId){return (await belgeSatirlari(fisId)).filter(i=>i.tur==='transfer_cikis');}
 function _trfFisNesnesi(h){
-  const satirlar=islemler.filter(i=>i.belge_id===h.id&&i.tur==='transfer_cikis').sort((a,b)=>(a.ts||0)-(b.ts||0));
-  return {id:h.id,tarih:h.tarih,alt_tur:h.alt_tur,kaynak:h.depo_id,hedef:h.hedef_depo_id,satirlar,kalem:h.kalem_sayisi||satirlar.length,
+  return {id:h.id,tarih:h.tarih,alt_tur:h.alt_tur,kaynak:h.depo_id,hedef:h.hedef_depo_id,kalem:h.kalem_sayisi||0,
     not:h.aciklama||'',irsaliye_id:h.irsaliye_id||null,fatura_id:h.fatura_id||null,kullanici:h.kullanici||''};
 }
 
@@ -261,9 +262,10 @@ window.kaydetTransfer=async function(){
 };
 
 // ===== DÜZENLE / GÖRÜNTÜLE / SİL =====
-window.trfDuzenleAc=function(fisId,salt){
+window.trfDuzenleAc=async function(fisId,salt){
   const fis=_trfFisListesi.find(f=>f.id===fisId);
   if(!fis){bil('Fiş bulunamadı','err');return;}
+  fis.satirlar=await trfSatirlariGetir(fisId);
   if(!salt&&(fis.irsaliye_id||fis.fatura_id)){
     bil(`Bu fiş bir ${fis.irsaliye_id?'irsaliye':'fatura'}dan oluştuğu için burada düzenlenemez. Düzenlemek için önce bu fişi silin, sonra ilgili ${fis.irsaliye_id?'irsaliyeyi':'faturayı'} düzenleyin.`,'err');return;
   }
@@ -282,6 +284,7 @@ window.trfDuzenleAc=function(fisId,salt){
 };
 window.trfSil=async function(fisId){
   const fis=_trfFisListesi.find(f=>f.id===fisId);if(!fis)return;
+  fis.satirlar=await trfSatirlariGetir(fisId);
   const bagli=fis.irsaliye_id||fis.fatura_id;
   const mesaj=bagli
     ?`Bu fiş bir ${fis.irsaliye_id?'irsaliye':'fatura'}dan oluşmuş.<br><small>Silerseniz ilgili belgeyi düzenleyebilirsiniz; belgedeki çıkış depoları kayıtlı kalır.</small><br>Fiş silinsin mi?`
