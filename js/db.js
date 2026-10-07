@@ -132,3 +132,28 @@ window.faturaSilDb=async function(id){
   const {error}=await sb.rpc('fatura_sil',{p_id:id,p_kullanici:aktifKullanici?.ad||''});
   if(error)throw error;
 };
+
+// ===== KASA FİŞLERİ =====
+// Kasa günlük listesi: işaret>0 → Tahsil (kasaya giriş), işaret<0 → Tediye (kasadan çıkış)
+window.islemlerKasa=function(tarih,isaret){
+  return sbSayfali(()=>{
+    let q=_aktifIslemSorgusu().eq('tur','kasa').eq('tarih',tarih);
+    q=isaret>0?q.gt('kasa_etkisi',0):q.lt('kasa_etkisi',0);
+    return q.order('ts',{ascending:false}).order('id');
+  });
+};
+window.kasaBakiyelerDb=async function(){
+  const {data,error}=await sb.rpc('kasa_bakiyeler',{p_isyeri:aktifIsyeri?.id||null});
+  if(error)throw error;
+  return data||{};
+};
+// Kasa hareketi + cari hareketi tek işlemde yazılır/silinir
+window.kasaFisiYazDb=async function(satir,cari,eskiId){
+  const {data,error}=await sb.rpc('kasa_fisi_yaz',{p_satir:satir,p_cari:cari||null,p_eski:eskiId||null});
+  if(error)throw error;
+  return data;
+};
+window.kasaFisiSilDb=async function(id){
+  const {error}=await sb.rpc('kasa_fisi_sil',{p_id:id,p_kullanici:aktifKullanici?.ad||''});
+  if(error)throw error;
+};
