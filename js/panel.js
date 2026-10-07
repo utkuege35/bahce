@@ -103,13 +103,15 @@ window.panelFiltre=function(tip,btn){
   renderPanel();
 };
 
-function renderPanel(){
+async function renderPanel(){
   const {bas,bit}=_panelAralik();
-  const aralik=islemler.filter(i=>i.tarih>=bas&&i.tarih<=bit);
+  // Seçilen dönemin hareketleri ve kasa bakiyesi veritabanından alınır (tüm geçmiş tarayıcıya yüklenmez)
+  let aralik,topKasa;
+  try{[aralik,topKasa]=await Promise.all([islemlerAralik(bas,bit),kasaToplamDb()]);}
+  catch(e){const m=document.getElementById('panel-met');if(m)m.innerHTML=`<div class="bos">Panel verisi okunamadı: ${e.message}</div>`;return;}
   const gelir=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
   const gider=aralik.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
   const net=gelir-gider;
-  const topKasa=islemler.reduce((s,i)=>s+parseFloat(i.kasa_etkisi||0),0);
   const alisCount=aralik.filter(i=>i.tur==='giris').length;
   const satisCount=aralik.filter(i=>i.tur==='satis').length;
   const giderCount=aralik.filter(i=>i.tur==='gider').length;
@@ -400,17 +402,26 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin){
 }
 
 // ===== İŞLEM LİSTESİ =====
-window.renderIslemListe=function(){
+let _ilCache=null;
+window.ilCacheSifirla=function(){_ilCache=null;};
+window.renderIslemListe=async function(){
   const isAdmin=aktifKullanici?.rol==='admin';
   const th=document.getElementById('il-islem-th');if(th)th.style.display=isAdmin?'':'none';
   const ara=(document.getElementById('il-ara')?.value||'').toLowerCase();
   const tur=document.getElementById('il-tur')?.value||'';
   const bas=document.getElementById('il-bas')?.value||'';
   const bit=document.getElementById('il-bit')?.value||'';
-  let liste=[...islemler].filter(i=>i.kat!=='YM Sayım Özeti'); // YM/Ürün seviyesi özet satırları burada gösterilmez, ayrı raporu var
-  if(tur)liste=liste.filter(i=>i.tur===tur);
-  if(bas)liste=liste.filter(i=>i.tarih>=bas);
-  if(bit)liste=liste.filter(i=>i.tarih<=bit);
+  // Tarih seçilmediyse son 90 gün gösterilir (tüm geçmişi her seferinde çekmemek için).
+  let basS=bas,not='';
+  if(!bas&&!bit){const g=new Date();g.setDate(g.getDate()-90);basS=g.toISOString().slice(0,10);not=' &nbsp;·&nbsp; <span style="color:var(--yazi3)">tarih seçilmedi: son 90 gün</span>';}
+  const anahtar=`${aktifIsyeri?.id}|${tur}|${basS}|${bit}`;
+  const tb=document.getElementById('il-tb');
+  if(!_ilCache||_ilCache.anahtar!==anahtar){
+    if(tb)tb.innerHTML='<tr><td colspan="10" class="bos">Yükleniyor...</td></tr>';
+    try{_ilCache={anahtar,veri:await islemlerListe({tur,bas:basS,bit})};}
+    catch(e){if(tb)tb.innerHTML=`<tr><td colspan="10" class="bos">Liste okunamadı: ${e.message}</td></tr>`;return;}
+  }
+  let liste=_ilCache.veri.filter(i=>i.kat!=='YM Sayım Özeti'); // YM/Ürün seviyesi özet satırları burada gösterilmez, ayrı raporu var
   if(ara)liste=liste.filter(i=>(i.aciklama||'').toLowerCase().includes(ara)||(i.kat||'').toLowerCase().includes(ara)||(i.kullanici||'').toLowerCase().includes(ara)||(i.satir_not||'').toLowerCase().includes(ara));
   if(_ilSira==='tarih-artan')liste.sort((a,b)=>a.tarih>b.tarih?1:-1);
   else liste.sort((a,b)=>b.tarih>a.tarih?1:-1);
@@ -418,7 +429,7 @@ window.renderIslemListe=function(){
   const topGelir=liste.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
   const topGider=liste.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
   const ozEl=document.getElementById('il-ozet');
-  if(ozEl)ozEl.innerHTML=`${liste.length} işlem &nbsp;·&nbsp; <span style="color:var(--yesil)">${para(topGelir)}</span> &nbsp;·&nbsp; <span style="color:var(--turuncu)">${para(topGider)}</span>`;
+  if(ozEl)ozEl.innerHTML=`${liste.length} işlem &nbsp;·&nbsp; <span style="color:var(--yesil)">${para(topGelir)}</span> &nbsp;·&nbsp; <span style="color:var(--turuncu)">${para(topGider)}</span>${not}`;
 
   // Belge bazlı gruplama — ÖNCE tüm filtrelenmiş listeyi belgelere ayır,
   // SONRA sayfalamayı belge sayısına göre uygula. (Sayfalama ham satırlara
@@ -466,7 +477,7 @@ const _ISLEM_SEKME_TUR={
 const _ISLEM_SEKME_PREFIX={hammadde:'hm',satis:'st',kasa:'ks',uretim:'ur',sayim:'sy',devir:'dv'};
 let _gunlukAcikId={}; // prefix -> açık belge key
 
-window.renderIslemGunSekmesi=function(sekmeId){
+window.renderIslemGunSekmesi=async function(sekmeId){
   const turler=_ISLEM_SEKME_TUR[sekmeId];const prefix=_ISLEM_SEKME_PREFIX[sekmeId];
   if(!turler||!prefix)return;
   const tarihEl=document.getElementById(prefix+'-liste-tarih');
@@ -474,7 +485,9 @@ window.renderIslemGunSekmesi=function(sekmeId){
   const tarih=tarihEl?.value||bugun();
   const isAdmin=aktifKullanici?.rol==='admin';
 
-  let liste=islemler.filter(i=>turler.includes(i.tur)&&i.tarih===tarih);
+  let liste;
+  try{liste=await islemlerGun(tarih,turler);}
+  catch(e){const t=document.getElementById(prefix+'-liste-tb');if(t)t.innerHTML=`<div class="bos">Liste okunamadı: ${e.message}</div>`;return;}
   // İç tüketim / özet satırlarını (Satış Sarfiyatı, Üretim Sarfiyatı, YM Sayım Özeti) gizle
   liste=liste.filter(i=>i.tur!=='satis_sarfiyat'&&i.tur!=='uretim_sarfiyat'&&i.kat!=='YM Sayım Özeti');
   liste.sort((a,b)=>(b.ts||0)-(a.ts||0));
@@ -503,8 +516,7 @@ window.renderIslemGunSekmesi=function(sekmeId){
 window.islemSilListe=async function(id){
   if(!(await onay('Bu işlemi silmek istiyor musunuz?<br><small>Veritabanında kalır, ekranda görünmez.</small>','🗑️')))return;
   await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',id);
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
-  if(data)islemler=data.filter(i=>!i.silindi);
+  await stokBakiyeToplamYenile();
   renderIslemListe();renderPanel();kontolUyari();
   if(typeof _aktifIslemTab!=='undefined'&&typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(_aktifIslemTab);
   bil('İşlem silindi ✓');
@@ -518,17 +530,15 @@ window.islemBelgeSilListe=async function(idsCsv){
   for(const id of ids){
     await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:silinmeTarihi}).eq('id',id);
   }
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});
-  if(data)islemler=data.filter(i=>!i.silindi);
+  await stokBakiyeToplamYenile();
   renderIslemListe();renderPanel();kontolUyari();
   if(typeof _aktifIslemTab!=='undefined'&&typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(_aktifIslemTab);
   bil(ids.length>1?'Fiş silindi ✓':'İşlem silindi ✓');
 };
 
 // ===== İŞLEM GEÇMİŞİ =====
-function islemGecmisHtml(id){
-  const islem=islemler.find(x=>x.id===id);if(!islem)return '';
-  const loglar=(typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===id).sort((a,b)=>a.tarih>b.tarih?1:-1);
+function islemGecmisHtml(islem,loglar){
+  loglar=[...(loglar||[])].sort((a,b)=>a.tarih>b.tarih?1:-1);
   let html=`<div style="padding-left:18px;border-left:2px solid var(--krem2)">
     <div style="margin-bottom:12px;position:relative">
       <div style="position:absolute;left:-22px;width:10px;height:10px;border-radius:50%;background:var(--yesil);top:3px"></div>
@@ -563,16 +573,17 @@ function islemGecmisHtml(id){
 }
 function formatDeger(alan,deger){if(deger===null||deger===undefined||deger==='')return '—';if(alan==='tutar'||alan==='fiyat')return para(deger);return String(deger);}
 
-window.islemGecmisAc=function(id){
-  const islem=islemler.find(x=>x.id===id);if(!islem)return;
+window.islemGecmisAc=async function(id){
+  const islem=await islemGetir(id);if(!islem)return;
+  const loglar=await islemLoglariGetir(id);
   const turAd=ISLEM_TUR_ADLARI[islem.tur]||islem.tur;
   document.getElementById('ig-title').textContent=`${turAd} — ${islem.tarih} — ${islem.aciklama||''}`;
-  document.getElementById('ig-icerik').innerHTML=islemGecmisHtml(id);
+  document.getElementById('ig-icerik').innerHTML=islemGecmisHtml(islem,loglar);
   modalAc('modal-islem-gecmis');
 };
 
-window.islemDuzenleAc=function(id){
-  const i=islemler.find(x=>x.id===id);if(!i)return;
+window.islemDuzenleAc=async function(id){
+  const i=await islemGetir(id);if(!i)return;
   document.getElementById('id-islem-id').value=id;
   const turAd=ISLEM_TUR_ADLARI[i.tur]||i.tur;
   document.getElementById('id-bilgi').textContent=`${turAd} — ${i.tarih} — ${i.aciklama||''} — Oluşturan: ${i.kullanici||'?'}`;
@@ -582,7 +593,7 @@ window.islemDuzenleAc=function(id){
   document.getElementById('id-tutar').value=i.tutar||'';
   document.getElementById('id-satir-not').value=i.satir_not||'';
   document.getElementById('id-not').value=i.aciklama_not||'';
-  const loglar=(typeof islemLoglari!=='undefined'?islemLoglari:[]).filter(l=>l.islem_id===id);
+  const loglar=await islemLoglariGetir(id);
   if(loglar.length){
     document.getElementById('id-log-wrap').style.display='block';
     document.getElementById('id-log-liste').innerHTML=loglar.sort((a,b)=>a.tarih>b.tarih?1:-1).map(l=>{
@@ -597,7 +608,7 @@ window.islemDuzenleAc=function(id){
 
 window.islemKaydet=async function(){
   const id=document.getElementById('id-islem-id').value;
-  const islem=islemler.find(x=>x.id===id);if(!islem)return;
+  const islem=await islemGetir(id);if(!islem)return;
   const yeni={tarih:document.getElementById('id-tarih').value,miktar:parseFloat(document.getElementById('id-miktar').value)||null,fiyat:parseFloat(document.getElementById('id-fiyat').value)||null,tutar:parseFloat(document.getElementById('id-tutar').value)||null,satir_not:document.getElementById('id-satir-not').value||null,aciklama_not:document.getElementById('id-not').value||null};
   const eski={tarih:islem.tarih,miktar:islem.miktar,fiyat:islem.fiyat,tutar:islem.tutar,satir_not:islem.satir_not,aciklama_not:islem.aciklama_not};
   const degisti=Object.keys(yeni).some(k=>JSON.stringify(eski[k])!==JSON.stringify(yeni[k]));
@@ -606,7 +617,7 @@ window.islemKaydet=async function(){
     await sb.from('islemler').update(yeni).eq('id',id);
     const {data:ilog}=await sb.from('islem_loglari').select('*').order('tarih',{ascending:false});if(ilog)islemLoglari=ilog;
   }
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+  await stokBakiyeToplamYenile();
   modalKapat('modal-islem-duzenle');renderPanel();
   if(document.getElementById('islem-liste')?.classList.contains('active'))renderIslemListe();
   if(typeof _aktifIslemTab!=='undefined'&&typeof renderIslemGunSekmesi==='function')renderIslemGunSekmesi(_aktifIslemTab);
@@ -616,14 +627,14 @@ window.islemKaydet=async function(){
 window.islemSil=async function(id){
   if(!(await onay('Bu işlemi silmek istiyor musunuz?','🗑️')))return;
   await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',id);
-  const {data}=await sb.from('islemler').select('*').order('ts',{ascending:false});if(data)islemler=data.filter(i=>!i.silindi);
+  await stokBakiyeToplamYenile();
   renderPanel();if(document.getElementById('islem-liste')?.classList.contains('active'))renderIslemListe();kontolUyari();bil('İşlem silindi ✓');
 };
 
 // Bir fişin (belge) detay satırlarını — ekranda göründüğü kümülatif/toplamlı
 // haliyle (sayım fişlerinde aynı stok tek satırda toplanmış) — Excel'e aktarır.
-window.belgeExcelIndir=function(belgeKey){
-  const satirlar=islemler.filter(i=>(i.belge_id||i.id)===belgeKey&&i.kat!=='YM Sayım Özeti');
+window.belgeExcelIndir=async function(belgeKey){
+  const satirlar=(await belgeSatirlari(belgeKey)).filter(i=>i.kat!=='YM Sayım Özeti');
   if(!satirlar.length){bil('Veri bulunamadı','err');return;}
   const turler=[...new Set(satirlar.map(i=>i.tur))];
   let gosterim=satirlar;
@@ -653,8 +664,8 @@ window.belgeExcelIndir=function(belgeKey){
   const turAd=ISLEM_TUR_ADLARI[turler[0]]||turler[0]||'fis';
   XLSX.writeFile(wb,`${turAd}_${tarih}.xlsx`.replace(/\s+/g,'_'));
 };
-window.islemDetayAc=function(id){
-  const i=islemler.find(x=>x.id===id);if(!i)return;
+window.islemDetayAc=async function(id){
+  const i=await islemGetir(id);if(!i)return;
   const turAd=ISLEM_TUR_ADLARI[i.tur]||i.tur;
   document.getElementById('idet-title').textContent=`${turAd} — ${i.tarih||''}`;
   document.getElementById('idet-alt').textContent=`${i.aciklama||i.kat||''} · ${i.kullanici||''}`;
