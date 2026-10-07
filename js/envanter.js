@@ -180,12 +180,13 @@ window.renderEnvanter=function(){
     thEl.innerHTML=`<tr><th class="env-k1">Kod</th><th class="env-k2">Stok Grubu</th>`
       +kolonlar.map(c=>tekBaslik(c.ad)).join('')+tekBaslik('KALAN',true)+tekBaslik('Sayım')+tekBaslik('Fark')+`</tr>`;
   }
-  const renkFark=v=>v===null||v===undefined?'':v>0.0005?'color:#c62828;font-weight:600':v<-0.0005?'color:var(--yesil);font-weight:600':'';
+  // Renk kuralı: sayılarda SADECE iki renk vardır — normal metin rengi ve NEGATİF sayılar için kırmızı.
+  const kr=(v,esik)=>v<-(esik||0.0005)?'color:#c62828;':'';
   const tops={};kolonlar.forEach(c=>tops[c.k]=0);let tKalanT=0,tSayimT=0,tFarkT=0;
   const fm=v=>(+v).toLocaleString('tr-TR',{maximumFractionDigits:3});
-  const farkM_=(v,sv)=>Math.abs(v)<0.0005?(sv?'0':''):fm(v);
-  const farkT_=(v,sv)=>Math.abs(v)<0.005?(sv?'0,00':''):_irsSayi(v);
-  const hucre=(m,t,sinif,stil)=>`<td class="${sinif||''}" style="text-align:right;${stil||''}">${m}</td><td class="${sinif||''}" style="text-align:right;color:var(--yazi2);${stil||''}">${t}</td>`;
+  const farkM_=v=>Math.abs(v)<0.0005?'0':fm(v);
+  const farkT_=v=>Math.abs(v)<0.005?'0,00':_irsSayi(v);
+  const hucre=(m,t,mv,tv,sinif)=>`<td class="${sinif||''}" style="text-align:right;${kr(mv)}">${m}</td><td class="${sinif||''}" style="text-align:right;${kr(tv,0.005)}">${t}</td>`;
   let govde;
   if(!grupMu){
     govde=satirlar.map(r=>{
@@ -194,10 +195,10 @@ window.renderEnvanter=function(){
       kolonlar.forEach(c=>tops[c.k]+=o.t[c.k]);tKalanT+=h.kalanT;tSayimT+=o.sayimT;tFarkT+=h.farkT;
       return `<tr onclick="envanterDetayAc('${stok.id}')" style="cursor:pointer" title="Hareket dökümü için tıklayın">
         <td class="env-k1">${stok.kod||''}</td><td class="env-k2">${_logEsc(stok.ad)}</td><td style="text-align:center">${tb?.kisaltma||''}</td>
-        ${kolonlar.map(c=>hucre(_envM(o.m[c.k]),_envT(o.t[c.k]))).join('')}
-        ${hucre(`<strong>${fm(h.kalanM)}</strong>`,`<strong>${_irsSayi(h.kalanT)}</strong>`,'env-v',h.kalanM<-0.0005?'color:#c62828;':'')}
-        ${hucre(o.sayimVar?fm(o.sayimM):'',o.sayimVar?_irsSayi(o.sayimT):'')}
-        ${hucre(farkM_(h.farkM,o.sayimVar),farkT_(h.farkT,o.sayimVar),'',renkFark(h.farkM))}
+        ${kolonlar.map(c=>hucre(_envM(o.m[c.k]),_envT(o.t[c.k]),o.m[c.k],o.t[c.k])).join('')}
+        ${hucre(`<strong>${fm(h.kalanM)}</strong>`,`<strong>${_irsSayi(h.kalanT)}</strong>`,h.kalanM,h.kalanT,'env-v')}
+        ${hucre(o.sayimVar?fm(o.sayimM):'',o.sayimVar?_irsSayi(o.sayimT):'',o.sayimM,o.sayimT)}
+        ${hucre(farkM_(h.farkM),farkT_(h.farkT),h.farkM,h.farkT)}
       </tr>`;
     }).join('');
   }else{
@@ -211,8 +212,8 @@ window.renderEnvanter=function(){
         <td class="env-k1">${a.grup.kod||''}</td><td class="env-k2" style="padding-left:${7+(sev-1)*16}px">${_logEsc(a.grup.ad)}</td>
         ${kolonlar.map(c=>tc(_envT(a.t[c.k]))).join('')}
         <td class="env-v" style="text-align:right;${a.kalanT<-0.005?'color:#c62828;':''}"><strong>${_irsSayi(a.kalanT)}</strong></td>
-        ${tc(a.sayimVar?_irsSayi(a.sayimT):'')}
-        ${tc(farkT_(a.farkT,a.sayimVar),renkFark(a.farkT))}
+        ${tc(a.sayimVar?_irsSayi(a.sayimT):'',kr(a.sayimT,0.005))}
+        ${tc(farkT_(a.farkT),kr(a.farkT,0.005))}
       </tr>`;
     }).join('');
   }
@@ -225,10 +226,10 @@ window.renderEnvanter=function(){
     tbEl.innerHTML+=grupMu
       ?`<tr style="background:var(--krem2);font-weight:700"><td class="env-k1"></td><td class="env-k2">TOPLAM</td>
         ${kolonlar.map(c=>`<td style="text-align:right">${_envT(tops[c.k])}</td>`).join('')}
-        <td style="text-align:right">${_irsSayi(tKalanT)}</td><td style="text-align:right">${_envT(tSayimT)}</td><td style="text-align:right">${_envT(tFarkT)}</td></tr>`
+        <td style="text-align:right;${kr(tKalanT,0.005)}">${_irsSayi(tKalanT)}</td><td style="text-align:right;${kr(tSayimT,0.005)}">${_envT(tSayimT)}</td><td style="text-align:right;${kr(tFarkT,0.005)}">${_irsSayi(tFarkT)}</td></tr>`
       :`<tr style="background:var(--krem2);font-weight:700"><td class="env-k1"></td><td class="env-k2">TOPLAM (tutar)</td><td></td>
         ${kolonlar.map(c=>`${bl}<td style="text-align:right">${_envT(tops[c.k])}</td>`).join('')}
-        ${bl}<td style="text-align:right">${_irsSayi(tKalanT)}</td>${bl}<td style="text-align:right">${_envT(tSayimT)}</td>${bl}<td style="text-align:right">${_envT(tFarkT)}</td></tr>`;
+        ${bl}<td style="text-align:right;${kr(tKalanT,0.005)}">${_irsSayi(tKalanT)}</td>${bl}<td style="text-align:right;${kr(tSayimT,0.005)}">${_envT(tSayimT)}</td>${bl}<td style="text-align:right;${kr(tFarkT,0.005)}">${_irsSayi(tFarkT)}</td></tr>`;
   }
   const depoMetni=_envSeciliDepolar.size===_envTumDepolar().length?'Tüm depolar':[..._envSeciliDepolar].map(id=>depolar.find(d=>d.id===id)?.ad||'?').join(', ');
   if(oz)oz.textContent=`${satirlar.length} ${grupMu?'grup':'stok kalemi'} · ${depoMetni} · ${bas} – ${bit}`;
@@ -259,9 +260,9 @@ window.envanterDetayAc=async function(stokId){
         <td style="font-size:12px">${ENV_TUR_ADLARI[r.tur]||r.tur}${r.alt_tur&&typeof TRF_TIP_ADLARI!=='undefined'&&TRF_TIP_ADLARI[r.alt_tur]?` <span style="font-size:10px;color:var(--yazi3)">(${TRF_TIP_ADLARI[r.alt_tur]})</span>`:''}</td>
         <td style="font-size:12px">${_logEsc(depolar.find(d=>d.id===r.depo_id)?.ad||'')}</td>
         <td style="font-size:11px;color:var(--yazi2)">${_logEsc([kaynak,belge].filter(Boolean).join(' · '))}</td>
-        <td style="text-align:right;${isaret<0?'color:#c62828':isaret>0?'color:var(--yesil)':''}">${isaret===0?f(mik)+' (sayım)':(isaret>0?'+':'−')+f(mik)}</td>
-        <td style="text-align:right;color:var(--yazi3)">${isaret?_irsSayi(r.tutar):''}</td>
-        <td style="text-align:right;font-weight:500">${isaret?f(bakiye):''}</td>
+        <td style="text-align:right;${isaret<0?'color:#c62828':''}">${isaret===0?f(mik)+' (sayım)':(isaret>0?'+':'−')+f(mik)}</td>
+        <td style="text-align:right">${isaret?_irsSayi(r.tutar):''}</td>
+        <td style="text-align:right;font-weight:500;${isaret&&bakiye<-0.0005?'color:#c62828':''}">${isaret?f(bakiye):''}</td>
       </tr>`;
     }).join('');
     kutu.innerHTML=`
