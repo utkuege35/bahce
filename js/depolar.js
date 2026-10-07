@@ -69,7 +69,7 @@ window.depoKaydetDuzenle=async function(){
 window.depoSil=async function(id){
   const d=depolar.find(x=>x.id===id);
   if(d?.ana_depo){bil('Ana depo silinemez. Önce başka bir depoyu ana depo yapın.','err');return;}
-  const kullanimda=islemler.some(i=>i.depo_id===id||i.hedef_depo_id===id);
+  const kullanimda=await depoHareketVarMi(id);
   if(kullanimda){
     if(await onay('Bu depoda hareket/sayım kayıtları var, silinemez.<br><small>Tamam\'a basarsan pasife alınır.</small>','⚠️'))
       await sb.from('depolar').update({aktif:false}).eq('id',id);
