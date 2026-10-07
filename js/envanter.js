@@ -5,8 +5,8 @@
 //  • DEVİR: sadece BAŞLANGIÇ TARİHİNDE devir fişi varsa görünür; yoksa boştur.
 //  • Her alan MİKTAR | TUTAR olarak yan yana, Excel benzeri hücreli tabloda gösterilir.
 //  • KALAN = Devir + Giriş + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık − Diğer  (bitiş tarihindeki bakiye)
-//  • SAYIM: bitiş tarihinde yapılmış sayım; FARK = Kalan − Sayım (sayım fazlaysa EKSİ, sayım eksikse ARTI görünür). Birden çok
-//    depoda fark, yalnızca bitiş tarihinde sayımı olan depoların kalanıyla kıyaslanır.
+//  • SAYIM: bitiş tarihinde yapılmış sayım. FARK = Kalan − Sayım, HER stok için hem Miktar hem Tutar olarak hesaplanır
+//    (sayım fazlaysa EKSİ, sayım eksikse ARTI). Bitiş tarihinde sayım yoksa sayım 0 kabul edilir, yani Fark = Kalan olur.
 //  • GÖRÜNÜM: "Detay" tüm stokları; "Grup" stok gruplarını KÜMÜLATİF toplamla (üst grup = altındaki tüm gruplar + stoklar) gösterir.
 //    Farklı birimler (kg, adet, lt) toplanamayacağı için grup görünümünde MİKTAR hiç gösterilmez; sadece TUTAR sütunları gelir.
 // Satış/Ödenmez/İkram/Hasar/Atık, ürünlerin reçetesinden açılan hammadde sarfiyatlarını da içerir. Hesap veritabanında yapılır.
@@ -82,16 +82,11 @@ async function envanterVeriGetir(bas,bit,depolar_){
   });
   return satir;
 }
-// Bir satırın hesaplanmış değerleri (miktar/tutar çiftleri)
+// Bir satırın hesaplanmış değerleri (miktar/tutar çiftleri).
+// FARK = KALAN − SAYIM (miktar ve tutar için). Bitiş tarihinde sayım yoksa sayım 0'dır, Fark = Kalan olur.
 function _envHesapla(o){
   const kalanM=_envKalan(o.m),kalanT=_envKalan(o.t);
-  let farkM=null,farkT=null;
-  if(o.sayimVar){
-    farkM=o.kalanSayimliM-o.sayimM; // Kalan − Sayım (sayım fazlaysa eksi); sadece sayımı olan depoların kalanıyla kıyaslanır
-    const birim=o.sayimM>0?o.sayimT/o.sayimM:o.maliyet; // tutar farkı = miktar farkı × birim değer
-    farkT=farkM*birim;
-  }
-  return {kalanM,kalanT,farkM,farkT};
+  return {kalanM,kalanT,farkM:kalanM-o.sayimM,farkT:kalanT-o.sayimT};
 }
 
 // ----- Filtre / Raporla akışı -----
@@ -137,11 +132,12 @@ function _envGruplar(tum,maxSeviye){
       if(!a){a={grup:g,m:_envBos(),t:_envBos(),kalanM:0,kalanT:0,sayimM:0,sayimT:0,farkM:0,farkT:0,sayimVar:false,hareket:false,birimler:new Set(),stokSayisi:0};gMap.set(p,a);}
       Object.keys(a.m).forEach(k=>{a.m[k]+=r.o.m[k];a.t[k]+=r.o.t[k];});
       a.kalanM+=r.h.kalanM;a.kalanT+=r.h.kalanT;
-      if(r.o.sayimVar){a.sayimVar=true;a.sayimM+=r.o.sayimM;a.sayimT+=r.o.sayimT;a.farkM+=r.h.farkM;a.farkT+=r.h.farkT;}
+      if(r.o.sayimVar){a.sayimVar=true;a.sayimM+=r.o.sayimM;a.sayimT+=r.o.sayimT;}
       a.hareket=a.hareket||r.o.hareket;a.birimler.add(r.stok.birim_id);a.stokSayisi++;
       p=g.ust_id;
     }
   });
+  gMap.forEach(a=>{a.farkM=a.kalanM-a.sayimM;a.farkT=a.kalanT-a.sayimT;}); // Fark = Kalan − Sayım
   return [...gMap.values()].filter(a=>(a.grup.seviye||1)<=maxSeviye)
     .sort((a,b)=>(a.grup.kod||'').localeCompare(b.grup.kod||'','tr',{numeric:true}));
 }
@@ -186,26 +182,28 @@ window.renderEnvanter=function(){
   }
   const renkFark=v=>v===null||v===undefined?'':v>0.0005?'color:#c62828;font-weight:600':v<-0.0005?'color:var(--yesil);font-weight:600':'';
   const tops={};kolonlar.forEach(c=>tops[c.k]=0);let tKalanT=0,tSayimT=0,tFarkT=0;
-  const hucre=(m,t,sinif,stil)=>`<td class="${sinif||''}" style="text-align:right;${stil||''}">${m}</td><td class="${sinif||''}" style="text-align:right;color:var(--yazi2);${stil||''}">${t}</td>`;
   const fm=v=>(+v).toLocaleString('tr-TR',{maximumFractionDigits:3});
+  const farkM_=(v,sv)=>Math.abs(v)<0.0005?(sv?'0':''):fm(v);
+  const farkT_=(v,sv)=>Math.abs(v)<0.005?(sv?'0,00':''):_irsSayi(v);
+  const hucre=(m,t,sinif,stil)=>`<td class="${sinif||''}" style="text-align:right;${stil||''}">${m}</td><td class="${sinif||''}" style="text-align:right;color:var(--yazi2);${stil||''}">${t}</td>`;
   let govde;
   if(!grupMu){
     govde=satirlar.map(r=>{
       const {stok,o,h}=r;
       const tb=birimler.find(b=>b.id===stok.birim_id);
-      kolonlar.forEach(c=>tops[c.k]+=o.t[c.k]);tKalanT+=h.kalanT;if(o.sayimVar){tSayimT+=o.sayimT;tFarkT+=h.farkT;}
+      kolonlar.forEach(c=>tops[c.k]+=o.t[c.k]);tKalanT+=h.kalanT;tSayimT+=o.sayimT;tFarkT+=h.farkT;
       return `<tr onclick="envanterDetayAc('${stok.id}')" style="cursor:pointer" title="Hareket dökümü için tıklayın">
         <td class="env-k1">${stok.kod||''}</td><td class="env-k2">${_logEsc(stok.ad)}</td><td style="text-align:center">${tb?.kisaltma||''}</td>
         ${kolonlar.map(c=>hucre(_envM(o.m[c.k]),_envT(o.t[c.k]))).join('')}
         ${hucre(`<strong>${fm(h.kalanM)}</strong>`,`<strong>${_irsSayi(h.kalanT)}</strong>`,'env-v',h.kalanM<-0.0005?'color:#c62828;':'')}
         ${hucre(o.sayimVar?fm(o.sayimM):'',o.sayimVar?_irsSayi(o.sayimT):'')}
-        ${hucre(o.sayimVar?fm(h.farkM):'',o.sayimVar?_irsSayi(h.farkT):'','',renkFark(h.farkM))}
+        ${hucre(farkM_(h.farkM,o.sayimVar),farkT_(h.farkT,o.sayimVar),'',renkFark(h.farkM))}
       </tr>`;
     }).join('');
   }else{
     govde=satirlar.map(a=>{
       const sev=a.grup.seviye||1;
-      if(sev===1){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;if(a.sayimVar){tSayimT+=a.sayimT;tFarkT+=a.farkT;}}
+      if(sev===1){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;tSayimT+=a.sayimT;tFarkT+=a.farkT;}
       const kalin=sev===1?'font-weight:700;':sev===2?'font-weight:600;':'';
       const tc=(v,stil)=>`<td style="text-align:right;${stil||''}">${v}</td>`;
       // Grup adı sistemdeki gibi (ek bilgi yok); alt gruplar girintili
@@ -214,7 +212,7 @@ window.renderEnvanter=function(){
         ${kolonlar.map(c=>tc(_envT(a.t[c.k]))).join('')}
         <td class="env-v" style="text-align:right;${a.kalanT<-0.005?'color:#c62828;':''}"><strong>${_irsSayi(a.kalanT)}</strong></td>
         ${tc(a.sayimVar?_irsSayi(a.sayimT):'')}
-        ${tc(a.sayimVar?_irsSayi(a.farkT):'',renkFark(a.sayimVar?a.farkT:null))}
+        ${tc(farkT_(a.farkT,a.sayimVar),renkFark(a.farkT))}
       </tr>`;
     }).join('');
   }
@@ -286,11 +284,11 @@ window.envanterExcelIndir=function(){
       _envSonKolonlar.forEach(c=>{satir[c.ad+' Miktar']=+(+m[c.k]).toFixed(3);satir[c.ad+' Tutar']=+t[c.k].toFixed(2);});
       satir['KALAN Miktar']=+(+kalanM).toFixed(3);satir['KALAN Tutar']=+kalanT.toFixed(2);
       satir['Sayım Miktar']=sayimVar?+(+sayimM).toFixed(3):'';satir['Sayım Tutar']=sayimVar?+sayimT.toFixed(2):'';
-      satir['Fark Miktar']=sayimVar?+(+farkM).toFixed(3):'';satir['Fark Tutar']=sayimVar?+farkT.toFixed(2):'';
+      satir['Fark Miktar']=+(+farkM).toFixed(3);satir['Fark Tutar']=+farkT.toFixed(2); // Kalan − Sayım
     }else{ // Grup: miktar yok, sadece tutar
       satir={'Seviye':r.grup.seviye||1,'Grup Kodu':r.grup.kod||'','Stok Grubu':r.grup.ad};
       _envSonKolonlar.forEach(c=>{satir[c.ad]=+r.t[c.k].toFixed(2);});
-      satir['KALAN']=+r.kalanT.toFixed(2);satir['Sayım']=r.sayimVar?+r.sayimT.toFixed(2):'';satir['Fark']=r.sayimVar?+r.farkT.toFixed(2):'';
+      satir['KALAN']=+r.kalanT.toFixed(2);satir['Sayım']=r.sayimVar?+r.sayimT.toFixed(2):'';satir['Fark']=+r.farkT.toFixed(2); // Kalan − Sayım
     }
     return satir;
   });
