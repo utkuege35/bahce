@@ -110,6 +110,7 @@ window.trfKaydetmedenCik=async function(){
   if(ok)trfGorunumListe();
 };
 window.trfYeniBaslat=function(){
+  _trfBakCache={}; // formu her açışta güncel bakiyeler okunur
   _trfDuzenlenenId=null;_trfGoruntuleme=false;_trfSaltOkunur(false);_trfBaslikYaz(false,false);
   trfSatirListesi=[];
   for(let i=0;i<15;i++)trfSatirListesi.push({stokId:'',birimId:'',miktar:''});
@@ -160,13 +161,17 @@ function trfSatirRender(){
       <td id="trf-bak-${i}" style="text-align:right">${_trfBakiyeHtml(s,kaynak)}</td>
     </tr>`;
   }).join('');
+  trfBakiyeleriGetir();
 }
 // Kaynak depodaki mevcut bakiye (düzenlemede kendi eski hareketleri hariç) ve aşım uyarısı.
+let _trfBakCache={}; // "stok|kaynak|haric" → bakiye (veritabanından)
+const _trfBakAnahtar=(sid,kaynak)=>`${sid}|${kaynak}|${_trfDuzenlenenId||''}`;
 function _trfBakiyeHtml(s,kaynak){
   if(!s.stokId||!kaynak)return '';
   const st=stoklar.find(x=>x.id===s.stokId);
   const tb=birimler.find(b=>b.id===st?.birim_id);
-  const bak=stokMiktar(s.stokId,kaynak,_trfDuzenlenenId);
+  const bak=_trfBakCache[_trfBakAnahtar(s.stokId,kaynak)];
+  if(bak===undefined)return '<span style="font-size:11px;color:var(--yazi3)">…</span>';
   const mik=(parseFloat(s.miktar)||0)*birimTemelCarp(s.birimId);
   const asildi=mik>bak+0.0005;
   return `<span style="font-size:12px;${asildi?'color:#c62828;font-weight:600':'color:var(--yazi3)'}">${_trfSayi(bak)} ${tb?.kisaltma||''}${asildi?' ⚠':''}</span>`;
@@ -174,6 +179,19 @@ function _trfBakiyeHtml(s,kaynak){
 function _trfBakiyeGuncelle(i){
   const kaynak=document.getElementById('trf-kaynak')?.value||'';
   const td=document.getElementById('trf-bak-'+i);if(td)td.innerHTML=_trfBakiyeHtml(trfSatirListesi[i],kaynak);
+}
+// Satırlardaki stokların kaynak depo bakiyelerini veritabanından getirir (eksik olanları, tek çağrıda).
+async function trfBakiyeleriGetir(){
+  const kaynak=document.getElementById('trf-kaynak')?.value||'';
+  if(!kaynak)return;
+  const eksik=[...new Set(trfSatirListesi.filter(s=>s.stokId).map(s=>s.stokId))].filter(id=>_trfBakCache[_trfBakAnahtar(id,kaynak)]===undefined);
+  if(eksik.length){
+    try{
+      const m=await stokBakiyelerDb(kaynak,eksik,_trfDuzenlenenId);
+      eksik.forEach(id=>{_trfBakCache[_trfBakAnahtar(id,kaynak)]=parseFloat(m[id])||0;});
+    }catch(e){return;}
+  }
+  trfSatirListesi.forEach((s,i)=>_trfBakiyeGuncelle(i));
 }
 window.trfMalzemeAramaFiltrele=function(i,val){
   const kutu=document.getElementById('trf-oneri-'+i);if(!kutu)return;
@@ -215,17 +233,7 @@ window.kaydetTransfer=async function(){
   if(!gecerli.length){bil('En az bir satır!','err');return;}
   if(gecerli.some(s=>!s.birimId)){bil('Tüm satırlarda birim seçilmeli!','err');return;}
   const haric=_trfDuzenlenenId;
-  if(haric){const h=fisKaldirmaKontrol(haric);if(h){bil(h,'err');return;}}
-  // Kaynak depoda yeterli stok var mı? (aynı stok birden fazla satırdaysa toplamı kontrol edilir)
-  const toplam={};
-  gecerli.forEach(s=>{toplam[s.stokId]=(toplam[s.stokId]||0)+(parseFloat(s.miktar)||0)*birimTemelCarp(s.birimId);});
-  for(const [sid,mik] of Object.entries(toplam)){
-    const mevcut=stokMiktar(sid,kaynak,haric);
-    if(mik>mevcut+0.0005){
-      const st=stoklar.find(x=>x.id===sid);const tb=birimler.find(b=>b.id===st?.birim_id);
-      bil(`${st?.ad||''}: ${_depoAd(kaynak)} deposunda yeterli stok yok (mevcut ${_trfSayi(mevcut)} ${tb?.kisaltma||''}, istenen ${_trfSayi(mik)} ${tb?.kisaltma||''}).`,'err');return;
-    }
-  }
+  // Kaynak depoda yeterli stok ve eksiye düşme kontrolleri veritabanında yapılır (stok_fisi_yaz).
   const fisId=haric||crypto.randomUUID(); // düzenlemede aynı fiş kimliği korunur (log geçmişi kesilmez)
   const baz=Date.now();let n=0;const rows=[];
   gecerli.forEach(s=>{
@@ -238,26 +246,15 @@ window.kaydetTransfer=async function(){
     rows.push({...ortak,tur:'transfer_cikis',depo_id:kaynak,ts:baz+(n++)});
     rows.push({...ortak,tur:'transfer_giris',depo_id:hedef,ts:baz+(n++)});
   });
-  // Yeni fişte: başlık → satırlar (satırlar yazılamazsa başlık geri alınır).
-  // Düzenlemede: yeni satırlar yazılır → başlık güncellenir → eski satırlar kaldırılır (aynı fiş kimliği).
   const toplamTutar=Math.round(rows.filter(r=>r.tur==='transfer_cikis').reduce((a,r)=>a+r.tutar,0)*100)/100;
   const baslikVeri={isyeri_id:aktifIsyeri?.id||null,fis_turu:'transfer',alt_tur:tip,tarih,depo_id:kaynak,hedef_depo_id:hedef,
     kalem_sayisi:gecerli.length,toplam_tutar:toplamTutar,aciklama:not};
-  const eskiIdler=haric?islemler.filter(i=>i.belge_id===haric&&(i.tur==='transfer_cikis'||i.tur==='transfer_giris')).map(i=>i.id):[];
-  if(!haric){
-    const {error:eb}=await sb.from('stok_fisleri').insert({id:fisId,...baslikVeri,kullanici:aktifKullanici?.ad||'',ts:baz});
-    if(eb){bil('Kaydedilemedi: '+eb.message,'err');return;}
-  }
-  const {error}=await sb.from('islemler').insert(rows);
-  if(error){if(!haric)await sb.from('stok_fisleri').delete().eq('id',fisId);bil('Kaydedilemedi: '+error.message,'err');return;}
-  if(haric){
-    await sb.from('stok_fisleri').update(baslikVeri).eq('id',haric);
-    const {error:e2}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).in('id',eskiIdler);
-    if(e2){bil('Eski satırlar kaldırılamadı: '+e2.message,'err');return;}
-  }
+  // Tek işlemde (transaction) yazılır; stok yetersizse/eksiye düşecekse veritabanı hata verir ve hiçbir şey kaydedilmez.
+  try{await fisYazDb({id:fisId,...baslikVeri,kullanici:aktifKullanici?.ad||'',ts:baz},rows,haric,true);}
+  catch(e){bil('Kaydedilemedi: '+e.message,'err');return;}
   await logYaz({islem:haric?'duzenle':'olustur',belgeTuru:'transfer',altTur:tip,belgeId:fisId,belgeTarihi:tarih,tutar:toplamTutar,
     eski:haric?_trfEskiSnapshot:null,yeni:transferSnapshotKur(tarih,tip,kaynak,hedef,not,gecerli)});
-  const {data:id}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  await islemleriYenile();
   bil(`✓ Transfer fişi ${haric?'güncellendi':'kaydedildi'} (${gecerli.length} kalem)`);
   const tEl=document.getElementById('trf-liste-tarih');if(tEl)tEl.value=tarih;
   trfGorunumListe();
@@ -285,17 +282,14 @@ window.trfDuzenleAc=function(fisId,salt){
 };
 window.trfSil=async function(fisId){
   const fis=_trfFisListesi.find(f=>f.id===fisId);if(!fis)return;
-  const h=fisKaldirmaKontrol(fisId);
-  if(h){bil(h,'err');return;}
   const bagli=fis.irsaliye_id||fis.fatura_id;
   const mesaj=bagli
     ?`Bu fiş bir ${fis.irsaliye_id?'irsaliye':'fatura'}dan oluşmuş.<br><small>Silerseniz ilgili belgeyi düzenleyebilirsiniz; belgedeki çıkış depoları kayıtlı kalır.</small><br>Fiş silinsin mi?`
     :'Bu transfer fişi silinsin mi?';
   if(!(await onay(mesaj,'🗑️')))return;
-  const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).in('tur',['transfer_cikis','transfer_giris']);
-  if(error){bil('Silinemedi: '+error.message,'err');return;}
-  await sb.from('stok_fisleri').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',fisId);
-  const {data:id}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  // Tek işlemde silinir; mal başka yere çıkmışsa (stok eksiye düşecekse) veritabanı hata verir.
+  try{await fisSilDb(fisId,true);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
+  await islemleriYenile();
   _trfSeciliId=null;
   await logYaz({islem:'sil',belgeTuru:'transfer',altTur:fis.alt_tur,belgeId:fisId,belgeTarihi:fis.tarih,irsaliyeId:fis.irsaliye_id,faturaId:fis.fatura_id,
     eski:transferSnapshotKur(fis.tarih,fis.alt_tur,fis.kaynak,fis.hedef,fis.not,fis.satirlar.map(r=>({stokId:r.stok_id,birimId:r.birim_id,miktar:r.miktar})))});
