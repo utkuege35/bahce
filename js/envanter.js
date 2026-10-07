@@ -1,12 +1,15 @@
 // ===== STOK ENVANTER RAPORU =====
-// Seçilen DEPO için, seçilen tarih aralığında her stoğun hareketleri. Tarih aralığı ve depo seçilmeden rakam gelmez.
+// Seçilen DEPOLAR (tek, birden fazla ya da hepsi) için, seçilen tarih aralığında her stoğun hareketleri.
+// Tarih aralığı + depo seçilip "Raporla" butonuna basılmadan rakam gelmez; filtre değişince tablo temizlenir.
 //  • "Dönem öncesi" yoktur: rapor sadece seçilen aralığın hareketlerini gösterir.
-//  • DEVİR: sadece BAŞLANGIÇ TARİHİNDE devir fişi varsa görünür (önceki dönem sayımından üretilen devir); yoksa boştur.
-//  • Her alan MİKTAR | TUTAR olarak yan yana gösterilir.
+//  • DEVİR: sadece BAŞLANGIÇ TARİHİNDE devir fişi varsa görünür; yoksa boştur.
+//  • Her alan MİKTAR | TUTAR olarak yan yana, Excel benzeri hücreli tabloda gösterilir.
 //  • KALAN = Devir + Giriş + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık − Diğer  (bitiş tarihindeki bakiye)
-//  • SAYIM: bitiş tarihinde yapılmış sayım; FARK = Sayım − Kalan (− eksik, + fazla). Bitiş tarihinde sayım yoksa ikisi de boştur.
-// Satış/Ödenmez/İkram/Hasar/Atık kolonları, ürünlerin reçetesinden açılan hammadde sarfiyatlarını da içerir.
-// Miktarlar stoğun temel birimi cinsindendir. Hesap veritabanında yapılır (stok_envanter fonksiyonu).
+//  • SAYIM: bitiş tarihinde yapılmış sayım; FARK = Sayım − Kalan (− eksik, + fazla). Birden çok depoda fark, yalnızca bitiş
+//    tarihinde sayımı olan depoların kalanıyla kıyaslanır.
+//  • GÖRÜNÜM: "Detay" tüm stokları; "Grup" stok gruplarını KÜMÜLATİF toplamla (üst grup = altındaki tüm gruplar + stoklar) gösterir.
+//    Farklı birimler (kg, adet, lt) toplanamayacağı için grupta MİKTAR sadece grubun tüm stokları aynı birimdeyse gösterilir; TUTAR her zaman.
+// Satış/Ödenmez/İkram/Hasar/Atık, ürünlerin reçetesinden açılan hammadde sarfiyatlarını da içerir. Hesap veritabanında yapılır.
 const ENV_KOLONLAR=[
   {k:'devir',ad:'Devir'},{k:'giris',ad:'Giriş (Dış Alım)'},
   {k:'trfArti',ad:'+ Transfer'},{k:'trfEksi',ad:'− Transfer'},{k:'satis',ad:'Satış'},{k:'odenmez',ad:'Ödenmez'},
@@ -16,16 +19,56 @@ const ENV_TUR_ADLARI={devir:'Devir',giris:'Giriş (Alış)',transfer_giris:'Tran
   satis:'Satış',satis_sarfiyat:'Satış (reçeteden)',odenmez:'Ödenmez',odenmez_sarfiyat:'Ödenmez (reçeteden)',
   ikram:'İkram',ikram_sarfiyat:'İkram (reçeteden)',hasar:'Hasar',hasar_sarfiyat:'Hasar (reçeteden)',
   atik:'Atık',atik_sarfiyat:'Atık (reçeteden)',cikis:'Çıkış',uretim_sarfiyat:'Üretim Sarfiyatı',sayim:'Sayım'};
-let _envSonSatirlar=[],_envSonKolonlar=[];
+let _envSonSatirlar=[],_envSonKolonlar=[],_envSonGorunum='detay';
+let _envSeciliDepolar=new Set();
+let _envVeri=null; // {anahtar, satir}
 
 const _envBos=()=>({devir:0,giris:0,trfArti:0,trfEksi:0,satis:0,odenmez:0,ikram:0,hasar:0,atik:0,diger:0});
 const _envKalan=o=>o.devir+o.giris+o.trfArti-o.trfEksi-o.satis-o.odenmez-o.ikram-o.hasar-o.atik-o.diger;
+const _envFmtM=v=>(+v).toLocaleString('tr-TR',{maximumFractionDigits:3});
+const _envM=v=>Math.abs(v)<0.0005?'':_envFmtM(v);
+const _envT=v=>Math.abs(v)<0.005?'':_irsSayi(v);
 
-// Hesap veritabanında yapılır; ekran sadece sonucu alır. Tarih/depo değişince yeniden sorgulanır,
-// arama ve gizleme filtreleri önbellekten çalışır.
-let _envVeri=null,_envAnahtar='';
-async function envanterVeriGetir(bas,bit,depo){
-  const {data,error}=await sb.rpc('stok_envanter',{p_isyeri:aktifIsyeri?.id||null,p_bas:bas,p_bit:bit,p_depo:depo});
+// ----- Depo çoklu seçimi -----
+const _envTumDepolar=()=>(typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar);
+function envDepoMetni(){
+  const hepsi=_envTumDepolar(),n=_envSeciliDepolar.size;
+  if(!n)return '— Depo seçin —';
+  if(n===hepsi.length)return `Tüm depolar (${n})`;
+  if(n===1)return depolar.find(d=>d.id===[..._envSeciliDepolar][0])?.ad||'1 depo';
+  return `${n} depo seçili`;
+}
+window.envDepoListeCiz=function(){
+  const hepsi=_envTumDepolar();
+  const btn=document.getElementById('env-depo-btn');if(btn)btn.textContent=envDepoMetni()+' ▾';
+  const liste=document.getElementById('env-depo-liste');if(!liste)return;
+  const hepsiEl=document.getElementById('env-depo-hepsi');
+  if(hepsiEl)hepsiEl.checked=hepsi.length>0&&_envSeciliDepolar.size===hepsi.length;
+  liste.innerHTML=hepsi.map(d=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 4px;cursor:pointer;font-size:12px"><input type="checkbox" value="${d.id}" ${_envSeciliDepolar.has(d.id)?'checked':''} onchange="envDepoSec('${d.id}',this.checked)"> ${_logEsc(d.ad)}${d.ana_depo?' <span style="color:var(--yesil);font-size:10px">(Ana Depo)</span>':''}${d.aktif===false?' <span style="color:var(--turuncu);font-size:10px">(pasif)</span>':''}</label>`).join('')||'<div class="bos">Depo tanımlı değil</div>';
+};
+window.envDepoPanelAc=function(ev){
+  ev.stopPropagation();
+  const p=document.getElementById('env-depo-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+};
+window.envDepoSec=function(id,secili){
+  if(secili)_envSeciliDepolar.add(id);else _envSeciliDepolar.delete(id);
+  envDepoListeCiz();envFiltreDegisti();
+};
+window.envDepoHepsi=function(secili){
+  _envSeciliDepolar=secili?new Set(_envTumDepolar().map(d=>d.id)):new Set();
+  envDepoListeCiz();envFiltreDegisti();
+};
+// Panel dışına tıklanınca kapanır (bir kez bağlanır)
+if(!window._envDisTiklama){window._envDisTiklama=true;document.addEventListener('click',e=>{
+  const p=document.getElementById('env-depo-panel');
+  if(p&&p.style.display!=='none'&&!document.getElementById('env-depo-wrap')?.contains(e.target))p.style.display='none';
+});}
+
+// ----- Veri -----
+const _envAnahtar=()=>`${aktifIsyeri?.id||''}|${document.getElementById('env-bas').value}|${document.getElementById('env-bit').value}|${[..._envSeciliDepolar].sort().join(',')}`;
+async function envanterVeriGetir(bas,bit,depolar_){
+  const {data,error}=await sb.rpc('stok_envanter',{p_isyeri:aktifIsyeri?.id||null,p_bas:bas,p_bit:bit,p_depolar:depolar_});
   if(error)throw error;
   const n=x=>parseFloat(x)||0;
   const satir={};
@@ -35,107 +78,166 @@ async function envanterVeriGetir(bas,bit,depo){
       const kk=k==='trf_arti'?'trfArti':k==='trf_eksi'?'trfEksi':k;
       m[kk]=n(r[k+'_m']);t[kk]=n(r[k+'_t']);
     });
-    satir[r.stok_id]={m,t,sayimM:n(r.sayim_m),sayimT:n(r.sayim_t),sayimVar:!!r.sayim_var,hareket:!!r.hareket,maliyet:n(r.maliyet)};
+    satir[r.stok_id]={m,t,sayimM:n(r.sayim_m),sayimT:n(r.sayim_t),kalanSayimliM:n(r.kalan_sayimli_m),sayimVar:!!r.sayim_var,hareket:!!r.hareket,maliyet:n(r.maliyet)};
   });
   return satir;
 }
-// Bir stok satırının tüm hesaplanmış değerleri (miktar/tutar çiftleri)
+// Bir satırın hesaplanmış değerleri (miktar/tutar çiftleri)
 function _envHesapla(o){
   const kalanM=_envKalan(o.m),kalanT=_envKalan(o.t);
   let farkM=null,farkT=null;
   if(o.sayimVar){
-    farkM=o.sayimM-kalanM;
-    // Tutar farkı: miktar farkı × birim değer (sayımın kendi birim değeri, yoksa stok maliyeti)
-    const birim=o.sayimM>0?o.sayimT/o.sayimM:o.maliyet;
+    farkM=o.sayimM-o.kalanSayimliM; // sadece sayımı olan depoların kalanıyla kıyaslanır
+    const birim=o.sayimM>0?o.sayimT/o.sayimM:o.maliyet; // tutar farkı = miktar farkı × birim değer
     farkT=farkM*birim;
   }
   return {kalanM,kalanT,farkM,farkT};
 }
-const _envM=v=>Math.abs(v)<0.0005?'':(+v).toLocaleString('tr-TR',{maximumFractionDigits:3});
-const _envT=v=>Math.abs(v)<0.005?'':_irsSayi(v);
 
-window.envanterAc=function(){renderEnvanter(true);};
-window.renderEnvanter=async function(yenile){
+// ----- Filtre / Raporla akışı -----
+window.envanterAc=function(){
+  envDepoListeCiz();
+  if(_envVeri&&_envVeri.anahtar===_envAnahtar())renderEnvanter();else envFiltreDegisti();
+};
+// Tarih/depo değişince eski rakamlar kaldırılır (rakamlar hiçbir zaman seçili filtrelerle uyuşmaz hale gelmez)
+window.envFiltreDegisti=function(){
+  _envVeri=null;_envSonSatirlar=[];
+  document.getElementById('env-th').innerHTML='';
   const bas=document.getElementById('env-bas').value,bit=document.getElementById('env-bit').value;
+  const tamam=bas&&bit&&_envSeciliDepolar.size>0&&bas<=bit;
+  document.getElementById('env-tb').innerHTML=tamam
+    ?'<tr><td class="bos">Filtreler hazır. Rakamları görmek için <strong>📊 Raporla</strong> butonuna basın.</td></tr>'
+    :'<tr><td class="bos">Raporu görmek için <strong>başlangıç tarihi</strong>, <strong>bitiş tarihi</strong> ve en az bir <strong>depo</strong> seçip <strong>Raporla</strong> butonuna basın.</td></tr>';
+  const oz=document.getElementById('env-ozet');if(oz)oz.textContent='';
+};
+window.envanterRaporla=async function(){
+  const bas=document.getElementById('env-bas').value,bit=document.getElementById('env-bit').value;
+  if(!bas||!bit){bil('Başlangıç ve bitiş tarihini seçin','err');return;}
+  if(bas>bit){bil('Başlangıç tarihi bitiş tarihinden sonra olamaz','err');return;}
+  if(!_envSeciliDepolar.size){bil('En az bir depo seçin','err');return;}
+  const thEl=document.getElementById('env-th'),tbEl=document.getElementById('env-tb');
+  const anahtar=_envAnahtar();
+  thEl.innerHTML='';tbEl.innerHTML='<tr><td class="bos">Hesaplanıyor...</td></tr>';
+  try{_envVeri={anahtar,satir:await envanterVeriGetir(bas,bit,[..._envSeciliDepolar])};}
+  catch(err){_envVeri=null;tbEl.innerHTML=`<tr><td class="bos">Rapor hesaplanamadı: ${_logEsc(err.message)}. Veritabanı fonksiyonları güncel mi?</td></tr>`;return;}
+  renderEnvanter();
+};
+
+// ----- Çizim -----
+// Gruplar: her stok, üst gruplarının hepsine eklenir (kümülatif). maxSeviye: gösterilecek en derin grup seviyesi.
+function _envGruplar(tum,maxSeviye){
+  const kapsam=typeof isyeriFiltre==='function'?isyeriFiltre(stoklar):stoklar;
+  const byId=new Map(kapsam.map(s=>[s.id,s]));
+  const gMap=new Map();
+  tum.forEach(r=>{
+    let p=r.stok.ust_id,koruma=0;
+    while(p&&koruma++<10){
+      const g=byId.get(p);if(!g)break;
+      let a=gMap.get(p);
+      if(!a){a={grup:g,m:_envBos(),t:_envBos(),kalanM:0,kalanT:0,sayimM:0,sayimT:0,farkM:0,farkT:0,sayimVar:false,hareket:false,birimler:new Set(),stokSayisi:0};gMap.set(p,a);}
+      Object.keys(a.m).forEach(k=>{a.m[k]+=r.o.m[k];a.t[k]+=r.o.t[k];});
+      a.kalanM+=r.h.kalanM;a.kalanT+=r.h.kalanT;
+      if(r.o.sayimVar){a.sayimVar=true;a.sayimM+=r.o.sayimM;a.sayimT+=r.o.sayimT;a.farkM+=r.h.farkM;a.farkT+=r.h.farkT;}
+      a.hareket=a.hareket||r.o.hareket;a.birimler.add(r.stok.birim_id);a.stokSayisi++;
+      p=g.ust_id;
+    }
+  });
+  return [...gMap.values()].filter(a=>(a.grup.seviye||1)<=maxSeviye)
+    .sort((a,b)=>(a.grup.kod||'').localeCompare(b.grup.kod||'','tr',{numeric:true}));
+}
+window.renderEnvanter=function(){
   const thEl=document.getElementById('env-th'),tbEl=document.getElementById('env-tb'),oz=document.getElementById('env-ozet');
-  // Depo seçim kutusu
-  const sel=document.getElementById('env-depo');const seciliDepo=sel.value;
-  const depoKapsam=(typeof isyeriFiltre==='function'?isyeriFiltre(depolar):depolar).filter(d=>d.aktif!==false);
-  sel.innerHTML='<option value="">— Depo seçin —</option>'+depoKapsam.map(d=>`<option value="${d.id}"${d.id===seciliDepo?' selected':''}>${d.ad}${d.ana_depo?' (Ana Depo)':''}</option>`).join('');
-  sel.value=seciliDepo;
-  // Tarih aralığı VE depo seçilmeden rakam gelmez
-  _envSonSatirlar=[];
-  if(!bas||!bit||!seciliDepo){
-    thEl.innerHTML='';
-    tbEl.innerHTML='<tr><td class="bos">Raporu görmek için <strong>başlangıç tarihi</strong>, <strong>bitiş tarihi</strong> ve <strong>depo</strong> seçin.</td></tr>';
-    if(oz)oz.textContent='';return;
-  }
-  if(bas>bit){thEl.innerHTML='';tbEl.innerHTML='<tr><td class="bos">Başlangıç tarihi bitiş tarihinden sonra olamaz.</td></tr>';if(oz)oz.textContent='';return;}
-  const anahtar=`${aktifIsyeri?.id||''}|${bas}|${bit}|${seciliDepo}`;
-  if(yenile===true||_envVeri===null||_envAnahtar!==anahtar){
-    thEl.innerHTML='';tbEl.innerHTML='<tr><td class="bos">Hesaplanıyor...</td></tr>';
-    try{_envVeri=await envanterVeriGetir(bas,bit,seciliDepo);_envAnahtar=anahtar;}
-    catch(err){tbEl.innerHTML=`<tr><td class="bos">Rapor hesaplanamadı: ${_logEsc(err.message)}. Veritabanı fonksiyonları güncel mi?</td></tr>`;return;}
-  }
+  if(!_envVeri||_envVeri.anahtar!==_envAnahtar()){envFiltreDegisti();return;}
+  const bas=document.getElementById('env-bas').value,bit=document.getElementById('env-bit').value;
+  const gorunum=document.getElementById('env-gorunum').value; // detay | grup1 | grup2 | grup3
+  const grupMu=gorunum!=='detay',maxSeviye=grupMu?parseInt(gorunum.replace('grup',''),10):0;
   const ara=(document.getElementById('env-ara').value||'').trim().toLocaleLowerCase('tr');
   const gizle=document.getElementById('env-gizle').checked;
   const kapsam=(typeof isyeriFiltre==='function'?isyeriFiltre(stoklar):stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
-  const satirlar=[];
-  kapsam.forEach(s=>{
-    if(ara&&!(s.ad||'').toLocaleLowerCase('tr').includes(ara)&&!(s.kod||'').toLowerCase().includes(ara))return;
-    const o=_envVeri[s.id]||{m:_envBos(),t:_envBos(),sayimM:0,sayimT:0,sayimVar:false,hareket:false,maliyet:0};
-    if(gizle&&!o.hareket&&!o.sayimVar)return;
-    satirlar.push({stok:s,o,h:_envHesapla(o)});
-  });
-  satirlar.sort((a,b)=>(a.stok.kod||'').localeCompare(b.stok.kod||''));
-  _envSonSatirlar=satirlar;
-  const digerVar=satirlar.some(r=>Math.abs(r.o.m.diger)>=0.0005||Math.abs(r.o.t.diger)>=0.005);
+  const bosO={m:_envBos(),t:_envBos(),sayimM:0,sayimT:0,kalanSayimliM:0,sayimVar:false,hareket:false,maliyet:0};
+  const tum=kapsam.map(s=>{const o=_envVeri.satir[s.id]||bosO;return {stok:s,o,h:_envHesapla(o)};});
+  let satirlar;
+  if(!grupMu){
+    satirlar=tum.filter(r=>{
+      if(ara&&!(r.stok.ad||'').toLocaleLowerCase('tr').includes(ara)&&!(r.stok.kod||'').toLowerCase().includes(ara))return false;
+      return !(gizle&&!r.o.hareket&&!r.o.sayimVar);
+    }).sort((a,b)=>(a.stok.kod||'').localeCompare(b.stok.kod||'','tr',{numeric:true}));
+  }else{
+    satirlar=_envGruplar(tum,maxSeviye).filter(a=>{
+      if(ara&&!(a.grup.ad||'').toLocaleLowerCase('tr').includes(ara)&&!(a.grup.kod||'').toLowerCase().includes(ara))return false;
+      return !(gizle&&!a.hareket&&!a.sayimVar);
+    });
+  }
+  _envSonSatirlar=satirlar;_envSonGorunum=gorunum;
+  const digerVar=tum.some(r=>Math.abs(r.o.m.diger)>=0.0005||Math.abs(r.o.t.diger)>=0.005);
   const kolonlar=ENV_KOLONLAR.filter(c=>c.k!=='diger'||digerVar);
   _envSonKolonlar=kolonlar;
   // İki satırlı başlık: alan adı (2 sütun) / Miktar | Tutar
-  const grup=(ad,vurgu)=>`<th colspan="2" style="text-align:center;border-left:1px solid var(--border)${vurgu?';background:var(--krem2)':''}">${ad}</th>`;
-  const alt=vurgu=>`<th style="text-align:right;font-size:10px;font-weight:500;border-left:1px solid var(--border)${vurgu?';background:var(--krem2)':''}">Miktar</th><th style="text-align:right;font-size:10px;font-weight:500${vurgu?';background:var(--krem2)':''}">Tutar</th>`;
-  thEl.innerHTML=`<tr><th rowspan="2" style="width:90px">Kod</th><th rowspan="2" style="min-width:170px">Stok</th><th rowspan="2" style="width:50px">Birim</th>`
+  const grup=(ad,vurgu)=>`<th colspan="2" class="${vurgu?'env-v':''}" style="text-align:center">${ad}</th>`;
+  const alt=vurgu=>`<th class="${vurgu?'env-v':''}" style="text-align:right;font-size:10px;font-weight:500">Miktar</th><th class="${vurgu?'env-v':''}" style="text-align:right;font-size:10px;font-weight:500">Tutar</th>`;
+  thEl.innerHTML=`<tr><th rowspan="2" class="env-k1">${grupMu?'Grup Kodu':'Kod'}</th><th rowspan="2" class="env-k2">${grupMu?'Stok Grubu':'Stok'}</th><th rowspan="2">Birim</th>`
     +kolonlar.map(c=>grup(c.ad)).join('')+grup('KALAN',true)+grup('Sayım')+grup('Fark')+`</tr>`
     +`<tr>${kolonlar.map(()=>alt()).join('')}${alt(true)}${alt()}${alt()}</tr>`;
-  const renkFark=v=>v===null?'':v<-0.0005?'color:#c62828;font-weight:600':v>0.0005?'color:var(--yesil);font-weight:600':'';
+  const renkFark=v=>v===null||v===undefined?'':v<-0.0005?'color:#c62828;font-weight:600':v>0.0005?'color:var(--yesil);font-weight:600':'';
   const tops={};kolonlar.forEach(c=>tops[c.k]=0);let tKalanT=0,tSayimT=0,tFarkT=0;
-  tbEl.innerHTML=satirlar.map(r=>{
-    const {stok,o,h}=r;
-    const tb=birimler.find(b=>b.id===stok.birim_id);
-    kolonlar.forEach(c=>tops[c.k]+=o.t[c.k]);tKalanT+=h.kalanT;if(o.sayimVar){tSayimT+=o.sayimT;tFarkT+=h.farkT;}
-    const hucre=(m,t,stil)=>`<td style="text-align:right;border-left:1px solid var(--krem2);${stil||''}">${m}</td><td style="text-align:right;color:var(--yazi2);${stil||''}">${t}</td>`;
-    return `<tr onclick="envanterDetayAc('${stok.id}')" style="cursor:pointer" title="Hareket dökümü için tıklayın">
-      <td class="tree-kod">${stok.kod||''}</td><td>${_logEsc(stok.ad)}</td><td>${tb?.kisaltma||''}</td>
-      ${kolonlar.map(c=>hucre(_envM(o.m[c.k]),_envT(o.t[c.k]))).join('')}
-      ${hucre(`<strong>${(+h.kalanM).toLocaleString('tr-TR',{maximumFractionDigits:3})}</strong>`,`<strong>${_irsSayi(h.kalanT)}</strong>`,'background:var(--krem2);'+(h.kalanM<-0.0005?'color:#c62828;':''))}
-      ${hucre(o.sayimVar?(+o.sayimM).toLocaleString('tr-TR',{maximumFractionDigits:3}):'',o.sayimVar?_irsSayi(o.sayimT):'')}
-      ${hucre(o.sayimVar?((+h.farkM).toLocaleString('tr-TR',{maximumFractionDigits:3})):'',o.sayimVar?_irsSayi(h.farkT):'',renkFark(h.farkM))}
-    </tr>`;
-  }).join('')||`<tr><td colspan="${3+kolonlar.length*2+6}" class="bos">Bu depo ve tarih aralığında hareket yok</td></tr>`;
-  // Toplam satırı: sadece Tutar sütunlarında (farklı birimlerin miktarları toplanamaz)
-  if(satirlar.length){
-    tbEl.innerHTML+=`<tr style="background:var(--krem2);font-weight:600"><td></td><td>TOPLAM (tutar)</td><td></td>
-      ${kolonlar.map(c=>`<td style="border-left:1px solid var(--border)"></td><td style="text-align:right">${_envT(tops[c.k])}</td>`).join('')}
-      <td style="border-left:1px solid var(--border)"></td><td style="text-align:right">${_irsSayi(tKalanT)}</td>
-      <td style="border-left:1px solid var(--border)"></td><td style="text-align:right">${_envT(tSayimT)}</td>
-      <td style="border-left:1px solid var(--border)"></td><td style="text-align:right">${_envT(tFarkT)}</td></tr>`;
+  const hucre=(m,t,sinif,stil)=>`<td class="${sinif||''}" style="text-align:right;${stil||''}">${m}</td><td class="${sinif||''}" style="text-align:right;color:var(--yazi2);${stil||''}">${t}</td>`;
+  const fm=v=>(+v).toLocaleString('tr-TR',{maximumFractionDigits:3});
+  let govde;
+  if(!grupMu){
+    govde=satirlar.map(r=>{
+      const {stok,o,h}=r;
+      const tb=birimler.find(b=>b.id===stok.birim_id);
+      kolonlar.forEach(c=>tops[c.k]+=o.t[c.k]);tKalanT+=h.kalanT;if(o.sayimVar){tSayimT+=o.sayimT;tFarkT+=h.farkT;}
+      return `<tr onclick="envanterDetayAc('${stok.id}')" style="cursor:pointer" title="Hareket dökümü için tıklayın">
+        <td class="env-k1">${stok.kod||''}</td><td class="env-k2">${_logEsc(stok.ad)}</td><td style="text-align:center">${tb?.kisaltma||''}</td>
+        ${kolonlar.map(c=>hucre(_envM(o.m[c.k]),_envT(o.t[c.k]))).join('')}
+        ${hucre(`<strong>${fm(h.kalanM)}</strong>`,`<strong>${_irsSayi(h.kalanT)}</strong>`,'env-v',h.kalanM<-0.0005?'color:#c62828;':'')}
+        ${hucre(o.sayimVar?fm(o.sayimM):'',o.sayimVar?_irsSayi(o.sayimT):'')}
+        ${hucre(o.sayimVar?fm(h.farkM):'',o.sayimVar?_irsSayi(h.farkT):'','',renkFark(h.farkM))}
+      </tr>`;
+    }).join('');
+  }else{
+    govde=satirlar.map(a=>{
+      const sev=a.grup.seviye||1;
+      const tek=a.birimler.size===1; // miktar sadece tek birimli grupta anlamlıdır
+      const tb=tek?birimler.find(b=>b.id===[...a.birimler][0]):null;
+      const gm=v=>tek?_envM(v):'';
+      if(sev===1){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;if(a.sayimVar){tSayimT+=a.sayimT;tFarkT+=a.farkT;}}
+      const kalin=sev===1?'font-weight:700;':sev===2?'font-weight:600;':'';
+      return `<tr style="${kalin}${sev===1?'background:var(--krem2);':''}">
+        <td class="env-k1">${a.grup.kod||''}</td><td class="env-k2" style="padding-left:${7+(sev-1)*16}px">${_logEsc(a.grup.ad)} <span style="font-size:10px;color:var(--yazi3);font-weight:400">(${a.stokSayisi} stok)</span></td>
+        <td style="text-align:center;font-size:11px">${tek?(tb?.kisaltma||''):'<span title="Farklı birimler toplanamaz" style="color:var(--yazi3)">karışık</span>'}</td>
+        ${kolonlar.map(c=>hucre(gm(a.m[c.k]),_envT(a.t[c.k]))).join('')}
+        ${hucre(tek?`<strong>${fm(a.kalanM)}</strong>`:'',`<strong>${_irsSayi(a.kalanT)}</strong>`,'env-v',tek&&a.kalanM<-0.0005?'color:#c62828;':'')}
+        ${hucre(a.sayimVar&&tek?fm(a.sayimM):'',a.sayimVar?_irsSayi(a.sayimT):'')}
+        ${hucre(a.sayimVar&&tek?fm(a.farkM):'',a.sayimVar?_irsSayi(a.farkT):'','',renkFark(a.sayimVar?(tek?a.farkM:a.farkT):null))}
+      </tr>`;
+    }).join('');
   }
-  const depoAd=depolar.find(d=>d.id===seciliDepo)?.ad||'';
-  if(oz)oz.textContent=`${satirlar.length} stok kalemi · ${depoAd} · ${bas} – ${bit}`;
+  const bos=`<tr><td colspan="${3+kolonlar.length*2+6}" class="bos">${grupMu?'Bu seçimde stok grubu bulunamadı':'Seçilen depo(lar) ve tarih aralığında hareket yok'}</td></tr>`;
+  tbEl.innerHTML=govde||bos;
+  // Toplam satırı: sadece Tutar sütunlarında. Grup görünümünde yalnızca 1. seviye gruplar toplanır (çift sayımı önlemek için).
+  if(satirlar.length){
+    const bl='<td></td>';
+    tbEl.innerHTML+=`<tr style="background:var(--krem2);font-weight:700"><td class="env-k1"></td><td class="env-k2">TOPLAM (tutar)</td><td></td>
+      ${kolonlar.map(c=>`${bl}<td style="text-align:right">${_envT(tops[c.k])}</td>`).join('')}
+      ${bl}<td style="text-align:right">${_irsSayi(tKalanT)}</td>${bl}<td style="text-align:right">${_envT(tSayimT)}</td>${bl}<td style="text-align:right">${_envT(tFarkT)}</td></tr>`;
+  }
+  const depoMetni=_envSeciliDepolar.size===_envTumDepolar().length?'Tüm depolar':[..._envSeciliDepolar].map(id=>depolar.find(d=>d.id===id)?.ad||'?').join(', ');
+  if(oz)oz.textContent=`${satirlar.length} ${grupMu?'grup':'stok kalemi'} · ${depoMetni} · ${bas} – ${bit}`;
 };
-// ===== HAREKET DÖKÜMÜ (bir stok için) — rapordaki kurallarla aynı =====
+// ===== HAREKET DÖKÜMÜ (bir stok için) — rapordaki kurallarla aynı; seçili tüm depolar birlikte =====
 window.envanterDetayAc=async function(stokId){
+  if(!_envVeri)return;
   const bas=document.getElementById('env-bas').value,bit=document.getElementById('env-bit').value;
-  const depo=document.getElementById('env-depo').value;
-  const stok=stoklar.find(s=>s.id===stokId);if(!stok||!depo)return;
+  const stok=stoklar.find(s=>s.id===stokId);if(!stok)return;
   const tb=birimler.find(b=>b.id===stok.birim_id);const bk=tb?.kisaltma||'';
   document.getElementById('env-detay-baslik').textContent=`${stok.ad} — Hareket Dökümü`;
   const kutu=document.getElementById('env-detay-icerik');
   kutu.innerHTML='<div class="bos">Yükleniyor...</div>';
   modalAc('modal-envanter-detay');
   try{
-    const {data,error}=await sb.rpc('stok_hareket_dokumu',{p_isyeri:aktifIsyeri?.id||null,p_stok:stokId,p_bas:bas,p_bit:bit,p_depo:depo});
+    const {data,error}=await sb.rpc('stok_hareket_dokumu',{p_isyeri:aktifIsyeri?.id||null,p_stok:stokId,p_bas:bas,p_bit:bit,p_depolar:[..._envSeciliDepolar]});
     if(error)throw error;
     const f=n=>(+n).toLocaleString('tr-TR',{maximumFractionDigits:3});
     let bakiye=0;
@@ -148,6 +250,7 @@ window.envanterDetayAc=async function(stokId){
       return `<tr>
         <td style="font-size:11px;white-space:nowrap">${r.tarih}</td>
         <td style="font-size:12px">${ENV_TUR_ADLARI[r.tur]||r.tur}${r.alt_tur&&typeof TRF_TIP_ADLARI!=='undefined'&&TRF_TIP_ADLARI[r.alt_tur]?` <span style="font-size:10px;color:var(--yazi3)">(${TRF_TIP_ADLARI[r.alt_tur]})</span>`:''}</td>
+        <td style="font-size:12px">${_logEsc(depolar.find(d=>d.id===r.depo_id)?.ad||'')}</td>
         <td style="font-size:11px;color:var(--yazi2)">${_logEsc([kaynak,belge].filter(Boolean).join(' · '))}</td>
         <td style="text-align:right;${isaret<0?'color:#c62828':isaret>0?'color:var(--yesil)':''}">${isaret===0?f(mik)+' (sayım)':(isaret>0?'+':'−')+f(mik)}</td>
         <td style="text-align:right;color:var(--yazi3)">${isaret?_irsSayi(r.tutar):''}</td>
@@ -155,26 +258,36 @@ window.envanterDetayAc=async function(stokId){
       </tr>`;
     }).join('');
     kutu.innerHTML=`
-      <div style="font-size:12px;color:var(--yazi2);margin-bottom:.5rem">${bas} – ${bit} · ${_logEsc(depolar.find(d=>d.id===depo)?.ad||'')} · Birim: ${bk}</div>
+      <div style="font-size:12px;color:var(--yazi2);margin-bottom:.5rem">${bas} – ${bit} · ${_logEsc(envDepoMetni())} · Birim: ${bk}</div>
       <div class="tw" style="max-height:55vh;overflow-y:auto"><table>
-        <thead><tr><th>Tarih</th><th>Hareket</th><th>Kaynak / Not</th><th style="text-align:right">Miktar</th><th style="text-align:right">Tutar</th><th style="text-align:right">Bakiye</th></tr></thead>
-        <tbody>${satirlar||'<tr><td colspan="6" class="bos">Bu aralıkta hareket yok</td></tr>'}</tbody></table></div>`;
+        <thead><tr><th>Tarih</th><th>Hareket</th><th>Depo</th><th>Kaynak / Not</th><th style="text-align:right">Miktar</th><th style="text-align:right">Tutar</th><th style="text-align:right">Bakiye</th></tr></thead>
+        <tbody>${satirlar||'<tr><td colspan="7" class="bos">Bu aralıkta hareket yok</td></tr>'}</tbody></table></div>`;
   }catch(err){kutu.innerHTML='<div class="bos">Hareket dökümü okunamadı: '+_logEsc(err.message)+'</div>';}
 };
-// ===== EXCEL =====
+// ===== EXCEL (ekranda görünen haliyle: Detay ya da Grup) =====
 window.envanterExcelIndir=function(){
-  if(!_envSonSatirlar.length){bil('İndirilecek veri yok (tarih aralığı ve depo seçin)','err');return;}
-  const data=_envSonSatirlar.map(({stok,o,h})=>{
-    const tb=birimler.find(b=>b.id===stok.birim_id);
-    const r={'Kod':stok.kod||'','Stok':stok.ad,'Birim':tb?.kisaltma||''};
-    _envSonKolonlar.forEach(c=>{r[c.ad+' Miktar']=+o.m[c.k].toFixed(3);r[c.ad+' Tutar']=+o.t[c.k].toFixed(2);});
-    r['KALAN Miktar']=+h.kalanM.toFixed(3);r['KALAN Tutar']=+h.kalanT.toFixed(2);
-    r['Sayım Miktar']=o.sayimVar?+o.sayimM.toFixed(3):'';r['Sayım Tutar']=o.sayimVar?+o.sayimT.toFixed(2):'';
-    r['Fark Miktar']=o.sayimVar?+h.farkM.toFixed(3):'';r['Fark Tutar']=o.sayimVar?+h.farkT.toFixed(2):'';
-    return r;
+  if(!_envSonSatirlar.length){bil("İndirilecek veri yok (filtreleri seçip Raporla butonuna basın)","err");return;}
+  const grupMu=_envSonGorunum!=='detay';
+  const data=_envSonSatirlar.map(r=>{
+    let satir,m,t,kalanM,kalanT,sayimM,sayimT,sayimVar,farkM,farkT,tek=true;
+    if(!grupMu){
+      const tb=birimler.find(b=>b.id===r.stok.birim_id);
+      satir={'Kod':r.stok.kod||'','Stok':r.stok.ad,'Birim':tb?.kisaltma||''};
+      m=r.o.m;t=r.o.t;kalanM=r.h.kalanM;kalanT=r.h.kalanT;sayimVar=r.o.sayimVar;sayimM=r.o.sayimM;sayimT=r.o.sayimT;farkM=r.h.farkM;farkT=r.h.farkT;
+    }else{
+      tek=r.birimler.size===1;
+      const tb=tek?birimler.find(b=>b.id===[...r.birimler][0]):null;
+      satir={'Seviye':r.grup.seviye||1,'Grup Kodu':r.grup.kod||'','Stok Grubu':r.grup.ad,'Birim':tek?(tb?.kisaltma||''):'karışık'};
+      m=r.m;t=r.t;kalanM=r.kalanM;kalanT=r.kalanT;sayimVar=r.sayimVar;sayimM=r.sayimM;sayimT=r.sayimT;farkM=r.farkM;farkT=r.farkT;
+    }
+    const mm=v=>tek?+(+v).toFixed(3):''; // farklı birimli grupta miktar yazılmaz
+    _envSonKolonlar.forEach(c=>{satir[c.ad+' Miktar']=mm(m[c.k]);satir[c.ad+' Tutar']=+t[c.k].toFixed(2);});
+    satir['KALAN Miktar']=mm(kalanM);satir['KALAN Tutar']=+kalanT.toFixed(2);
+    satir['Sayım Miktar']=sayimVar?mm(sayimM):'';satir['Sayım Tutar']=sayimVar?+sayimT.toFixed(2):'';
+    satir['Fark Miktar']=sayimVar?mm(farkM):'';satir['Fark Tutar']=sayimVar?+farkT.toFixed(2):'';
+    return satir;
   });
-  const depoAd=(depolar.find(d=>d.id===document.getElementById('env-depo').value)?.ad||'depo').replace(/\s+/g,'_');
   const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Stok Envanter');
-  XLSX.writeFile(wb,`stok_envanter_${depoAd}_${document.getElementById('env-bas').value}_${document.getElementById('env-bit').value}.xlsx`);
+  XLSX.utils.book_append_sheet(wb,ws,grupMu?'Envanter (Grup)':'Envanter (Detay)');
+  XLSX.writeFile(wb,`stok_envanter_${grupMu?'grup':'detay'}_${document.getElementById('env-bas').value}_${document.getElementById('env-bit').value}.xlsx`);
 };
