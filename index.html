@@ -1255,18 +1255,18 @@
     <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Stok Envanter Raporu</div>
     <button class="btn sm sec" onclick="envanterExcelIndir()">📤 Excel'e Aktar</button>
   </div>
-  <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Seçilen aralıkta her stoğun tüm hareketleri. <strong>Kalan = Dönem Öncesi + Devir + Giriş + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık.</strong> Satış, İkram vb. kolonlar ürünlerin reçetesinden düşen hammaddeleri de içerir. Miktarlar stoğun temel birimindedir. Sayım: aralıktaki son sayım; Fark = Sayım − o tarihteki sistem bakiyesi. Satıra tıklayınca hareket dökümü açılır.</div>
+  <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Önce <strong>başlangıç tarihi, bitiş tarihi ve depoyu</strong> seçin; seçim yapılmadan rapora rakam gelmez. Her alan <strong>Miktar | Tutar</strong> olarak yan yana gösterilir. <strong>Devir</strong> sadece başlangıç tarihinde devir fişi varsa görünür. <strong>Kalan</strong> bitiş tarihindeki bakiyedir (Devir + Giriş + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık). <strong>Sayım</strong> bitiş tarihinde yapılmış sayımdır; <strong>Fark = Sayım − Kalan</strong> (− eksik, + fazla). Satış, İkram vb. alanlar ürünlerin reçetesinden düşen hammaddeleri de içerir. Miktarlar stoğun temel birimindedir. Satıra tıklayınca hareket dökümü açılır.</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
-    <label style="font-size:12px;color:var(--yazi2)">Tarih:</label>
+    <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
     <input type="date" id="env-bas" onchange="renderEnvanter(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
     <input type="date" id="env-bit" onchange="renderEnvanter(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-    <select id="env-depo" onchange="renderEnvanter(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm depolar</option></select>
-    <select id="env-gorunum" onchange="renderEnvanter()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="miktar">Miktar</option><option value="tutar">Tutar</option></select>
+    <select id="env-depo" onchange="renderEnvanter(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">— Depo seçin —</option></select>
     <input type="text" id="env-ara" oninput="renderEnvanter()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px" placeholder="🔍 Stok ara...">
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--yazi2);cursor:pointer"><input type="checkbox" id="env-gizle" checked onchange="renderEnvanter()"> Hareketsiz stokları gizle</label>
     <div id="env-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
   </div>
-  <div class="card"><div class="tw"><table><thead id="env-th"></thead><tbody id="env-tb"></tbody></table></div></div>
+  <div class="card"><div class="tw"><table style="font-size:12px"><thead id="env-th"></thead><tbody id="env-tb"></tbody></table></div></div>
 </div>
 <!-- DEPO BAZLI STOK DURUMU -->
 <div id="depo-stok" class="page">
