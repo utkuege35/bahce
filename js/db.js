@@ -24,10 +24,89 @@ window.fisSilDb=async function(fisId,sert){
   const {error}=await sb.rpc('stok_fisi_sil',{p_fis:fisId,p_isyeri:aktifIsyeri?.id||null,p_kullanici:aktifKullanici?.ad||'',p_sert:!!sert});
   if(error)throw error;
 };
-// Bellekteki hareket listesini (henüz veritabanı katmanına taşınmamış ekranlar için) tazeler.
-window.islemleriYenile=async function(){
-  const {data}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
-  if(data)islemler=data.filter(i=>!i.silindi);
+// Hareketlerin hepsi artık tarayıcıda tutulmaz; her ekran ihtiyacını veritabanından (filtreli, sayfalı) alır.
+// Sadece stok miktarı ve son alım fiyatları küçük bir önbellekte durur (veritabanı fonksiyonlarından gelir).
+window._stokBakiyeToplam={};
+window._stokSonAlim={};
+window.stokBakiyeToplamYenile=async function(){
+  const isyeri=aktifIsyeri?.id||null;
+  const [bak,alim]=await Promise.all([
+    sb.rpc('stok_bakiyeler',{p_isyeri:isyeri,p_depo:null,p_stoklar:null,p_haric_belge:null,p_tarih:null}),
+    sb.rpc('stok_son_alim_fiyatlari',{p_isyeri:isyeri})
+  ]);
+  if(!bak.error)_stokBakiyeToplam=bak.data||{};
+  if(!alim.error)_stokSonAlim=alim.data||{};
+  // Hareket listeleri/önbellekleri de bayatlamış olabilir
+  if(typeof ilCacheSifirla==='function')ilCacheSifirla();
+};
+// Geriye dönük uyumluluk: yazma işlemlerinden sonra çağrılan eski ad
+window.islemleriYenile=window.stokBakiyeToplamYenile;
+
+// ===== Sayfalı okuma (Supabase tek istekte en fazla 1000 satır döner) =====
+// kur: her çağrıda yeni bir sorgu üreten fonksiyon (ör. ()=>sb.from('islemler').select('*').eq(...))
+window.sbSayfali=async function(kur,sayfa){
+  sayfa=sayfa||1000;const tum=[];
+  for(let bas=0;;bas+=sayfa){
+    const {data,error}=await kur().range(bas,bas+sayfa-1);
+    if(error)throw error;
+    tum.push(...(data||[]));
+    if(!data||data.length<sayfa)break;
+  }
+  return tum;
+};
+const _aktifIslemSorgusu=()=>sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).or('silindi.is.null,silindi.eq.false');
+// Tarih aralığındaki hareketler (Panel)
+window.islemlerAralik=function(bas,bit){
+  return sbSayfali(()=>_aktifIslemSorgusu().gte('tarih',bas).lte('tarih',bit).order('ts',{ascending:false}).order('id'));
+};
+// İşlem Listesi: tür ve tarih sunucuda filtrelenir
+window.islemlerListe=function(f){
+  return sbSayfali(()=>{
+    let q=_aktifIslemSorgusu();
+    if(f.tur)q=q.eq('tur',f.tur);
+    if(f.bas)q=q.gte('tarih',f.bas);
+    if(f.bit)q=q.lte('tarih',f.bit);
+    return q.order('tarih',{ascending:false}).order('ts',{ascending:false}).order('id');
+  });
+};
+// Günlük sekme listesi (belirli bir gün + tür listesi)
+window.islemlerGun=function(tarih,turler){
+  return sbSayfali(()=>_aktifIslemSorgusu().eq('tarih',tarih).in('tur',turler).order('ts',{ascending:false}).order('id'));
+};
+window.islemGetir=async function(id){
+  const {data}=await sb.from('islemler').select('*').eq('id',id).maybeSingle();
+  return data||null;
+};
+// Bir belgenin (fişin) tüm satırları. belgeKey = belge_id (belge_id boşsa satırın kendi id'si)
+window.belgeSatirlari=async function(belgeKey){
+  return sbSayfali(()=>_aktifIslemSorgusu().or(`belge_id.eq.${belgeKey},id.eq.${belgeKey}`).order('ts').order('id'));
+};
+// Bir stoğun hareketleri (stok detayı)
+window.islemlerStok=function(stokId){
+  return sbSayfali(()=>_aktifIslemSorgusu().eq('stok_id',stokId).order('tarih',{ascending:false}).order('ts',{ascending:false}).order('id'));
+};
+window.islemLoglariGetir=async function(islemId){
+  const {data}=await sb.from('islem_loglari').select('*').eq('islem_id',islemId).order('tarih');
+  return data||[];
+};
+window.kasaToplamDb=async function(){
+  const {data,error}=await sb.rpc('kasa_toplam',{p_isyeri:aktifIsyeri?.id||null});
+  if(error)throw error;
+  return parseFloat(data)||0;
+};
+// Hareket var mı kontrolleri (silme/pasife alma kararları için)
+window.stokHareketVarMi=async function(stokId){
+  const {data}=await sb.from('islemler').select('id').eq('stok_id',stokId).or('silindi.is.null,silindi.eq.false').limit(1);
+  return !!(data&&data.length);
+};
+window.depoHareketVarMi=async function(depoId){
+  const {data}=await sb.from('islemler').select('id,silindi').or(`depo_id.eq.${depoId},hedef_depo_id.eq.${depoId}`).limit(200);
+  return (data||[]).some(i=>!i.silindi);
+};
+// Bir irsaliye/faturaya bağlı (silinmemiş) Ana Depo Çıkış fişleri
+window.bagliCikisFisleri=async function(alan,belgeId){
+  const {data}=await sb.from('stok_fisleri').select('*').eq(alan,belgeId).eq('fis_turu','transfer').eq('silindi',false);
+  return data||[];
 };
 
 // ===== İRSALİYE / FATURA (tek işlemde) =====
