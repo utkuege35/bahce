@@ -29,14 +29,14 @@ function _irsSaltOkunur(tur,salt){
   if(!salt)document.getElementById('irs-'+tur+'-goruntu-bilgi')?.remove();
 }
 // Görüntüleme modunda formun üstünde durum + bağlı çıkış fişleri (silme butonlu) bloğu.
-window.irsBilgiBlokYenile=function(tur){
+window.irsBilgiBlokYenile=async function(tur){
   const form=document.getElementById('tp-irs-'+tur+'-form');if(!form)return;
   let el=document.getElementById('irs-'+tur+'-goruntu-bilgi');
   if(!_irsGoruntuleme[tur]){el?.remove();return;}
   const x=_irsGoruntulenenKayit[tur];if(!x)return;
   if(!el){el=document.createElement('div');el.id='irs-'+tur+'-goruntu-bilgi';form.querySelector('.card-title').after(el);}
   const durumAd=x.durum==='faturalandi'?'Faturalandı':x.durum==='iptal'?'İptal':'Açık';
-  el.innerHTML=`<div style="font-size:12px;color:var(--yazi2);margin-bottom:.5rem">Durum: <strong>${durumAd}</strong></div>`+(tur==='alis'?bagliCikisFisleriHtml('irsaliye_id',x.id,'irs',tur):'');
+  el.innerHTML=`<div style="font-size:12px;color:var(--yazi2);margin-bottom:.5rem">Durum: <strong>${durumAd}</strong></div>`+(tur==='alis'?await bagliCikisFisleriHtml('irsaliye_id',x.id,'irs',tur):'');
 };
 
 const IRS_BASLIK={alis:'Alış İrsaliyeleri',satis:'Satış İrsaliyeleri',iade:'İade İrsaliyeleri'};
@@ -343,7 +343,7 @@ window.irsListeIslem=function(tur,islem){
 window.irsSil=async function(tur,id){
   const x=_irsListeVeri[tur]?.[id];
   if(x&&x.durum!=='acik'){bil('Faturalanmış irsaliye silinemez. Önce faturayı silin.','err');return;}
-  if(islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
+  if((await bagliCikisFisleri('irsaliye_id',id)).length>0){
     bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Silmek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
   if(!(await onay('Bu irsaliyeyi silmek istiyor musunuz?','🗑️')))return;
@@ -386,7 +386,7 @@ window.irsFaturaDonustur=function(tur,id){
 window.irsGoruntule=function(tur,id){return irsDuzenleAc(tur,id,true);};
 window.irsDuzenleAc=async function(tur,id,salt){
   // Bağlı Ana Depo Çıkış fişi varsa düzenleme engellenir; önce çıkış fişi silinmeli. (Görüntülemede engel yok)
-  if(!salt&&islemler.some(i=>i.irsaliye_id===id&&i.alt_tur==='ana_depo_cikis')){
+  if(!salt&&(await bagliCikisFisleri('irsaliye_id',id)).length>0){
     bil('Bu irsaliyeye bağlı Ana Depo Çıkış fişi var. Düzenlemek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
   const {data:irs}=await sb.from('irsaliyeler').select('*').eq('id',id).single();
