@@ -321,6 +321,7 @@ window.gp=function(id){
   if(id==='depo-stok'&&typeof renderDepoStok==='function')renderDepoStok(true);
   if(id==='stok-envanter'&&typeof envanterAc==='function')envanterAc();
   if(id==='stok-islemleri'&&typeof skAcilis==='function')skAcilis();
+  if(id==='kasa-islemleri'&&typeof kiAcilis==='function')kiAcilis();
   if(id==='kullanici-loglari'&&typeof renderLogEkrani==='function')renderLogEkrani(true);
   if(id==='faturalar'&&typeof fatGorunumListe==='function')fatGorunumListe(typeof _aktifFatTab!=='undefined'?_aktifFatTab:'alis');
   if(id==='urun-teklif-gonder'&&typeof utgBaslat==='function')utgBaslat();
