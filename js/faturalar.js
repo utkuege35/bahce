@@ -286,8 +286,7 @@ window.kaydetFatura=async function(tur){
   if(odeme==='pesin'&&!kasaId){bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!','err');return;}
   const gecerli=fatSatirListesi[tur].filter(s=>s.kaynakId&&parseFloat(s.miktar)>0);
   if(!gecerli.length){bil('En az bir satır!','err');return;}
-  const mukerrer=await belgeMukerrerMi('faturalar','fatura_no',tur,cariId,faturaNo,_fatDuzenlenenId[tur]);
-  if(mukerrer){bil(`Bu ${MUKERRER_KISI[tur]} ait "${faturaNo}" numaralı fatura zaten kayıtlı (${mukerrer.tarih}). Aynı belge ikinci kez işlenemez.`,'err');return;}
+  // Mükerrer belge, düzenleme/silme kısıtları ve stok kontrolleri veritabanında (fatura_yaz) zorlanır.
   // İrsaliyesiz kesilen ALIŞ faturası stoğa girer (irsaliyeden dönüşenlerde stok zaten irsaliyede girmiştir)
   const depoId=tur==='alis'?anaDepoId():null; // alım deposu her zaman Ana Depo
   const stoguGirecek=tur==='alis'&&!_fatIrsaliyeIds[tur].length;
@@ -310,67 +309,43 @@ window.kaydetFatura=async function(tur){
   }
   let net=0,kdv=0;
   gecerli.forEach(s=>{net+=parseFloat(s.tutar)||0;kdv+=_irsKdvHesapla(s).kdvTutar;});
-  try{
-    const duzenlenen=_fatDuzenlenenId[tur];
-    let fat;
-    if(duzenlenen){
-      // Düzenleme: irsaliyesiz alış faturasında stok girişi değişiyorsa eksiye düşme kontrolü
-      if(stoguGirecek){const hata=belgeDegisimKontrol('fatura_id',duzenlenen,gecerli);if(hata)throw new Error(hata);}
-      const {error:eu}=await sb.from('faturalar').update({
-        fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,
-        depo_id:stoguGirecek?depoId:null,toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,kalem_sayisi:gecerli.length
-      }).eq('id',duzenlenen);
-      if(eu)throw eu;
-      const {error:ed}=await sb.from('fatura_kalemleri').delete().eq('fatura_id',duzenlenen);
-      if(ed)throw ed;
-      fat={id:duzenlenen};
-      if(stoguGirecek)await stokHareketiGeriAl({faturaId:duzenlenen});
-    }else{
-    const {data:fatYeni,error:e1}=await sb.from('faturalar').insert({
-      isyeri_id:aktifIsyeri?.id||null,tur,fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,
-      odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,depo_id:stoguGirecek?depoId:null,
-      toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,kalem_sayisi:gecerli.length,muhasebe_durumu:'bekliyor',
-      kullanici:aktifKullanici?.ad||'',ts:Date.now()
-    }).select().single();
-    if(e1)throw e1;
-      fat=fatYeni;
-    }
-    const kalemler=gecerli.map((s,i)=>{
-      const {kdvTutar,dahil}=_irsKdvHesapla(s);
-      return {
-        fatura_id:fat.id,
-        stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
-        urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
-        birim_id:s.birimId||null,
-        miktar:parseFloat(s.miktar)||0,
-        fiyat:parseFloat(s.fiyat)||0,
-        tutar:parseFloat(s.tutar)||(parseFloat(s.miktar)||0)*(parseFloat(s.fiyat)||0),
-        kdv_orani_id:s.kdvOraniId||null,
-        kdv_orani:s.kdvOraniId?kdvOraniDegeri(s.kdvOraniId):null,
-        kdv_tutar:kdvTutar,kdv_dahil_tutar:dahil,
-        cikis_depo_id:stoguGirecek?(s.cikisDepoId||null):null,
-        sira:i
-      };
-    });
-    const {error:e2}=await sb.from('fatura_kalemleri').insert(kalemler);
-    if(e2)throw e2;
-    if(_fatIrsaliyeIds[tur].length){
-      const {error:e3}=await sb.from('irsaliyeler').update({durum:'faturalandi',fatura_id:fat.id}).in('id',_fatIrsaliyeIds[tur]);
-      if(e3)throw e3;
-    }
-    let cikisFis=0;
-    if(stoguGirecek){
-      const b={tarih,depoId,cariId,not:an,belgeNo:faturaNo,kat:'Alış Faturası',belgeId:fat.id,faturaId:fat.id};
-      await stokGirisYaz(gecerli,b);
-      cikisFis=await anaDepoCikisYaz(gecerli,b);
-    }
-    bil(`✓ Fatura ${duzenlenen?'güncellendi':'kaydedildi'} (${gecerli.length} kalem, ${_irsSayi(net+kdv)})${stoguGirecek?' — Ana Depo\'ya stok girişi yapıldı'+(cikisFis?`, ${cikisFis} Ana Depo Çıkış fişi oluştu`:''):''}`);
-    await logYaz({islem:duzenlenen?'duzenle':'olustur',belgeTuru:'fatura',altTur:tur,belgeId:fat.id,belgeNo:faturaNo,belgeTarihi:tarih,cariId,tutar:net+kdv,
-      eski:duzenlenen?_fatEskiSnapshot[tur]:null,yeni:belgeSnapshotKur({tarih,no:faturaNo,cariId,not:an,odeme,kasaId},gecerli),faturaId:fat.id});
-    fatGorunumListe(tur);
-  }catch(err){
-    bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');
+  const duzenlenen=_fatDuzenlenenId[tur];
+  const id=duzenlenen||crypto.randomUUID();
+  const baslik={id,isyeri_id:aktifIsyeri?.id||null,tur,fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,
+    odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,depo_id:stoguGirecek?depoId:null,
+    toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,kalem_sayisi:gecerli.length,kullanici:aktifKullanici?.ad||'',ts:Date.now()};
+  const kalemler=gecerli.map((s,i)=>{
+    const {kdvTutar,dahil}=_irsKdvHesapla(s);
+    return {
+      stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
+      urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
+      birim_id:s.birimId||null,
+      miktar:parseFloat(s.miktar)||0,
+      fiyat:parseFloat(s.fiyat)||0,
+      tutar:parseFloat(s.tutar)||(parseFloat(s.miktar)||0)*(parseFloat(s.fiyat)||0),
+      kdv_orani_id:s.kdvOraniId||null,
+      kdv_orani:s.kdvOraniId?kdvOraniDegeri(s.kdvOraniId):null,
+      kdv_tutar:kdvTutar,kdv_dahil_tutar:dahil,
+      cikis_depo_id:stoguGirecek?(s.cikisDepoId||null):null,
+      sira:i
+    };
+  });
+  // İrsaliyesiz alış faturası Ana Depo'ya stok girişi yapar (+ çıkış deposu seçilmişse Ana Depo Çıkış fişleri).
+  // İrsaliyeden dönüşen faturada stok zaten irsaliyede girmiştir; giriş/çıkış listeleri boş gönderilir.
+  let giris=[],cikislar=[],maliyetler=[];
+  if(stoguGirecek){
+    const b={tarih,depoId,cariId,not:an,belgeNo:faturaNo,kat:'Alış Faturası',belgeId:id,faturaId:id};
+    const g=stokGirisHazirla(gecerli,b);giris=g.rows;maliyetler=g.maliyetler;
+    cikislar=anaDepoCikisHazirla(gecerli,b);
   }
+  // Başlık, kalemler, bağlı irsaliyeler, stok hareketleri TEK işlemde yazılır.
+  try{await faturaYazDb(baslik,kalemler,giris,cikislar,maliyetler,_fatIrsaliyeIds[tur],duzenlenen);}
+  catch(err){bil('Kaydedilemedi: '+(err.message||'bilinmeyen hata'),'err');return;}
+  await islemleriYenile();
+  bil(`✓ Fatura ${duzenlenen?'güncellendi':'kaydedildi'} (${gecerli.length} kalem, ${_irsSayi(net+kdv)})${stoguGirecek?' — Ana Depo\'ya stok girişi yapıldı'+(cikislar.length?`, ${cikislar.length} Ana Depo Çıkış fişi oluştu`:''):''}`);
+  await logYaz({islem:duzenlenen?'duzenle':'olustur',belgeTuru:'fatura',altTur:tur,belgeId:id,belgeNo:faturaNo,belgeTarihi:tarih,cariId,tutar:net+kdv,
+    eski:duzenlenen?_fatEskiSnapshot[tur]:null,yeni:belgeSnapshotKur({tarih,no:faturaNo,cariId,not:an,odeme,kasaId},gecerli),faturaId:id});
+  fatGorunumListe(tur);
 };
 
 // ===== GÜNLÜK ÖZET LİSTESİ =====
@@ -428,15 +403,12 @@ window.fatSil=async function(tur,id){
   if(islemler.some(i=>i.fatura_id===id&&i.alt_tur==='ana_depo_cikis')){
     bil('Bu faturaya bağlı Ana Depo Çıkış fişi var. Silmek için önce Stok İşlemleri → Transfer ekranından çıkış fişini silin.','err');return;
   }
-  if(islemler.some(i=>i.fatura_id===id&&i.tur==='giris')){ // irsaliyesiz alış faturasının stok girişi var
-    const hata=belgeDegisimKontrol('fatura_id',id,[]);if(hata){bil(hata,'err');return;}
-  }
   if(!(await onay('Bu faturayı silmek istiyor musunuz?<br><small>Bağlı irsaliyeler tekrar açık duruma döner.</small>','🗑️')))return;
   const {data:silKl}=await sb.from('fatura_kalemleri').select('*').eq('fatura_id',id).order('sira');
   const silSnap=belgeSnapshotKur({tarih:x?.tarih,no:x?.fatura_no,cariId:x?.cari_id,not:x?.aciklama,odeme:x?.odeme_tipi,kasaId:x?.kasa_id},(silKl||[]).map(k=>({kaynakTur:k.stok_id?'stok':'urun',kaynakId:k.stok_id||k.urun_id,birimId:k.birim_id,miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdvOraniId:k.kdv_orani_id,cikisDepoId:k.cikis_depo_id})));
-  await sb.from('faturalar').update({silindi:true}).eq('id',id);
-  await stokHareketiGeriAl({faturaId:id}); // irsaliyesiz faturanın stok girişi varsa geri al
-  await sb.from('irsaliyeler').update({durum:'acik',fatura_id:null}).eq('fatura_id',id);
+  // Tek işlemde silinir (kalemler, stok girişi, irsaliye bağlantıları dahil); mal başka yere çıkmışsa veritabanı hata verir.
+  try{await faturaSilDb(id);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
+  await islemleriYenile();
   _fatSeciliId[tur]=null;
   await logYaz({islem:'sil',belgeTuru:'fatura',altTur:tur,belgeId:id,belgeNo:x?.fatura_no,belgeTarihi:x?.tarih,cariId:x?.cari_id,tutar:x?.genel_toplam,eski:silSnap,faturaId:id});
   bil('Fatura silindi ✓');
