@@ -18,7 +18,11 @@ window.belgeSnapshotKur=function(b,satirlar){
     baslik['Kasa']=b.odeme==='pesin'?(kasa?.ad||''):'';
   }
   const kalemler=(satirlar||[]).filter(s=>s.kaynakId).map(s=>{
-    const kart=s.kaynakTur==='stok'?stoklar.find(x=>x.id===s.kaynakId):urunler.find(x=>x.id===s.kaynakId);
+    // Alış faturasında satır türü: stok (malzeme), gider kalemi (hizmet) ya da serbest açıklama (diğer)
+    const kart=s.kaynakTur==='stok'?stoklar.find(x=>x.id===s.kaynakId)
+      :s.kaynakTur==='gider'?(typeof giderKalemleri!=='undefined'?giderKalemleri.find(x=>x.id===s.kaynakId):null)||{ad:s.aciklama}
+      :s.kaynakTur==='diger'?{ad:s.aciklama||s.kaynakId}
+      :urunler.find(x=>x.id===s.kaynakId);
     return {
       'Malzeme':kart?.ad||'',
       'Birim':birimAd(s.birimId)||'',
@@ -26,7 +30,8 @@ window.belgeSnapshotKur=function(b,satirlar){
       'Fiyat':+(parseFloat(s.fiyat)||0),
       'Tutar':+(parseFloat(s.tutar)||0),
       'KDV %':s.kdvOraniId?kdvOraniDegeri(s.kdvOraniId):'',
-      'Çıkış Deposu':s.cikisDepoId?(depolar.find(d=>d.id===s.cikisDepoId)?.ad||''):''
+      'Çıkış Deposu':s.cikisDepoId?(depolar.find(d=>d.id===s.cikisDepoId)?.ad||''):'',
+      'Tür':s.kaynakTur==='gider'?'Hizmet':s.kaynakTur==='diger'?'Diğer':''
     };
   });
   return {baslik,kalemler};
