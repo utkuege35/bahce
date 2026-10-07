@@ -313,6 +313,7 @@ window.gp=function(id){
   if(id==='urun-teklif-gonderdiklerim'&&typeof renderUtgGonderdiklerim==='function')renderUtgGonderdiklerim();
   if(id==='irsaliyeler'&&typeof irsGorunumListe==='function')irsGorunumListe(typeof _aktifIrsTab!=='undefined'?_aktifIrsTab:'alis');
   if(id==='depo-stok'&&typeof renderDepoStok==='function')renderDepoStok();
+  if(id==='stok-envanter'&&typeof envanterAc==='function')envanterAc();
   if(id==='stok-islemleri'&&typeof skAcilis==='function')skAcilis();
   if(id==='kullanici-loglari'&&typeof renderLogEkrani==='function')renderLogEkrani(true);
   if(id==='faturalar'&&typeof fatGorunumListe==='function')fatGorunumListe(typeof _aktifFatTab!=='undefined'?_aktifFatTab:'alis');
