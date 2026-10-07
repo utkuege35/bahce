@@ -160,10 +160,10 @@ async function baslat(){
     isyFil(sb.from('urunler').select('*')).order('kod'),
     sb.from('urun_bilesenleri').select('*'),
     sb.from('kullanicilar').select('*'),
-    sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
+    sbSayfali(()=>sb.from('islem_loglari').select('*').order('tarih',{ascending:false}).order('id')).then(data=>({data})).catch(()=>({data:null})),
     isyFil(sb.from('merkezler').select('*')).order('kod'),
     isyFil(sb.from('gider_kalemleri').select('*')).order('kod'),
-    sb.from('islem_loglari').select('*').order('tarih',{ascending:false}),
+    sbSayfali(()=>sb.from('islem_loglari').select('*').order('tarih',{ascending:false}).order('id')).then(data=>({data})).catch(()=>({data:null})),
     isyFil(sb.from('kasalar').select('*')).order('kod'),
     isyFil(sb.from('depolar').select('*')).order('ad'),
     sb.from('kdv_oranlari').select('*').order('sira')
@@ -172,7 +172,6 @@ async function baslat(){
   if(ub.data)urunBilesenleri=ub.data;if(k.data)kullanicilar=k.data;if(il.data)islemLoglari=il.data;
   if(mz.data)merkezler=mz.data;if(gk.data)giderKalemleri=gk.data;if(ilog.data)islemLoglari=ilog.data;
   if(ks.data)kasalar_list=ks.data;if(dp.data)depolar=dp.data;if(kdv.data)kdvOranlari=kdv.data;
-  const islemQ=sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
   // Yetki tablolarını yükle
   const [{data:ysData},{data:kysData}] = await Promise.all([
     sb.from('yetki_sablonlari').select('*').eq('aktif',true),
@@ -181,8 +180,9 @@ async function baslat(){
   if(ysData)yetkiSablonlari=ysData;
   if(kysData)kullaniciYetkiSablonlari=kysData;
 
-  const {data:iData}=await islemQ;
-  if(iData)islemler=iData.filter(i=>!i.silindi);
+  // Hareketlerin tamamı artık tarayıcıya yüklenmez. Sadece stok bakiyeleri ve son alım fiyatları (veritabanı fonksiyonlarından) alınır;
+  // Panel, İşlem Listesi, günlük listeler vb. ihtiyaç duydukları kısmı kendileri (filtreli, sayfalı) çeker.
+  await stokBakiyeToplamYenile();
   document.getElementById('sync').textContent='● Canlı';document.getElementById('sync').className='sync ok';
   const stokK=sb.channel('stoklar-ch').on('postgres_changes',{event:'*',schema:'public',table:'stoklar'},async()=>{
     const {data}=await isyFil(sb.from('stoklar').select('*')).order('kod');if(data){stoklar=data;renderStoklar();kontolUyari();}
@@ -190,9 +190,15 @@ async function baslat(){
   const urunK=sb.channel('urunler-ch').on('postgres_changes',{event:'*',schema:'public',table:'urunler'},async()=>{
     const {data}=await isyFil(sb.from('urunler').select('*')).order('kod');if(data){urunler=data;renderUrunler();}
   }).subscribe();
-  const islemK=sb.channel('islemler-ch').on('postgres_changes',{event:'*',schema:'public',table:'islemler'},async()=>{
-    const {data}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});
-    if(data){islemler=data.filter(i=>!i.silindi);renderPanel();kontolUyari();}
+  let _islemOlayZamanlayici=null;
+  const islemK=sb.channel('islemler-ch').on('postgres_changes',{event:'*',schema:'public',table:'islemler'},()=>{
+    // Bir kayıt işlemi onlarca satır değiştirebilir; art arda gelen olaylar tek bir tazelemeye indirilir
+    clearTimeout(_islemOlayZamanlayici);
+    _islemOlayZamanlayici=setTimeout(async()=>{
+      await stokBakiyeToplamYenile();
+      renderPanel();kontolUyari();
+      if(typeof renderStoklar==='function')renderStoklar();
+    },800);
   }).subscribe();
   realtimeKanallar=[stokK,urunK,islemK];
   doldurBirimSecleri();doldurStokFil();doldurUrunFil();if(typeof doldurYariMamulFil==='function')doldurYariMamulFil();doldurIslemSecleri();doldurMerkezSecleri();if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
