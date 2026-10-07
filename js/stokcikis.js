@@ -186,8 +186,11 @@ window.kaydetStokCikis=async function(tur){
   // Stok yeterliliği: engellemez, eksiği gösterip onay ister. Reçetesiz ürünler stoktan düşülmez, uyarılır.
   const {gereken,receteYok}=_scGereksinim(gecerli);
   const eksikler=[];
+  let mevcutlar={};
+  try{mevcutlar=await stokBakiyelerDb(depo,Object.keys(gereken),haric);}
+  catch(e){bil('Stok bakiyesi okunamadı: '+e.message,'err');return;}
   Object.entries(gereken).forEach(([sid,mik])=>{
-    const mevcut=stokMiktar(sid,depo,haric);
+    const mevcut=parseFloat(mevcutlar[sid])||0;
     if(mik>mevcut+0.0005){
       const st=stoklar.find(x=>x.id===sid);const tb=birimler.find(b=>b.id===st?.birim_id);
       eksikler.push(`${st?.ad||''}: mevcut ${_trfSayi(mevcut)}, gereken ${_trfSayi(mik)} ${tb?.kisaltma||''}`);
@@ -226,21 +229,12 @@ window.kaydetStokCikis=async function(tur){
   const toplamTutar=Math.round(fisSatirlari.reduce((a,r)=>a+r.tutar,0)*100)/100;
   const baslikVeri={isyeri_id:aktifIsyeri?.id||null,fis_turu:tur,alt_tur:'manuel',tarih,depo_id:depo,
     kalem_sayisi:gecerli.length,toplam_tutar:toplamTutar,aciklama:not};
-  const eskiIdler=haric?islemler.filter(i=>i.belge_id===haric&&(i.tur===tur||i.tur===tur+'_sarfiyat')).map(i=>i.id):[];
-  if(!haric){
-    const {error:eb}=await sb.from('stok_fisleri').insert({id:fisId,...baslikVeri,kullanici:aktifKullanici?.ad||'',ts:baz});
-    if(eb){bil('Kaydedilemedi: '+eb.message,'err');return;}
-  }
-  const {error}=await sb.from('islemler').insert(rows);
-  if(error){if(!haric)await sb.from('stok_fisleri').delete().eq('id',fisId);bil('Kaydedilemedi: '+error.message,'err');return;}
-  if(haric){
-    await sb.from('stok_fisleri').update(baslikVeri).eq('id',haric);
-    const {error:e2}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).in('id',eskiIdler);
-    if(e2){bil('Eski satırlar kaldırılamadı: '+e2.message,'err');return;}
-  }
+  // Tek işlemde yazılır (stok yetersizliği yukarıda kullanıcı onayıyla geçildi; eksiye düşmeye izin verilir).
+  try{await fisYazDb({id:fisId,...baslikVeri,kullanici:aktifKullanici?.ad||'',ts:baz},rows,haric,false);}
+  catch(e){bil('Kaydedilemedi: '+e.message,'err');return;}
   await logYaz({islem:haric?'duzenle':'olustur',belgeTuru:tur,altTur:'manuel',belgeId:fisId,belgeTarihi:tarih,tutar:toplamTutar,
     eski:haric?_scEski[tur]:null,yeni:stokCikisSnapshotKur(tarih,depo,not,gecerli)});
-  const {data:id}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  await islemleriYenile();
   bil(`✓ ${etiket} fişi ${haric?'güncellendi':'kaydedildi'} (${gecerli.length} kalem)`);
   const tEl=document.getElementById(`sc-${tur}-liste-tarih`);if(tEl)tEl.value=tarih;
   scGorunumListe(tur);
@@ -264,12 +258,10 @@ window.scDuzenleAc=function(tur,fisId,salt){
 window.scSil=async function(tur,fisId){
   const fis=_scFisListesi[tur].find(f=>f.id===fisId);if(!fis)return;
   if(!(await onay(`Bu ${SC_ETIKET[tur].toLowerCase()} fişi silinsin mi?<br><small>Stoktan düşülen miktarlar geri alınır.</small>`,'🗑️')))return;
-  const {error}=await sb.from('islemler').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('belge_id',fisId).in('tur',[tur,tur+'_sarfiyat']);
-  if(error){bil('Silinemedi: '+error.message,'err');return;}
-  await sb.from('stok_fisleri').update({silindi:true,silen:aktifKullanici?.ad||'',silinme_tarihi:new Date().toISOString()}).eq('id',fisId);
+  try{await fisSilDb(fisId,false);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
   await logYaz({islem:'sil',belgeTuru:tur,altTur:'manuel',belgeId:fisId,belgeTarihi:fis.tarih,tutar:fis.tutar,
     eski:stokCikisSnapshotKur(fis.tarih,fis.depo,fis.not,fis.satirlar.map(r=>({kaynakTur:r.stok_id?'stok':'urun',kaynakId:r.stok_id||r.urun_id,birimId:r.birim_id,miktar:r.miktar,fiyat:r.fiyat,tutar:r.tutar})))});
-  const {data:id}=await sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).order('ts',{ascending:false});if(id)islemler=id.filter(i=>!i.silindi);
+  await islemleriYenile();
   _scSecili[tur]=null;
   bil('Fiş silindi ✓');
   renderScListe(tur);
