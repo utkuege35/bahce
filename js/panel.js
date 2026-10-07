@@ -467,14 +467,11 @@ window.ilFiltreTemizle=function(){
 // Her sekme açıldığında, giriş formu yerine o güne ait fişlerin özet
 // listesini gösterir. "+ Yeni Fiş" ile form görünümüne geçilir.
 const _ISLEM_SEKME_TUR={
-  hammadde:['giris','gider'], // Alış sekmesi: malzeme(giris) + hizmet/diğer(gider)
-  satis:['satis'],
-  kasa:['kasa'],
+  hammadde:['gider'], // Hizmet / Gider sekmesi (malzeme alışı artık İrsaliye/Fatura ile girilir)
   uretim:['uretim'],
-  sayim:['sayim'],
-  devir:['devir']
+  sayim:['sayim']
 };
-const _ISLEM_SEKME_PREFIX={hammadde:'hm',satis:'st',kasa:'ks',uretim:'ur',sayim:'sy',devir:'dv'};
+const _ISLEM_SEKME_PREFIX={hammadde:'hm',uretim:'ur',sayim:'sy'};
 let _gunlukAcikId={}; // prefix -> açık belge key
 
 window.renderIslemGunSekmesi=async function(sekmeId){
