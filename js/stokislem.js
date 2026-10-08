@@ -22,11 +22,15 @@ window.skTab=function(id,btn){
   if(id==='transfer')trfGorunumListe();
   if(id==='devir'&&typeof dvrGorunumListe==='function')dvrGorunumListe();
   if(typeof SC_TURLER!=='undefined'&&SC_TURLER.includes(id))scGorunumListe(id);
+  if(id==='uretim'&&typeof urGorunumListe==='function')urGorunumListe();
+  if(id==='sayim'&&typeof syGorunumListe==='function')syGorunumListe();
 };
 window.skAcilis=function(){
   if(_aktifSkTab==='transfer')trfGorunumListe();
   else if(_aktifSkTab==='devir'&&typeof dvrGorunumListe==='function')dvrGorunumListe();
   else if(typeof SC_TURLER!=='undefined'&&SC_TURLER.includes(_aktifSkTab))scGorunumListe(_aktifSkTab);
+  else if(_aktifSkTab==='uretim'&&typeof urGorunumListe==='function')urGorunumListe();
+  else if(_aktifSkTab==='sayim'&&typeof syGorunumListe==='function')syGorunumListe();
 };
 
 const _depoAd=id=>depolar.find(d=>d.id===id)?.ad||'—';
