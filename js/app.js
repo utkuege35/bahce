@@ -101,6 +101,8 @@ function uygulamaAc(){
     // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
       'islem_liste':'gp(\'islem-liste\')',
+      'irsaliyeler':'gp(\'irsaliyeler\')', 'faturalar':'gp(\'faturalar\')', 'stok_islemleri':'gp(\'stok-islemleri\')', 'kasa_islemleri':'gp(\'kasa-islemleri\')',
+      'depo_stok':'gp(\'depo-stok\')', 'stok_envanter':'gp(\'stok-envanter\')', 'kdv_tanimlari':'gp(\'kdv-tanimlari\')',
       'stok':'gp(\'stok\')', 'stok_liste':'gp(\'stok-liste\')', 'urunler':'gp(\'urunler\')', 'urun_liste':'gp(\'urun-liste\')', 'yarimamuller':'gp(\'yarimamuller\')', 'ym_liste':'gp(\'ym-liste\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')', 'alt_birimler':'gp(\'alt-birimler\')',
@@ -268,7 +270,10 @@ window.navGrupToggle=function(btn){
   const acik=icerik.classList.toggle('acik');
   btn.classList.toggle('acik',acik);
 };
+// Yetki gerektiren yeni ekranlar: sayfa kimliği → yetki anahtarı. Menü gizlenmiş olsa bile doğrudan açılışı engeller.
+const SAYFA_YETKI={'irsaliyeler':'irsaliyeler','faturalar':'faturalar','stok-islemleri':'stok_islemleri','kasa-islemleri':'kasa_islemleri','depo-stok':'depo_stok','stok-envanter':'stok_envanter','kdv-tanimlari':'kdv_tanimlari'};
 window.gp=function(id){
+  if(SAYFA_YETKI[id]&&typeof yetkiVar==='function'&&!yetkiVar(SAYFA_YETKI[id],'goruntule')){bil('Bu ekran için yetkiniz yok','err');return;}
   navKapat();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
