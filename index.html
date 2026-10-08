@@ -89,14 +89,7 @@
 <div class="nav-overlay" id="nav-overlay" onclick="navKapat()"></div>
 <nav class="nav" id="ana-nav">
   <button class="active" onclick="gp('panel')">Panel</button>
-  <div class="nav-grup">
-    <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlem ▾</button>
-    <div class="nav-grup-icerik">
-      <button onclick="gp('islem')">Yeni İşlem</button>
-      <button onclick="gp('islem-liste')">İşlem Listesi</button>
-    </div>
-  </div>
-  <div class="nav-grup">
+    <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlemler ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('irsaliyeler')">İrsaliyeler</button>
@@ -105,47 +98,63 @@
       <button onclick="gp('kasa-islemleri')">Kasa İşlemleri</button>
     </div>
   </div>
-  <div class="nav-grup">
+    <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Tanımlar ▾</button>
     <div class="nav-grup-icerik">
-      <button onclick="gp('stok')">Stoklar</button>
-      <button onclick="gp('stok-liste')">Stok Listesi</button>
-      <button onclick="gp('kdv-tanimlari')">KDV Tanımları</button>
       <div class="nav-grup">
-        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürünler ▾</button>
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Stok ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="gp('stok')">Stoklar</button>
+          <button onclick="gp('stok-liste')">Stok Listesi</button>
+          <button onclick="gp('birimler')">Birimler</button>
+          <button onclick="gp('alt-birimler')">Alt Birimler</button>
+        </div>
+      </div>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün & Reçete ▾</button>
         <div class="nav-grup-icerik">
           <button onclick="gp('urunler')">Ana Ürünler</button>
           <button onclick="gp('urun-liste')">Ürün Listesi</button>
           <button onclick="gp('yarimamuller')">Yarı Mamuller</button>
           <button onclick="gp('ym-liste')">YM Listesi</button>
-        </div>
-      </div>
-      <div class="nav-grup">
-        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün Reçeteleri ▾</button>
-        <div class="nav-grup-icerik">
           <button onclick="_receteHedefTip='urun';_receteSeciliId=null;bilesenler=[];gp('receteler')">Ana Ürün Reçeteleri</button>
           <button onclick="_receteHedefTip='ara_urun';_receteSeciliId=null;bilesenler=[];gp('receteler')">Yarı Mamul Reçeteleri</button>
           <button onclick="gp('recete-normalize')">Reçete Normalize Et</button>
         </div>
       </div>
-      <button onclick="gp('hizmetler')">Hizmetler</button>
-      <button onclick="gp('kasalar')">Kasalar</button>
-      <button onclick="gp('cari')">Cari & Personel Kartları</button>
-      <button onclick="gp('birimler')">Birimler</button>
-      <button onclick="gp('alt-birimler')">Alt Birimler</button>
-      <button onclick="gp('merkezler')">Masraf & Gelir Merkezleri</button>
-      <button onclick="gp('depolar')">Depolar</button>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Cari & Finans ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="gp('cari')">Cari & Personel Kartları</button>
+          <button onclick="gp('kasalar')">Kasalar</button>
+          <button onclick="gp('kdv-tanimlari')">KDV Tanımları</button>
+          <button onclick="gp('hizmetler')">Hizmet / Gider Kalemleri</button>
+        </div>
+      </div>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Organizasyon ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="gp('depolar')">Depolar</button>
+          <button onclick="gp('merkezler')">Masraf & Gelir Merkezleri</button>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="nav-grup">
+    <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Raporlar ▾</button>
     <div class="nav-grup-icerik">
-      <button onclick="gp('rapor')">Rapor</button>
-      <button onclick="gp('depo-stok')">Depo Stok Durumu</button>
-      <button onclick="gp('stok-envanter')">Stok Envanter Raporu</button>
-      <button onclick="gp('sayim-raporu')">Sayım Raporu</button>
-      <button onclick="gp('recete-kullanim-raporu')">Reçetelerde Kullanım</button>
-      <button onclick="gp('ym-sayim-ozeti')">YM/Ürün Sayım Özeti</button>
+      <button onclick="gp('rapor')">Finans Raporları</button>
+      <button onclick="gp('islem-liste')">İşlem Listesi</button>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Stok Raporları ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="gp('depo-stok')">Depo Stok Durumu</button>
+          <button onclick="gp('stok-envanter')">Stok Envanter Raporu</button>
+          <button onclick="gp('sayim-raporu')">Sayım Raporu</button>
+          <button onclick="gp('ym-sayim-ozeti')">YM/Ürün Sayım Özeti</button>
+          <button onclick="gp('recete-kullanim-raporu')">Reçetelerde Kullanım</button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="nav-grup">
@@ -218,6 +227,8 @@
 
 <!-- İŞLEM LİSTESİ -->
 <div id="islem-liste" class="page">
+  <div style="font-size:15px;font-weight:600;color:var(--yazi1);margin-bottom:.25rem">İşlem Listesi</div>
+  <div style="font-size:12px;color:var(--yazi3);margin-bottom:.75rem">Tüm stok, gider ve kasa hareketlerinin dökümü. İrsaliye, Fatura, Stok İşlemleri ve Kasa İşlemleri ekranlarından girilen kayıtlar burada yalnızca görüntülenir (🔒); düzenleme ve silme ilgili ekrandan yapılır. Eski ekranlardan kalan kayıtlar buradan düzenlenebilir.</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
     <input type="text" id="il-ara" oninput="renderIslemListe()" placeholder="🔍 Ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:140px">
     <select id="il-tur" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
@@ -227,8 +238,7 @@
       <option value="satis">Satış</option>
       <option value="uretim">Üretim</option>
       <option value="sayim">Sayım</option>
-      <option value="devir">Devir</option><option value="satis">Satış</option><option value="ikram">İkram</option><option value="odenmez">Ödenmez</option><option value="hasar">Hasar</option><option value="atik">Atık</option><option value="kasa">Kasa</option>
-      <option value="kasa">Kasa</option>
+      <option value="devir">Devir</option><option value="ikram">İkram</option><option value="odenmez">Ödenmez</option><option value="hasar">Hasar</option><option value="atik">Atık</option><option value="kasa">Kasa</option>
     </select>
     <input type="date" id="il-bas" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
     <input type="date" id="il-bit" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
@@ -279,80 +289,6 @@
     </div>
   </div>
 </div>
-<div id="islem" class="page">
-  <div class="tabs">
-    <button class="tab active" onclick="islemTab('hammadde',this)">Hizmet / Gider</button>
-  </div>
-
-  <!-- ALIŞ -->
-  <div id="tp-hammadde" class="tab-panel active">
-    <div id="tp-hammadde-liste">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
-          <input type="date" id="hm-liste-tarih" onchange="renderIslemGunSekmesi('hammadde')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-          <button class="btn sm pri" onclick="yeniFisBaslat()">Yeni</button>
-          <div id="hm-liste-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
-        </div>
-        <div id="hm-liste-tb"></div>
-      </div>
-    </div>
-    <div id="tp-hammadde-form" style="display:none">
-      <div class="card"><div class="card-title">Hizmet / Gider Alımı<button class="btn sm ghost" onclick="islemKaydetmedenCik('hammadde')">← Listeye Dön</button></div>
-      <div class="fgrid c3" style="margin-bottom:1rem">
-        <div class="fg"><label>Tarih</label><input type="date" id="hm-tarih"></div>
-        <div class="fg"><label>Belge / Fatura No</label><input type="text" id="hm-belge" placeholder="FAT-001..."></div>
-        <div class="fg"><label>Not</label><input type="text" id="hm-not" placeholder="Açıklama..."></div>
-      </div>
-      <div class="fgrid c3" style="margin-bottom:1rem">
-        <div class="fg"><label>Ödeme Tipi</label>
-          <select id="hm-odeme-ust" onchange="hmOdemeUstDegis()">
-            <option value="pesin">Peşin</option>
-            <option value="cari">Cari</option>
-          </select>
-        </div>
-        <div class="fg" id="hm-cari-ust-fg"><label>Cari</label><select id="hm-cari-ust"><option value="">— Cari seçin —</option></select></div>
-        <div class="fg" id="hm-kasa-ust-fg"><label>Kasa</label><select id="hm-kasa-ust"><option value="">— Kasa seçin —</option></select></div>
-      </div>
-      <div class="tw" style="margin-bottom:.75rem">
-        <table class="excel-tablo" style="font-size:13px">
-          <thead><tr id="hm-baslik">
-            <th style="width:90px">Tür</th>
-            <th style="min-width:160px" id="hm-th-secim">Gider Kalemi / Açıklama</th>
-            <th style="width:80px">Birim</th>
-            <th style="width:100px">Miktar</th>
-            <th style="width:85px">B.Fiyat (₺)</th>
-            <th style="width:110px">Tutar (₺)</th>
-            <th style="min-width:130px" id="hm-th-alt">Açıklama</th>
-          </tr></thead>
-          <tbody id="hm-satirlar"></tbody>
-          <tfoot><tr>
-            <td colspan="5" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
-            <td id="hm-toplam" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px">₺0,00</td>
-            <td></td>
-          </tr></tfoot>
-        </table>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;gap:6px">
-          <button class="btn sm sec" onclick="hmSatirEkle()">+ Satır Ekle</button>
-          <button id="btn-hm-sil" class="btn sm ghost" onclick="hmSatirSilHover()" title="Üzerine gelinen satırı sil">🗑 Satırı Sil</button>
-        </div>
-        <button class="btn ghost" onclick="islemKaydetmedenCik('hammadde')">Kaydetmeden Çık</button>
-        <button class="btn pri" onclick="kaydetHammadde()">Kaydet</button>
-      </div>
-    </div>
-    </div>
-  </div>
-
-  <!-- ÜRETİM -->
-  
-
-  <!-- SAYIM -->
-  
-
-</div>
-
 <div id="irsaliyeler" class="page">
   <div class="tabs">
     <button class="tab active" onclick="irsTab('alis',this)">Alış İrsaliyeleri</button>
