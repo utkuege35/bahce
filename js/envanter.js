@@ -90,7 +90,35 @@ function _envHesapla(o){
 }
 
 // ----- Filtre / Raporla akışı -----
+// ----- Ay seçici: seçilen ayın ilk ve son günü başlangıç/bitiş tarihine otomatik yazılır -----
+const _ENV_AYLAR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+// Bu aydan geriye 24 ay (en yeni üstte) listelenir
+function envAyListesiDoldur(){
+  const sel=document.getElementById('env-ay');if(!sel||sel.options.length>1)return;
+  const bugun_=new Date();let y=bugun_.getFullYear(),m=bugun_.getMonth(); // m: 0-11
+  for(let i=0;i<24;i++){
+    const o=document.createElement('option');
+    o.value=`${y}-${String(m+1).padStart(2,'0')}`;o.textContent=`${_ENV_AYLAR[m]} ${y}`;
+    sel.appendChild(o);
+    m--;if(m<0){m=11;y--;}
+  }
+}
+window.envAySec=function(deger){
+  if(!deger){return;} // "Özel tarih": tarihler elle girilir
+  const [y,m]=deger.split('-').map(Number);
+  const sonGun=new Date(y,m,0).getDate(); // m (1-12) → o ayın son günü
+  document.getElementById('env-bas').value=`${y}-${String(m).padStart(2,'0')}-01`;
+  document.getElementById('env-bit').value=`${y}-${String(m).padStart(2,'0')}-${String(sonGun).padStart(2,'0')}`;
+  envFiltreDegisti();
+};
+// Tarih elle değiştirilirse ay seçimi "Özel tarih"e döner (ekranda yanlış ay yazmasın)
+window.envTarihElleDegisti=function(){
+  const sel=document.getElementById('env-ay');if(sel)sel.value='';
+  envFiltreDegisti();
+};
+
 window.envanterAc=function(){
+  envAyListesiDoldur();
   envDepoListeCiz();
   if(_envVeri&&_envVeri.anahtar===_envAnahtar())renderEnvanter();else envFiltreDegisti();
 };
