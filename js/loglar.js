@@ -4,7 +4,7 @@
 // eski/yeni değerlerin anlık görüntüsü (snapshot) ile okunabilir "değişiklik" listesi bulunur.
 const LOG_ISLEM_ADLARI={olustur:'Oluşturuldu',duzenle:'Düzenlendi',sil:'Silindi'};
 const LOG_ISLEM_RENK={olustur:'var(--yesil)',duzenle:'var(--sari)',sil:'#c62828'};
-const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',kasa:'Kasa'};
+const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',kasa:'Kasa',uretim:'Üretim',sayim:'Sayım'};
 const _logEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // Bir belgenin (irsaliye/fatura) o anki halinin okunabilir özeti.
@@ -66,6 +66,26 @@ window.stokCikisSnapshotKur=function(tarih,depoId,not,satirlar){
         'Fiyat':+(parseFloat(s.fiyat)||0),'Tutar':+(parseFloat(s.tutar)||0)};
     })
   };
+};
+// Sayım fişinin özeti. satirlar: [{stokId,birimId,direkt,kaynaklar:[{miktar}]}], ozet: [{urunId,ad,birimId,miktar}]
+window.sayimSnapshotKur=function(tarih,depoId,not,satirlar,ozet){
+  const y3=n=>Math.round(n*1000)/1000;
+  return {
+    baslik:{'Tarih':tarih||'','Depo':depolar.find(d=>d.id===depoId)?.ad||'','Not':not||''},
+    kalemler:[
+      ...(satirlar||[]).filter(s=>s.stokId).map(s=>{
+        const top=(parseFloat(s.direkt)||0)+(s.kaynaklar||[]).reduce((a,k)=>a+(parseFloat(k.miktar)||0),0);
+        return {'Malzeme':stoklar.find(x=>x.id===s.stokId)?.ad||'','Tür':'Hammadde','Birim':birimAd(s.birimId)||'','Miktar':y3(top)};
+      }),
+      ...(ozet||[]).filter(o=>(parseFloat(o.miktar)||0)>0).map(o=>({'Malzeme':urunler.find(u=>u.id===o.urunId)?.ad||o.ad||'','Tür':'YM/Ürün özeti','Birim':birimAd(o.birimId)||'','Miktar':y3(parseFloat(o.miktar)||0)}))
+    ]
+  };
+};
+// Üretim fişinin özeti (tek ürün: kalem yok, tüm bilgi başlıkta)
+window.uretimSnapshotKur=function(o){
+  const urun=urunler.find(u=>u.id===o.urunId);
+  return {baslik:{'Tarih':o.tarih||'','Depo':depolar.find(d=>d.id===o.depoId)?.ad||'','Ürün':urun?.ad||'',
+    'Miktar':+(parseFloat(o.miktar)||0),'Birim':birimAd(urun?.birim_id)||'','Maliyet':+(parseFloat(o.maliyet)||0),'Not':o.not||''},kalemler:[]};
 };
 // Kasa fişinin özeti (tek satırlı fiş: kalem yok, tüm bilgi başlıkta)
 window.kasaSnapshotKur=function(o){
@@ -160,6 +180,11 @@ window.renderLogEkrani=async function(sifirla){
   if(kulEl&&kulEl.options.length<=1){
     const adlar=[...new Set((typeof kullanicilar!=='undefined'?kullanicilar:[]).map(k=>`${k.ad||''}${k.soyad?' '+k.soyad:''}`.trim()).filter(Boolean))].sort();
     kulEl.innerHTML='<option value="">Tüm kullanıcılar</option>'+adlar.map(a=>`<option value="${_logEsc(a)}">${_logEsc(a)}</option>`).join('');
+  }
+  const turEl=document.getElementById('lg-tur');
+  if(turEl){
+    const mevcut=new Set([...turEl.options].map(o=>o.value));
+    Object.entries(LOG_TUR_ADLARI).forEach(([k,ad])=>{if(!mevcut.has(k)){const o=document.createElement('option');o.value=k;o.textContent=ad;turEl.appendChild(o);}});
   }
   const v=id=>document.getElementById(id)?.value||'';
   let q=sb.from('belge_loglari').select('*').order('ts',{ascending:false}).limit(_logLimit);
