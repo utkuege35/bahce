@@ -12,6 +12,7 @@
 <title>Sever Bahçesi</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script>try{var _v=localStorage.getItem('sb_yazi_olcek');if(['1','1.1','1.2'].indexOf(_v)<0)_v='1.1';document.documentElement.style.setProperty('--yazi-olcek',_v);}catch(e){}</script>
 </head>
 <body>
 <div id="giris-wrap">
@@ -1273,8 +1274,8 @@
     #env-tablo thead th{position:sticky;background:var(--krem2);z-index:4;height:26px;box-sizing:border-box}
     #env-tablo thead tr:nth-child(1) th{top:0}
     #env-tablo thead tr:nth-child(2) th{top:27px}
-    #env-tablo .env-k1{position:sticky;left:0;min-width:90px;background:var(--beyaz);z-index:2}
-    #env-tablo .env-k2{position:sticky;left:90px;min-width:190px;background:var(--beyaz);z-index:2}
+    #env-tablo .env-k1{position:sticky;left:0;width:115px;min-width:115px;background:var(--beyaz);z-index:2}
+    #env-tablo .env-k2{position:sticky;left:115px;min-width:200px;background:var(--beyaz);z-index:2}
     #env-tablo thead .env-k1,#env-tablo thead .env-k2{z-index:6;background:var(--krem2)}
     #env-tablo .env-v{background:var(--krem2)}
     #env-tablo tbody tr:hover td{background:var(--yesil-cok-ac)}
@@ -2520,6 +2521,8 @@
         <div id="profil-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--yesil);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;font-family:Lora,serif;flex-shrink:0"></div>
         <div><div id="profil-ad" style="font-size:15px;font-weight:500"></div><div id="profil-email" style="font-size:12px;color:var(--yazi3);margin-top:2px"></div><div id="profil-rol" style="font-size:11px;margin-top:4px"></div></div>
       </div>
+      <div class="fgrid c1" style="margin-bottom:1rem"><div class="fg"><label>Yazı Boyutu <span style="font-weight:400;color:var(--yazi3)">(bu cihazda geçerli)</span></label>
+        <select id="yazi-boyutu" onchange="yaziBoyutuDegis(this.value)"><option value="1">Normal</option><option value="1.1">Büyük</option><option value="1.2">Çok büyük</option></select></div></div>
       <div class="sep"></div>
       <div style="font-size:13px;font-weight:500;margin-bottom:.8rem">Şifre Değiştir</div>
       <div id="psifre-hata" class="msg err"></div><div id="psifre-ok" class="msg ok"></div>
@@ -2537,6 +2540,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/yazi.js"></script>
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
