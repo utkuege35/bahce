@@ -1222,10 +1222,12 @@
     <button class="btn sm sec" onclick="envanterExcelIndir()">📤 Excel'e Aktar</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.5rem;align-items:center">
+    <label style="font-size:12px;color:var(--yazi2)">Ay:</label>
+    <select id="env-ay" onchange="envAySec(this.value)" title="Bir ay seçince başlangıç ve bitiş tarihi otomatik dolar" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Özel tarih</option></select>
     <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
-    <input type="date" id="env-bas" onchange="envFiltreDegisti()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <input type="date" id="env-bas" onchange="envTarihElleDegisti()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
     <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
-    <input type="date" id="env-bit" onchange="envFiltreDegisti()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <input type="date" id="env-bit" onchange="envTarihElleDegisti()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
     <div id="env-depo-wrap" style="position:relative">
       <button type="button" id="env-depo-btn" class="btn sm" onclick="envDepoPanelAc(event)" style="min-width:170px;text-align:left">— Depo seçin — ▾</button>
       <div id="env-depo-panel" style="display:none;position:absolute;z-index:70;top:100%;left:0;margin-top:4px;min-width:230px;max-height:300px;overflow-y:auto;background:var(--beyaz);border:1px solid var(--border);border-radius:8px;padding:6px 10px;box-shadow:0 6px 20px rgba(0,0,0,.25)">
