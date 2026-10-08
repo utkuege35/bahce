@@ -467,11 +467,9 @@ window.ilFiltreTemizle=function(){
 // Her sekme açıldığında, giriş formu yerine o güne ait fişlerin özet
 // listesini gösterir. "+ Yeni Fiş" ile form görünümüne geçilir.
 const _ISLEM_SEKME_TUR={
-  hammadde:['gider'], // Hizmet / Gider sekmesi (malzeme alışı artık İrsaliye/Fatura ile girilir)
-  uretim:['uretim'],
-  sayim:['sayim']
+  hammadde:['gider'] // Hizmet / Gider sekmesi (malzeme alışı artık İrsaliye/Fatura ile girilir; Üretim ve Sayım Stok İşlemleri'ndedir)
 };
-const _ISLEM_SEKME_PREFIX={hammadde:'hm',uretim:'ur',sayim:'sy'};
+const _ISLEM_SEKME_PREFIX={hammadde:'hm'};
 let _gunlukAcikId={}; // prefix -> açık belge key
 
 window.renderIslemGunSekmesi=async function(sekmeId){
