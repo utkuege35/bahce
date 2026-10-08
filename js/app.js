@@ -276,6 +276,10 @@ window.gp=function(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
+  // Henüz yeni yapıya taşınmamış eski rapor ekranları için hareket listesi (açılırken bir kez yüklenir, yazımdan sonra bayatlar)
+  if(['sayim-raporu','recete-kullanim-raporu','ym-sayim-ozeti','rapor','cari'].includes(id)&&!window._legacyHazir&&typeof islemlerLegacyYukle==='function'){
+    islemlerLegacyYukle().then(()=>{window._legacyHazir=true;gp(id);});
+  }
   const navBtn=document.querySelector(`.nav button[onclick="gp('${id}')"]`);
   if(navBtn){
     navBtn.classList.add('active');
