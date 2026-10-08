@@ -1893,6 +1893,38 @@
   <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem"><button class="btn pri sm" onclick="yeniKullaniciModalAc()">+ Yeni Kullanıcı</button></div>
   <div id="kullanici-liste"></div>
 </div>
+
+<!-- KULLANICI LOGLARI (yönetici) -->
+<div id="kullanici-loglari" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Kullanıcı Logları</div>
+    <div id="lg-ozet" style="font-size:12px;color:var(--yazi3)"></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
+    <select id="lg-kullanici" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm kullanıcılar</option></select>
+    <select id="lg-islem" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+      <option value="">Tüm işlemler</option>
+      <option value="olustur">Oluşturuldu</option>
+      <option value="duzenle">Düzenlendi</option>
+      <option value="sil">Silindi</option>
+    </select>
+    <select id="lg-tur" onchange="renderLogEkrani(true)" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm belge türleri</option></select>
+    <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+    <input type="date" id="lg-bas" onchange="renderLogEkrani(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+    <input type="date" id="lg-bit" onchange="renderLogEkrani(true)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+    <input type="text" id="lg-no" onchange="renderLogEkrani(true)" placeholder="🔍 Belge no..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:140px">
+    <button class="btn sm ghost" onclick="logFiltreTemizle()">✕ Temizle</button>
+  </div>
+  <div class="card">
+    <div class="tw"><table>
+      <thead><tr><th>Zaman</th><th>Kullanıcı</th><th>İşlem</th><th>Belge Türü</th><th>Belge No</th><th>Belge Tarihi</th><th>Özet</th><th></th></tr></thead>
+      <tbody id="lg-tb"></tbody>
+    </table></div>
+    <div id="lg-daha" style="text-align:center;margin-top:.5rem"></div>
+  </div>
+</div>
+
 </div>
 
 <!-- MODAL: FATURAYA İRSALİYE AKTAR -->
