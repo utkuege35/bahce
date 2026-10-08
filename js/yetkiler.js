@@ -1,3 +1,27 @@
+// ===== YETKİ EKRAN LİSTESİ GÜNCELLEMESİ =====
+// config.js'teki EKRANLAR listesi burada güncellenir (config.js'e dokunmadan):
+//  • "Yeni İşlem" kalktı (sayfa kaldırıldı; işlemler İrsaliye/Fatura/Stok İşlemleri/Kasa İşlemleri ekranlarında).
+//  • Yeni ekranlar için yetki anahtarları eklendi. Stok İşlemleri = Devir, Transfer, Satış, İkram, Ödenmez, Hasar, Atık, Üretim, Sayım;
+//    Kasa İşlemleri = Tahsil, Tediye. Rapor ekranları sadece "Görüntüle" ister (eylemler: [...]).
+//  • Menü adlarıyla uyum için bazı etiketler yeniden adlandırıldı.
+// Yetkiler iki yerde uygulanır: menü düğmesi/ekran açılışı (app.js) ve kayıt/silme işlevleri (yetkikontrol.js).
+(function(){
+  const bul=id=>EKRANLAR.findIndex(e=>e.id===id);
+  const ekle=(oncesi,...yeni)=>yeni.filter(e=>bul(e.id)<0).forEach(e=>{const j=bul(oncesi);if(j>=0)EKRANLAR.splice(j,0,e);else EKRANLAR.push(e);});
+  const i=bul('islem');if(i>=0)EKRANLAR.splice(i,1);
+  ekle('islem_liste',{id:'irsaliyeler',ad:'İrsaliyeler'},{id:'faturalar',ad:'Faturalar'},{id:'stok_islemleri',ad:'Stok İşlemleri'},{id:'kasa_islemleri',ad:'Kasa İşlemleri'});
+  ekle('birimler',{id:'kdv_tanimlari',ad:'KDV Tanımları'});
+  ekle('sayim_raporu',{id:'depo_stok',ad:'Depo Stok Durumu',eylemler:['goruntule']},{id:'stok_envanter',ad:'Stok Envanter Raporu',eylemler:['goruntule']});
+  const ad=(id,yeniAd)=>{const e=EKRANLAR.find(x=>x.id===id);if(e)e.ad=yeniAd;};
+  ad('hizmetler','Hizmet / Gider Kalemleri');ad('rapor','Finans Raporları');
+  const il=EKRANLAR.find(x=>x.id==='islem_liste');if(il)il.eylemler=['goruntule','duzenle','sil'];
+})();
+// Bir ekran bazı eylemleri desteklemiyorsa (rapor gibi) o eylemin onay kutusu çizilmez
+function _yetkiHucre(onek,e,ey){
+  if(e.eylemler&&!e.eylemler.includes(ey.id))return '<td style="padding:8px;text-align:center;color:var(--yazi3)">—</td>';
+  return `<td style="padding:8px;text-align:center"><input type="checkbox" id="${onek}-${e.id}-${ey.id}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--yesil)"></td>`;
+}
+
 // ===== YETKİ ŞABLONLARI =====
 
 window.renderYetkiler = function() {
@@ -218,6 +242,8 @@ window.yetkiButonlariUygula = function() {
     const el = document.getElementById(id);
     if (el && !yetkiVar(ekran, eylem)) el.style.display = 'none';
   });
+  // Yeni ekranların araç çubuğu düğmeleri (Yeni / Görüntüle / Düzenle / Sil / Log / Faturaya Dönüştür)
+  if (typeof yetkiEylemleriUygula === 'function') yetkiEylemleriUygula();
 };
 
 // Yetki tablosunu doldur (modal açıldığında)
@@ -227,11 +253,7 @@ window.sablonYetkiTabloOlustur = function() {
   tbody.innerHTML = EKRANLAR.map(e => `
     <tr style="border-bottom:1px solid var(--krem2)">
       <td style="padding:8px 10px;font-weight:500">${e.ad}</td>
-      ${EYLEMLER.map(ey => `
-        <td style="padding:8px;text-align:center">
-          <input type="checkbox" id="ys-${e.id}-${ey.id}"
-            style="width:16px;height:16px;cursor:pointer;accent-color:var(--yesil)">
-        </td>`).join('')}
+      ${EYLEMLER.map(ey => _yetkiHucre('ys',e,ey)).join('')}
     </tr>`).join('');
 };
 
@@ -351,11 +373,7 @@ function _kyCrudTabloOlustur() {
   tbody.innerHTML = EKRANLAR.map(e => `
     <tr style="border-bottom:1px solid var(--krem2)">
       <td style="padding:8px 10px;font-weight:500">${e.ad}</td>
-      ${EYLEMLER.map(ey => `
-        <td style="padding:8px;text-align:center">
-          <input type="checkbox" id="ky-${e.id}-${ey.id}"
-            style="width:16px;height:16px;cursor:pointer;accent-color:var(--yesil)">
-        </td>`).join('')}
+      ${EYLEMLER.map(ey => _yetkiHucre('ky',e,ey)).join('')}
     </tr>`).join('');
 }
 
