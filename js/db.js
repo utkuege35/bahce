@@ -24,11 +24,30 @@ window.fisSilDb=async function(fisId,sert){
   const {error}=await sb.rpc('stok_fisi_sil',{p_fis:fisId,p_isyeri:aktifIsyeri?.id||null,p_kullanici:aktifKullanici?.ad||'',p_sert:!!sert});
   if(error)throw error;
 };
+// Üretim fişi: ürün + reçeteden açılan hammadde sarfiyatları + urunler.stok sayacı TEK işlemde yazılır/silinir.
+window.uretimYazDb=async function(baslik,satirlar,eskiBelge){
+  const {data,error}=await sb.rpc('uretim_fisi_yaz',{p_baslik:baslik,p_satirlar:satirlar,p_eski:eskiBelge||null});
+  if(error)throw error;
+  return data;
+};
+window.uretimSilDb=async function(fisId){
+  const {error}=await sb.rpc('uretim_fisi_sil',{p_fis:fisId,p_isyeri:aktifIsyeri?.id||null,p_kullanici:aktifKullanici?.ad||''});
+  if(error)throw error;
+};
+// GEÇİŞ KOLAYLIĞI: henüz yeni yapıya taşınmamış eski rapor ekranları (Sayım Raporu, Rapor, Reçete Kullanım Raporu, YM Sayım Özeti, Cari)
+// hareketleri bellekteki `islemler` listesinden okuyabilir. O ekranlar açılırken liste veritabanından (sayfalı) yüklenir;
+// herhangi bir kayıt yazımından sonra bayat sayılır ve ekran tekrar açılınca yenilenir.
+window.islemlerLegacyYukle=async function(){
+  if(!aktifIsyeri?.id)return;
+  try{islemler=await sbSayfali(()=>_aktifIslemSorgusu().order('tarih',{ascending:false}).order('ts',{ascending:false}).order('id'));}
+  catch(e){console.warn('Eski ekranlar için hareket listesi yüklenemedi:',e.message);}
+};
 // Hareketlerin hepsi artık tarayıcıda tutulmaz; her ekran ihtiyacını veritabanından (filtreli, sayfalı) alır.
 // Sadece stok miktarı ve son alım fiyatları küçük bir önbellekte durur (veritabanı fonksiyonlarından gelir).
 window._stokBakiyeToplam={};
 window._stokSonAlim={};
 window.stokBakiyeToplamYenile=async function(){
+  window._legacyHazir=false; // eski ekranlar için hareket kopyası bayatladı
   const isyeri=aktifIsyeri?.id||null;
   const [bak,alim]=await Promise.all([
     sb.rpc('stok_bakiyeler',{p_isyeri:isyeri,p_depo:null,p_stoklar:null,p_haric_belge:null,p_tarih:null}),
