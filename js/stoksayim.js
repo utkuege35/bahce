@@ -72,7 +72,7 @@ window.syFormAc=function(){
   if(typeof doldurDepoSecleri==='function')doldurDepoSecleri();
 };
 window.syYeniBaslat=function(){
-  fisNoRozetYaz('#tp-sk-sayim-form','');
+  if(typeof fisNoRozetYaz==='function')fisNoRozetYaz('#tp-sk-sayim-form',''); // (loglar.js güncel değilse rozet atlanır; form yine açılır)
   sayimDuzenlemeIptal();_syEskiSnapshot=null;
   syFormAc();
   _syGoruntuleme=false;_sySaltOkunur(false);_syBaslikYaz(false,false);
