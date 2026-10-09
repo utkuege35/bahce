@@ -577,7 +577,7 @@ window.sayimFisiDuzenleAc=async function(belgeKey,salt){
  _syDuzenlenenBelgeId=salt?null:belgeKey;
  const ilk=satirlar[0];
  syFormAc();
- fisNoRozetYaz('#tp-sk-sayim-form',ilk.fis_no||'');
+ if(typeof fisNoRozetYaz==='function')fisNoRozetYaz('#tp-sk-sayim-form',ilk.fis_no||'');
  document.getElementById('sy-tarih').value=ilk.tarih;
  document.getElementById('sy-depo').value=ilk.depo_id;
  if(typeof syTarihDegisti==='function')syTarihDegisti();
