@@ -77,7 +77,7 @@ window.syYeniBaslat=function(){
   syFormAc();
   _syGoruntuleme=false;_sySaltOkunur(false);_syBaslikYaz(false,false);
   const t=document.getElementById('sy-tarih');if(t&&!t.value)t.value=bugun();
-  syTarihDegisti(); // kalan hesabı başlangıcı = sayım tarihinin ay başı
+  syFisKontrol();
   sySatirRender();
   bil('Yeni Sayım fişi başlatıldı ✓');
 };
@@ -92,6 +92,7 @@ function _sySaltOkunur(salt){
     el.disabled=salt;
   });
   const kaydet=document.getElementById('btn-sayim-kaydet');if(kaydet)kaydet.style.display=salt?'none':'';
+  if(!salt)syKalanKilidiUygula();
   form.querySelectorAll('button[onclick^="syKaydetmedenCik"]').forEach(b=>{
     if(b.textContent.includes('Kaydetmeden')||b.textContent==='Kapat')b.textContent=salt?'Kapat':'Kaydetmeden Çık';
   });
@@ -119,64 +120,57 @@ window.sySil=async function(id){
 // ===== KALANLARI GETİR / SAYIMA AKTAR =====
 // Seçili depoda, sayım tarihinde görünen KALAN miktar ve tutarı getirir. Hesap Stok Envanter Raporu ile AYNIDIR
 // (envanterVeriGetir + _envKalan: Devir [sadece başlangıç tarihindeki devir fişi] + Alım + Transfer(+) − Transfer(−) − Satış − Ödenmez
-// − İkram − Hasar − Atık), tek depo için. Aralık: "kalan hesabı başlangıcı" (varsayılan sayım tarihinin ay başı) → sayım tarihi.
-// Sayım fişine sadece SAYIM sütunu yazılır; kalan değerleri bilgi amaçlıdır ve kaydedilmez.
-let _syKalanAnahtar='',_syKalanMesaj='',_syHesapBasOto=true;
-const _syAyBasi=t=>t?t.slice(0,7)+'-01':'';
-function _syKalanTemizle(){
-  _syKalanAnahtar='';_syKalanMesaj='';_syHesapBasOto=true;
-  const b=document.getElementById('sy-hesap-bas');if(b)b.value='';
-  const bi=document.getElementById('sy-kalan-bilgi');if(bi){bi.textContent='';bi.style.color='';}
+// − İkram − Hasar − Atık), tek depo için.
+// Hesabın BAŞLANGICI otomatiktir: o depoda sayım tarihinden önceki (ya da aynı gün) EN SON devir fişinin tarihi; devir fişi yoksa
+// sayım tarihinin ay başı.
+// BİR KEZ: kalanlar getirilince tarih ve depo kilitlenir, düğme pasifleşir. Getirilen her stok satırı (sayımı girilmese bile)
+// fişle birlikte kalan değerleriyle saklanır; fiş yeniden açılınca hepsi görünür. Aynı depo+gün için ikinci fiş zaten açılamaz.
+async function _syHesapBaslangici(depo,tarih){
+  try{
+    let q=sb.from('stok_fisleri').select('tarih').eq('fis_turu','devir').eq('depo_id',depo).eq('silindi',false).lte('tarih',tarih).order('tarih',{ascending:false}).limit(1);
+    if(aktifIsyeri?.id)q=q.eq('isyeri_id',aktifIsyeri.id);
+    const {data}=await q;
+    if(data&&data[0]&&data[0].tarih)return data[0].tarih;
+  }catch(e){}
+  return tarih.slice(0,7)+'-01';
 }
-function syKalanBilgiGuncelle(){
-  const bi=document.getElementById('sy-kalan-bilgi');if(!bi||!_syKalanAnahtar)return;
-  const sim=[document.getElementById('sy-depo')?.value,document.getElementById('sy-hesap-bas')?.value,document.getElementById('sy-tarih')?.value].join('|');
-  if(sim!==_syKalanAnahtar){bi.textContent='⚠ Depo ya da tarih değişti — görünen kalanlar eski seçime göre. Yeniden "Kalanları Getir"e basın.';bi.style.color='#c62828';}
-  else{bi.textContent=_syKalanMesaj;bi.style.color='';}
+// Kalanlar getirilmişse (satırlarda kalan değeri varsa) tarih/depo alanları ve "Kalanları Getir" düğmesi kilitlenir
+function syKalanKilidiUygula(){
+  if(_syGoruntuleme)return; // görüntülemede tüm alanlar zaten kilitli
+  const getirildi=sayimSatirListesi.some(s=>s.kalanM!==undefined&&s.kalanM!==null);
+  ['sy-tarih','sy-depo'].forEach(id=>{const e=document.getElementById(id);if(e)e.disabled=getirildi;});
+  const b=document.getElementById('btn-sy-kalan');
+  if(b){b.disabled=getirildi;b.style.opacity=getirildi?'.45':'';b.style.cursor=getirildi?'not-allowed':'';}
 }
-window.syTarihDegisti=function(){
-  if(_syHesapBasOto){const b=document.getElementById('sy-hesap-bas');if(b)b.value=_syAyBasi(document.getElementById('sy-tarih')?.value);}
-  syKalanBilgiGuncelle();syFisKontrol();
-};
-window.syDepoDegisti=function(){syKalanBilgiGuncelle();syFisKontrol();};
-window.syHesapBasElle=function(){_syHesapBasOto=false;syKalanBilgiGuncelle();};
 window.syKalanlariGetir=async function(){
   const tarih=document.getElementById('sy-tarih')?.value,depo=document.getElementById('sy-depo')?.value;
   if(!depo){bil('Önce depoyu seçin!','err');return;}
   if(!tarih){bil('Önce sayım tarihini seçin!','err');return;}
+  if(sayimSatirListesi.some(s=>s.kalanM!==undefined&&s.kalanM!==null)){bil('Bu tarih ve depo için kalanlar zaten getirildi.','err');return;}
   if(typeof envanterVeriGetir!=='function'||typeof _envKalan!=='function'){bil('Envanter hesabı yüklenemedi, sayfayı yenileyin.','err');return;}
-  const bas=document.getElementById('sy-hesap-bas')?.value||_syAyBasi(tarih);
-  if(bas>tarih){bil('Hesap başlangıcı sayım tarihinden sonra olamaz!','err');return;}
   const btn=document.getElementById('btn-sy-kalan');const btnYazi=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='Hesaplanıyor...';}
-  let veri;
-  try{veri=await envanterVeriGetir(bas,tarih,[depo]);}
-  catch(e){bil('Kalanlar hesaplanamadı: '+e.message,'err');return;}
-  finally{if(btn){btn.disabled=false;btn.textContent=btnYazi;}}
-  // Önceki "Kalanları Getir"in sayım girilmemiş satırları ve eski kalan değerleri temizlenir (depo/tarih değişmiş olabilir)
-  sayimSatirListesi=sayimSatirListesi.filter(s=>!(s.otoKalan&&!(s.direkt>0)&&!(s.kaynaklar||[]).length));
-  sayimSatirListesi.forEach(s=>{delete s.kalanM;delete s.kalanT;});
+  let veri,bas;
+  try{bas=await _syHesapBaslangici(depo,tarih);veri=await envanterVeriGetir(bas,tarih,[depo]);}
+  catch(e){bil('Kalanlar hesaplanamadı: '+e.message,'err');if(btn)btn.disabled=false;return;}
+  finally{if(btn)btn.textContent=btnYazi;}
   const kapsam=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false);
-  let adet=0,toplamT=0,devirVar=false;
+  let adet=0;
   kapsam.forEach(st=>{
     const o=veri[st.id];if(!o)return;
     const kalanM=_envKalan(o.m),kalanT=_envKalan(o.t);
-    if(o.m.devir>0)devirVar=true;
     if(!o.hareket&&Math.abs(kalanM)<0.0005&&Math.abs(kalanT)<0.005)return; // depoda hiç hareketi olmayan stok listelenmez
     let satir=sayimSatirListesi.find(x=>x.stokId===st.id);
-    if(!satir){satir={stokId:st.id,birimId:st.birim_id||'',direkt:0,kaynaklar:[],otoKalan:true};sayimSatirListesi.push(satir);}
+    if(!satir){satir={stokId:st.id,birimId:st.birim_id||'',direkt:0,kaynaklar:[]};sayimSatirListesi.push(satir);}
     satir.kalanM=Math.round(kalanM*1000)/1000;satir.kalanT=Math.round(kalanT*100)/100;
-    adet++;toplamT+=satir.kalanT;
+    adet++;
   });
   sayimSatirListesi.sort((a,b)=>{const ka=stoklar.find(x=>x.id===a.stokId)?.kod||'',kb=stoklar.find(x=>x.id===b.stokId)?.kod||'';return ka.localeCompare(kb,'tr',{numeric:true});});
-  const depoAd=depolar.find(d=>d.id===depo)?.ad||'';
-  _syKalanAnahtar=[depo,bas,tarih].join('|');
-  _syKalanMesaj=`📊 ${depoAd} · ${bas} – ${tarih} · ${adet} kalem · Kalan toplam tutar: ${para(toplamT)}`+(devirVar?'':' · ⚠ Başlangıç tarihinde devir fişi yok; kalanlar sadece aralıktaki hareketlerden hesaplandı (Stok Envanter Raporu ile aynı kural).');
-  syKalanBilgiGuncelle();
-  sySatirRender();
-  bil(adet?`${adet} kalem için kalan getirildi ✓`:'Bu depoda seçilen aralıkta hareket görünmüyor.',adet?'ok':'uyari');
+  sySatirRender(); // satırları çizer ve tarih/depo kilidini uygular
+  const [yy,mm,dd]=bas.split('-');
+  bil(adet?`${adet} kalem için kalan getirildi (${dd}.${mm}.${yy} tarihinden itibaren) ✓`:'Bu depoda seçilen aralıkta hareket görünmüyor.',adet?'ok':'uyari');
 };
-// KALAN miktarlarını SAYIM sütununa toplu yazar (negatif kalan atlanır). Sayım tutarı otomatik oluşur.
+// KALAN miktarlarını SAYIM sütununa toplu yazar (sıfır/negatif kalan atlanır). Sayım tutarı otomatik oluşur.
 window.syKalanlariSayimaYaz=async function(){
   const satirlar=sayimSatirListesi.filter(s=>s.kalanM!==undefined&&s.kalanM!==null);
   if(!satirlar.length){bil('Önce "Kalanları Getir"e basın.','err');return;}
@@ -184,7 +178,7 @@ window.syKalanlariSayimaYaz=async function(){
   if(dolu.length&&!(await onay(`${dolu.length} satırda daha önce girilmiş sayım var; bunların üzerine KALAN miktarı yazılacak.<br>Devam edilsin mi?`,'⚠️','Evet','Hayır')))return;
   let yazilan=0,atlanan=0;
   satirlar.forEach(s=>{
-    if(!(s.kalanM>0)){atlanan++;return;} // sıfır/negatif kalan sayıma yazılmaz
+    if(!(s.kalanM>0)){atlanan++;return;}
     const kaynaklarToplam=(s.kaynaklar||[]).reduce((t,k)=>t+(parseFloat(k.miktar)||0),0);
     s.direkt=Math.max(0,Math.round((s.kalanM-kaynaklarToplam)*1000)/1000); // sayım toplamı = kalan (YM kaynaklı kısım sabit kalır)
     yazilan++;
