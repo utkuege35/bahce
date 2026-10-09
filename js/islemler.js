@@ -460,6 +460,9 @@ window.syExcelSecildi=async function(input){
 // otomatik eklenir ve altında yeni bir boş satır belirir (ayrı pencere yok).
 function sySatirRender(){
  const el=document.getElementById('sy-satirlar');if(!el)return;
+ const f3=n=>(+n).toLocaleString('tr-TR',{maximumFractionDigits:3});
+ const kr=(v,esik)=>v<-(esik||0.0005)?'color:#c62828;':''; // sadece negatif sayılar kırmızı
+ let topKalanT=0,topSayimT=0,kalanVarMi=false;
  let html=sayimSatirListesi.map((s,i)=>{
  const stok=stoklar.find(x=>x.id===s.stokId);
  const birim=birimler.find(b=>b.id===s.birimId);
@@ -467,24 +470,34 @@ function sySatirRender(){
  const genelToplam=(s.direkt||0)+kaynaklarToplam;
  const birimFiyat=stok?stokBirimMaliyet(stok.id):0;
  const tutar=genelToplam*birimFiyat;
+ // KALAN (Kalanları Getir ile gelir; elle eklenen satırda yoktur) ve FARK = Kalan − Sayım (sayım girildiyse)
+ const kalanVar=s.kalanM!==undefined&&s.kalanM!==null;
+ if(kalanVar){kalanVarMi=true;topKalanT+=s.kalanT||0;}
+ topSayimT+=tutar;
+ const fark=kalanVar&&genelToplam>0?(s.kalanM-genelToplam):null;
  return `<tr onmouseenter="_syHoverIndex=${i}">
  <td>${stok?stok.ad:'(bilinmeyen)'} <span style="font-size:10px;color:var(--yazi3)">[${stok?.kod||''}]</span></td>
  <td>${birim?.kisaltma||''}</td>
+ <td style="text-align:right;${kalanVar?kr(s.kalanM):''}">${kalanVar?f3(s.kalanM):'—'}</td>
+ <td style="text-align:right;${kalanVar?kr(s.kalanT,0.005):''}">${kalanVar?para(s.kalanT):'—'}</td>
  <td><input type="number" value="${genelToplam||''}" onfocus="_syHoverIndex=${i}" onblur="sySatirGuncelle(${i},this.value)" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px"></td>
- <td style="text-align:right;color:var(--yazi3)">${birimFiyat>0?para(birimFiyat):'—'}</td>
+ <td style="text-align:right">${birimFiyat>0?para(birimFiyat):'—'}</td>
  <td style="text-align:right;font-weight:600">${tutar>0?para(tutar):'—'}</td>
+ <td style="text-align:right;${fark!==null?kr(fark):''}">${fark===null?'':f3(fark)}</td>
  <td></td>
  </tr>`;
  }).join('');
  const eklenenler=new Set(sayimSatirListesi.map(s=>s.stokId));
  const secenekler=isyeriFiltre(stoklar).filter(s=>s.tip==='stok'&&s.aktif!==false&&!eklenenler.has(s.id));
  html+=`<tr style="background:var(--krem)">
- <td><input type="text" id="sy-bos-hammadde-arama" list="sy-hammadde-datalist" autocomplete="off" oninput="syBosSatirAramaInput(this.value)" style="width:100%;padding:3px 5px;font-size:12px;background:var(--beyaz)">
+ <td><input type="text" id="sy-bos-hammadde-arama" list="sy-hammadde-datalist" autocomplete="off" placeholder="Listede olmayan stok ekle..." oninput="syBosSatirAramaInput(this.value)" style="width:100%;padding:3px 5px;font-size:12px;background:var(--beyaz)">
  <datalist id="sy-hammadde-datalist">${secenekler.map(s=>`<option value="[${s.kod}] ${s.ad}">`).join('')}</datalist></td>
- <td colspan="4" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
+ <td colspan="7" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
  <td></td>
  </tr>`;
  el.innerHTML=html;
+ const oz=document.getElementById('sy-ozet');
+ if(oz)oz.textContent=(kalanVarMi||topSayimT>0)?`${kalanVarMi?`Kalan toplam: ${para(topKalanT)}  ·  `:''}Sayım toplam: ${para(topSayimT)}`:'';
 }
 window.syBosSatirAramaInput=function(val){
  const eklenenler=new Set(sayimSatirListesi.map(s=>s.stokId));
@@ -564,8 +577,10 @@ window.sayimFisiDuzenleAc=async function(belgeKey,salt){
  _syDuzenlenenBelgeId=salt?null:belgeKey;
  const ilk=satirlar[0];
  syFormAc();
+ fisNoRozetYaz('#tp-sk-sayim-form',ilk.fis_no||'');
  document.getElementById('sy-tarih').value=ilk.tarih;
  document.getElementById('sy-depo').value=ilk.depo_id;
+ if(typeof syTarihDegisti==='function')syTarihDegisti();
  document.getElementById('sy-not').value=ilk.aciklama_not||'';
  sySatirRender();
  const dzBant=document.getElementById('sy-duzenleme-bant');
@@ -584,7 +599,9 @@ window.sayimFisiDuzenleAc=async function(belgeKey,salt){
 };
 window.sayimDuzenlemeIptal=function(){
  _syDuzenlenenBelgeId=null;
- sayimSatirListesi=[];_ymSayimOzetListesi=[];sySatirRender();
+ sayimSatirListesi=[];_ymSayimOzetListesi=[];
+ if(typeof _syKalanTemizle==='function')_syKalanTemizle();
+ sySatirRender();
  document.getElementById('sy-not').value='';
  const dzBant=document.getElementById('sy-duzenleme-bant');
  if(dzBant)dzBant.style.display='none';
@@ -645,7 +662,9 @@ window.kaydetSayim=async function(){
  await logYaz({islem:duzenlemeMi?'duzenle':'olustur',belgeTuru:'sayim',altTur:'manuel',belgeId,belgeTarihi:tarih,tutar:toplamTutar,
  eski:duzenlemeMi?_syEskiSnapshot:null,yeni:sayimSnapshotKur(tarih,depoId,an,gecerli,_ymSayimOzetListesi)});
  await islemleriYenile();
- sayimSatirListesi=[];sySatirRender();
+ sayimSatirListesi=[];
+ if(typeof _syKalanTemizle==='function')_syKalanTemizle();
+ sySatirRender();
  _ymSayimOzetListesi=[];
  _syDuzenlenenBelgeId=null;_syEskiSnapshot=null;
  document.getElementById('sy-not').value='';
