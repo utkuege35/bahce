@@ -492,12 +492,12 @@ function sySatirRender(){
  html+=`<tr style="background:var(--krem)">
  <td><input type="text" id="sy-bos-hammadde-arama" list="sy-hammadde-datalist" autocomplete="off" placeholder="Listede olmayan stok ekle..." oninput="syBosSatirAramaInput(this.value)" style="width:100%;padding:3px 5px;font-size:12px;background:var(--beyaz)">
  <datalist id="sy-hammadde-datalist">${secenekler.map(s=>`<option value="[${s.kod}] ${s.ad}">`).join('')}</datalist></td>
- <td colspan="7" style="color:var(--yazi3);font-size:11px">Seçince satır otomatik eklenir</td>
- <td></td>
+ <td colspan="8"></td>
  </tr>`;
  el.innerHTML=html;
  const oz=document.getElementById('sy-ozet');
  if(oz)oz.textContent=(kalanVarMi||topSayimT>0)?`${kalanVarMi?`Kalan toplam: ${para(topKalanT)}  ·  `:''}Sayım toplam: ${para(topSayimT)}`:'';
+ if(typeof syKalanKilidiUygula==='function')syKalanKilidiUygula();
 }
 window.syBosSatirAramaInput=function(val){
  const eklenenler=new Set(sayimSatirListesi.map(s=>s.stokId));
@@ -563,6 +563,7 @@ window.sayimSatirlariCoz=function(rows){
  if(!i.stok_id)return;
  let satir=satirlar.find(x=>x.stokId===i.stok_id);
  if(!satir){satir={stokId:i.stok_id,birimId:i.birim_id||'',direkt:0,kaynaklar:[]};satirlar.push(satir);}
+ if(i.kalan_miktar!==null&&i.kalan_miktar!==undefined&&satir.kalanM===undefined){satir.kalanM=parseFloat(i.kalan_miktar);satir.kalanT=parseFloat(i.kalan_tutar)||0;}
  if(i.urun_id)satir.kaynaklar.push({ustId:i.urun_id,ad:urunler.find(u=>u.id===i.urun_id)?.ad||'Bilinmeyen',miktar:parseFloat(i.miktar)||0});
  else satir.direkt+=parseFloat(i.miktar)||0;
  });
@@ -580,7 +581,6 @@ window.sayimFisiDuzenleAc=async function(belgeKey,salt){
  if(typeof fisNoRozetYaz==='function')fisNoRozetYaz('#tp-sk-sayim-form',ilk.fis_no||'');
  document.getElementById('sy-tarih').value=ilk.tarih;
  document.getElementById('sy-depo').value=ilk.depo_id;
- if(typeof syTarihDegisti==='function')syTarihDegisti();
  document.getElementById('sy-not').value=ilk.aciklama_not||'';
  sySatirRender();
  const dzBant=document.getElementById('sy-duzenleme-bant');
@@ -600,7 +600,6 @@ window.sayimFisiDuzenleAc=async function(belgeKey,salt){
 window.sayimDuzenlemeIptal=function(){
  _syDuzenlenenBelgeId=null;
  sayimSatirListesi=[];_ymSayimOzetListesi=[];
- if(typeof _syKalanTemizle==='function')_syKalanTemizle();
  sySatirRender();
  document.getElementById('sy-not').value='';
  const dzBant=document.getElementById('sy-duzenleme-bant');
@@ -626,7 +625,9 @@ window.kaydetSayim=async function(){
  syFisKontrol();
  return;
  }
- const gecerli=sayimSatirListesi.filter(s=>(s.direkt>0)||s.kaynaklar.some(k=>k.miktar>0));
+ const kalanVar=s=>s.kalanM!==undefined&&s.kalanM!==null;
+ // Kalanları Getir ile gelen her stok (sayımı girilmemiş olsa bile) fişle saklanır; fiş yeniden açılınca hepsi görünür
+ const gecerli=sayimSatirListesi.filter(s=>(s.direkt>0)||s.kaynaklar.some(k=>k.miktar>0)||kalanVar(s));
  if(!gecerli.length&&!_ymSayimOzetListesi.some(o=>o.miktar>0)){bil('En az bir satır!','err');return;}
  const duzenlemeMi=!!_syDuzenlenenBelgeId;
  // Tek bir "sayım oturumu" içindeki tüm satırlar aynı belge_id'yi (= fiş kimliği) paylaşır. Kaynak bazlı satırlar
@@ -639,6 +640,7 @@ window.kaydetSayim=async function(){
  for(const s of gecerli){
  const stok=stoklar.find(x=>x.id===s.stokId);
  const birimFiyat=stok?stokBirimMaliyet(stok.id):0;
+ const ilkSatir=rows.length;
  if(s.direkt>0){
  const mik=y3(parseFloat(s.direkt)||0),tut=Math.round(mik*birimFiyat*100)/100;toplamTutar+=tut;
  rows.push({...ortak,stok_id:s.stokId,birim_id:s.birimId||null,miktar:mik,fiyat:birimFiyat,tutar:tut,kat:'Sayım',satir_not:'Doğrudan sayım',ts:baz+(n++)});
@@ -648,6 +650,9 @@ window.kaydetSayim=async function(){
  const mik=y3(k.miktar),tut=Math.round(mik*birimFiyat*100)/100;toplamTutar+=tut;
  rows.push({...ortak,stok_id:s.stokId,urun_id:k.ustId,birim_id:s.birimId||null,miktar:mik,fiyat:birimFiyat,tutar:tut,kat:'Sayım',satir_not:`${k.ad} sayımından`,ts:baz+(n++)});
  }
+ // Sayımı girilmemiş ama kalanı olan stok: 0 sayımla satır yazılır; kalan değerleri bu satırda saklanır
+ if(rows.length===ilkSatir)rows.push({...ortak,stok_id:s.stokId,birim_id:s.birimId||null,miktar:0,fiyat:birimFiyat,tutar:0,kat:'Sayım',satir_not:'Doğrudan sayım',ts:baz+(n++)});
+ if(kalanVar(s)){rows[ilkSatir].kalan_miktar=s.kalanM;rows[ilkSatir].kalan_tutar=s.kalanT;}
  }
  for(const o of _ymSayimOzetListesi){
  if(!(o.miktar>0))continue;
@@ -663,7 +668,6 @@ window.kaydetSayim=async function(){
  eski:duzenlemeMi?_syEskiSnapshot:null,yeni:sayimSnapshotKur(tarih,depoId,an,gecerli,_ymSayimOzetListesi)});
  await islemleriYenile();
  sayimSatirListesi=[];
- if(typeof _syKalanTemizle==='function')_syKalanTemizle();
  sySatirRender();
  _ymSayimOzetListesi=[];
  _syDuzenlenenBelgeId=null;_syEskiSnapshot=null;
