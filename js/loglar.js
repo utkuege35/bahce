@@ -4,7 +4,7 @@
 // eski/yeni değerlerin anlık görüntüsü (snapshot) ile okunabilir "değişiklik" listesi bulunur.
 const LOG_ISLEM_ADLARI={olustur:'Oluşturuldu',duzenle:'Düzenlendi',sil:'Silindi'};
 const LOG_ISLEM_RENK={olustur:'var(--yesil)',duzenle:'var(--sari)',sil:'#c62828'};
-const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',kasa:'Kasa',uretim:'Üretim',sayim:'Sayım'};
+const LOG_TUR_ADLARI={irsaliye:'İrsaliye',fatura:'Fatura',transfer:'Transfer',devir:'Devir',satis:'Satış',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',kasa:'Kasa',uretim:'Üretim',sayim:'Sayım',aktarim:'Veri Yükleme'};
 const _logEsc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // Bir belgenin (irsaliye/fatura) o anki halinin okunabilir özeti.
@@ -118,8 +118,31 @@ window.belgeFarkiUret=function(eski,yeni){
 };
 // Log kaydı yazar. Log yazılamazsa asıl işlemi engellemez ama kullanıcıyı uyarır.
 // o: {islem,belgeTuru,altTur,belgeId,belgeNo,belgeTarihi,cariId,tutar,eski,yeni,irsaliyeId,faturaId}
+// Formun başlığına "Fiş No: DVR-000012" rozeti yazar (fisNo boşsa rozeti kaldırır). Yeni belge formunda rozet görünmez;
+// numara kayıt yazılırken verilir ve listede ve açılan belgede görünür.
+window.fisNoRozetYaz=function(formSecici,fisNo){
+  const baslik=document.querySelector(formSecici+' .card-title');if(!baslik)return;
+  let r=baslik.querySelector('.fis-no-rozet');
+  if(!fisNo){if(r)r.remove();return;}
+  if(!r){
+    r=document.createElement('span');r.className='fis-no-rozet';
+    r.style.cssText='font-size:11px;font-weight:600;padding:2px 9px;border-radius:10px;background:var(--krem2);color:var(--yesil);margin-left:8px;letter-spacing:.03em;white-space:nowrap';
+    baslik.insertBefore(r,baslik.firstChild?baslik.firstChild.nextSibling:null);
+  }
+  r.textContent='Fiş No: '+fisNo;
+};
+// Logda "belge no" olarak sistemin verdiği Fiş No saklanır (kullanıcı girişi belge no varsa o korunur). Kullanıcı Logları'nda aranabilir.
+const _LOG_FIS_TABLO={irsaliye:'irsaliyeler',fatura:'faturalar',devir:'stok_fisleri',transfer:'stok_fisleri',satis:'stok_fisleri',ikram:'stok_fisleri',odenmez:'stok_fisleri',hasar:'stok_fisleri',atik:'stok_fisleri',uretim:'stok_fisleri',sayim:'stok_fisleri',kasa:'islemler'};
+async function _logFisNo(belgeTuru,belgeId){
+  const tablo=_LOG_FIS_TABLO[belgeTuru];if(!tablo||!belgeId)return null;
+  let q=sb.from(tablo).select('fis_no').limit(1);
+  q=tablo==='islemler'?q.eq('belge_id',belgeId).eq('tur','kasa').not('fis_no','is',null):q.eq('id',belgeId);
+  const {data}=await q;
+  return data&&data[0]?data[0].fis_no||null:null;
+}
 window.logYaz=async function(o){
   try{
+    if(!o.belgeNo){try{o.belgeNo=await _logFisNo(o.belgeTuru,o.belgeId);}catch(e){}}
     let degisiklikler=[];
     if(o.islem==='duzenle'&&o.eski&&o.yeni)degisiklikler=belgeFarkiUret(o.eski,o.yeni);
     else if(o.islem==='olustur'&&o.yeni)degisiklikler=[(o.yeni.kalemler||[]).length?`${o.yeni.kalemler.length} kalem kaydedildi`:'Kayıt oluşturuldu'];
