@@ -103,6 +103,7 @@ function uygulamaAc(){
       'islem_liste':'gp(\'islem-liste\')',
       'irsaliyeler':'gp(\'irsaliyeler\')', 'faturalar':'gp(\'faturalar\')', 'stok_islemleri':'gp(\'stok-islemleri\')', 'kasa_islemleri':'gp(\'kasa-islemleri\')',
       'depo_stok':'gp(\'depo-stok\')', 'stok_envanter':'gp(\'stok-envanter\')', 'kdv_tanimlari':'gp(\'kdv-tanimlari\')',
+      'bagimsiz_raporlama':'gp(\'bagimsiz-raporlama\')',
       'stok':'gp(\'stok\')', 'stok_liste':'gp(\'stok-liste\')', 'urunler':'gp(\'urunler\')', 'urun_liste':'gp(\'urun-liste\')', 'yarimamuller':'gp(\'yarimamuller\')', 'ym_liste':'gp(\'ym-liste\')',
       'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')', 'alt_birimler':'gp(\'alt-birimler\')',
@@ -271,7 +272,7 @@ window.navGrupToggle=function(btn){
   btn.classList.toggle('acik',acik);
 };
 // Yetki gerektiren yeni ekranlar: sayfa kimliği → yetki anahtarı. Menü gizlenmiş olsa bile doğrudan açılışı engeller.
-const SAYFA_YETKI={'irsaliyeler':'irsaliyeler','faturalar':'faturalar','stok-islemleri':'stok_islemleri','kasa-islemleri':'kasa_islemleri','depo-stok':'depo_stok','stok-envanter':'stok_envanter','kdv-tanimlari':'kdv_tanimlari'};
+const SAYFA_YETKI={'irsaliyeler':'irsaliyeler','faturalar':'faturalar','stok-islemleri':'stok_islemleri','kasa-islemleri':'kasa_islemleri','depo-stok':'depo_stok','stok-envanter':'stok_envanter','kdv-tanimlari':'kdv_tanimlari','bagimsiz-raporlama':'bagimsiz_raporlama'};
 window.gp=function(id){
   if(SAYFA_YETKI[id]&&typeof yetkiVar==='function'&&!yetkiVar(SAYFA_YETKI[id],'goruntule')){bil('Bu ekran için yetkiniz yok','err');return;}
   navKapat();
@@ -312,6 +313,7 @@ window.gp=function(id){
   if(id==='irsaliyeler'&&typeof irsGorunumListe==='function')irsGorunumListe(typeof _aktifIrsTab!=='undefined'?_aktifIrsTab:'alis');
   if(id==='depo-stok'&&typeof renderDepoStok==='function')renderDepoStok(true);
   if(id==='stok-envanter'&&typeof envanterAc==='function')envanterAc();
+  if(id==='bagimsiz-raporlama'&&typeof brAc==='function')brAc();
   if(id==='stok-islemleri'&&typeof skAcilis==='function')skAcilis();
   if(id==='kasa-islemleri'&&typeof kiAcilis==='function')kiAcilis();
   if(id==='kullanici-loglari'&&typeof renderLogEkrani==='function')renderLogEkrani(true);
