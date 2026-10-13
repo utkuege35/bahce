@@ -157,6 +157,7 @@
       </div>
     </div>
   </div>
+  <button onclick="gp('bagimsiz-raporlama')" title="Ana sistem verisinden bağımsız çalışan raporlama modülü" style="color:var(--mor);border-left-color:var(--mor)">🧭 Bağımsız Raporlama</button>
   <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün Teklifleri ▾</button>
     <div class="nav-grup-icerik">
@@ -1253,6 +1254,50 @@
     <div id="env-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
   </div>
   <div class="card" style="padding:.5rem"><div style="overflow:auto;max-height:68vh"><table id="env-tablo"><thead id="env-th"></thead><tbody id="env-tb"></tbody></table></div></div>
+</div>
+<!-- BAĞIMSIZ RAPORLAMA: ana sistem verisinden bağımsız çalışan modül (yüklenen verilerle analiz) -->
+<div id="bagimsiz-raporlama" class="page">
+  <style>
+    #bagimsiz-raporlama.page{max-width:none;margin-right:0}
+    @media(max-width:768px){#bagimsiz-raporlama.page{margin-left:0}}
+    #bagimsiz-raporlama .br-bant{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--mor-ac);color:var(--mor);border:1px solid var(--mor);border-radius:10px;padding:.55rem .9rem;margin-bottom:.9rem;font-size:12px}
+    #bagimsiz-raporlama .br-bant b{letter-spacing:.08em;font-size:11px}
+    #bagimsiz-raporlama .card{border-top:3px solid var(--mor)}
+    #bagimsiz-raporlama .tabs .tab.active{color:var(--mor)}
+  </style>
+  <div class="br-bant"><b>BAĞIMSIZ RAPORLAMA</b><span>Yüklenen verilerle çalışır; ana sistemin stok, fatura ve envanter kayıtlarını etkilemez.</span></div>
+  <div class="tabs">
+    <button class="tab active" onclick="brTab('yukleme',this)">Veri Yükleme</button>
+    <button class="tab" onclick="brTab('alis',this)">Alış Fiyat Analizi</button>
+  </div>
+  <div id="br-yukleme" class="tab-panel active">
+    <div class="card" id="akt-yukle-kart">
+      <div class="card-title">Alım Hareketleri</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn sm sec" onclick="aktarimSablonIndir()">📥 Şablonu İndir</button>
+        <input type="file" id="akt-dosya" accept=".xlsx,.xls,.csv" style="display:none" onchange="aktarimDosyaSecildi(this)">
+        <button class="btn sm pri" onclick="document.getElementById('akt-dosya').click()">📤 Dosya Seç</button>
+      </div>
+      <div id="akt-onizleme"></div>
+    </div>
+    <div class="card"><div class="card-title">Yüklenen Veriler</div><div id="akt-liste"></div></div>
+  </div>
+  <div id="br-alis" class="tab-panel">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.9rem;align-items:center">
+      <select id="aa-parti" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz);max-width:260px"><option value="">Tüm partiler</option></select>
+      <label style="font-size:12px;color:var(--yazi2)">Yıl:</label>
+      <select id="aa-yil" onchange="aaYilAySec()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">—</option></select>
+      <label style="font-size:12px;color:var(--yazi2)">Ay:</label>
+      <select id="aa-ay" onchange="aaYilAySec()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)"><option value="">Tüm yıl</option></select>
+      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+      <input type="date" id="aa-bas" onchange="aaTarihElle()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+      <input type="date" id="aa-bit" onchange="aaTarihElle()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <button type="button" class="btn pri" onclick="alisAnalizRaporla()">📊 Raporla</button>
+      <button type="button" class="btn sm sec" style="margin-left:auto" onclick="alisAnalizExcel()">📤 Excel'e Aktar</button>
+    </div>
+    <div id="aa-icerik"></div>
+  </div>
 </div>
 <!-- DEPO BAZLI STOK DURUMU -->
 <div id="depo-stok" class="page">
@@ -2513,6 +2558,9 @@
 <script src="js/loglar.js"></script>
 <script src="js/envanter.js"></script>
 <script src="js/depostok.js"></script>
+<script src="js/bagimsiz.js"></script>
+<script src="js/aktarim.js"></script>
+<script src="js/alisanaliz.js"></script>
 <script src="js/yetkikontrol.js"></script>
 
 </body>
