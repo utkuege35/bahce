@@ -12,6 +12,7 @@
   ekle('islem_liste',{id:'irsaliyeler',ad:'İrsaliyeler'},{id:'faturalar',ad:'Faturalar'},{id:'stok_islemleri',ad:'Stok İşlemleri'},{id:'kasa_islemleri',ad:'Kasa İşlemleri'});
   ekle('birimler',{id:'kdv_tanimlari',ad:'KDV Tanımları'});
   ekle('sayim_raporu',{id:'depo_stok',ad:'Depo Stok Durumu',eylemler:['goruntule']},{id:'stok_envanter',ad:'Stok Envanter Raporu',eylemler:['goruntule']});
+  ekle('rapor',{id:'bagimsiz_raporlama',ad:'Bağımsız Raporlama (Veri Yükleme + Analizler)',eylemler:['goruntule','ekle','sil']});
   const ad=(id,yeniAd)=>{const e=EKRANLAR.find(x=>x.id===id);if(e)e.ad=yeniAd;};
   ad('hizmetler','Hizmet / Gider Kalemleri');ad('rapor','Finans Raporları');
   const il=EKRANLAR.find(x=>x.id==='islem_liste');if(il)il.eylemler=['goruntule','duzenle','sil'];
