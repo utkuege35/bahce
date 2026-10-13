@@ -29,6 +29,8 @@
     sayimFisiDuzenleAc:a=>e('stok_islemleri',a[1]?'goruntule':'duzenle'),
     // Kasa İşlemleri (tur, islem)
     kiYeniBaslat:()=>e('kasa_islemleri','ekle'), kiListeIslem:a=>liste('kasa_islemleri',a[1]), kaydetKasaFisi:()=>e('kasa_islemleri',KAYDET),
+    // Bağımsız Raporlama: dosya seçme/yükleme = ekle, parti silme = sil (raporları görmek = görüntüle)
+    aktarimDosyaSecildi:()=>e('bagimsiz_raporlama','ekle'), aktarimOnayla:()=>e('bagimsiz_raporlama','ekle'), aktarimPartiSil:()=>e('bagimsiz_raporlama','sil'),
     // KDV Tanımları
     kdvYeniAc:()=>e('kdv_tanimlari','ekle'), kdvDuzenleAc:()=>e('kdv_tanimlari','duzenle'), kdvKaydet:()=>e('kdv_tanimlari',KAYDET), kdvSil:()=>e('kdv_tanimlari','sil')
   };
