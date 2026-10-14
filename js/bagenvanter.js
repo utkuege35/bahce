@@ -1,6 +1,6 @@
 // ===== BAĞIMSIZ RAPORLAMA › ENVANTER =====
 // Veri Yükleme ile içeri alınan Stok Envanter Raporu'nu (parti) ana ekrandaki Stok Envanter ile AYNI düzende gösterir:
-//  • DETAY: stok bazında Devir/Alım/Alış İade/+Transfer/−Transfer/Satış/Ödenmez/İkram/Hasar/Atık[/Diğer], KALAN, Sayım, Fark — her alan Miktar | Tutar.
+//  • DETAY: stok bazında Devir/Alım/+Transfer/−Transfer/Alış İade/Satış/Ödenmez/İkram/Hasar/Atık[/Diğer], KALAN, Sayım, Fark — her alan Miktar | Tutar.
 //  • GRUP: stok grupları KÜMÜLATİF toplamla (üst grup = altındaki tüm gruplar + stoklar); farklı birimler toplanamayacağı için sadece TUTAR.
 //  • Kalan, Sayım ve hareketler dosyadan olduğu gibi gelir. FARK = Kalan − Sayım (sayım fazlaysa eksi); sayım yapılmamış stokta sayım 0 kabul edilir.
 //  • Sayılarda sadece iki renk: normal ve NEGATİF için kırmızı. Veri ana sistemin stok kayıtlarından bağımsızdır.
