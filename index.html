@@ -1253,6 +1253,7 @@
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--yazi2);cursor:pointer"><input type="checkbox" id="env-gizle" checked onchange="renderEnvanter()"> Hareketsiz olanları gizle</label>
     <div id="env-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
   </div>
+  <div id="env-filtre-bar"></div>
   <div class="card" style="padding:.5rem"><div style="overflow:auto;max-height:68vh"><table id="env-tablo"><thead id="env-th"></thead><tbody id="env-tb"></tbody></table></div></div>
 </div>
 <!-- BAĞIMSIZ RAPORLAMA: ana sistem verisinden bağımsız çalışan modül (yüklenen verilerle analiz) -->
@@ -1318,6 +1319,7 @@
       <div id="be-ozet" style="font-size:12px;color:var(--yazi3)"></div>
       <button type="button" class="btn sm sec" style="margin-left:auto" onclick="bagEnvanterExcel()">📤 Excel'e Aktar</button>
     </div>
+    <div id="be-filtre-bar"></div>
     <div style="overflow:auto;max-height:calc(100vh - 260px);border:1px solid var(--border);border-radius:8px">
       <table id="be-tablo"><thead id="be-th"></thead><tbody id="be-tb"></tbody></table>
     </div>
@@ -2599,6 +2601,7 @@
 <script src="js/stoksayim.js"></script>
 <script src="js/kasaislem.js"></script>
 <script src="js/loglar.js"></script>
+<script src="js/envtablo.js"></script>
 <script src="js/envanter.js"></script>
 <script src="js/depostok.js"></script>
 <script src="js/bagimsiz.js"></script>
