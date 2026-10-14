@@ -13,7 +13,7 @@ const _AA_PALET=['#4e9bd4','#52b788','#e9a23b','#b57edc','#e76f6f','#2ec4b6','#f
 const _AA_SEVIYE_AD=['Ana Grup','Alt Grup','Alt Grup 2'];
 const _aaSeviyeAd=i=>_AA_SEVIYE_AD[i]||('Seviye '+(i+1));
 const _aaF=(n,o)=>(+n).toLocaleString('tr-TR',o||{minimumFractionDigits:2,maximumFractionDigits:2});
-const _aaPara=n=>'₺'+_aaF(n);
+const _aaPara=n=>(n<0?'-':'')+'₺'+_aaF(Math.abs(n));
 const _aaYuzde=v=>v===null||v===undefined?'—':(v<0?'-':'')+'%'+_aaF(Math.abs(v));
 const _aaKr=(v,e)=>v!==null&&v!==undefined&&v<-(e||0.005)?'color:#c62828;':'';
 const _aaTr=t=>t?t.split('-').reverse().join('.'):'';
@@ -221,7 +221,7 @@ function aaFiltreUygula(){
 function aaChipsCiz(){
   const kutu=document.getElementById('aa-chips');if(!kutu)return;
   const g=alisGrupHesapla(_aaVeri.sonuc.stoklar,_aaSeviye);
-  const chip=(ad,renk,secili,yazi,i)=>`<button type="button" onclick="${i<0?'aaGrupSecI(-1)':`aaGrupSecI(${i})`}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:5px 11px;border-radius:16px;border:1px solid ${renk};${secili?`background:${renk};color:#fff;font-weight:600`:`background:${renk}22;color:var(--yazi1)`}">${secili?'':_aaNokta(renk).replace('margin-right:6px','margin-right:0')}${yazi}</button>`;
+  const chip=(ad,renk,secili,yazi,i)=>`<button type="button" onclick="${i<0?'aaGrupSecI(-1)':`aaGrupSecI(${i})`}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:5px 11px;border-radius:16px;border:1px solid ${renk};${secili?`background:${renk};color:#fff;font-weight:600`:`background:${renk}22;color:var(--yazi)`}">${secili?'':_aaNokta(renk).replace('margin-right:6px','margin-right:0')}${yazi}</button>`;
   kutu.innerHTML=chip('Tümü','#8d99ae',!_aaGrupFiltre,'Tüm gruplar',-1)+g.map(x=>chip(x.ad,_aaRenkOf(x.ad),x.ad===_aaGrupFiltre,`${_logEsc(x.ad)}${x.degisim===null?'':` · ${_aaYuzde(x.degisim)}`}`,_aaGrupAdlari.indexOf(x.ad))).join('');
 }
 window.aaGrupSecI=function(i){
@@ -230,53 +230,71 @@ window.aaGrupSecI=function(i){
   aaFiltreUygula();
 };
 window.aaSeviyeDegis=function(v){_aaSeviye=+v;_aaGrupFiltre='';alisAnalizCiz();};
-function _aaRenk(ad){return (getComputedStyle(document.documentElement).getPropertyValue(ad)||'').trim();}
+// Renkler body'den okunur: koyu tema değişkenleri body.dark üzerindedir (documentElement açık temayı verir)
+function _aaRenk(ad){return (getComputedStyle(document.body).getPropertyValue(ad)||'').trim();}
 function _aaGrafigiYenile(id,config){
   if(_aaGrafik[id]){_aaGrafik[id].destroy();delete _aaGrafik[id];}
   const el=document.getElementById(id);if(!el||!config||typeof Chart==='undefined')return;
   _aaGrafik[id]=new Chart(el,config);
 }
-function aaGrafikleriCiz(){
-  const {sonuc,rows}=_aaVeri;
-  const yazi=_aaRenk('--yazi2')||'#888',cizgi=_aaRenk('--border')||'#444',zemin=_aaRenk('--beyaz')||'#1b2330';
+// Tema: ekranda uygulamanın (açık/koyu) renkleri, PDF'te her zaman beyaz zemin
+function _aaTema(pdf){
+  return pdf?{yazi:'#4a4a4a',cizgi:'#dcdcdc',zemin:'#ffffff',font:11}:{yazi:_aaRenk('--yazi2')||'#a0b4c4',cizgi:_aaRenk('--border')||'#243448',zemin:_aaRenk('--beyaz')||'#1a2535',font:10};
+}
+// Uzun grup adını kelime sınırından satırlara böler (PDF yatay grafiğinde etiketler kesilmesin)
+function _aaEtiketBol(ad,uz){const s=[];let k='';String(ad).split(' ').forEach(w=>{if(k&&(k+' '+w).length>uz){s.push(k);k=w;}else k=k?k+' '+w:w;});if(k)s.push(k);return s;}
+// Dört grup/stok grafiğinin Chart.js yapılandırması. pdf=true: sabit boyut, animasyonsuz, tıklama yok, uzun grup adları için yatay çubuk
+function _aaKonfigler(tema,pdf){
+  const {sonuc,rows}=_aaVeri;const {yazi,cizgi,zemin,font}=tema;
   const grup=alisGrupHesapla(sonuc.stoklar,_aaSeviye);
   const sec=ad=>!_aaGrupFiltre||ad===_aaGrupFiltre;      // seçili grup dışındakiler soluklaşır
   const soluk=(renk,ad)=>sec(ad)?renk:renk+'44';
+  const temel=pdf?{responsive:false,animation:false,devicePixelRatio:3}:{responsive:true,maintainAspectRatio:false};
+  const tikla=fn=>pdf?{}:{onClick:fn};
+  const eksenYazi={color:yazi,font:{size:font}};
+  const sonucK={};
   // 1) fiyatı en çok artan 10 stok (seçili gruba göre); çubuk rengi = stoğun grubu
   const top=_aaListe().filter(s=>s.degisim!==null&&s.degisim>0).sort((a,b)=>b.degisim-a.degisim).slice(0,10);
-  _aaGrafigiYenile('aa-c1',{type:'bar',data:{labels:top.map(s=>s.ad),datasets:[{data:top.map(s=>Math.round(s.degisim*100)/100),backgroundColor:top.map(s=>_aaRenkOf(alisGrupAdi(s,_aaSeviye))),borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+_aaYuzde(c.raw)+' · '+alisGrupAdi(top[c.dataIndex],_aaSeviye)}}},
-      scales:{x:{ticks:{color:yazi,callback:v=>'%'+v},grid:{color:cizgi}},y:{ticks:{color:yazi,font:{size:10}},grid:{display:false}}}}});
-  // 2) grup bazında ağırlıklı fiyat değişimi; her grup kendi renginde, çubuğa tıklayınca o gruba filtrelenir
+  sonucK.c1={type:'bar',data:{labels:top.map(s=>s.ad),datasets:[{data:top.map(s=>Math.round(s.degisim*100)/100),backgroundColor:top.map(s=>_aaRenkOf(alisGrupAdi(s,_aaSeviye))),borderRadius:4}]},
+    options:{...temel,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+_aaYuzde(c.raw)+' · '+alisGrupAdi(top[c.dataIndex],_aaSeviye)}}},
+      scales:{x:{ticks:{...eksenYazi,callback:v=>'%'+v},grid:{color:cizgi}},y:{ticks:eksenYazi,grid:{display:false}}}}};
+  // 2) grup bazında ağırlıklı fiyat değişimi; her grup kendi renginde, çubuğa tıklayınca o gruba filtrelenir (PDF'te yatay: uzun adlar okunur)
   const g2=grup.filter(x=>x.degisim!==null);
-  _aaGrafigiYenile('aa-c2',{type:'bar',data:{labels:g2.map(x=>x.ad),datasets:[{data:g2.map(x=>Math.round(x.degisim*100)/100),backgroundColor:g2.map(x=>soluk(_aaRenkOf(x.ad),x.ad)),borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,onClick:(e,el)=>{if(el&&el.length)aaGrupSecI(_aaGrupAdlari.indexOf(g2[el[0].index].ad));},
+  sonucK.c2={type:'bar',data:{labels:g2.map(x=>pdf?_aaEtiketBol(x.ad,22):x.ad),datasets:[{data:g2.map(x=>Math.round(x.degisim*100)/100),backgroundColor:g2.map(x=>soluk(_aaRenkOf(x.ad),x.ad)),borderRadius:4}]},
+    options:{...temel,...(pdf?{indexAxis:'y'}:{}),...tikla((e,el)=>{if(el&&el.length)aaGrupSecI(_aaGrupAdlari.indexOf(g2[el[0].index].ad));}),
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+_aaYuzde(c.raw)+' · alım '+_aaPara(g2[c.dataIndex].tutar)}}},
-      scales:{x:{ticks:{color:yazi,font:{size:10}},grid:{display:false}},y:{ticks:{color:yazi,callback:v=>'%'+v},grid:{color:cizgi}}}}});
+      scales:pdf?{x:{ticks:{...eksenYazi,callback:v=>'%'+v},grid:{color:cizgi}},y:{ticks:{...eksenYazi,autoSkip:false},grid:{display:false}}}
+               :{x:{ticks:{...eksenYazi},grid:{display:false}},y:{ticks:{...eksenYazi,callback:v=>'%'+v},grid:{color:cizgi}}}}};
   // 4) alım tutarının gruplara dağılımı
   const g4=grup.filter(x=>x.tutar>0);
-  _aaGrafigiYenile('aa-c4',{type:'doughnut',data:{labels:g4.map(x=>x.ad),datasets:[{data:g4.map(x=>Math.round(x.tutar*100)/100),backgroundColor:g4.map(x=>soluk(_aaRenkOf(x.ad),x.ad)),borderColor:zemin,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',onClick:(e,el)=>{if(el&&el.length)aaGrupSecI(_aaGrupAdlari.indexOf(g4[el[0].index].ad));},
-      plugins:{legend:{position:'right',labels:{color:yazi,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>` ${c.label}: ${_aaPara(c.raw)} (%${_aaF(g4[c.dataIndex].pay,{maximumFractionDigits:1})})`}}}}});
-  // 5) aylık grup fiyat endeksi (ilk ay = 100)
+  sonucK.c4={type:'doughnut',data:{labels:g4.map(x=>x.ad),datasets:[{data:g4.map(x=>Math.round(x.tutar*100)/100),backgroundColor:g4.map(x=>soluk(_aaRenkOf(x.ad),x.ad)),borderColor:zemin,borderWidth:2}]},
+    options:{...temel,cutout:'55%',...tikla((e,el)=>{if(el&&el.length)aaGrupSecI(_aaGrupAdlari.indexOf(g4[el[0].index].ad));}),
+      plugins:{legend:{position:pdf?'bottom':'right',labels:{color:yazi,font:{size:pdf?font-1:font},boxWidth:10,padding:pdf?5:6}},tooltip:{callbacks:{label:c=>` ${c.label}: ${_aaPara(c.raw)} (%${_aaF(g4[c.dataIndex].pay,{maximumFractionDigits:1})})`}}}}};
+  // 5) aylık grup fiyat endeksi (ilk ay = 100); en az iki ay yoksa null
   const en=alisGrupEndeksi(rows,sonuc.stoklar,_aaSeviye);
+  sonucK.c5=en.aylar.length<2?null:{type:'line',data:{labels:en.aylar.map(_aaAyEtiket),datasets:en.seriler.map(s=>({label:s.ad,data:s.degerler.map(v=>Math.round(v*100)/100),borderColor:soluk(_aaRenkOf(s.ad),s.ad),backgroundColor:soluk(_aaRenkOf(s.ad),s.ad),tension:.25,pointRadius:3,borderWidth:sec(s.ad)?2.5:1.5}))},
+    options:{...temel,plugins:{legend:{position:'bottom',labels:{color:yazi,font:{size:pdf?font-1:font},boxWidth:10,padding:pdf?5:6}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${_aaF(c.raw,{minimumFractionDigits:1,maximumFractionDigits:1})}`}}},
+      scales:{x:{ticks:eksenYazi,grid:{display:false}},y:{ticks:{color:yazi,font:{size:font}},grid:{color:cizgi}}}}};
+  return sonucK;
+}
+function aaGrafikleriCiz(){
+  const k=_aaKonfigler(_aaTema(false),false);
+  _aaGrafigiYenile('aa-c1',k.c1);_aaGrafigiYenile('aa-c2',k.c2);_aaGrafigiYenile('aa-c4',k.c4);
   const bos=document.getElementById('aa-c5-bos'),cv=document.getElementById('aa-c5');
-  if(en.aylar.length<2){if(bos)bos.style.display='';if(cv)cv.parentElement.style.display='none';_aaGrafigiYenile('aa-c5',null);}
-  else{
-    if(bos)bos.style.display='none';if(cv)cv.parentElement.style.display='';
-    _aaGrafigiYenile('aa-c5',{type:'line',data:{labels:en.aylar.map(_aaAyEtiket),datasets:en.seriler.map(s=>({label:s.ad,data:s.degerler.map(v=>Math.round(v*100)/100),borderColor:soluk(_aaRenkOf(s.ad),s.ad),backgroundColor:soluk(_aaRenkOf(s.ad),s.ad),tension:.25,pointRadius:3,borderWidth:sec(s.ad)?2.5:1.5}))},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:yazi,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${_aaF(c.raw,{minimumFractionDigits:1,maximumFractionDigits:1})}`}}},
-        scales:{x:{ticks:{color:yazi,font:{size:10}},grid:{display:false}},y:{ticks:{color:yazi},grid:{color:cizgi}}}}});
-  }
+  if(!k.c5){if(bos)bos.style.display='';if(cv)cv.parentElement.style.display='none';_aaGrafigiYenile('aa-c5',null);}
+  else{if(bos)bos.style.display='none';if(cv)cv.parentElement.style.display='';_aaGrafigiYenile('aa-c5',k.c5);}
+}
+// Seçili stoğun fiyat trendi (günlük ağırlıklı fiyat)
+function _aaTrendKonfig(s,tema,pdf){
+  const {yazi,cizgi,font}=tema;const renk=_aaRenkOf(alisGrupAdi(s,_aaSeviye));
+  return {type:'line',data:{labels:s.gunler.map(x=>_aaTr(x.tarih)),datasets:[{label:s.ad,data:s.gunler.map(x=>Math.round(x.fiyat*10000)/10000),borderColor:renk,backgroundColor:renk+'33',fill:true,tension:.25,pointRadius:3,pointBackgroundColor:renk}]},
+    options:{...(pdf?{responsive:false,animation:false,devicePixelRatio:3}:{responsive:true,maintainAspectRatio:false}),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${_aaPara(c.raw)} / ${s.birim||'birim'}`}}},
+      scales:{x:{ticks:{color:yazi,font:{size:font}},grid:{display:false}},y:{ticks:{color:yazi,font:{size:font},callback:v=>'₺'+v},grid:{color:cizgi}}}}};
 }
 window.aaTrendCiz=function(stokId){
   const s=_aaVeri.sonuc.stoklar.find(x=>x.stokId===stokId);if(!s)return;
   const sel=document.getElementById('aa-trend-sec');if(sel)sel.value=stokId;
-  const yazi=_aaRenk('--yazi2')||'#888',cizgi=_aaRenk('--border')||'#444';
-  const renk=_aaRenkOf(alisGrupAdi(s,_aaSeviye));
-  _aaGrafigiYenile('aa-c3',{type:'line',data:{labels:s.gunler.map(x=>_aaTr(x.tarih)),datasets:[{label:s.ad,data:s.gunler.map(x=>Math.round(x.fiyat*10000)/10000),borderColor:renk,backgroundColor:renk+'33',fill:true,tension:.25,pointRadius:3,pointBackgroundColor:renk}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${_aaPara(c.raw)} / ${s.birim||'birim'}`}}},
-      scales:{x:{ticks:{color:yazi,font:{size:10}},grid:{display:false}},y:{ticks:{color:yazi,callback:v=>'₺'+v},grid:{color:cizgi}}}}});
+  _aaGrafigiYenile('aa-c3',_aaTrendKonfig(s,_aaTema(false),false));
 };
 function aaGrupTabloCiz(){
   const g=alisGrupHesapla(_aaVeri.sonuc.stoklar,_aaSeviye);
@@ -285,13 +303,17 @@ function aaGrupTabloCiz(){
     <td style="text-align:right">${x.stokSayisi}</td><td style="text-align:right">${_aaPara(x.tutar)}</td><td style="text-align:right">%${_aaF(x.pay,{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
     <td style="text-align:right;${_aaKr(x.degisim)}">${_aaYuzde(x.degisim)}</td><td style="text-align:right;${_aaKr(x.etki)}">${x.degisim===null?'—':_aaPara(x.etki)}</td><td style="text-align:right">${x.artan}</td><td style="text-align:right">${x.azalan}</td></tr>`;}).join('');
 }
-window.aaTabloCiz=function(){
-  if(!_aaVeri)return;
+// Arama kutusu + sıralama seçimi + grup filtresine göre görünen stok listesi (ekran tablosu ve PDF aynı listeyi kullanır)
+function _aaTabloListesi(){
   const ara=(document.getElementById('aa-ara')?.value||'').trim().toLocaleLowerCase('tr');
   const sirala=document.getElementById('aa-sirala')?.value||'degisim';
-  let liste=_aaListe().filter(s=>!ara||s.ad.toLocaleLowerCase('tr').includes(ara)||String(s.kod).toLowerCase().includes(ara));
+  const liste=_aaListe().filter(s=>!ara||s.ad.toLocaleLowerCase('tr').includes(ara)||String(s.kod).toLowerCase().includes(ara));
   const null_sonda=(a,b,f)=>{const x=f(a),y=f(b);if(x===null&&y===null)return 0;if(x===null)return 1;if(y===null)return -1;return y-x;};
-  liste=liste.slice().sort((a,b)=>sirala==='kod'?String(a.kod).localeCompare(String(b.kod),'tr',{numeric:true}):sirala==='tutar'?b.toplamTutar-a.toplamTutar:null_sonda(a,b,s=>sirala==='etki'?s.etki:s.degisim));
+  return liste.slice().sort((a,b)=>sirala==='kod'?String(a.kod).localeCompare(String(b.kod),'tr',{numeric:true}):sirala==='tutar'?b.toplamTutar-a.toplamTutar:null_sonda(a,b,s=>sirala==='etki'?s.etki:s.degisim));
+}
+window.aaTabloCiz=function(){
+  if(!_aaVeri)return;
+  const liste=_aaTabloListesi();
   document.getElementById('aa-th').innerHTML=`<tr><th>Kod</th><th>Stok</th><th>Birim</th><th style="text-align:right">Alım</th><th style="text-align:right">Toplam Miktar</th><th style="text-align:right">Toplam Tutar</th><th style="text-align:right">İlk Fiyat</th><th style="text-align:right">Son Fiyat</th><th style="text-align:right">Ort. Fiyat</th><th style="text-align:right">Min</th><th style="text-align:right">Maks</th><th style="text-align:right">Değişim</th><th style="text-align:right">Fiyat Farkı Etkisi</th></tr>`;
   const f3=n=>_aaF(n,{maximumFractionDigits:3});
   document.getElementById('aa-tb').innerHTML=liste.map(s=>{const gad=alisGrupAdi(s,_aaSeviye);return `<tr onclick="aaTrendSec('${s.stokId}')" style="cursor:pointer" title="Fiyat trendini göster">
@@ -328,4 +350,87 @@ window.alisAnalizExcel=function(){
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(stokSatirlari),'Stok Analizi');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detay),'Alım Detay');
   XLSX.writeFile(wb,`alis_fiyat_analizi_${bas||'tum'}_${bit||'veri'}.xlsx`);
+};
+
+// ----- PDF -----
+// A4, her zaman AÇIK ZEMİNLİ, yazdırmaya/e-postaya uygun ayrı bir rapor düzeni üretir (ekranın görüntüsü değildir): özet kartlar,
+// grafikler (açık temada yeniden çizilir), grup özeti ve stok detay tablosu. Ekrandaki grup filtresi, grup düzeyi, arama ve sıralama PDF'e yansır.
+// pdfmake yalnızca PDF'e Aktar'a ilk basıldığında yüklenir (sayfa açılışını yavaşlatmaz); Türkçe karakterler yazı tipiyle birlikte gelir.
+const AA_PDF_KAYNAKLAR=[
+  ['https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/build/pdfmake.min.js','https://cdn.jsdelivr.net/npm/pdfmake@0.2.20/build/vfs_fonts.js'],
+  ['https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js']];
+function _aaBetikYukle(url){return new Promise((ok,hata)=>{const s=document.createElement('script');s.src=url;s.onload=ok;s.onerror=()=>{s.remove();hata(new Error('Yüklenemedi: '+url));};document.head.appendChild(s);});}
+let _aaPdfSoz=null;
+function _aaPdfKutuphane(){
+  if(window.pdfMake&&window.pdfMake.vfs&&Object.keys(window.pdfMake.vfs).length)return Promise.resolve();
+  if(_aaPdfSoz)return _aaPdfSoz;
+  _aaPdfSoz=(async()=>{
+    let son;
+    for(const [ana,yazi] of (window.AA_PDF_KAYNAKLAR||AA_PDF_KAYNAKLAR)){ // ilk adres açılmazsa ikincisi denenir
+      try{if(!window.pdfMake)await _aaBetikYukle(ana);await _aaBetikYukle(yazi);return;}catch(e){son=e;}
+    }
+    _aaPdfSoz=null;throw son;
+  })();
+  return _aaPdfSoz;
+}
+function _aaAcik(hex,oran){const n=parseInt(hex.slice(1),16);return '#'+[(n>>16)&255,(n>>8)&255,n&255].map(c=>Math.round(c+(255-c)*oran).toString(16).padStart(2,'0')).join('');}
+// Grafikleri açık temada ekran dışı tuvallere çizip resme çevirir
+function _aaPdfGrafikler(){
+  const k=_aaKonfigler(_aaTema(true),true),r={};
+  const ciz=(cfg,w,h)=>{if(!cfg||typeof Chart==='undefined')return null;const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ch=new Chart(cv,cfg);const u=ch.toBase64Image('image/png',1);ch.destroy();return u;};
+  const gSay=alisGrupHesapla(_aaVeri.sonuc.stoklar,_aaSeviye).filter(x=>x.degisim!==null).length;
+  r.c1=ciz(k.c1,380,270);r.c2=ciz(k.c2,380,Math.max(220,60+gSay*32));r.c4=ciz(k.c4,380,310);r.c5=ciz(k.c5,380,310);
+  const s=_aaVeri.sonuc.stoklar.find(x=>x.stokId===document.getElementById('aa-trend-sec')?.value);
+  r.c3=s?ciz(_aaTrendKonfig(s,_aaTema(true),true),760,230):null;r.trendAd=s?s.ad:'';
+  return r;
+}
+function _aaPdfTanim(img){
+  const {sonuc,bas,bit,partiAd}=_aaVeri;const k=sonuc.kpi;
+  const grupTum=alisGrupHesapla(sonuc.stoklar,_aaSeviye);const enArtan=grupTum.find(g=>g.degisim!==null);
+  const liste=_aaTabloListesi();
+  const GRI='#666666',LACIVERT='#1f3a5f',KIRMIZI='#c62828',KOYU='#222222';
+  const rk=(v,e)=>v!==null&&v!==undefined&&v<-(e||0.005)?KIRMIZI:KOYU;
+  const simdi=new Date(),p2=n=>String(n).padStart(2,'0');
+  const olusturma=`${p2(simdi.getDate())}.${p2(simdi.getMonth()+1)}.${simdi.getFullYear()} ${p2(simdi.getHours())}:${p2(simdi.getMinutes())}`;
+  const isyeri=(aktifIsyeri?.ad||'')+(typeof aktifSirket!=='undefined'&&aktifSirket?.ad?' · '+aktifSirket.ad:'');
+  const donem=(bas||bit)?`${_aaTr(bas)||'…'} – ${_aaTr(bit)||'…'}`:'Tüm veri';
+  const kart=(baslik,deger,renk,alt,degerRenk)=>({unbreakable:true,table:{widths:[4,'*'],body:[[{text:'',fillColor:renk},{stack:[{text:baslik.toLocaleUpperCase('tr-TR'),fontSize:6.5,color:GRI,characterSpacing:.3},{text:deger,fontSize:13,bold:true,color:degerRenk||KOYU,margin:[0,2,0,0]}].concat([{text:alt||'\u00A0',fontSize:7,color:GRI,margin:[0,1,0,0]}]),fillColor:_aaAcik(renk,.86),margin:[7,6,5,6]}]]},layout:'noBorders'});
+  const bolum=(baslik,resim,gen)=>resim?{unbreakable:true,stack:[{text:baslik,fontSize:9,bold:true,color:LACIVERT,margin:[0,0,0,3]},{image:resim,width:gen}]}:{unbreakable:true,stack:[{text:baslik,fontSize:9,bold:true,color:LACIVERT,margin:[0,0,0,3]},{text:'Endeks için en az iki ayın verisi gerekir.',fontSize:8,color:GRI}]};
+  const baslikHucre=(m,sag)=>({text:m,bold:true,fontSize:7,color:'#ffffff',fillColor:'#3b4f66',alignment:sag?'right':'left'});
+  const duzen={hLineWidth:()=>0.4,vLineWidth:()=>0,hLineColor:()=>'#e3e3e3',fillColor:i=>i>0&&i%2===0?'#f6f8fa':null,paddingTop:()=>2.5,paddingBottom:()=>2.5,paddingLeft:()=>3,paddingRight:()=>3};
+  const nokta=renk=>({width:8,canvas:[{type:'rect',x:0,y:1.5,w:6,h:6,color:renk}]});
+  const sag=(m,renk)=>({text:m,alignment:'right',color:renk||KOYU});
+  const grupGovde=grupTum.map(x=>[{columns:[nokta(_aaRenkOf(x.ad)),{text:x.ad}],columnGap:2},sag(String(x.stokSayisi)),sag(_aaF(x.tutar)),sag('%'+_aaF(x.pay,{minimumFractionDigits:1,maximumFractionDigits:1})),sag(_aaYuzde(x.degisim),rk(x.degisim)),sag(x.degisim===null?'—':_aaF(x.etki),rk(x.etki)),sag(String(x.artan)),sag(String(x.azalan))]);
+  const stokGovde=liste.map(s=>{const gad=alisGrupAdi(s,_aaSeviye);return [{text:String(s.kod)},{columns:[nokta(_aaRenkOf(gad)),{text:s.ad}],columnGap:2},{text:s.birim},sag(String(s.alimSayisi)),sag(_aaF(s.toplamMiktar,{maximumFractionDigits:3})),sag(_aaF(s.toplamTutar)),sag(_aaF(s.ilkFiyat)),sag(_aaF(s.sonFiyat)),sag(_aaF(s.ort)),sag(_aaYuzde(s.degisim),rk(s.degisim)),sag(s.etki===null?'—':_aaF(s.etki),rk(s.etki))];});
+  return {
+    pageSize:'A4',pageMargins:[28,34,28,40],
+    pageBreakBefore:(dugum,sonrakiler)=>dugum.headlineLevel===1&&sonrakiler.length===0, // başlık sayfa sonunda tablosundan ayrı kalmasın
+    info:{title:'Alış Fiyat Analizi',subject:donem},
+    defaultStyle:{font:'Roboto',fontSize:8,color:KOYU},
+    footer:(sayfa,toplam)=>({columns:[{text:`${aktifIsyeri?.ad||''} · Bağımsız Raporlama · Alış Fiyat Analizi`,fontSize:7,color:'#999999'},{text:`Sayfa ${sayfa} / ${toplam}`,alignment:'right',fontSize:7,color:'#999999'}],margin:[28,14,28,0]}),
+    content:[
+      {columns:[{stack:[{text:'Alış Fiyat Analizi',fontSize:20,bold:true,color:LACIVERT},{text:isyeri,fontSize:9,color:GRI,margin:[0,2,0,0]}]},{text:'Oluşturulma: '+olusturma,alignment:'right',fontSize:8,color:GRI,width:150}]},
+      {canvas:[{type:'rect',x:0,y:0,w:539,h:3,color:'#4e9bd4'}],margin:[0,7,0,8]},
+      {columns:[{text:[{text:'Dönem: ',bold:true},donem]},{text:[{text:'Parti: ',bold:true},partiAd||'Tüm partiler']},{text:[{text:'Grup: ',bold:true},`${_aaSeviyeAd(_aaSeviye)}${_aaGrupFiltre?' · '+_aaGrupFiltre:' · tüm gruplar'}`]}],fontSize:8,columnGap:8,margin:[0,0,0,10]},
+      {columns:[kart('Toplam Alım Tutarı',_aaPara(k.toplamTutar),'#4e9bd4'),kart('Alım Yapılan Stok',String(k.stokSayisi),'#2ec4b6',`${grupTum.length} grup`),kart('Ağırlıklı Fiyat Değişimi',_aaYuzde(k.agirlikliDegisim),'#e9a23b',null,rk(k.agirlikliDegisim))],columnGap:10,margin:[0,0,0,8]},
+      {columns:[kart('Fiyatı Artan · Azalan · Sabit',`${k.artan} · ${k.azalan} · ${k.sabit}`,'#b57edc'),kart('Fiyat Farkı Etkisi',_aaPara(k.etki),'#52b788',null,rk(k.etki)),kart('Fiyatı En Çok Artan Grup',enArtan?_aaYuzde(enArtan.degisim):'—','#e76f6f',enArtan?enArtan.ad:'',enArtan?rk(enArtan.degisim):KOYU)],columnGap:10,margin:[0,0,0,12]},
+      {columns:[bolum('Fiyatı En Çok Artan 10 Stok',img.c1,262),bolum('Grup Bazında Fiyat Değişimi',img.c2,262)],columnGap:15,margin:[0,0,0,10]},
+      {columns:[bolum('Gruplara Göre Alım Dağılımı',img.c4,262),bolum('Grup Fiyat Endeksi (aylık, ilk ay = 100)',img.c5,262)],columnGap:15,margin:[0,0,0,10]},
+      img.c3?bolum('Fiyat Trendi — '+img.trendAd,img.c3,539):{text:''},
+      {text:'Gruplara Göre Özet',fontSize:11,bold:true,color:LACIVERT,headlineLevel:1,margin:[0,12,0,4]},
+      {table:{headerRows:1,keepWithHeaderRows:1,dontBreakRows:true,widths:['*',30,66,36,58,66,30,32],body:[[baslikHucre('Grup'),baslikHucre('Stok',1),baslikHucre('Alım Tutarı (₺)',1),baslikHucre('Pay',1),baslikHucre('Ağ. Değişim',1),baslikHucre('Fiyat Farkı Etkisi (₺)',1),baslikHucre('Artan',1),baslikHucre('Azalan',1)],...grupGovde]},layout:duzen,fontSize:7.5},
+      {text:`Stok Detayı${_aaGrupFiltre?' — '+_aaGrupFiltre:''} (${liste.length} stok)`,fontSize:11,bold:true,color:LACIVERT,headlineLevel:1,margin:[0,14,0,4]},
+      {table:{headerRows:1,keepWithHeaderRows:1,dontBreakRows:true,widths:[56,'*',24,22,40,56,40,40,40,38,48],body:[[baslikHucre('Kod'),baslikHucre('Stok'),baslikHucre('Birim'),baslikHucre('Alım',1),baslikHucre('Toplam Miktar',1),baslikHucre('Toplam Tutar (₺)',1),baslikHucre('İlk Fiyat',1),baslikHucre('Son Fiyat',1),baslikHucre('Ort. Fiyat',1),baslikHucre('Değişim',1),baslikHucre('Etki (₺)',1)],...stokGovde]},layout:duzen,fontSize:7},
+      {text:'Fiyatlar KDV hariç ve stoğun temel birimi başınadır. İlk/Son fiyat: dönemdeki ilk ve son alım gününün ağırlıklı ortalaması; Değişim = Son / İlk − 1. Fiyat Farkı Etkisi = fiilen ödenen − tüm miktar ilk fiyattan alınsaydı ödenecek tutar.',fontSize:7,color:GRI,margin:[0,8,0,0]}
+    ]
+  };
+}
+window.alisAnalizPdf=async function(){
+  if(!_aaVeri){bil('Önce filtreleri seçip Raporla\'ya basın.','err');return;}
+  bil('PDF hazırlanıyor...');
+  try{await _aaPdfKutuphane();}catch(e){bil('PDF kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.','err');return;}
+  try{
+    const dd=_aaPdfTanim(_aaPdfGrafikler());
+    pdfMake.createPdf(dd).download(`alis_fiyat_analizi_${_aaVeri.bas||'tum'}_${_aaVeri.bit||'veri'}.pdf`,()=>bil('✓ PDF indirildi'));
+  }catch(e){bil('PDF oluşturulamadı: '+e.message,'err');}
 };
