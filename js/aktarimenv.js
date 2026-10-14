@@ -5,15 +5,15 @@
 // • Sütunlar BAŞLIK ADINA göre bulunur (sırası önemli değil). Hem tek satırlı başlık ("Devir Miktar", "Devir Tutar") hem de
 //   iki satırlı başlık (üstte "Devir", altta "Miktar | Tutar") desteklenir.
 // • Stoklar sistemde önceden tanımlı olmalıdır; STOK KODU ile eşleştirilir. Hata varsa hiçbir satır yüklenmez.
-// • KALAN sütunu yoksa Devir + Alım − Alış İade + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık − Diğer ile hesaplanır.
+// • KALAN sütunu yoksa Devir + Alım + Transfer(+) − Transfer(−) − Alış İade − Satış − Ödenmez − İkram − Hasar − Atık − Diğer ile hesaplanır.
 //   SAYIM boşsa o stokta sayım yapılmamış sayılır. FARK sütunu okunmaz; uygulama Kalan − Sayım olarak kendisi hesaplar.
 // • Miktarlar stok kartındaki temel birim cinsinden kabul edilir. Dönem ve depo/kapsam yüklemede girilir (dosyada yoksa).
 const ENVY_ALANLAR=[
   {k:'devir',  db:'devir',   ad:'Devir',       alias:['devir','acilis','acilisstogu','devirstok']},
   {k:'giris',  db:'alim',    ad:'Alım',        alias:['alim','giris','alimlar','satinalma']},
-  {k:'alisIade',db:'alis_iade',ad:'Alış İade',alias:['alisiade','alisiadesi','alisiadeleri','alimiade','satinalmaiade','tedarikciyeiade','iadealis','iade']},
   {k:'trfArti',db:'trf_arti',ad:'+ Transfer',  alias:['artitransfer','transferarti','transfergiris','transfergirisi']},
   {k:'trfEksi',db:'trf_eksi',ad:'− Transfer',  alias:['eksitransfer','transfereksi','transfercikis','transfercikisi']},
+  {k:'alisIade',db:'alis_iade',ad:'Alış İade',alias:['alisiade','alisiadesi','alisiadeleri','alimiade','satinalmaiade','tedarikciyeiade','iadealis','iade']},
   {k:'satis',  db:'satis',   ad:'Satış',       alias:['satis','satislar']},
   {k:'odenmez',db:'odenmez', ad:'Ödenmez',     alias:['odenmez','odenmeyen']},
   {k:'ikram',  db:'ikram',   ad:'İkram',       alias:['ikram','ikramlar']},
