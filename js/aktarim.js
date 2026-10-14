@@ -171,10 +171,10 @@ async function aktarimListeYukle(){
   const kutu=document.getElementById('akt-liste');if(!kutu)return;
   const {data,error}=await sb.from('aktarim_partileri').select('*').eq('isyeri_id',aktifIsyeri.id).eq('silindi',false).order('ts',{ascending:false});
   if(error){kutu.innerHTML=`<div class="bos">Liste okunamadı: ${_logEsc(error.message)}</div>`;return;}
-  if(!data||!data.length){kutu.innerHTML='<div class="bos">Henüz aktarım yok.</div>';return;}
+  if(!data||!data.length){kutu.innerHTML='<div class="bos">Henüz yüklenen veri yok.</div>';return;}
   const silebilir=typeof yetkiVar==='function'?yetkiVar('bagimsiz_raporlama','sil'):true;
   kutu.innerHTML=`<div class="tw"><table><thead><tr><th>Parti</th><th>Tür</th><th>Dönem</th><th style="text-align:right">Satır</th><th style="text-align:right">Tutar</th><th>Yükleyen</th><th>Tarih</th><th></th></tr></thead><tbody>
-  ${data.map(p=>`<tr><td>${_logEsc(p.ad||'')}</td><td>Alım</td><td style="white-space:nowrap">${_aktTr(p.bas)} – ${_aktTr(p.bit)}</td><td style="text-align:right">${p.satir_sayisi}</td><td style="text-align:right">${_aktPara(p.toplam_tutar)}</td><td style="font-size:12px">${_logEsc(p.kullanici||'')}</td><td style="font-size:12px;white-space:nowrap">${p.ts?new Date(+p.ts).toLocaleDateString('tr-TR'):''}</td>
+  ${data.map(p=>`<tr><td>${_logEsc(p.ad||'')}${p.depo_ad?` <span style="font-size:11px;color:var(--yazi3)">· ${_logEsc(p.depo_ad)}</span>`:''}</td><td>${p.tur==='envanter'?'Envanter':'Alım'}</td><td style="white-space:nowrap">${_aktTr(p.bas)} – ${_aktTr(p.bit)}</td><td style="text-align:right">${p.satir_sayisi}</td><td style="text-align:right"${p.tur==='envanter'?' title="Envanter: toplam Kalan tutarı"':''}>${_aktPara(p.toplam_tutar)}</td><td style="font-size:12px">${_logEsc(p.kullanici||'')}</td><td style="font-size:12px;white-space:nowrap">${p.ts?new Date(+p.ts).toLocaleDateString('tr-TR'):''}</td>
     <td>${silebilir?`<button class="btn sm ghost" onclick="aktarimPartiSil('${p.id}')" title="Partiyi sil">✕</button>`:''}</td></tr>`).join('')}
   </tbody></table></div>`;
 }
@@ -183,12 +183,13 @@ window.aktarimPartiSil=async function(id){
   if(!(await onay(`"${_logEsc(data?.ad||'Parti')}" partisi silinsin mi?<br><small>Raporlardan çıkar.</small>`,'🗑️')))return;
   const {error}=await sb.rpc('aktarim_parti_sil',{p_parti:id,p_kullanici:aktifKullanici?.ad||''});
   if(error){bil('Silinemedi: '+error.message,'err');return;}
-  await logYaz({islem:'sil',belgeTuru:'aktarim',altTur:'alim',belgeId:id,belgeNo:data?.ad||null,belgeTarihi:data?.bas||null,tutar:data?.toplam_tutar||0,
+  await logYaz({islem:'sil',belgeTuru:'aktarim',altTur:data?.tur||'alim',belgeId:id,belgeNo:data?.ad||null,belgeTarihi:data?.bas||null,tutar:data?.toplam_tutar||0,
     eski:{baslik:{'Parti':data?.ad||'','Dönem':data?`${_aktTr(data.bas)} – ${_aktTr(data.bit)}`:'','Satır':data?.satir_sayisi||0,'Tutar':data?.toplam_tutar||0},kalemler:[]}});
   bil('Parti silindi ✓');aktarimListeYukle();
+  if(typeof bagEnvanterPartileriYukle==='function')bagEnvanterPartileriYukle();
 };
 window.aktarimAc=function(){
   const ekleyebilir=typeof yetkiVar==='function'?yetkiVar('bagimsiz_raporlama','ekle'):true;
-  const kart=document.getElementById('akt-yukle-kart');if(kart)kart.style.display=ekleyebilir?'':'none';
+  ['akt-yukle-kart','aktenv-yukle-kart'].forEach(id=>{const kart=document.getElementById(id);if(kart)kart.style.display=ekleyebilir?'':'none';});
   aktarimListeYukle();
 };
