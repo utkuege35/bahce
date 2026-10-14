@@ -4,18 +4,18 @@
 //  • "Dönem öncesi" yoktur: rapor sadece seçilen aralığın hareketlerini gösterir.
 //  • DEVİR: sadece BAŞLANGIÇ TARİHİNDE devir fişi varsa görünür; yoksa boştur.
 //  • Her alan MİKTAR | TUTAR olarak yan yana, Excel benzeri hücreli tabloda gösterilir.
-//  • KALAN = Devir + Alım + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık − Diğer  (bitiş tarihindeki bakiye)
+//  • KALAN = Devir + Alım − Alış İade + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık − Diğer  (bitiş tarihindeki bakiye)
 //  • SAYIM: bitiş tarihinde yapılmış sayım. FARK = Kalan − Sayım, HER stok için hem Miktar hem Tutar olarak hesaplanır
 //    (sayım fazlaysa EKSİ, sayım eksikse ARTI). Bitiş tarihinde sayım yoksa sayım 0 kabul edilir, yani Fark = Kalan olur.
 //  • GÖRÜNÜM: "Detay" tüm stokları; "Grup" stok gruplarını KÜMÜLATİF toplamla (üst grup = altındaki tüm gruplar + stoklar) gösterir.
 //    Farklı birimler (kg, adet, lt) toplanamayacağı için grup görünümünde MİKTAR hiç gösterilmez; sadece TUTAR sütunları gelir.
 // Satış/Ödenmez/İkram/Hasar/Atık, ürünlerin reçetesinden açılan hammadde sarfiyatlarını da içerir. Hesap veritabanında yapılır.
 const ENV_KOLONLAR=[
-  {k:'devir',ad:'Devir'},{k:'giris',ad:'Alım'},
+  {k:'devir',ad:'Devir'},{k:'giris',ad:'Alım'},{k:'alisIade',ad:'Alış İade'},
   {k:'trfArti',ad:'+ Transfer'},{k:'trfEksi',ad:'− Transfer'},{k:'satis',ad:'Satış'},{k:'odenmez',ad:'Ödenmez'},
   {k:'ikram',ad:'İkram'},{k:'hasar',ad:'Hasar'},{k:'atik',ad:'Atık'},{k:'diger',ad:'Diğer Çıkış'}
 ];
-const ENV_TUR_ADLARI={devir:'Devir',giris:'Alım',transfer_giris:'Transfer Giriş',transfer_cikis:'Transfer Çıkış',
+const ENV_TUR_ADLARI={devir:'Devir',giris:'Alım',alis_iade:'Alış İade',transfer_giris:'Transfer Giriş',transfer_cikis:'Transfer Çıkış',
   satis:'Satış',satis_sarfiyat:'Satış (reçeteden)',odenmez:'Ödenmez',odenmez_sarfiyat:'Ödenmez (reçeteden)',
   ikram:'İkram',ikram_sarfiyat:'İkram (reçeteden)',hasar:'Hasar',hasar_sarfiyat:'Hasar (reçeteden)',
   atik:'Atık',atik_sarfiyat:'Atık (reçeteden)',cikis:'Çıkış',uretim_sarfiyat:'Üretim Sarfiyatı',sayim:'Sayım'};
@@ -23,8 +23,8 @@ let _envSonSatirlar=[],_envSonKolonlar=[],_envSonGorunum='detay';
 let _envSeciliDepolar=new Set();
 let _envVeri=null; // {anahtar, satir}
 
-const _envBos=()=>({devir:0,giris:0,trfArti:0,trfEksi:0,satis:0,odenmez:0,ikram:0,hasar:0,atik:0,diger:0});
-const _envKalan=o=>o.devir+o.giris+o.trfArti-o.trfEksi-o.satis-o.odenmez-o.ikram-o.hasar-o.atik-o.diger;
+const _envBos=()=>({devir:0,giris:0,alisIade:0,trfArti:0,trfEksi:0,satis:0,odenmez:0,ikram:0,hasar:0,atik:0,diger:0});
+const _envKalan=o=>o.devir+o.giris-o.alisIade+o.trfArti-o.trfEksi-o.satis-o.odenmez-o.ikram-o.hasar-o.atik-o.diger;
 const _envFmtM=v=>(+v).toLocaleString('tr-TR',{maximumFractionDigits:3});
 const _envM=v=>Math.abs(v)<0.0005?'':_envFmtM(v);
 const _envT=v=>Math.abs(v)<0.005?'':_irsSayi(v);
@@ -74,8 +74,8 @@ async function envanterVeriGetir(bas,bit,depolar_){
   const satir={};
   (data||[]).forEach(r=>{
     const m=_envBos(),t=_envBos();
-    ['devir','giris','trf_arti','trf_eksi','satis','odenmez','ikram','hasar','atik','diger'].forEach(k=>{
-      const kk=k==='trf_arti'?'trfArti':k==='trf_eksi'?'trfEksi':k;
+    ['devir','giris','alis_iade','trf_arti','trf_eksi','satis','odenmez','ikram','hasar','atik','diger'].forEach(k=>{
+      const kk=k==='trf_arti'?'trfArti':k==='trf_eksi'?'trfEksi':k==='alis_iade'?'alisIade':k;
       m[kk]=n(r[k+'_m']);t[kk]=n(r[k+'_t']);
     });
     satir[r.stok_id]={m,t,sayimM:n(r.sayim_m),sayimT:n(r.sayim_t),kalanSayimliM:n(r.kalan_sayimli_m),sayimVar:!!r.sayim_var,hareket:!!r.hareket,maliyet:n(r.maliyet)};
