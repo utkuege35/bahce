@@ -4,15 +4,15 @@
 //  • "Dönem öncesi" yoktur: rapor sadece seçilen aralığın hareketlerini gösterir.
 //  • DEVİR: sadece BAŞLANGIÇ TARİHİNDE devir fişi varsa görünür; yoksa boştur.
 //  • Her alan MİKTAR | TUTAR olarak yan yana, Excel benzeri hücreli tabloda gösterilir.
-//  • KALAN = Devir + Alım − Alış İade + Transfer(+) − Transfer(−) − Satış − Ödenmez − İkram − Hasar − Atık − Diğer  (bitiş tarihindeki bakiye)
+//  • KALAN = Devir + Alım + Transfer(+) − Transfer(−) − Alış İade − Satış − Ödenmez − İkram − Hasar − Atık − Diğer  (bitiş tarihindeki bakiye)
 //  • SAYIM: bitiş tarihinde yapılmış sayım. FARK = Kalan − Sayım, HER stok için hem Miktar hem Tutar olarak hesaplanır
 //    (sayım fazlaysa EKSİ, sayım eksikse ARTI). Bitiş tarihinde sayım yoksa sayım 0 kabul edilir, yani Fark = Kalan olur.
 //  • GÖRÜNÜM: "Detay" tüm stokları; "Grup" stok gruplarını KÜMÜLATİF toplamla (üst grup = altındaki tüm gruplar + stoklar) gösterir.
 //    Farklı birimler (kg, adet, lt) toplanamayacağı için grup görünümünde MİKTAR hiç gösterilmez; sadece TUTAR sütunları gelir.
 // Satış/Ödenmez/İkram/Hasar/Atık, ürünlerin reçetesinden açılan hammadde sarfiyatlarını da içerir. Hesap veritabanında yapılır.
 const ENV_KOLONLAR=[
-  {k:'devir',ad:'Devir'},{k:'giris',ad:'Alım'},{k:'alisIade',ad:'Alış İade'},
-  {k:'trfArti',ad:'+ Transfer'},{k:'trfEksi',ad:'− Transfer'},{k:'satis',ad:'Satış'},{k:'odenmez',ad:'Ödenmez'},
+  {k:'devir',ad:'Devir'},{k:'giris',ad:'Alım'},
+  {k:'trfArti',ad:'+ Transfer'},{k:'trfEksi',ad:'− Transfer'},{k:'alisIade',ad:'Alış İade'},{k:'satis',ad:'Satış'},{k:'odenmez',ad:'Ödenmez'},
   {k:'ikram',ad:'İkram'},{k:'hasar',ad:'Hasar'},{k:'atik',ad:'Atık'},{k:'diger',ad:'Diğer Çıkış'}
 ];
 const ENV_TUR_ADLARI={devir:'Devir',giris:'Alım',alis_iade:'Alış İade',transfer_giris:'Transfer Giriş',transfer_cikis:'Transfer Çıkış',
