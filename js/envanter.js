@@ -177,6 +177,23 @@ function _envGruplar(tum,maxSeviye){
   return [...gMap.values()].filter(a=>(a.grup.seviye||1)<=maxSeviye)
     .sort((a,b)=>(a.grup.kod||'').localeCompare(b.grup.kod||'','tr',{numeric:true}));
 }
+// Sütun filtresi/sıralaması için sütun tanımları (envtablo.js). Değerler ekranda görünen duyarlıkla yuvarlanır (miktar 3, tutar 2 hane).
+function _envKolonTanim(grupMu,kolonlar){
+  const r3=v=>Math.round(v*1000)/1000,r2=v=>Math.round(v*100)/100,d=[];
+  if(!grupMu){
+    d.push({id:'kod',ad:'Kod',tip:'metin',deger:r=>r.stok.kod||''},{id:'stok',ad:'Stok',tip:'metin',deger:r=>r.stok.ad||''},
+      {id:'birim',ad:'Birim',tip:'metin',deger:r=>birimler.find(b=>b.id===r.stok.birim_id)?.kisaltma||''});
+    kolonlar.forEach(c=>{d.push({id:c.k+'_m',ad:c.ad+' Miktar',tip:'sayi',deger:r=>r3(r.o.m[c.k])},{id:c.k+'_t',ad:c.ad+' Tutar',tip:'sayi',deger:r=>r2(r.o.t[c.k])});});
+    d.push({id:'kalan_m',ad:'KALAN Miktar',tip:'sayi',deger:r=>r3(r.h.kalanM)},{id:'kalan_t',ad:'KALAN Tutar',tip:'sayi',deger:r=>r2(r.h.kalanT)},
+      {id:'sayim_m',ad:'Sayım Miktar',tip:'sayi',deger:r=>r.o.sayimVar?r3(r.o.sayimM):null,bosMu:v=>v===null},{id:'sayim_t',ad:'Sayım Tutar',tip:'sayi',deger:r=>r.o.sayimVar?r2(r.o.sayimT):null,bosMu:v=>v===null},
+      {id:'fark_m',ad:'Fark Miktar',tip:'sayi',deger:r=>r3(r.h.farkM)},{id:'fark_t',ad:'Fark Tutar',tip:'sayi',deger:r=>r2(r.h.farkT)});
+  }else{
+    d.push({id:'kod',ad:'Kod',tip:'metin',deger:a=>a.grup.kod||''},{id:'stok',ad:'Stok Grubu',tip:'metin',deger:a=>a.grup.ad||''});
+    kolonlar.forEach(c=>d.push({id:c.k+'_t',ad:c.ad,tip:'sayi',deger:a=>r2(a.t[c.k])}));
+    d.push({id:'kalan_t',ad:'KALAN',tip:'sayi',deger:a=>r2(a.kalanT)},{id:'sayim_t',ad:'Sayım',tip:'sayi',deger:a=>a.sayimVar?r2(a.sayimT):null,bosMu:v=>v===null},{id:'fark_t',ad:'Fark',tip:'sayi',deger:a=>r2(a.farkT)});
+  }
+  return d;
+}
 window.renderEnvanter=function(){
   const thEl=document.getElementById('env-th'),tbEl=document.getElementById('env-tb'),oz=document.getElementById('env-ozet');
   if(!_envVeri||_envVeri.anahtar!==_envAnahtar()){envFiltreDegisti();return;}
@@ -200,21 +217,30 @@ window.renderEnvanter=function(){
       return !(gizle&&!a.hareket&&!a.sayimVar);
     });
   }
-  _envSonSatirlar=satirlar;_envSonGorunum=gorunum;
   const digerVar=tum.some(r=>Math.abs(r.o.m.diger)>=0.0005||Math.abs(r.o.t.diger)>=0.005);
   const kolonlar=ENV_KOLONLAR.filter(c=>c.k!=='diger'||digerVar);
   _envSonKolonlar=kolonlar;
+  // Sütun filtresi + tıklayınca sıralama (envtablo.js). Grup görünümünde hiyerarşi korunarak sıralanır. TOPLAM ve Excel çıktısı GÖRÜNEN satırlara göredir.
+  const ET=window.EnvTablo,gk=grupMu?'grup':'detay';
+  if(ET){
+    ET.kaydet('env',{barId:'env-filtre-bar',yenile:renderEnvanter});
+    ET.kolonlar('env',gk,_envKolonTanim(grupMu,kolonlar));
+    satirlar=ET.isle('env',gk,satirlar,grupMu?{id:a=>a.grup.id,ust:a=>a.grup.ust_id}:null);
+  }
+  _envSonSatirlar=satirlar;_envSonGorunum=gorunum;
   // Detay: iki satırlı başlık (alan adı / Miktar | Tutar). Grup: tek satır, sadece Tutar (grupta miktar gösterilmez).
   const grup=(ad,vurgu)=>`<th colspan="2" class="${vurgu?'env-v':''}" style="text-align:center">${ad}</th>`;
-  const alt=vurgu=>`<th class="${vurgu?'env-v':''}" style="text-align:right;font-size:10px;font-weight:500">Miktar</th><th class="${vurgu?'env-v':''}" style="text-align:right;font-size:10px;font-weight:500">Tutar</th>`;
-  const tekBaslik=(ad,vurgu)=>`<th class="${vurgu?'env-v':''}" style="text-align:center">${ad}</th>`;
+  // Tıklanabilir (sıralama) + filtre simgeli başlık hücresi; envtablo.js yüklenmemişse düz başlık
+  const hc=(id,etiket,o)=>ET?ET.th('env',gk,id,etiket,o):`<th class="${(o&&o.sinif)||''}"${o&&o.rowspan?` rowspan="${o.rowspan}"`:''} style="${(o&&o.stil)||''}">${etiket}</th>`;
+  const alt=(k,vurgu)=>{const o={sinif:vurgu?'env-v':'',stil:'text-align:right;font-size:10px;font-weight:500'};return hc(k+'_m','Miktar',o)+hc(k+'_t','Tutar',o);};
+  const tekBaslik=(k,ad,vurgu)=>hc(k+'_t',ad,{sinif:vurgu?'env-v':'',stil:'text-align:center'});
   if(!grupMu){
-    thEl.innerHTML=`<tr><th rowspan="2" class="env-k1">Kod</th><th rowspan="2" class="env-k2">Stok</th><th rowspan="2">Birim</th>`
+    thEl.innerHTML=`<tr>${hc('kod','Kod',{rowspan:2,sinif:'env-k1'})}${hc('stok','Stok',{rowspan:2,sinif:'env-k2'})}${hc('birim','Birim',{rowspan:2})}`
       +kolonlar.map(c=>grup(c.ad)).join('')+grup('KALAN',true)+grup('Sayım')+grup('Fark')+`</tr>`
-      +`<tr>${kolonlar.map(()=>alt()).join('')}${alt(true)}${alt()}${alt()}</tr>`;
+      +`<tr>${kolonlar.map(c=>alt(c.k)).join('')}${alt('kalan',true)}${alt('sayim')}${alt('fark')}</tr>`;
   }else{
-    thEl.innerHTML=`<tr><th class="env-k1">Kod</th><th class="env-k2">Stok Grubu</th>`
-      +kolonlar.map(c=>tekBaslik(c.ad)).join('')+tekBaslik('KALAN',true)+tekBaslik('Sayım')+tekBaslik('Fark')+`</tr>`;
+    thEl.innerHTML=`<tr>${hc('kod','Kod',{sinif:'env-k1'})}${hc('stok','Stok Grubu',{sinif:'env-k2'})}`
+      +kolonlar.map(c=>tekBaslik(c.k,c.ad)).join('')+tekBaslik('kalan','KALAN',true)+tekBaslik('sayim','Sayım')+tekBaslik('fark','Fark')+`</tr>`;
   }
   // Renk kuralı: sayılarda SADECE iki renk vardır — normal metin rengi ve NEGATİF sayılar için kırmızı.
   const kr=(v,esik)=>v<-(esik||0.0005)?'color:#c62828;':'';
@@ -223,6 +249,7 @@ window.renderEnvanter=function(){
   const farkM_=v=>Math.abs(v)<0.0005?'0':fm(v);
   const farkT_=v=>Math.abs(v)<0.005?'0,00':_irsSayi(v);
   const hucre=(m,t,mv,tv,sinif)=>`<td class="${sinif||''}" style="text-align:right;${kr(mv)}">${m}</td><td class="${sinif||''}" style="text-align:right;${kr(tv,0.005)}">${t}</td>`;
+  const topSev=grupMu&&satirlar.length?Math.min(...satirlar.map(a=>a.grup.seviye||1)):1; // grup toplamı: görünen EN ÜST seviyedeki satırlar (üst+alt grup birlikte görünürse çift sayılmaz)
   let govde;
   if(!grupMu){
     govde=satirlar.map(r=>{
@@ -240,7 +267,7 @@ window.renderEnvanter=function(){
   }else{
     govde=satirlar.map(a=>{
       const sev=a.grup.seviye||1;
-      if(sev===1){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;tSayimT+=a.sayimT;tFarkT+=a.farkT;}
+      if(sev===topSev){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;tSayimT+=a.sayimT;tFarkT+=a.farkT;}
       const kalin=sev===1?'font-weight:700;':sev===2?'font-weight:600;':'';
       const tc=(v,stil)=>`<td style="text-align:right;${stil||''}">${v}</td>`;
       // Grup adı sistemdeki gibi (ek bilgi yok); alt gruplar girintili
@@ -268,7 +295,7 @@ window.renderEnvanter=function(){
         ${bl}<td style="text-align:right;${kr(tKalanT,0.005)}">${_irsSayi(tKalanT)}</td>${bl}<td style="text-align:right;${kr(tSayimT,0.005)}">${_envT(tSayimT)}</td>${bl}<td style="text-align:right;${kr(tFarkT,0.005)}">${_irsSayi(tFarkT)}</td></tr>`;
   }
   const depoMetni=_envSeciliDepolar.size===_envTumDepolar().length?'Tüm depolar':[..._envSeciliDepolar].map(id=>depolar.find(d=>d.id===id)?.ad||'?').join(', ');
-  if(oz)oz.textContent=`${satirlar.length} ${grupMu?'grup':'stok kalemi'} · ${depoMetni} · ${bas} – ${bit}`;
+  if(oz)oz.textContent=`${satirlar.length} ${grupMu?'grup':'stok kalemi'} · ${depoMetni} · ${bas} – ${bit}`+(ET&&ET.filtreSayisi('env',gk)?` · ${ET.filtreSayisi('env',gk)} filtre`:'');
 };
 // ===== HAREKET DÖKÜMÜ (bir stok için) — rapordaki kurallarla aynı; seçili tüm depolar birlikte =====
 window.envanterDetayAc=async function(stokId){
