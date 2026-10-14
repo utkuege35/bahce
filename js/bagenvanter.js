@@ -1,6 +1,6 @@
 // ===== BAĞIMSIZ RAPORLAMA › ENVANTER =====
 // Veri Yükleme ile içeri alınan Stok Envanter Raporu'nu (parti) ana ekrandaki Stok Envanter ile AYNI düzende gösterir:
-//  • DETAY: stok bazında Devir/Alım/+Transfer/−Transfer/Satış/Ödenmez/İkram/Hasar/Atık[/Diğer], KALAN, Sayım, Fark — her alan Miktar | Tutar.
+//  • DETAY: stok bazında Devir/Alım/Alış İade/+Transfer/−Transfer/Satış/Ödenmez/İkram/Hasar/Atık[/Diğer], KALAN, Sayım, Fark — her alan Miktar | Tutar.
 //  • GRUP: stok grupları KÜMÜLATİF toplamla (üst grup = altındaki tüm gruplar + stoklar); farklı birimler toplanamayacağı için sadece TUTAR.
 //  • Kalan, Sayım ve hareketler dosyadan olduğu gibi gelir. FARK = Kalan − Sayım (sayım fazlaysa eksi); sayım yapılmamış stokta sayım 0 kabul edilir.
 //  • Sayılarda sadece iki renk: normal ve NEGATİF için kırmızı. Veri ana sistemin stok kayıtlarından bağımsızdır.
@@ -11,7 +11,7 @@ const _beF2=v=>(+v).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFract
 const _beM=v=>Math.abs(v)<0.0005?'':_beF3(v);
 const _beT=v=>Math.abs(v)<0.005?'':_beF2(v);
 const _beKr=(v,esik)=>v<-(esik||0.0005)?'color:#c62828;':'';
-const _beBosM=()=>({devir:0,giris:0,trfArti:0,trfEksi:0,satis:0,odenmez:0,ikram:0,hasar:0,atik:0,diger:0});
+const _beBosM=()=>({devir:0,giris:0,alisIade:0,trfArti:0,trfEksi:0,satis:0,odenmez:0,ikram:0,hasar:0,atik:0,diger:0});
 // Veritabanı satırı → ekran nesnesi
 function bagEnvanterSatirHazirla(r){
   const m=_beBosM(),t=_beBosM();
