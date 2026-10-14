@@ -1264,10 +1264,23 @@
     #bagimsiz-raporlama .br-bant b{letter-spacing:.08em;font-size:11px}
     #bagimsiz-raporlama .card{border-top:3px solid var(--mor)}
     #bagimsiz-raporlama .tabs .tab.active{color:var(--mor)}
+    /* Envanter sekmesi: ana ekrandaki gibi Excel benzeri hücreli tablo, sabit başlık ve sabit ilk iki sütun */
+    #be-tablo{border-collapse:collapse;font-size:12px}
+    #be-tablo th,#be-tablo td{border:1px solid var(--border);padding:3px 7px;white-space:nowrap}
+    #be-tablo thead th{position:sticky;background:var(--krem2);z-index:4;height:26px;box-sizing:border-box}
+    #be-tablo thead tr:nth-child(1) th{top:0}
+    #be-tablo thead tr:nth-child(2) th{top:27px}
+    #be-tablo .be-k1{position:sticky;left:0;width:115px;min-width:115px;background:var(--beyaz);z-index:2}
+    #be-tablo .be-k2{position:sticky;left:115px;min-width:200px;background:var(--beyaz);z-index:2}
+    #be-tablo thead .be-k1,#be-tablo thead .be-k2{z-index:6;background:var(--krem2)}
+    #be-tablo .be-v{background:var(--krem2)}
+    #be-tablo tbody tr:hover td{background:var(--yesil-cok-ac)}
+    #be-tablo tbody td.bos{text-align:center;padding:2rem;border:none}
   </style>
   <div class="br-bant"><b>BAĞIMSIZ RAPORLAMA</b><span>Yüklenen verilerle çalışır; ana sistemin stok, fatura ve envanter kayıtlarını etkilemez.</span></div>
   <div class="tabs">
     <button class="tab active" onclick="brTab('yukleme',this)">Veri Yükleme</button>
+    <button class="tab" onclick="brTab('envanter',this)">Envanter</button>
     <button class="tab" onclick="brTab('alis',this)">Alış Fiyat Analizi</button>
   </div>
   <div id="br-yukleme" class="tab-panel active">
@@ -1280,7 +1293,34 @@
       </div>
       <div id="akt-onizleme"></div>
     </div>
+    <div class="card" id="aktenv-yukle-kart">
+      <div class="card-title">Envanter Raporu</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn sm sec" onclick="aktarimEnvSablonIndir()">📥 Şablonu İndir</button>
+        <input type="file" id="aktenv-dosya" accept=".xlsx,.xls,.csv" style="display:none" onchange="aktarimEnvDosyaSecildi(this)">
+        <button class="btn sm pri" onclick="document.getElementById('aktenv-dosya').click()">📤 Dosya Seç</button>
+      </div>
+      <div id="aktenv-onizleme"></div>
+    </div>
     <div class="card"><div class="card-title">Yüklenen Veriler</div><div id="akt-liste"></div></div>
+  </div>
+  <div id="br-envanter" class="tab-panel">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.6rem;align-items:center">
+      <select id="be-rapor" onchange="bagEnvanterSec()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz);max-width:420px"><option value="">Rapor seçin</option></select>
+      <select id="be-gorunum" onchange="bagEnvanterCiz()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="detay">Detay (tüm stoklar)</option>
+        <option value="grup1">Grup — ana gruplar (1. seviye)</option>
+        <option value="grup2">Grup — 2. seviyeye kadar</option>
+        <option value="grup3">Grup — tüm gruplar (3. seviye)</option>
+      </select>
+      <input type="text" id="be-ara" oninput="bagEnvanterCiz()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:180px" placeholder="🔍 Stok / grup ara...">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--yazi2);cursor:pointer"><input type="checkbox" id="be-gizle" checked onchange="bagEnvanterCiz()"> Hareketsiz olanları gizle</label>
+      <div id="be-ozet" style="font-size:12px;color:var(--yazi3)"></div>
+      <button type="button" class="btn sm sec" style="margin-left:auto" onclick="bagEnvanterExcel()">📤 Excel'e Aktar</button>
+    </div>
+    <div style="overflow:auto;max-height:calc(100vh - 260px);border:1px solid var(--border);border-radius:8px">
+      <table id="be-tablo"><thead id="be-th"></thead><tbody id="be-tb"></tbody></table>
+    </div>
   </div>
   <div id="br-alis" class="tab-panel">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.9rem;align-items:center">
@@ -2563,6 +2603,8 @@
 <script src="js/depostok.js"></script>
 <script src="js/bagimsiz.js"></script>
 <script src="js/aktarim.js"></script>
+<script src="js/aktarimenv.js"></script>
+<script src="js/bagenvanter.js"></script>
 <script src="js/alisanaliz.js"></script>
 <script src="js/yetkikontrol.js"></script>
 
