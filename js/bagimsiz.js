@@ -1,6 +1,6 @@
 // ===== BAĞIMSIZ RAPORLAMA (modül kabuğu) =====
 // Ana sistemin stok/fatura/envanter kayıtlarından BAĞIMSIZ çalışan modül: yüklenen veriler (aktarim_* tabloları) üzerinde analiz yapar.
-// Tek menü girişi, içinde sekmeler: Veri Yükleme (aktarim.js) · Alış Fiyat Analizi (alisanaliz.js). Yeni analizler buraya sekme olarak eklenir.
+// Tek menü girişi, içinde sekmeler: Veri Yükleme (aktarim.js + aktarimenv.js) · Envanter (bagenvanter.js) · Alış Fiyat Analizi (alisanaliz.js). Yeni analizler buraya sekme olarak eklenir.
 // Yetki tek anahtardır: bagimsiz_raporlama (görüntüle = modül + raporlar, ekle = veri yükleme, sil = parti silme).
 window.brTab=function(id,btn){
   const sayfa=document.getElementById('bagimsiz-raporlama');if(!sayfa)return;
@@ -10,6 +10,7 @@ window.brTab=function(id,btn){
   if(dugme)dugme.classList.add('active');
   document.getElementById('br-'+id)?.classList.add('active');
   if(id==='yukleme'&&typeof aktarimAc==='function')aktarimAc();
+  if(id==='envanter'&&typeof bagEnvanterAc==='function')bagEnvanterAc();
   if(id==='alis'&&typeof alisAnalizAc==='function')alisAnalizAc();
 };
 // Modül açılışı: en son açık sekme korunur, ilk açılışta Veri Yükleme
