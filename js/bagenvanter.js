@@ -63,6 +63,23 @@ window.bagEnvanterSec=async function(){
   _beVeri={id,ad:rows[0]?.parti_ad||opt?.textContent||'',bas:rows[0]?.bas||'',bit:rows[0]?.bit||'',depo:rows[0]?.depo_ad||'',satir:harita};
   bagEnvanterCiz();
 };
+// Sütun filtresi/sıralaması için sütun tanımları (envtablo.js); ana ekrandakiyle aynı mantık
+function _beKolonTanim(grupMu,kolonlar){
+  const r3=v=>Math.round(v*1000)/1000,r2=v=>Math.round(v*100)/100,d=[];
+  if(!grupMu){
+    d.push({id:'kod',ad:'Kod',tip:'metin',deger:r=>r.stok.kod||''},{id:'stok',ad:'Stok',tip:'metin',deger:r=>r.stok.ad||''},
+      {id:'birim',ad:'Birim',tip:'metin',deger:r=>birimler.find(b=>b.id===r.stok.birim_id)?.kisaltma||''});
+    kolonlar.forEach(c=>{d.push({id:c.k+'_m',ad:c.ad+' Miktar',tip:'sayi',deger:r=>r3(r.o.m[c.k])},{id:c.k+'_t',ad:c.ad+' Tutar',tip:'sayi',deger:r=>r2(r.o.t[c.k])});});
+    d.push({id:'kalan_m',ad:'KALAN Miktar',tip:'sayi',deger:r=>r3(r.o.kalanM)},{id:'kalan_t',ad:'KALAN Tutar',tip:'sayi',deger:r=>r2(r.o.kalanT)},
+      {id:'sayim_m',ad:'Sayım Miktar',tip:'sayi',deger:r=>r.o.sayimVar?r3(r.o.sayimM):null,bosMu:v=>v===null},{id:'sayim_t',ad:'Sayım Tutar',tip:'sayi',deger:r=>r.o.sayimVar?r2(r.o.sayimT):null,bosMu:v=>v===null},
+      {id:'fark_m',ad:'Fark Miktar',tip:'sayi',deger:r=>r3(r.o.farkM)},{id:'fark_t',ad:'Fark Tutar',tip:'sayi',deger:r=>r2(r.o.farkT)});
+  }else{
+    d.push({id:'kod',ad:'Kod',tip:'metin',deger:a=>a.grup.kod||''},{id:'stok',ad:'Stok Grubu',tip:'metin',deger:a=>a.grup.ad||''});
+    kolonlar.forEach(c=>d.push({id:c.k+'_t',ad:c.ad,tip:'sayi',deger:a=>r2(a.t[c.k])}));
+    d.push({id:'kalan_t',ad:'KALAN',tip:'sayi',deger:a=>r2(a.kalanT)},{id:'sayim_t',ad:'Sayım',tip:'sayi',deger:a=>a.sayimVar?r2(a.sayimT):null,bosMu:v=>v===null},{id:'fark_t',ad:'Fark',tip:'sayi',deger:a=>r2(a.farkT)});
+  }
+  return d;
+}
 window.bagEnvanterCiz=function(){
   const thEl=document.getElementById('be-th'),tbEl=document.getElementById('be-tb'),oz=document.getElementById('be-ozet');
   if(!thEl||!tbEl)return;
@@ -85,21 +102,30 @@ window.bagEnvanterCiz=function(){
       return !(gizle&&!a.hareket&&!a.sayimVar);
     });
   }
-  _beSonSatirlar=satirlar;_beSonGorunum=gorunum;
   const digerVar=tum.some(r=>Math.abs(r.o.m.diger)>=0.0005||Math.abs(r.o.t.diger)>=0.005);
   const kolonlar=_beKolonlar().filter(c=>c.k!=='diger'||digerVar);
   _beSonKolonlar=kolonlar;
+  // Sütun filtresi + tıklayınca sıralama (envtablo.js). TOPLAM ve Excel çıktısı GÖRÜNEN satırlara göredir.
+  const ET=window.EnvTablo,gk=grupMu?'grup':'detay';
+  if(ET){
+    ET.kaydet('be',{barId:'be-filtre-bar',yenile:bagEnvanterCiz});
+    ET.kolonlar('be',gk,_beKolonTanim(grupMu,kolonlar));
+    satirlar=ET.isle('be',gk,satirlar,grupMu?{id:a=>a.grup.id,ust:a=>a.grup.ust_id}:null);
+  }
+  _beSonSatirlar=satirlar;_beSonGorunum=gorunum;
   const grup=(ad,vurgu)=>`<th colspan="2" class="${vurgu?'be-v':''}" style="text-align:center">${ad}</th>`;
-  const alt=vurgu=>`<th class="${vurgu?'be-v':''}" style="text-align:right;font-size:10px;font-weight:500">Miktar</th><th class="${vurgu?'be-v':''}" style="text-align:right;font-size:10px;font-weight:500">Tutar</th>`;
-  const tek=(ad,vurgu)=>`<th class="${vurgu?'be-v':''}" style="text-align:center">${ad}</th>`;
+  const hc=(id,etiket,o)=>ET?ET.th('be',gk,id,etiket,o):`<th class="${(o&&o.sinif)||''}"${o&&o.rowspan?` rowspan="${o.rowspan}"`:''} style="${(o&&o.stil)||''}">${etiket}</th>`;
+  const alt=(k,vurgu)=>{const o={sinif:vurgu?'be-v':'',stil:'text-align:right;font-size:10px;font-weight:500'};return hc(k+'_m','Miktar',o)+hc(k+'_t','Tutar',o);};
+  const tek=(k,ad,vurgu)=>hc(k+'_t',ad,{sinif:vurgu?'be-v':'',stil:'text-align:center'});
   if(!grupMu){
-    thEl.innerHTML=`<tr><th rowspan="2" class="be-k1">Kod</th><th rowspan="2" class="be-k2">Stok</th><th rowspan="2">Birim</th>`+kolonlar.map(c=>grup(c.ad)).join('')+grup('KALAN',true)+grup('Sayım')+grup('Fark')+`</tr><tr>${kolonlar.map(()=>alt()).join('')}${alt(true)}${alt()}${alt()}</tr>`;
+    thEl.innerHTML=`<tr>${hc('kod','Kod',{rowspan:2,sinif:'be-k1'})}${hc('stok','Stok',{rowspan:2,sinif:'be-k2'})}${hc('birim','Birim',{rowspan:2})}`+kolonlar.map(c=>grup(c.ad)).join('')+grup('KALAN',true)+grup('Sayım')+grup('Fark')+`</tr><tr>${kolonlar.map(c=>alt(c.k)).join('')}${alt('kalan',true)}${alt('sayim')}${alt('fark')}</tr>`;
   }else{
-    thEl.innerHTML=`<tr><th class="be-k1">Kod</th><th class="be-k2">Stok Grubu</th>`+kolonlar.map(c=>tek(c.ad)).join('')+tek('KALAN',true)+tek('Sayım')+tek('Fark')+`</tr>`;
+    thEl.innerHTML=`<tr>${hc('kod','Kod',{sinif:'be-k1'})}${hc('stok','Stok Grubu',{sinif:'be-k2'})}`+kolonlar.map(c=>tek(c.k,c.ad)).join('')+tek('kalan','KALAN',true)+tek('sayim','Sayım')+tek('fark','Fark')+`</tr>`;
   }
   const tops={};kolonlar.forEach(c=>tops[c.k]=0);let tKalanT=0,tSayimT=0,tFarkT=0;
   const farkM_=v=>Math.abs(v)<0.0005?'0':_beF3(v),farkT_=v=>Math.abs(v)<0.005?'0,00':_beF2(v);
   const hucre=(m,t,mv,tv,sinif)=>`<td class="${sinif||''}" style="text-align:right;${_beKr(mv)}">${m}</td><td class="${sinif||''}" style="text-align:right;${_beKr(tv,0.005)}">${t}</td>`;
+  const topSev=grupMu&&satirlar.length?Math.min(...satirlar.map(a=>a.grup.seviye||1)):1; // grup toplamı: görünen EN ÜST seviyedeki satırlar
   let govde;
   if(!grupMu){
     govde=satirlar.map(r=>{
@@ -114,7 +140,7 @@ window.bagEnvanterCiz=function(){
   }else{
     govde=satirlar.map(a=>{
       const sev=a.grup.seviye||1;
-      if(sev===1){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;tSayimT+=a.sayimT;tFarkT+=a.farkT;}
+      if(sev===topSev){kolonlar.forEach(c=>tops[c.k]+=a.t[c.k]);tKalanT+=a.kalanT;tSayimT+=a.sayimT;tFarkT+=a.farkT;}
       const kalin=sev===1?'font-weight:700;':sev===2?'font-weight:600;':'';
       const tc=(v,stil)=>`<td style="text-align:right;${stil||''}">${v}</td>`;
       return `<tr style="${kalin}${sev===1?'background:var(--krem2);':''}"><td class="be-k1">${_logEsc(a.grup.kod||'')}</td><td class="be-k2" style="padding-left:${7+(sev-1)*16}px">${_logEsc(a.grup.ad)}</td>
@@ -133,7 +159,7 @@ window.bagEnvanterCiz=function(){
       :`<tr style="background:var(--krem2);font-weight:700"><td class="be-k1"></td><td class="be-k2">TOPLAM (tutar)</td><td></td>${kolonlar.map(c=>`${bl}<td style="text-align:right">${_beT(tops[c.k])}</td>`).join('')}
         ${bl}<td style="text-align:right;${_beKr(tKalanT,0.005)}">${_beF2(tKalanT)}</td>${bl}<td style="text-align:right;${_beKr(tSayimT,0.005)}">${_beT(tSayimT)}</td>${bl}<td style="text-align:right;${_beKr(tFarkT,0.005)}">${_beF2(tFarkT)}</td></tr>`;
   }
-  if(oz)oz.textContent=`${satirlar.length} ${grupMu?'grup':'stok kalemi'} · ${_beVeri.depo||'Tüm depolar'} · ${_aktTr(_beVeri.bas)} – ${_aktTr(_beVeri.bit)}`;
+  if(oz)oz.textContent=`${satirlar.length} ${grupMu?'grup':'stok kalemi'} · ${_beVeri.depo||'Tüm depolar'} · ${_aktTr(_beVeri.bas)} – ${_aktTr(_beVeri.bit)}`+(ET&&ET.filtreSayisi('be',gk)?` · ${ET.filtreSayisi('be',gk)} filtre`:'');
 };
 // Ana ekrandaki Stok Envanter (Detay/Grup) Excel çıktısıyla AYNI sütunlar: Detay çıktısı tekrar yüklenebilir
 window.bagEnvanterExcel=function(){
