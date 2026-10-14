@@ -1294,7 +1294,10 @@
       <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
       <input type="date" id="aa-bit" onchange="aaTarihElle()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
       <button type="button" class="btn pri" onclick="alisAnalizRaporla()">📊 Raporla</button>
-      <button type="button" class="btn sm sec" style="margin-left:auto" onclick="alisAnalizExcel()">📤 Excel'e Aktar</button>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button type="button" class="btn sm sec" onclick="alisAnalizPdf()">📄 PDF'e Aktar</button>
+        <button type="button" class="btn sm sec" onclick="alisAnalizExcel()">📤 Excel'e Aktar</button>
+      </div>
     </div>
     <div id="aa-icerik"></div>
   </div>
