@@ -16,12 +16,14 @@
   <section id="ekran-yukleniyor" class="ekran"><div class="merkez"><div class="donen" aria-hidden="true"></div><p>Yükleniyor…</p></div></section>
 
   <section id="ekran-pin" class="ekran" hidden>
-    <form id="pin-form" class="kutu giris" autocomplete="off">
+    <form id="pin-form" class="kutu giris" autocomplete="on">
       <div class="kilit" aria-hidden="true">🔒</div>
       <h1 id="pin-baslik">Rapor</h1>
-      <p class="alt">Raporu görmek için size verilen PIN'i girin.</p>
-      <label for="pin-girdi" class="gizli-etiket">PIN</label>
-      <input id="pin-girdi" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="64" placeholder="PIN" required>
+      <p class="alt">Raporu görmek için size verilen kullanıcı adı ve şifreyi girin.</p>
+      <label for="kullanici-girdi" class="gizli-etiket">Kullanıcı adı</label>
+      <input id="kullanici-girdi" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="32" placeholder="Kullanıcı adı" required>
+      <label for="pin-girdi" class="gizli-etiket">Şifre</label>
+      <input id="pin-girdi" type="password" autocomplete="current-password" maxlength="64" placeholder="Şifre" required>
       <button id="pin-gonder" type="submit" class="birincil">Raporu Aç</button>
       <p id="pin-mesaj" class="hata" role="alert" hidden></p>
     </form>
