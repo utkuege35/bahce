@@ -1,19 +1,22 @@
 // ===== RAPOR PAYLAŞIMI (yönetici ekranı) =====
-// Akış: 1) RAPOR HAZIRLA (canlı panel ya da belirli dönem için dondurulmuş)  2) ALICIYA GÖNDER (mevcut kişi ya da yeni kişi: bağlantı + PIN).
+// Akış: 1) RAPOR HAZIRLA (canlı panel ya da belirli dönem için dondurulmuş)  2) ALICIYA GÖNDER (mevcut kişi ya da yeni kişi).
+//  • Program HİÇBİR mesaj/e-posta göndermez. Yeni alıcı oluşturulunca ekranda BAĞLANTI + KULLANICI ADI + ŞİFRE gösterilir; kopyalayıp alıcıya siz iletirsiniz.
+//  • Varsayılan kullanıcı adı "rapor", varsayılan şifre "1234"; ikisi de oluştururken ve sonradan değiştirilebilir.
 //  • Alıcı KALICI ise zamanla yeni rapor gönderilir; geçmişi görme / yalnızca son gönderileni görme seçilir. TEK SEFERLİK alıcı yalnızca tek rapor açar.
 // Güvenlik kuralları veritabanında uygulanır (veritabani_rapor_paylasim.sql): bu ekran yalnızca arayüzdür. Yönetici (rol='admin') değilse veritabanı reddeder.
-// Üretilen link ve PIN veritabanında DÜZ YAZI saklanmaz; bu yüzden YALNIZCA oluşturulduğu anda gösterilir.
+// Bağlantı ve şifre veritabanında DÜZ YAZI saklanmaz; bu yüzden YALNIZCA oluşturulduğu anda gösterilir (kaybedilirse "Linki yenile" / "Kullanıcı adı / şifre" kullanılır).
 //  • Link biçimi:  <uygulama adresi>/rapor/#<jeton>   (jeton '#' sonrasındadır: sunucu kayıtlarına ve yönlendirme başlığına gitmez)
-//  • PIN'i linkle AYNI kanaldan göndermeyin (link WhatsApp, PIN telefon/SMS gibi).
-let _rpSonuc=null;        // {link, pin, etiket, baslik} — yalnızca ekranda gösterilirken tutulur, kapatılınca silinir
+let _rpSonuc=null;        // {link, kullanici, sifre, etiket, baslik} — yalnızca ekranda gösterilirken tutulur, kapatılınca silinir
 let _rpYayin=[],_rpAlici=[];
 
 const RP_DURUM={aktif:['Aktif','var(--yesil)'],kilitli:['Kilitli','var(--turuncu)'],iptal:['İptal','var(--kirmizi,#c62828)'],suresi_doldu:['Süresi doldu','var(--yazi3)']};
-const RP_OLAY={olusturuldu:'Alıcı oluşturuldu',giris:'Giriş yapıldı',liste:'Rapor listesine bakıldı',veri:'Rapor görüntülendi',hatali_pin:'Hatalı PIN',kilitlendi:'Kilitlendi (çok hatalı PIN)',kilitli_deneme:'Kilitliyken deneme',
+const RP_OLAY={olusturuldu:'Alıcı oluşturuldu',giris:'Giriş yapıldı',liste:'Rapor listesine bakıldı',veri:'Rapor görüntülendi',hatali_pin:'Hatalı kullanıcı adı / şifre',kilitlendi:'Kilitlendi (çok hatalı giriş)',kilitli_deneme:'Kilitliyken deneme',
   otomatik_iptal:'Otomatik iptal (güvenlik)',gecersiz_baglanti:'İptal/süresi dolmuş linkle deneme',tarih_sinir:'İzin dışı tarih denemesi',yetkisiz_rapor:'Erişimi olmayan rapora deneme',cikis:'Çıkış yapıldı',iptal:'İptal edildi',
-  pin_yenilendi:'PIN yenilendi',rapor_gonderildi:'Rapor gönderildi',rapor_geri_alindi:'Rapor geri alındı',gecmis_ayari:'Geçmiş ayarı değişti',sure_uzatildi:'Süre uzatıldı'};
+  pin_yenilendi:'Şifre yenilendi',kimlik_degisti:'Kullanıcı adı / şifre değiştirildi',link_yenilendi:'Bağlantı yenilendi',rapor_gonderildi:'Rapor gönderildi',rapor_geri_alindi:'Rapor geri alındı',gecmis_ayari:'Geçmiş ayarı değişti',sure_uzatildi:'Süre uzatıldı'};
 const RP_SUPHELI=['hatali_pin','kilitlendi','kilitli_deneme','otomatik_iptal','gecersiz_baglanti','tarih_sinir','yetkisiz_rapor'];
 const RP_TIP={kalici:'Kalıcı',tek_seferlik:'Tek seferlik'},RP_GECMIS={tumu:'Tümü görünür',sadece_son:'Yalnızca son'};
+const RP_VARSAYILAN={kullanici:'rapor',sifre:'1234'};
+const RP_KOLAY_SIFRE=['1234','12345','123456','0000','1111','1212','4321','1q2w3e','password','sifre','şifre','rapor','admin'];
 const _rpTr=t=>t?new Date(t).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 const _rpTarih=t=>t?new Date(t).toLocaleDateString('tr-TR'):'—';
 const _rpGun=t=>{const p=String(t||'').slice(0,10).split('-');return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:'';};
@@ -22,11 +25,12 @@ const _rpEsc=s=>typeof _logEsc==='function'?_logEsc(s):String(s==null?'':s).repl
 const _rpPara=n=>'₺'+Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const _rpId=id=>document.getElementById(id);
 const _rpIsoYerel=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const _rpKulOk=k=>/^[a-zA-Z0-9._@-]{3,32}$/.test(k);
 
 // Veritabanı hatasını anlaşılır mesaja çevirir
 function _rpHata(error){
   const m=String((error&&(error.message||error.details))||error||'');
-  if(/Could not find the function|PGRST202|does not exist/i.test(m)||(error&&error.code==='PGRST202'))return 'Rapor paylaşımı henüz kurulmamış: veritabani_rapor_paylasim.sql dosyasını Supabase SQL Editor\'de çalıştırın.';
+  if(/Could not find the function|PGRST202|does not exist/i.test(m)||(error&&error.code==='PGRST202'))return 'Rapor paylaşımı için veritabanı güncellemesi gerekli: veritabani_rapor_paylasim.sql dosyasını Supabase SQL Editor\'de çalıştırın.';
   if(/yönetici yetkisi/i.test(m))return 'Bu işlem yalnızca yöneticiler içindir (veritabanı yetkiyi doğrulayamadı).';
   return m||'Bilinmeyen hata';
 }
@@ -34,10 +38,28 @@ function _rpHata(error){
 window.rpAc=async function(){
   rpSonucKapat();
   const ad=_rpId('rp-isyeri-ad');if(ad)ad.textContent=(typeof aktifIsyeri!=='undefined'&&aktifIsyeri&&aktifIsyeri.ad)||'';
-  ['rp-y-baslik','rp-y-aciklama','rp-g-etiket','rp-g-pin'].forEach(i=>{const e=_rpId(i);if(e)e.value='';});
-  _rpId('rp-detay').style.display='none';_rpId('rp-gunluk').style.display='none';
-  rpKipDegisti();rpPinModDegisti();
+  ['rp-y-baslik','rp-y-aciklama','rp-g-etiket'].forEach(i=>{const e=_rpId(i);if(e)e.value='';});
+  rpVarsayilanKimlik();
+  ['rp-detay','rp-gunluk','rp-kimlik'].forEach(i=>{_rpId(i).style.display='none';});
+  rpKipDegisti();
+  rpGonderNotu();
   await rpYukle();
+};
+function rpVarsayilanKimlik(){_rpId('rp-g-kullanici').value=RP_VARSAYILAN.kullanici;_rpId('rp-g-sifre').value=RP_VARSAYILAN.sifre;rpSifreUyari();}
+// "Gönder" düğmesi mesaj/e-posta GÖNDERMEZ: raporu alıcıya AÇAR. Bunu düğmenin altında kalıcı olarak yaz.
+function rpGonderNotu(){
+  if(_rpId('rp-g-not')){return;}
+  const b=_rpId('rp-g-btn');if(!b||!b.parentElement)return;
+  const n=document.createElement('div');n.id='rp-g-not';n.style.cssText='font-size:12px;color:var(--yazi2);margin-top:10px;padding:8px 10px;border-left:3px solid var(--turuncu);background:var(--krem2);border-radius:4px;line-height:1.6';
+  n.innerHTML='ℹ️ <b>Bu düğme e-posta ya da mesaj göndermez.</b> Raporu seçilen alıcıya <b>açar</b>. Yeni alıcı oluşturuyorsanız <b>bağlantı + kullanıcı adı + şifre</b> sayfanın en üstünde bir kez gösterilir; bunları alıcıya <b>siz iletirsiniz</b> (kopyala, WhatsApp, SMS, e-posta… nasıl isterseniz). Mevcut alıcıya gönderirseniz yeni bilgi gerekmez: alıcı kendi bağlantısını açınca raporu görür.';
+  b.parentElement.appendChild(n);
+}
+// Kısa/kolay şifre için (engellemeyen) uyarı
+window.rpSifreUyari=function(){
+  const u=_rpId('rp-g-sifre-uyari'),s=(_rpId('rp-g-sifre').value||'').trim();
+  const zayif=s.length<8||RP_KOLAY_SIFRE.includes(s.toLowerCase());
+  u.style.display=(s&&zayif)?'':'none';
+  u.textContent=(s&&zayif)?'⚠ Kısa/kolay şifre: bağlantı yanlış kişinin eline geçerse koruma zayıf olur. Önemli raporlarda daha uzun bir şifre yazmanız önerilir (yine de istediğinizi kullanabilirsiniz).':'';
 };
 
 window.rpYukle=async function(){
@@ -88,14 +110,12 @@ function rpSecimleriDoldur(){
   if(oa&&(oa==='__yeni'||etkin.some(a=>a.id===oa)))as.value=oa;
   rpAliciDegisti();
 }
-window.rpPinModDegisti=function(){
-  const elle=_rpId('rp-g-pin-mod')?.value==='elle',k=_rpId('rp-g-pin');if(k){k.style.display=elle?'':'none';if(!elle)k.value='';}
-};
 window.rpAliciDegisti=function(){
   const sec=_rpId('rp-g-alici').value,yeni=sec==='__yeni';
   _rpId('rp-g-yeni').style.display=yeni?'':'none';
   const tip=_rpId('rp-g-tip').value;
   _rpId('rp-g-gecmis-kutu').style.display=(yeni&&tip==='kalici')?'':'none';
+  rpSifreUyari();_rpId('rp-g-sifre-uyari').style.display=(yeni&&_rpId('rp-g-sifre-uyari').textContent)?'':'none';
   let ipucu='';
   if(yeni){
     ipucu=tip==='tek_seferlik'?'Tek seferlik: alıcı yalnızca bu raporu açar; başka rapor gönderilemez. Süre dolunca bağlantı kapanır.'
@@ -104,7 +124,7 @@ window.rpAliciDegisti=function(){
   }else{
     const a=_rpAlici.find(x=>x.id===sec);
     if(a)ipucu=a.tip==='tek_seferlik'?(a.rapor_sayisi>=1?'Bu tek seferlik alıcıya zaten rapor gönderilmiş; başka rapor gönderilemez. Yeni bir alıcı oluşturun.':'Tek seferlik alıcı: yalnızca bu rapor açılacak.')
-      :(a.gecmis==='sadece_son'?'Bu alıcıda yalnızca en son gönderilen rapor açılır; bu rapor gönderilince öncekiler görünmez olur.':'Alıcı bu raporu ve daha önce gönderdiklerinizi görebilir (geçmiş açık). Alıcı kendi bağlantısından açar; PIN değişmez.');
+      :(a.gecmis==='sadece_son'?'Bu alıcıda yalnızca en son gönderilen rapor açılır; bu rapor gönderilince öncekiler görünmez olur.':'Alıcı bu raporu ve daha önce gönderdiklerinizi görebilir (geçmiş açık). Alıcı kendi bağlantısından açar; kullanıcı adı ve şifre değişmez.');
   }
   _rpId('rp-g-ipucu').textContent=ipucu;
 };
@@ -126,61 +146,77 @@ window.rpGonder=async function(){
   }
   const etiket=(_rpId('rp-g-etiket').value||'').trim();
   if(!etiket){bil('"Kime verilecek" alanını doldurun (örn. Genel Müdür – Ahmet Bey)','err');return;}
-  const elle=_rpId('rp-g-pin-mod').value==='elle',pin=elle?(_rpId('rp-g-pin').value||'').trim():null;
-  if(elle&&pin.length<6){bil('PIN en az 6 karakter olmalı','err');return;}
+  const kullanici=(_rpId('rp-g-kullanici').value||'').trim()||RP_VARSAYILAN.kullanici,sifre=(_rpId('rp-g-sifre').value||'').trim();
+  if(!_rpKulOk(kullanici)){bil('Kullanıcı adı 3-32 karakter olmalı: harf, rakam, nokta, alt çizgi, tire (Türkçe karakter olmadan)','err');return;}
+  if(sifre.length<4||sifre.length>32){bil('Şifre en az 4, en çok 32 karakter olmalı','err');return;}
   const tip=_rpId('rp-g-tip').value;
   btn.disabled=true;
   try{
     const {data,error}=await sb.rpc('rapor_baglanti_olustur',{p_isyeri:aktifIsyeri.id,p_etiket:etiket,p_tip:tip,p_gecmis:tip==='kalici'?_rpId('rp-g-gecmis').value:'sadece_son',
-      p_gecmis_gun:parseInt(_rpId('rp-g-gun').value,10),p_gecerlilik_gun:parseInt(_rpId('rp-g-gecerlilik').value,10),p_pin:pin});
+      p_gecmis_gun:parseInt(_rpId('rp-g-gun').value,10),p_gecerlilik_gun:parseInt(_rpId('rp-g-gecerlilik').value,10),p_kullanici:kullanici,p_sifre:sifre});
     if(error){bil(_rpHata(error),'err');return;}
-    _rpSonuc={link:new URL('rapor/',location.href).href+'#'+data.token,pin:data.pin,etiket,baslik:y?y.baslik:''};
-    rpSonucCiz(true);
-    _rpId('rp-g-etiket').value='';_rpId('rp-g-pin').value='';
+    _rpSonuc={link:new URL('rapor/',location.href).href+'#'+data.token,kullanici:data.kullanici,sifre:data.sifre,etiket,baslik:y?y.baslik:''};
+    rpSonucCiz('Alıcı oluşturuldu ve rapor gönderildi');
+    bil('Alıcı oluşturuldu. Bağlantı, kullanıcı adı ve şifre sayfanın ÜSTÜNDE gösteriliyor: kopyalayıp alıcıya SİZ iletin (otomatik mesaj gitmez).','ok');
+    _rpId('rp-g-etiket').value='';rpVarsayilanKimlik();
     const p=await sb.rpc('rapor_paylas',{p_baglanti:data.id,p_yayin:yid});       // bağlantı oluştu; rapor gönderilemezse kullanıcı bilgilendirilir (bağlantı yine de verilebilir)
     if(p.error)bil('Alıcı oluşturuldu ama rapor gönderilemedi: '+_rpHata(p.error),'err');
     await rpYukle();
   }finally{btn.disabled=false;}
 };
 
-// ---------- sonuç kutusu (link + PIN, yalnızca bir kez) ----------
-function rpSonucCiz(yeni){
+// ---------- sonuç kutusu (bağlantı + kullanıcı adı + şifre; yalnızca bir kez) ----------
+function rpMesaj(){
+  const s=_rpSonuc;if(!s)return '';
+  const satir=[];
+  satir.push(s.link?(s.baslik?`"${s.baslik}" raporuna aşağıdaki bilgilerle ulaşabilirsiniz:`:'Rapora aşağıdaki bilgilerle ulaşabilirsiniz:'):'Rapor giriş bilgileriniz güncellendi:');
+  if(s.link)satir.push(`Bağlantı: ${s.link}`);
+  satir.push(`Kullanıcı adı: ${s.kullanici}`);
+  satir.push(`Şifre: ${s.sifre!=null?s.sifre:'(değişmedi, daha önce size bildirilen şifre)'}`);
+  return satir.join('\n');
+}
+function rpSatir(etiket,id,deger,kopya,buyuk){
+  return `<div style="font-size:11px;color:var(--yazi3);margin-top:8px">${etiket}</div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:3px 0 4px">`+
+    (id==='rp-link-kutu'?`<input id="${id}" readonly value="${_rpEsc(deger)}" style="flex:1;min-width:220px;font-size:12px;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--krem)" onclick="this.select()">`
+      :`<span id="${id}" style="${buyuk?'font-size:22px;font-weight:700;font-family:monospace;letter-spacing:.08em;':'font-size:16px;font-weight:600;font-family:monospace;'}">${_rpEsc(deger)}</span>`)+
+    (kopya?`<button class="btn sm" onclick="rpKopyala('${kopya}')">📋 Kopyala</button>`:'')+`</div>`;
+}
+function rpSonucCiz(baslik){
   const k=_rpId('rp-sonuc');if(!k)return;
   if(!_rpSonuc){k.style.display='none';k.innerHTML='';return;}
-  const s=_rpSonuc,bsl=yeni?'Alıcı oluşturuldu ve rapor gönderildi':'PIN yenilendi';
-  k.style.display='';
-  k.innerHTML=`<div style="font-weight:600;margin-bottom:6px">🔐 ${bsl} — ${_rpEsc(s.etiket)}${s.baslik?` <span style="font-weight:400;color:var(--yazi2)">· ${_rpEsc(s.baslik)}</span>`:''}</div>
-    <div style="font-size:12px;color:var(--turuncu);margin-bottom:10px">Bu bilgiler yalnızca <b>şimdi</b> gösterilir; sistemde düz yazı olarak saklanmaz. Kapatınca bir daha görülemez.</div>
-    ${s.link?`<div style="font-size:11px;color:var(--yazi3)">BAĞLANTI</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin:3px 0 10px"><input id="rp-link-kutu" readonly value="${_rpEsc(s.link)}" style="flex:1;min-width:220px;font-size:12px;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--krem)" onclick="this.select()"><button class="btn sm" onclick="rpKopyala('link')">📋 Kopyala</button><button class="btn sm" onclick="rpWhatsapp()">WhatsApp</button><button class="btn sm" id="rp-paylas-btn" style="display:none" onclick="rpPaylas()">Paylaş…</button></div>`:'<div style="font-size:12px;color:var(--yazi2);margin-bottom:8px">Bağlantı değişmedi; yalnızca PIN yenilendi.</div>'}
-    <div style="font-size:11px;color:var(--yazi3)">PIN</div><div style="display:flex;gap:8px;align-items:center;margin:3px 0 10px"><span id="rp-pin-goster" style="font-size:26px;font-weight:700;letter-spacing:.25em;font-family:monospace">${_rpEsc(s.pin)}</span><button class="btn sm" onclick="rpKopyala('pin')">📋 Kopyala</button></div>
-    <div style="font-size:12px;color:var(--yazi2);margin-bottom:10px">💡 PIN'i linkle <b>aynı kanaldan göndermeyin</b>: link WhatsApp'tan, PIN telefonla ya da SMS ile iletilsin. Link yanlış kişiye gitse bile PIN olmadan rapor açılmaz.</div>
-    <button class="btn sm" onclick="rpSonucKapat()">Kapat ve sil</button>`;
+  const s=_rpSonuc;k.style.display='';
+  k.innerHTML=`<div style="font-weight:600;margin-bottom:6px">🔐 ${_rpEsc(baslik||'Bilgiler hazır')} — ${_rpEsc(s.etiket)}${s.baslik?` <span style="font-weight:400;color:var(--yazi2)">· ${_rpEsc(s.baslik)}</span>`:''}</div>
+    <div style="font-size:12px;color:var(--turuncu);margin-bottom:6px">Bu bilgiler yalnızca <b>şimdi</b> gösterilir; sistemde düz yazı olarak saklanmaz. Kapatınca bir daha görülemez (kaybederseniz alıcı satırındaki "Linki yenile" ya da "Kullanıcı adı / şifre" düğmesiyle yenisini üretirsiniz).</div>
+    ${s.link?rpSatir('BAĞLANTI','rp-link-kutu',s.link,'link'):''}
+    ${rpSatir('KULLANICI ADI','rp-kullanici-goster',s.kullanici,'kullanici')}
+    ${rpSatir('ŞİFRE','rp-sifre-goster',s.sifre!=null?s.sifre:'(değişmedi)',s.sifre!=null?'sifre':'',true)}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px"><button class="btn pri" onclick="rpKopyala('hepsi')">📋 Hepsini kopyala (hazır mesaj)</button><button class="btn sm" onclick="rpWhatsapp()">WhatsApp ile gönder</button><button class="btn sm" id="rp-paylas-btn" style="display:none" onclick="rpPaylas()">Paylaş…</button><button class="btn sm" onclick="rpSonucKapat()">Kapat ve sil</button></div>
+    <div style="font-size:12px;color:var(--yazi2)">💡 "Hepsini kopyala" bağlantı, kullanıcı adı ve şifreyi tek mesaj olarak panoya alır; WhatsApp, SMS ya da e-postaya yapıştırabilirsiniz. İsterseniz şifreyi ayrı bir mesajla da iletebilirsiniz.</div>`;
   if(navigator.share){const b=_rpId('rp-paylas-btn');if(b)b.style.display='';}
+  k.scrollIntoView?.({behavior:'smooth',block:'start'});    // kutu sayfanın üstünde: ekranı ona kaydır (görülmeden kaçmasın)
 }
-window.rpSonucKapat=function(){_rpSonuc=null;rpSonucCiz(false);};
+window.rpSonucKapat=function(){_rpSonuc=null;rpSonucCiz();};
 window.rpKopyala=async function(ne){
-  if(!_rpSonuc)return;const metin=ne==='pin'?_rpSonuc.pin:_rpSonuc.link;
-  try{await navigator.clipboard.writeText(metin);bil(ne==='pin'?'PIN kopyalandı':'Bağlantı kopyalandı','ok');}
-  catch(e){const k=_rpId(ne==='pin'?'rp-pin-goster':'rp-link-kutu');if(k&&k.select)k.select();bil('Otomatik kopyalanamadı; seçili metni elle kopyalayın','err');}
+  if(!_rpSonuc)return;
+  const metin=ne==='hepsi'?rpMesaj():ne==='link'?_rpSonuc.link:ne==='kullanici'?_rpSonuc.kullanici:_rpSonuc.sifre;
+  if(metin==null||metin==='')return;
+  try{await navigator.clipboard.writeText(metin);bil(ne==='hepsi'?'Hazır mesaj kopyalandı (bağlantı + kullanıcı adı + şifre)':ne==='link'?'Bağlantı kopyalandı':ne==='kullanici'?'Kullanıcı adı kopyalandı':'Şifre kopyalandı','ok');}
+  catch(e){const k=_rpId(ne==='link'?'rp-link-kutu':ne==='kullanici'?'rp-kullanici-goster':'rp-sifre-goster');if(k&&k.select)k.select();bil('Otomatik kopyalanamadı; seçili metni elle kopyalayın','err');}
 };
-window.rpWhatsapp=function(){
-  if(!_rpSonuc||!_rpSonuc.link)return;
-  const metin=`${_rpSonuc.baslik?'"'+_rpSonuc.baslik+'"':'Rapor'} raporuna bu bağlantıdan ulaşabilirsiniz (PIN ayrıca iletilecek): ${_rpSonuc.link}`;   // PIN ASLA metne eklenmez
-  window.open('https://wa.me/?text='+encodeURIComponent(metin),'_blank','noopener');
-};
-window.rpPaylas=async function(){if(!_rpSonuc||!_rpSonuc.link)return;try{await navigator.share({title:_rpSonuc.baslik||'Rapor',text:'Rapor bağlantısı (PIN ayrıca iletilecek)',url:_rpSonuc.link});}catch(e){/* vazgeçildi */}};
+window.rpWhatsapp=function(){if(!_rpSonuc)return;window.open('https://wa.me/?text='+encodeURIComponent(rpMesaj()),'_blank','noopener');};
+window.rpPaylas=async function(){if(!_rpSonuc)return;try{await navigator.share({title:_rpSonuc.baslik||'Rapor',text:rpMesaj()});}catch(e){/* vazgeçildi */}};
 
 // ---------- Alıcılar tablosu ----------
 function rpAlicilarCiz(){
   const kap=_rpId('rp-alicilar');
   if(!_rpAlici.length){kap.innerHTML='<div class="bos" style="padding:1.2rem;text-align:center;color:var(--yazi3)">Henüz alıcı yok. "2 · Raporu Gönder" bölümünden yeni alıcı oluşturabilirsiniz.</div>';return;}
-  kap.innerHTML=`<div class="tw"><table><thead><tr><th>Kime</th><th>Tip</th><th>Geçmiş</th><th style="text-align:right">Rapor</th><th>Durum</th><th>Bitiş</th><th>Son erişim</th><th style="text-align:right">Erişim</th><th style="text-align:right">Hatalı PIN</th><th></th></tr></thead><tbody>`+
+  kap.innerHTML=`<div class="tw"><table><thead><tr><th>Kime</th><th>Kullanıcı adı</th><th>Tip</th><th>Geçmiş</th><th style="text-align:right">Rapor</th><th>Durum</th><th>Bitiş</th><th>Son erişim</th><th style="text-align:right">Erişim</th><th style="text-align:right">Hatalı giriş</th><th></th></tr></thead><tbody>`+
     _rpAlici.map(b=>{const d=RP_DURUM[b.durum]||[b.durum,'var(--yazi3)'],etkin=b.durum==='aktif'||b.durum==='kilitli',sure=b.durum!=='iptal';
-      return `<tr><td style="min-width:140px"><b>${_rpEsc(b.etiket)}</b>${b.iptal_nedeni?`<div style="font-size:11px;color:var(--kirmizi,#c62828)">${_rpEsc(b.iptal_nedeni)}</div>`:''}</td><td>${RP_TIP[b.tip]||b.tip}</td>
+      return `<tr><td style="min-width:140px"><b>${_rpEsc(b.etiket)}</b>${b.iptal_nedeni?`<div style="font-size:11px;color:var(--kirmizi,#c62828)">${_rpEsc(b.iptal_nedeni)}</div>`:''}</td><td style="font-family:monospace">${_rpEsc(b.kullanici_adi||'')}</td><td>${RP_TIP[b.tip]||b.tip}</td>
       <td>${b.tip==='kalici'?RP_GECMIS[b.gecmis]:'—'}</td><td style="text-align:right">${b.rapor_sayisi}</td>
       <td><span style="font-size:11px;font-weight:600;color:${d[1]}">● ${d[0]}</span></td><td>${_rpTarih(b.bitis)}</td><td>${_rpTr(b.son_erisim)}</td>
       <td style="text-align:right">${b.erisim_sayisi}</td><td style="text-align:right;${b.toplam_basarisiz>0?'color:var(--turuncu);font-weight:600':''}">${b.toplam_basarisiz}</td>
-      <td style="min-width:250px"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" onclick="rpGonderilenler('${b.id}')">Raporlar</button>${etkin&&b.tip==='kalici'?` <button class="btn sm" onclick="rpGecmisDegistir('${b.id}','${b.gecmis}')">Geçmiş: ${b.gecmis==='tumu'?'kapat':'aç'}</button>`:''}${sure?` <button class="btn sm" onclick="rpSureUzat('${b.id}')">Süre +90g</button>`:''}${etkin?` <button class="btn sm" onclick="rpPinYenile('${b.id}')">PIN yenile</button>`:''} <button class="btn sm" onclick="rpGunluk('${b.id}')">Günlük</button>${etkin?` <button class="btn sm" style="color:var(--kirmizi,#c62828)" onclick="rpIptal('${b.id}')">İptal et</button>`:''}</div></td></tr>`;}).join('')+`</tbody></table></div>`;
+      <td style="min-width:250px"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" onclick="rpGonderilenler('${b.id}')">Raporlar</button>${etkin&&b.tip==='kalici'?` <button class="btn sm" onclick="rpGecmisDegistir('${b.id}','${b.gecmis}')">Geçmiş: ${b.gecmis==='tumu'?'kapat':'aç'}</button>`:''}${sure?` <button class="btn sm" onclick="rpSureUzat('${b.id}')">Süre +90g</button>`:''}${b.durum!=='iptal'?` <button class="btn sm" onclick="rpKimlikAc('${b.id}')">Kullanıcı adı / şifre</button> <button class="btn sm" onclick="rpLinkYenile('${b.id}')">Linki yenile</button>`:''} <button class="btn sm" onclick="rpGunluk('${b.id}')">Günlük</button>${etkin?` <button class="btn sm" style="color:var(--kirmizi,#c62828)" onclick="rpIptal('${b.id}')">İptal et</button>`:''}</div></td></tr>`;}).join('')+`</tbody></table></div>`;
 }
 window.rpGonderilenler=async function(id){
   const k=_rpId('rp-detay');
@@ -219,13 +255,41 @@ window.rpIptal=async function(id){
   if(error){bil(_rpHata(error),'err');return;}
   bil('Bağlantı iptal edildi','ok');await rpYukle();
 };
-window.rpPinYenile=async function(id){
-  if(!(await onay('PIN yenilenecek: <b>eski PIN geçersiz</b> olur ve açık oturumlar kapanır. Bağlantı aynı kalır. Yeni PIN yalnızca bir kez gösterilir.','🔑','PIN yenile','Vazgeç')))return;
-  const {data,error}=await sb.rpc('rapor_baglanti_pin_yenile',{p_id:id});
+
+// Kullanıcı adı / şifre değiştirme (mevcut alıcı): boş bırakılan alan değişmez
+window.rpKimlikAc=function(id){
+  const a=_rpAlici.find(x=>x.id===id);if(!a)return;
+  const k=_rpId('rp-kimlik');k.style.display='';
+  k.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="card-title" style="margin:0">Kullanıcı adı / şifre — ${_rpEsc(a.etiket)}</div><button class="btn sm" onclick="document.getElementById('rp-kimlik').style.display='none'">Kapat</button></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg" style="margin:0;min-width:170px"><label>Kullanıcı adı</label><input type="text" id="rp-k-kullanici" maxlength="32" value="${_rpEsc(a.kullanici_adi||'')}" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+      <div class="fg" style="margin:0;min-width:200px"><label>Yeni şifre (değişmeyecekse boş bırakın)</label><input type="text" id="rp-k-sifre" maxlength="32" placeholder="boş = değişmez" autocomplete="off" spellcheck="false"></div>
+      <button class="btn pri" onclick="rpKimlikKaydet('${a.id}')">Kaydet</button></div>
+    <div style="font-size:12px;color:var(--yazi2);margin-top:8px">Kaydedince eski şifre geçersiz olur, açık oturumlar kapanır ve varsa kilit kalkar. Bağlantı değişmez. Alıcıya yeni bilgileri siz iletirsiniz.</div>`;
+  k.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+};
+window.rpKimlikKaydet=async function(id){
+  const a=_rpAlici.find(x=>x.id===id);if(!a)return;
+  const kul=(_rpId('rp-k-kullanici').value||'').trim().toLowerCase(),sif=(_rpId('rp-k-sifre').value||'').trim();
+  const kulDegisti=kul&&kul!==String(a.kullanici_adi||'').toLowerCase();
+  if(!kulDegisti&&!sif){bil('Değişiklik yok: yeni bir kullanıcı adı ya da şifre yazın','err');return;}
+  if(kulDegisti&&!_rpKulOk(kul)){bil('Kullanıcı adı 3-32 karakter olmalı: harf, rakam, nokta, alt çizgi, tire (Türkçe karakter olmadan)','err');return;}
+  if(sif&&(sif.length<4||sif.length>32)){bil('Şifre en az 4, en çok 32 karakter olmalı','err');return;}
+  const {data,error}=await sb.rpc('rapor_baglanti_kimlik_degistir',{p_id:id,p_kullanici:kulDegisti?kul:null,p_sifre:sif||null});
+  if(error){bil(_rpHata(error),'err');return;}
+  _rpId('rp-kimlik').style.display='none';
+  _rpSonuc={link:null,kullanici:data.kullanici,sifre:data.sifre,etiket:a.etiket,baslik:''};
+  rpSonucCiz('Kullanıcı adı / şifre güncellendi');
+  await rpYukle();
+};
+// Linki yenile: eski link GEÇERSİZ olur; kullanıcı adı ve şifre aynı kalır (linki kaybettiyseniz)
+window.rpLinkYenile=async function(id){
+  if(!(await onay('Bağlantı <b>yenilenecek</b>: <b>eski link geçersiz</b> olur ve açık oturumlar kapanır. Kullanıcı adı ve şifre aynı kalır. Yeni linki alıcıya siz iletirsiniz.','🔗','Linki yenile','Vazgeç')))return;
+  const {data,error}=await sb.rpc('rapor_baglanti_link_yenile',{p_id:id});
   if(error){bil(_rpHata(error),'err');return;}
   const a=_rpAlici.find(x=>x.id===id);
-  _rpSonuc={link:null,pin:data.pin,etiket:a?a.etiket:'',baslik:''};
-  rpSonucCiz(false);_rpId('rp-sonuc').scrollIntoView?.({behavior:'smooth',block:'center'});
+  _rpSonuc={link:new URL('rapor/',location.href).href+'#'+data.token,kullanici:data.kullanici,sifre:null,etiket:a?a.etiket:'',baslik:''};
+  rpSonucCiz('Bağlantı yenilendi');
   await rpYukle();
 };
 window.rpGunluk=async function(id){
