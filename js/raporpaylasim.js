@@ -7,7 +7,7 @@
 // Bağlantı ve şifre veritabanında DÜZ YAZI saklanmaz; bu yüzden YALNIZCA oluşturulduğu anda gösterilir (kaybedilirse "Linki yenile" / "Kullanıcı adı / şifre" kullanılır).
 //  • Link biçimi:  <uygulama adresi>/rapor/#<jeton>   (jeton '#' sonrasındadır: sunucu kayıtlarına ve yönlendirme başlığına gitmez)
 let _rpSonuc=null;        // {link, kullanici, sifre, etiket, baslik} — yalnızca ekranda gösterilirken tutulur, kapatılınca silinir
-let _rpYayin=[],_rpAlici=[];
+let _rpYayin=[],_rpAlici=[],_rpPartiler=[];
 
 const RP_DURUM={aktif:['Aktif','var(--yesil)'],kilitli:['Kilitli','var(--turuncu)'],iptal:['İptal','var(--kirmizi,#c62828)'],suresi_doldu:['Süresi doldu','var(--yazi3)']};
 const RP_OLAY={olusturuldu:'Alıcı oluşturuldu',giris:'Giriş yapıldı',liste:'Rapor listesine bakıldı',veri:'Rapor görüntülendi',hatali_pin:'Hatalı kullanıcı adı / şifre',kilitlendi:'Kilitlendi (çok hatalı giriş)',kilitli_deneme:'Kilitliyken deneme',
@@ -21,6 +21,7 @@ const _rpTr=t=>t?new Date(t).toLocaleString('tr-TR',{day:'2-digit',month:'2-digi
 const _rpTarih=t=>t?new Date(t).toLocaleDateString('tr-TR'):'—';
 const _rpGun=t=>{const p=String(t||'').slice(0,10).split('-');return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:'';};
 const _rpDonem=y=>y.kip==='canli'?'Canlı panel':(y.donem_bas===y.donem_bit?_rpGun(y.donem_bas):_rpGun(y.donem_bas)+' – '+_rpGun(y.donem_bit));
+const _rpKaynak=y=>y.tur==='alimlar_bagimsiz'?('Bağımsız Raporlama'+(y.parti_ad?' ('+y.parti_ad+')':' (tüm yüklemeler)')):'Uygulama';
 const _rpEsc=s=>typeof _logEsc==='function'?_logEsc(s):String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const _rpPara=n=>'₺'+Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const _rpId=id=>document.getElementById(id);
@@ -40,6 +41,7 @@ window.rpAc=async function(){
   const ad=_rpId('rp-isyeri-ad');if(ad)ad.textContent=(typeof aktifIsyeri!=='undefined'&&aktifIsyeri&&aktifIsyeri.ad)||'';
   ['rp-y-baslik','rp-y-aciklama','rp-g-etiket'].forEach(i=>{const e=_rpId(i);if(e)e.value='';});
   rpVarsayilanKimlik();
+  _rpId('rp-y-kaynak').value='uygulama';_rpId('rp-y-parti-kutu').style.display='none';
   ['rp-detay','rp-gunluk','rp-kimlik'].forEach(i=>{_rpId(i).style.display='none';});
   rpKipDegisti();
   rpGonderNotu();
@@ -64,17 +66,44 @@ window.rpSifreUyari=function(){
 
 window.rpYukle=async function(){
   if(typeof aktifIsyeri==='undefined'||!aktifIsyeri)return;
-  const [y,a]=await Promise.all([sb.rpc('rapor_yayin_listele',{p_isyeri:aktifIsyeri.id}),sb.rpc('rapor_baglanti_listele',{p_isyeri:aktifIsyeri.id})]);
+  const [y,a,pt]=await Promise.all([sb.rpc('rapor_yayin_listele',{p_isyeri:aktifIsyeri.id}),sb.rpc('rapor_baglanti_listele',{p_isyeri:aktifIsyeri.id}),sb.rpc('rapor_bagimsiz_partileri',{p_isyeri:aktifIsyeri.id})]);
   const hata=y.error||a.error;
   if(hata){const m=`<div class="bos" style="padding:1rem;color:var(--kirmizi,#c62828)">${_rpEsc(_rpHata(hata))}</div>`;_rpId('rp-alicilar').innerHTML=m;_rpId('rp-yayinlar').innerHTML='';return;}
-  _rpYayin=y.data||[];_rpAlici=a.data||[];
+  _rpYayin=y.data||[];_rpAlici=a.data||[];_rpPartiler=(pt&&!pt.error&&pt.data)||[];
   const etkin=_rpAlici.filter(x=>x.durum==='aktif'||x.durum==='kilitli').length;
   _rpId('rp-ozet').textContent=`${_rpYayin.length} rapor · ${etkin} etkin alıcı`;
-  rpSecimleriDoldur();rpAlicilarCiz();rpYayinlarCiz();
+  rpPartileriDoldur();rpSecimleriDoldur();rpAlicilarCiz();rpYayinlarCiz();
 };
 
 // ---------- 1 · Rapor hazırla ----------
-window.rpKipDegisti=function(){const d=_rpId('rp-y-kip').value==='donmus';_rpId('rp-y-donem').style.display=d?'flex':'none';};
+window.rpKipDegisti=function(){const d=_rpId('rp-y-kip').value==='donmus';_rpId('rp-y-donem').style.display=d?'flex':'none';rpKaynakNotu();};
+// Veri kaynağı: Uygulama (stok kayıtları) ya da Bağımsız Raporlama (yüklenen veri; isteğe bağlı tek bir yükleme)
+window.rpKaynakDegisti=function(){
+  const bag=_rpId('rp-y-kaynak').value==='bagimsiz';
+  _rpId('rp-y-parti-kutu').style.display=bag?'':'none';
+  rpKaynakNotu();
+};
+function rpPartileriDoldur(){
+  const s=_rpId('rp-y-parti');if(!s)return;const onceki=s.value;
+  s.innerHTML='<option value="">Tüm yüklemeler</option>'+_rpPartiler.map(p=>`<option value="${p.id}">${_rpEsc(p.ad||p.dosya_adi||'Yükleme')} · ${_rpGun(p.bas)} – ${_rpGun(p.bit)} · ${p.satir_sayisi||0} satır · ${_rpPara(p.toplam_tutar)}</option>`).join('');
+  if(onceki&&_rpPartiler.some(p=>p.id===onceki))s.value=onceki;
+  rpKaynakNotu();
+}
+// Yükleme seçilince dondurulmuş rapor için dönem, yüklemenin kapsadığı tarihlerle doldurulur
+window.rpPartiDegisti=function(){
+  const p=_rpPartiler.find(x=>x.id===_rpId('rp-y-parti').value);
+  if(p&&_rpId('rp-y-kip').value==='donmus'&&p.bas&&p.bit){
+    const bugun=_rpIsoYerel(new Date());_rpId('rp-y-bas').value=String(p.bas).slice(0,10);_rpId('rp-y-bit').value=String(p.bit).slice(0,10)>bugun?bugun:String(p.bit).slice(0,10);
+  }
+  rpKaynakNotu();
+};
+function rpKaynakNotu(){
+  const n=_rpId('rp-y-kaynak-not');if(!n)return;
+  const bag=_rpId('rp-y-kaynak').value==='bagimsiz',canli=_rpId('rp-y-kip').value==='canli';
+  if(!bag){n.textContent='Kaynak: uygulamadaki alış irsaliyesi/faturası ile girilen stok kayıtları (Stok Envanter Raporu\'ndaki "Alım" ile aynı).';return;}
+  if(!_rpPartiler.length){n.textContent='⚠ Bağımsız Raporlama\'da yüklenmiş alım verisi yok. Önce Bağımsız Raporlama › Veri Yükleme bölümünden alım hareketlerini yükleyin.';return;}
+  n.textContent='Kaynak: Bağımsız Raporlama\'ya yüklediğiniz alım hareketleri (dosyadaki KDV hariç tutarlar). '+(_rpId('rp-y-parti').value?'Yalnızca seçilen yükleme kullanılır.':'Aynı dönemi birden çok kez yüklediyseniz "Tüm yüklemeler" çift sayabilir; bir yükleme seçmeniz önerilir.')+(canli?' Canlı panelde yüklenen verinin kapsamadığı günler "kayıt yok" görünür; eski tarihler için alıcıda "Canlı panelde geçmiş gün" sınırını geniş tutun ya da dondurulmuş rapor hazırlayın.':'');
+}
 window.rpDonemHizli=function(ne){
   const b=new Date();b.setHours(12,0,0,0);let bas,bit;
   if(ne==='dun'){bas=bit=new Date(b.getTime()-864e5);}
@@ -85,12 +114,14 @@ window.rpDonemHizli=function(ne){
 };
 window.rpYayinla=async function(){
   const baslik=(_rpId('rp-y-baslik').value||'').trim(),kip=_rpId('rp-y-kip').value,aciklama=(_rpId('rp-y-aciklama').value||'').trim()||null;
+  const bag=_rpId('rp-y-kaynak').value==='bagimsiz',parti=bag?(_rpId('rp-y-parti').value||null):null;
   if(!baslik){bil('Rapora bir başlık verin (örn. Haziran 2026 Alım Raporu)','err');return;}
+  if(bag&&!_rpPartiler.length){bil('Bağımsız Raporlama\'da yüklenmiş alım verisi yok. Önce Bağımsız Raporlama › Veri Yükleme bölümünden yükleyin','err');return;}
   let bas=null,bit=null;
   if(kip==='donmus'){bas=_rpId('rp-y-bas').value||null;bit=_rpId('rp-y-bit').value||null;if(!bas||!bit){bil('Dondurulmuş rapor için dönem başlangıcı ve sonunu seçin','err');return;}if(bas>bit){bil('Dönem başlangıcı bitişten sonra olamaz','err');return;}}
   const btn=_rpId('rp-y-btn');btn.disabled=true;
   try{
-    const {data,error}=await sb.rpc('rapor_yayin_olustur',{p_isyeri:aktifIsyeri.id,p_tur:_rpId('rp-y-tur').value,p_kip:kip,p_baslik:baslik,p_aciklama:aciklama,p_bas:bas,p_bit:bit});
+    const {data,error}=await sb.rpc('rapor_yayin_olustur',{p_isyeri:aktifIsyeri.id,p_tur:bag?'alimlar_bagimsiz':_rpId('rp-y-tur').value,p_kip:kip,p_baslik:baslik,p_aciklama:aciklama,p_bas:bas,p_bit:bit,p_parti:parti});
     if(error){bil(_rpHata(error),'err');return;}
     const oz=data.ozet;
     bil(kip==='donmus'&&oz?`Rapor hazırlandı: ${oz.kalem_sayisi} kalem · ${_rpPara(oz.toplam_tutar)}`:'Canlı panel hazırlandı','ok');
@@ -102,7 +133,7 @@ window.rpYayinla=async function(){
 // ---------- 2 · Raporu gönder ----------
 function rpSecimleriDoldur(){
   const ys=_rpId('rp-g-yayin'),onceki=ys.value;
-  ys.innerHTML=_rpYayin.length?_rpYayin.map(y=>`<option value="${y.id}">${_rpEsc(y.baslik)} — ${_rpEsc(_rpDonem(y))}</option>`).join(''):'<option value="">(önce bir rapor hazırlayın)</option>';
+  ys.innerHTML=_rpYayin.length?_rpYayin.map(y=>`<option value="${y.id}">${_rpEsc(y.baslik)} — ${_rpEsc(_rpDonem(y))} · ${_rpEsc(_rpKaynak(y))}</option>`).join(''):'<option value="">(önce bir rapor hazırlayın)</option>';
   if(onceki&&_rpYayin.some(y=>y.id===onceki))ys.value=onceki;
   const as=_rpId('rp-g-alici'),oa=as.value;
   const etkin=_rpAlici.filter(a=>a.durum==='aktif'||a.durum==='kilitli');
@@ -308,8 +339,8 @@ window.rpGunluk=async function(id){
 function rpYayinlarCiz(){
   const kap=_rpId('rp-yayinlar');
   if(!_rpYayin.length){kap.innerHTML='<div class="bos" style="padding:1.2rem;text-align:center;color:var(--yazi3)">Henüz rapor hazırlanmadı.</div>';return;}
-  kap.innerHTML=`<div class="tw"><table><thead><tr><th>Başlık</th><th>Tür</th><th>Dönem</th><th>Hazırlanma</th><th style="text-align:right">Toplam</th><th style="text-align:right">Gönderildiği alıcı</th><th></th></tr></thead><tbody>`+
-    _rpYayin.map(y=>`<tr><td><b>${_rpEsc(y.baslik)}</b>${y.aciklama?`<div style="font-size:11px;color:var(--yazi3)">${_rpEsc(y.aciklama)}</div>`:''}</td><td>${y.kip==='canli'?'Canlı panel':'Dondurulmuş'}</td><td>${_rpEsc(_rpDonem(y))}</td><td>${_rpTr(y.olusturma)}</td>
+  kap.innerHTML=`<div class="tw"><table><thead><tr><th>Başlık</th><th>Tür</th><th>Veri kaynağı</th><th>Dönem</th><th>Hazırlanma</th><th style="text-align:right">Toplam</th><th style="text-align:right">Gönderildiği alıcı</th><th></th></tr></thead><tbody>`+
+    _rpYayin.map(y=>`<tr><td><b>${_rpEsc(y.baslik)}</b>${y.aciklama?`<div style="font-size:11px;color:var(--yazi3)">${_rpEsc(y.aciklama)}</div>`:''}</td><td>${y.kip==='canli'?'Canlı panel':'Dondurulmuş'}</td><td style="font-size:12px">${_rpEsc(_rpKaynak(y))}</td><td>${_rpEsc(_rpDonem(y))}</td><td>${_rpTr(y.olusturma)}</td>
       <td style="text-align:right">${y.ozet?_rpPara(y.ozet.toplam_tutar):'—'}</td><td style="text-align:right">${y.paylasim_sayisi}</td>
       <td style="text-align:right;white-space:nowrap"><button class="btn sm" style="color:var(--kirmizi,#c62828)" onclick="rpYayinSil('${y.id}')">Sil</button></td></tr>`).join('')+`</tbody></table></div>`;
 }
