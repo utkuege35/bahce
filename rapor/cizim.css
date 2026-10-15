@@ -1,0 +1,105 @@
+/* ===== RAPOR ÇİZİMİ STİLİ (ortak): alıcı sayfası + yönetici önizlemesi — KOYU TEMA =====
+   Tüm kurallar .rc kapsamındadır (uygulamanın stilini etkilemez, ondan etkilenmez). Renkler/ışıklar bu dosyada sabittir. */
+.rc{--bg:#0b1220;--kart:rgba(255,255,255,.045);--kart2:rgba(255,255,255,.07);--kenar:rgba(255,255,255,.09);--y1:#eaf0ff;--y2:#a9b6d3;--y3:#6f7fa3;--v1:#34d399;--v2:#60a5fa;--uyari:#fbbf24;
+  color:var(--y1);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;line-height:1.35;text-align:left}
+.rc *,.rc *::before,.rc *::after{box-sizing:border-box}
+.rc-panel{background:linear-gradient(180deg,#0b1220,#101b30);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:14px}
+.rc svg{display:block;max-width:100%}
+
+/* ---- üst özet (hero) ---- */
+.rc-hero{position:relative;overflow:hidden;border-radius:22px;padding:18px 18px 8px;margin-bottom:12px;border:1px solid var(--kenar);
+  background:radial-gradient(120% 150% at 0% 0%,rgba(52,211,153,.24),transparent 58%),radial-gradient(120% 150% at 100% 0%,rgba(96,165,250,.22),transparent 58%),var(--kart)}
+.rc-etiket{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--y2)}
+.rc-hero-tutar{font-size:clamp(32px,10vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08;margin:6px 0 10px;background:linear-gradient(90deg,#fff 30%,#9ff0cf);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.rc-alt{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.rc-delta{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(251,191,36,.16);color:#fbbf24}
+.rc-delta.az{background:rgba(52,211,153,.16);color:#34d399}.rc-delta.yok{background:rgba(255,255,255,.08);color:var(--y2);font-weight:600}
+.rc-donem{font-size:12px;color:var(--y2)}
+.rc svg.rc-spark{width:calc(100% + 36px);max-width:none;margin:8px -18px 0;height:56px}
+
+/* ---- küçük göstergeler ---- */
+.rc-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+@media (min-width:720px){.rc-kpi{grid-template-columns:repeat(4,1fr)}}
+.rc-kpi>div{background:var(--kart);border:1px solid var(--kenar);border-radius:18px;padding:12px 14px}
+.rc-kpi-i{font-size:18px;line-height:1}
+.rc-kpi-e{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--y2);margin-top:8px}
+.rc-kpi-d{font-size:22px;font-weight:800;margin-top:2px}
+.rc-kpi-k{font-size:11px;color:var(--y3);margin-top:2px}
+
+/* ---- kartlar ve ızgara ---- */
+.rc-izgara{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:12px}
+@media (min-width:900px){.rc-izgara.iki{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rc-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:20px;padding:15px;min-width:0;margin-bottom:12px}
+.rc-izgara>.rc-kart{margin-bottom:0}
+.rc-kart h2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 12px;font-size:14px;font-weight:700;color:var(--y1)}
+.rc-kart h2 small{font-size:11px;font-weight:500;color:var(--y3)}
+.rc-oku{min-height:18px;margin:0 0 6px;font-size:12px;color:var(--y2)}.rc-oku b{color:var(--y1);font-weight:700}
+
+/* ---- SVG metinleri ve animasyonlar ---- */
+.rc-t{fill:var(--y3);font-size:9.5px}
+.rc-tm{fill:var(--y1);font-size:15px;font-weight:800;text-anchor:middle}
+.rc-ts{fill:var(--y2);font-size:9px;text-anchor:middle}
+.rc-izg{stroke:rgba(255,255,255,.07);stroke-width:1}
+.rc-sutun{transform-box:fill-box;transform-origin:50% 100%;animation:rc-yuksel .75s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 16ms);cursor:pointer;transition:filter .15s}
+.rc-sutun:hover,.rc-sutun.sec{filter:brightness(1.35)}
+.rc-vurus{fill:transparent;cursor:pointer}
+.rc-dilim{transition:stroke-width .15s,opacity .15s;cursor:pointer}
+.rc-dilim.sec{stroke-width:30}.rc-donus{transform-origin:80px 80px;animation:rc-don 1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rc-yuksel{from{transform:scaleY(0);opacity:.2}to{transform:scaleY(1);opacity:1}}
+@keyframes rc-don{from{transform:rotate(-120deg) scale(.82);opacity:0}to{transform:none;opacity:1}}
+@keyframes rc-gen{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes rc-cizgi{from{stroke-dashoffset:var(--u,600)}to{stroke-dashoffset:0}}
+.rc-cizgi{stroke-dasharray:var(--u,600);animation:rc-cizgi 1.2s ease both}
+@media (prefers-reduced-motion:reduce){.rc *{animation:none!important;transition:none!important}}
+
+/* ---- halka grafik ---- */
+.rc-halka{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:14px;align-items:center}
+@media (max-width:420px){.rc-halka{grid-template-columns:1fr;justify-items:center}.rc-lej{width:100%}}
+.rc-lej{display:grid;gap:7px;min-width:0}
+.rc-lej-s{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px;cursor:pointer}
+.rc-lej-s i{width:10px;height:10px;border-radius:50%;display:block}
+.rc-lej-s span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-lej-s em{font-style:normal;color:var(--y2);white-space:nowrap}.rc-lej-s b{color:var(--y1)}
+
+/* ---- sıralama çubukları ---- */
+.rc-sira{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:10px;align-items:center;margin:11px 0}
+.rc-no{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:rgba(255,255,255,.08);color:var(--y2)}
+.rc-no.bir{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a1200}
+.rc-ad{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-yol{height:8px;border-radius:5px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden}
+.rc-dolgu{height:100%;border-radius:5px;transform-origin:left;animation:rc-gen .9s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 60ms)}
+.rc-tut{font-size:13px;font-weight:700;text-align:right;white-space:nowrap}.rc-tut small{display:block;font-size:11px;font-weight:500;color:var(--y3)}
+
+/* ---- yığın çubuk (tedarikçi) ---- */
+.rc-yigin{display:flex;gap:3px;height:16px;border-radius:9px;overflow:hidden;margin:2px 0 14px}
+.rc-yigin>div{height:100%;min-width:3px;transform-origin:left;animation:rc-gen .9s cubic-bezier(.2,.8,.2,1) both}
+
+/* ---- takvim ısı haritası ---- */
+.rc-isi{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.rc-isi-b{font-size:10px;text-align:center;color:var(--y3);padding-bottom:2px}
+.rc-hucre{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--y1);background:rgba(255,255,255,.04);cursor:pointer;transition:transform .12s,outline-color .12s;outline:2px solid transparent}
+.rc-hucre.yok{color:var(--y3);background:rgba(255,255,255,.03)}.rc-hucre.dis{background:transparent;cursor:default}
+.rc-hucre.sec{outline-color:#fff;transform:scale(1.06)}
+.rc-isi-lej{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--y3)}
+.rc-isi-lej i{flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(52,211,153,.12),rgba(52,211,153,1))}
+
+/* ---- detay tablosu ---- */
+.rc-arama{width:100%;padding:11px 13px;margin-bottom:10px;border:1px solid var(--kenar);border-radius:12px;background:rgba(255,255,255,.05);color:var(--y1);font:inherit;font-size:14px}
+.rc-arama::placeholder{color:var(--y3)}
+.rc-tablo-sar{overflow-x:auto}
+.rc-tablo{width:100%;border-collapse:collapse;font-size:13px}
+.rc-tablo th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--y3);padding:8px;border-bottom:1px solid var(--kenar);white-space:nowrap}
+.rc-tablo td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+.rc-tablo td.s,.rc-tablo th.s{text-align:right;white-space:nowrap}
+.rc-nokta{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
+.rc-tablo tfoot td{font-weight:800;border-bottom:none;color:var(--y1)}
+@media (max-width:640px){
+  .rc-tablo-sar{overflow:visible}
+  .rc-tablo,.rc-tablo thead,.rc-tablo tbody,.rc-tablo tfoot,.rc-tablo tr,.rc-tablo td{display:block}
+  .rc-tablo thead{display:none}
+  .rc-tablo tr{border:1px solid var(--kenar);border-radius:14px;padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,.03)}
+  .rc-tablo td{border:none;padding:3px 0;display:flex;justify-content:space-between;gap:12px;text-align:right}
+  .rc-tablo td::before{content:attr(data-et);color:var(--y3);font-size:12px;text-align:left;flex-shrink:0}
+  .rc-tablo td.ilk{font-weight:700;text-align:left;display:block;font-size:14px}.rc-tablo td.ilk::before{content:none}
+  .rc-tablo tfoot tr{background:transparent;border-style:dashed}
+}
