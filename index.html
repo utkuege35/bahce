@@ -1942,6 +1942,8 @@
     <div class="card-title">1 · Rapor Hazırla</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <div class="fg" style="margin:0;min-width:150px"><label>Rapor türü</label><select id="rp-y-tur"><option value="alimlar">Alımlar</option></select></div>
+      <div class="fg" style="margin:0;min-width:250px"><label>Veri kaynağı</label><select id="rp-y-kaynak" onchange="rpKaynakDegisti()"><option value="uygulama">Uygulama (alış irsaliyesi/faturası stok kayıtları)</option><option value="bagimsiz">Bağımsız Raporlama (yüklediğim veri)</option></select></div>
+      <div class="fg" id="rp-y-parti-kutu" style="margin:0;min-width:260px;display:none"><label>Hangi yükleme</label><select id="rp-y-parti" onchange="rpPartiDegisti()"></select></div>
       <div class="fg" style="margin:0;min-width:210px"><label>Tür</label><select id="rp-y-kip" onchange="rpKipDegisti()"><option value="canli">Canlı panel (tarih seçilerek bakılır)</option><option value="donmus">Dondurulmuş rapor (belirli dönem)</option></select></div>
       <div class="fg" style="margin:0;flex:1;min-width:220px"><label>Başlık</label><input type="text" id="rp-y-baslik" maxlength="120" placeholder="Örn: Haziran 2026 Alım Raporu"></div>
       <div class="fg" style="margin:0;flex:1;min-width:220px"><label>Açıklama (alıcı da görür; aramada kullanılır)</label><input type="text" id="rp-y-aciklama" maxlength="500" placeholder="Örn: Haziran ayı malzeme alımları"></div>
@@ -1951,6 +1953,7 @@
       <div class="fg" style="margin:0"><label>Dönem sonu</label><input type="date" id="rp-y-bit"></div>
       <button class="btn sm" onclick="rpDonemHizli('dun')">Dün</button><button class="btn sm" onclick="rpDonemHizli('7gun')">Son 7 gün</button><button class="btn sm" onclick="rpDonemHizli('buay')">Bu ay</button><button class="btn sm" onclick="rpDonemHizli('gecenay')">Geçen ay</button>
     </div>
+    <div id="rp-y-kaynak-not" style="font-size:12px;color:var(--yazi2);margin-top:10px;min-height:16px"></div>
     <div style="margin-top:12px"><button class="btn pri" id="rp-y-btn" onclick="rpYayinla()">📄 Raporu Hazırla</button><span style="font-size:11px;color:var(--yazi3);margin-left:10px">Dondurulmuş rapor, hazırlandığı andaki veriyle saklanır; sonradan veri değişse de alıcı gönderilen hâlini görür.</span></div>
   </div>
 
