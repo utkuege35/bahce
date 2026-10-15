@@ -1,11 +1,11 @@
 // ===== RAPOR GÖRÜNTÜLEME SAYFASI (alıcı için, salt okunur) =====
 // Güvenlik:
 //  • Bağlantıdaki jeton URL'nin '#' kısmındadır (sunucuya / yönlendirme başlığına gitmez); okunur okunmaz adres çubuğundan SİLİNİR.
-//  • Rapor PIN doğrulanmadan açılmaz. Doğrulama ve yetki tamamen VERİTABANI işlevlerinde (rapor_giris / rapor_liste / rapor_veri / rapor_cikis) yapılır;
+//  • Rapor, kullanıcı adı ve şifre doğrulanmadan açılmaz. Doğrulama ve yetki tamamen VERİTABANI işlevlerinde (rapor_giris / rapor_liste / rapor_veri / rapor_cikis) yapılır;
 //    bu sayfa yalnızca bir arayüzdür. Hangi raporların açılabileceği ("sadece son" / "tümü") SUNUCUDA belirlenir.
 //  • Sunucudan gelen tüm metinler yalnızca textContent ile yazılır (HTML enjeksiyonu mümkün değil). Satır içi betik/stil ve harici kütüphane YOKTUR.
 //  • Oturum yalnızca sekme ömrü boyunca (sessionStorage) tutulur; sekme kapanınca silinir.
-// Akış: PIN → en son gönderilen rapor doğrudan açılır → (izin varsa) "Geçmiş raporlar": gönderim tarihine ve başlık/açıklamaya göre arama.
+// Akış: kullanıcı adı + şifre → en son gönderilen rapor doğrudan açılır → (izin varsa) "Geçmiş raporlar": gönderim tarihine ve başlık/açıklamaya göre arama.
 (function () {
   'use strict';
   const AYAR = window.RAPOR_AYAR || {};
@@ -63,16 +63,16 @@
   }
 
   function pinEkrani(hata) {
-    ekranGoster('pin'); $('pin-girdi').value = '';
+    ekranGoster('pin'); $('pin-girdi').value = '';                // şifre her zaman temizlenir; kullanıcı adı kalır (yeniden yazmaya gerek yok)
     const m = $('pin-mesaj'); m.hidden = !hata; m.textContent = hata || '';
-    $('pin-gonder').disabled = false; $('pin-girdi').focus();
+    $('pin-gonder').disabled = false; ($('kullanici-girdi').value ? $('pin-girdi') : $('kullanici-girdi')).focus();
   }
 
   async function pinGonder(e) {
     e.preventDefault();
-    const pin = $('pin-girdi').value.trim(); if (!pin) return;
+    const kullanici = $('kullanici-girdi').value.trim(), sifre = $('pin-girdi').value.trim(); if (!kullanici || !sifre) return;
     $('pin-gonder').disabled = true; $('pin-mesaj').hidden = true;
-    const g = await rpc('rapor_giris', { p_token: jeton, p_pin: pin });
+    const g = await rpc('rapor_giris', { p_token: jeton, p_kullanici: kullanici, p_sifre: sifre });
     $('pin-girdi').value = '';
     if (g && g.ok) {
       oturum = g.oturum; meta = { bitis: g.bitis, tip: g.tip, gecmis: g.gecmis, isyeri: g.isyeri, en_eski: g.en_eski, en_yeni: g.en_yeni, varsayilan_tarih: g.varsayilan_tarih };
@@ -86,7 +86,7 @@
   function oturumuBitir() { depo.sil(K_OTURUM); depo.sil(K_META); depo.sil(K_YAYIN); oturum = null; meta = null; listeBilgi = null; aktifYayin = null; }
   function oturumDustu() {
     oturumuBitir();
-    if (jeton) pinEkrani('Oturum süresi doldu. PIN\'i yeniden girin.'); else mesajGoster('Oturum sona erdi', 'Lütfen bağlantıyı yeniden açın.');
+    if (jeton) pinEkrani('Oturum süresi doldu. Şifrenizi yeniden girin.'); else mesajGoster('Oturum sona erdi', 'Lütfen bağlantıyı yeniden açın.');
   }
 
   async function cikis() {
