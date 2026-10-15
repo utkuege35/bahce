@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<!-- Sıkı içerik güvenlik politikası: yalnızca bu klasördeki betik/stil, yalnızca Supabase'e bağlantı; satır içi betik YOK, harici kütüphane YOK -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; base-uri 'none'; form-action 'none'">
+<title>Rapor</title>
+<link rel="stylesheet" href="rapor.css">
+</head>
+<body>
+<main id="uygulama">
+
+  <section id="ekran-yukleniyor" class="ekran"><div class="merkez"><div class="donen" aria-hidden="true"></div><p>Yükleniyor…</p></div></section>
+
+  <section id="ekran-pin" class="ekran" hidden>
+    <form id="pin-form" class="kutu giris" autocomplete="off">
+      <div class="kilit" aria-hidden="true">🔒</div>
+      <h1 id="pin-baslik">Rapor</h1>
+      <p class="alt">Raporu görmek için size verilen PIN'i girin.</p>
+      <label for="pin-girdi" class="gizli-etiket">PIN</label>
+      <input id="pin-girdi" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="64" placeholder="PIN" required>
+      <button id="pin-gonder" type="submit" class="birincil">Raporu Aç</button>
+      <p id="pin-mesaj" class="hata" role="alert" hidden></p>
+    </form>
+  </section>
+
+  <section id="ekran-rapor" class="ekran" hidden>
+    <header class="ust">
+      <div class="ust-sol">
+        <div id="ust-isyeri" class="isyeri"></div>
+        <h1 id="ust-baslik" class="baslik">Rapor</h1>
+        <p id="ust-aciklama" class="ust-aciklama" hidden></p>
+        <div id="ust-rozetler" class="rozetler"></div>
+      </div>
+      <div class="ust-sag">
+        <button id="gecmis-btn" type="button" class="ikincil" hidden>📚 Geçmiş raporlar</button>
+        <button id="cikis" type="button" class="ikincil">Çıkış</button>
+      </div>
+    </header>
+
+    <div id="tarih-alani">
+      <nav class="tarih-cubugu" aria-label="Tarih seçimi">
+        <button id="onceki-gun" type="button" class="ok" aria-label="Önceki gün">◀</button>
+        <div class="tarih-orta">
+          <input id="tarih" type="date" aria-label="Rapor tarihi">
+          <div id="tarih-metin" class="tarih-metin"></div>
+        </div>
+        <button id="sonraki-gun" type="button" class="ok" aria-label="Sonraki gün">▶</button>
+      </nav>
+      <div class="hizli"><button id="hizli-dun" type="button" class="ikincil kucuk">Dün</button><button id="hizli-bugun" type="button" class="ikincil kucuk">Bugün</button></div>
+    </div>
+
+    <div id="rapor-uyari" class="uyari" hidden></div>
+    <div id="rapor-icerik"></div>
+    <footer class="alt-bilgi"><span id="guncelleme"></span><span>Salt okunur rapor</span></footer>
+  </section>
+
+  <section id="ekran-liste" class="ekran" hidden>
+    <header class="ust">
+      <div class="ust-sol"><div id="liste-isyeri" class="isyeri"></div><h1 class="baslik">Geçmiş raporlar</h1></div>
+      <div class="ust-sag"><button id="liste-geri" type="button" class="ikincil">← Rapora dön</button><button id="liste-cikis" type="button" class="ikincil">Çıkış</button></div>
+    </header>
+    <form id="liste-form" class="filtre-cubugu" autocomplete="off">
+      <label class="alan">Gönderim tarihi: başlangıç<input id="liste-bas" type="date" aria-label="Gönderim tarihi başlangıç"></label>
+      <label class="alan">Gönderim tarihi: bitiş<input id="liste-bit" type="date" aria-label="Gönderim tarihi bitiş"></label>
+      <label class="genis alan">Başlık veya açıklama<input id="liste-ara" type="search" placeholder="Başlık veya açıklamada ara…" aria-label="Başlık veya açıklamada ara"></label>
+      <button id="liste-ara-btn" type="submit" class="birincil kucuk">Ara</button>
+      <button id="liste-temizle" type="button" class="ikincil kucuk">Temizle</button>
+    </form>
+    <div id="liste-ozet" class="liste-ozet"></div>
+    <div id="liste-icerik"></div>
+  </section>
+
+  <section id="ekran-mesaj" class="ekran" hidden>
+    <div class="kutu giris"><div class="kilit" aria-hidden="true">ℹ️</div><h1 id="mesaj-baslik">Bilgi</h1><p id="mesaj-metin" class="alt"></p></div>
+  </section>
+
+</main>
+<script src="ayar.js"></script>
+<script src="rapor.js"></script>
+</body>
+</html>
