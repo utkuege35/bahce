@@ -3,7 +3,7 @@
 //       4) PAYLAŞ: alıcı (kalıcı / tek seferlik), geçmiş, geçerlilik, kullanıcı adı + şifre  5) bağlantı + kullanıcı adı + şifre ekranda; kopyalayıp siz iletirsiniz.
 // Program hiçbir mesaj göndermez. Güvenlik kuralları veritabanındadır (veritabani_rapor_paylasim.sql); bu ekran yalnızca arayüzdür.
 // Bağlantı ve şifre veritabanında DÜZ YAZI saklanmaz; bu yüzden yalnızca oluşturulduğunda gösterilir (kaybedilirse "Linki yenile" / "Kullanıcı adı / şifre").
-// Önizleme, alıcı sayfasıyla AYNI çizim kodunu kullanır (rapor/cizim.js).
+// Önizleme, alıcı sayfasıyla AYNI çizim kodunu ve stili kullanır (rapor/cizim.js + rapor/cizim.css; koyu tema).
 let _rpSonuc=null;        // {link, kullanici, sifre, etiket, baslik} — yalnızca ekranda gösterilirken tutulur, kapatılınca silinir
 let _rpYayin=[],_rpAlici=[],_rpPartiler=[],_rpSecYayin=null,_rpSecAlici=null,_rpBaslikElle=false,_rpOnizleNo=0;
 
@@ -76,29 +76,7 @@ function rpStil(){
 #rapor-paylasim .rp-bilgi{display:flex;align-items:center;gap:8px;margin:4px 0 10px}
 #rapor-paylasim .rp-bilgi input{flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--k);border-radius:8px;background:var(--a);color:var(--y);font:inherit;font-size:12px}
 #rapor-paylasim .rp-bilgi .rp-mono{font-size:18px;font-weight:600}
-#rapor-paylasim .rp-etiket{font-size:11px;color:var(--s);text-transform:uppercase;letter-spacing:.04em}
-#rp-onizleme .kartlar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
-@media (max-width:760px){#rp-onizleme .kartlar{grid-template-columns:repeat(2,1fr)}}
-#rp-onizleme .kart{background:var(--krem,#f4f1ea);border:1px solid var(--border,#e1ddd2);border-left-width:4px;border-radius:10px;padding:10px 12px}
-#rp-onizleme .kart .e{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--yazi3,#8a96a0)}
-#rp-onizleme .kart .d{font-size:19px;font-weight:700;margin-top:3px;color:var(--yazi,#1f2a33)}
-#rp-onizleme .kart .k{font-size:11px;color:var(--yazi3,#8a96a0);margin-top:2px}
-#rp-onizleme .bolum{border:1px solid var(--border,#e1ddd2);border-radius:12px;padding:12px;margin-bottom:12px}
-#rp-onizleme .bolum h2{font-size:13px;margin:0 0 10px;color:var(--yazi,#1f2a33)}
-#rp-onizleme .cubuk-satir{display:grid;grid-template-columns:minmax(90px,36%) 1fr auto;gap:10px;align-items:center;margin:7px 0;font-size:12px;color:var(--yazi,#1f2a33)}
-#rp-onizleme .cubuk-ad{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#rp-onizleme .cubuk-yol{height:12px;background:var(--krem2,#ece8de);border-radius:7px;overflow:hidden}
-#rp-onizleme .cubuk-dolgu{height:100%;border-radius:7px}
-#rp-onizleme .cubuk-deger{white-space:nowrap;color:var(--yazi3,#8a96a0)}
-#rp-onizleme .arama{width:100%;box-sizing:border-box;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border,#e1ddd2);border-radius:8px;background:var(--krem,#f4f1ea);color:var(--yazi,#1f2a33);font:inherit;font-size:12px}
-#rp-onizleme .tablo-sar{overflow-x:auto}
-#rp-onizleme table{width:100%;border-collapse:collapse;font-size:12px}
-#rp-onizleme th{text-align:left;font-size:10px;font-weight:500;text-transform:uppercase;color:var(--yazi3,#8a96a0);padding:6px;border-bottom:1px solid var(--border,#e1ddd2);white-space:nowrap;background:transparent}
-#rp-onizleme td{padding:7px 6px;border-bottom:1px solid var(--border,#e1ddd2);vertical-align:top;color:var(--yazi,#1f2a33)}
-#rp-onizleme td.s,#rp-onizleme th.s{text-align:right;white-space:nowrap}
-#rp-onizleme .grup-pt{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-#rp-onizleme tfoot td{font-weight:700;border-bottom:none}
-#rp-onizleme .bos{text-align:center;color:var(--yazi3,#8a96a0);padding:24px 8px}`;
+#rapor-paylasim .rp-etiket{font-size:11px;color:var(--s);text-transform:uppercase;letter-spacing:.04em}`;
   document.head.appendChild(s);
 }
 
@@ -198,15 +176,15 @@ window.rpRaporAc=async function(id){
 window.rpDetayKapat=function(){_rpSecYayin=null;_rpOnizleNo++;const e=_rpId('rp-rapor-detay');if(e)e.style.display='none';};
 window.rpOnizleTarih=function(){const v=_rpId('rp-d-tarih').value;if(/^\d{4}-\d{2}-\d{2}$/.test(v))rpOnizle(v);};
 async function rpOnizle(tarih){
-  const no=++_rpOnizleNo,kap=_rpId('rp-onizleme');kap.innerHTML='<div class="bos">Yükleniyor…</div>';
+  const no=++_rpOnizleNo,kap=_rpId('rp-onizleme');kap.className='rc-panel';kap.innerHTML='<div class="rc rc-kart">Yükleniyor…</div>';
   const {data,error}=await sb.rpc('rapor_yayin_onizle',{p_yayin:_rpSecYayin,p_tarih:tarih||null});
   if(no!==_rpOnizleNo)return;
-  if(error){kap.innerHTML=`<div class="bos">${_rpEsc(_rpHata(error))}</div>`;return;}
+  if(error){kap.innerHTML=`<div class="rc rc-kart">${_rpEsc(_rpHata(error))}</div>`;return;}
   const y=data.yayin,r=data.rapor,canli=y.kip==='canli',ti=_rpId('rp-d-tarih');
   ti.style.display=canli?'':'none';if(canli){ti.max=data.bugun||'';ti.value=r.tarih||'';}
-  kap.replaceChildren();
-  if(!r.kayit_var){const b=document.createElement('div');b.className='bos';b.textContent='Bu tarih için kayıt yok';kap.appendChild(b);return;}
-  if(window.RaporCizim)window.RaporCizim.ciz(r,kap);else kap.innerHTML='<div class="bos">Önizleme yüklenemedi (rapor/cizim.js yüklü değil)</div>';
+  kap.replaceChildren();kap.className='rc-panel';
+  if(!r.kayit_var){const b=document.createElement('div');b.className='rc-kart';b.textContent='Bu tarih için kayıt yok';kap.appendChild(b);return;}
+  if(window.RaporCizim)window.RaporCizim.ciz(r,kap);else kap.innerHTML='<div class="rc rc-kart">Önizleme yüklenemedi (rapor/cizim.js yüklü değil)</div>';
 }
 window.rpYayinSil=async function(){
   const y=_rpYayin.find(x=>x.id===_rpSecYayin);if(!y)return;
