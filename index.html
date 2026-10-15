@@ -174,6 +174,7 @@
       <button id="nav-yetkiler" onclick="gp('yetkiler')" style="display:none">Yetki Şablonları</button>
       <button id="nav-kul-yetkiler" onclick="gp('kul-yetkiler')" style="display:none">Kullanıcı Yetkileri</button>
       <button id="nav-loglar" onclick="gp('kullanici-loglari')" style="display:none">Kullanıcı Logları</button>
+      <button id="nav-rapor-paylasim" onclick="gp('rapor-paylasim')" style="display:none" title="Yöneticiye link + PIN ile salt-okunur rapor paylaş">🔗 Rapor Paylaşımı</button>
     </div>
   </div>
 </nav>
@@ -1925,6 +1926,61 @@
   <div id="kullanici-liste"></div>
 </div>
 
+<!-- RAPOR PAYLAŞIMI (yönetici) -->
+<div id="rapor-paylasim" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
+    <div style="font-size:15px;font-weight:600;color:var(--yazi1)">Rapor Paylaşımı <span id="rp-isyeri-ad" style="font-weight:400;font-size:12px;color:var(--yazi3);margin-left:6px"></span></div>
+    <div id="rp-ozet" style="font-size:12px;color:var(--yazi3)"></div>
+  </div>
+  <div style="font-size:12px;color:var(--yazi2);background:var(--krem2);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;margin-bottom:.9rem;line-height:1.6">
+    🔒 Raporu Excel/PDF göndermek yerine <b>kişiye bağlantı + PIN</b> verin; telefonundan ya da bilgisayarından açar. Yalnızca <b>görüntüler</b>, istediğiniz an iptal edersiniz.<br>
+    <b>Rapor</b> = hazırladığınız şey (<i>canlı panel</i>: tarih seçilerek bakılır · <i>dondurulmuş</i>: gönderdiğiniz anki dönem raporu). &nbsp;<b>Alıcı</b> = kişi (<i>kalıcı</i>: zamanla yeni rapor gönderirsiniz · <i>tek seferlik</i>: yalnızca tek rapor). &nbsp;Kalıcı alıcıda geçmiş raporları <i>görsün</i> ya da yalnızca <i>son gönderileni</i> açabilsin diye seçersiniz.
+  </div>
+  <div id="rp-sonuc" class="card" style="display:none;border:2px solid var(--yesil)"></div>
+
+  <div class="card">
+    <div class="card-title">1 · Rapor Hazırla</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg" style="margin:0;min-width:150px"><label>Rapor türü</label><select id="rp-y-tur"><option value="alimlar">Alımlar</option></select></div>
+      <div class="fg" style="margin:0;min-width:210px"><label>Tür</label><select id="rp-y-kip" onchange="rpKipDegisti()"><option value="canli">Canlı panel (tarih seçilerek bakılır)</option><option value="donmus">Dondurulmuş rapor (belirli dönem)</option></select></div>
+      <div class="fg" style="margin:0;flex:1;min-width:220px"><label>Başlık</label><input type="text" id="rp-y-baslik" maxlength="120" placeholder="Örn: Haziran 2026 Alım Raporu"></div>
+      <div class="fg" style="margin:0;flex:1;min-width:220px"><label>Açıklama (alıcı da görür; aramada kullanılır)</label><input type="text" id="rp-y-aciklama" maxlength="500" placeholder="Örn: Haziran ayı malzeme alımları"></div>
+    </div>
+    <div id="rp-y-donem" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg" style="margin:0"><label>Dönem başlangıcı</label><input type="date" id="rp-y-bas"></div>
+      <div class="fg" style="margin:0"><label>Dönem sonu</label><input type="date" id="rp-y-bit"></div>
+      <button class="btn sm" onclick="rpDonemHizli('dun')">Dün</button><button class="btn sm" onclick="rpDonemHizli('7gun')">Son 7 gün</button><button class="btn sm" onclick="rpDonemHizli('buay')">Bu ay</button><button class="btn sm" onclick="rpDonemHizli('gecenay')">Geçen ay</button>
+    </div>
+    <div style="margin-top:12px"><button class="btn pri" id="rp-y-btn" onclick="rpYayinla()">📄 Raporu Hazırla</button><span style="font-size:11px;color:var(--yazi3);margin-left:10px">Dondurulmuş rapor, hazırlandığı andaki veriyle saklanır; sonradan veri değişse de alıcı gönderilen hâlini görür.</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">2 · Raporu Gönder</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg" style="margin:0;flex:1;min-width:240px"><label>Rapor</label><select id="rp-g-yayin"></select></div>
+      <div class="fg" style="margin:0;flex:1;min-width:240px"><label>Kime</label><select id="rp-g-alici" onchange="rpAliciDegisti()"></select></div>
+    </div>
+    <div id="rp-g-yeni" style="display:none;margin-top:10px;padding:10px;border:1px dashed var(--border);border-radius:8px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="fg" style="margin:0;flex:1;min-width:220px"><label>Kime verilecek (yalnızca sizin göreceğiniz not)</label><input type="text" id="rp-g-etiket" maxlength="80" placeholder="Örn: Genel Müdür – Ahmet Bey"></div>
+        <div class="fg" style="margin:0;min-width:170px"><label>Alıcı tipi</label><select id="rp-g-tip" onchange="rpAliciDegisti()"><option value="kalici">Kalıcı (zamanla rapor gönderirim)</option><option value="tek_seferlik">Tek seferlik (yalnızca bu rapor)</option></select></div>
+        <div class="fg" id="rp-g-gecmis-kutu" style="margin:0;min-width:190px"><label>Geçmiş raporlar</label><select id="rp-g-gecmis" onchange="rpAliciDegisti()"><option value="tumu">Görebilsin (tümü)</option><option value="sadece_son">Yalnızca son gönderilen</option></select></div>
+        <div class="fg" style="margin:0;min-width:140px"><label>Canlı panelde geçmiş gün</label><select id="rp-g-gun"><option value="7">Son 7 gün</option><option value="30" selected>Son 30 gün</option><option value="90">Son 90 gün</option><option value="180">Son 180 gün</option><option value="366">Son 1 yıl</option></select></div>
+        <div class="fg" style="margin:0;min-width:130px"><label>Bağlantı geçerliliği</label><select id="rp-g-gecerlilik"><option value="7">7 gün</option><option value="30">30 gün</option><option value="90" selected>90 gün</option><option value="180">180 gün</option><option value="366">1 yıl</option></select></div>
+        <div class="fg" style="margin:0;min-width:170px"><label>PIN</label><select id="rp-g-pin-mod" onchange="rpPinModDegisti()"><option value="oto">Otomatik üret (önerilen)</option><option value="elle">Kendim belirleyeceğim</option></select></div>
+        <div class="fg" style="margin:0;min-width:140px"><input type="text" id="rp-g-pin" maxlength="32" placeholder="en az 6 karakter" style="display:none" autocomplete="off"></div>
+      </div>
+    </div>
+    <div id="rp-g-ipucu" style="font-size:12px;color:var(--yazi2);margin-top:8px;min-height:16px"></div>
+    <div style="margin-top:10px"><button class="btn pri" id="rp-g-btn" onclick="rpGonder()">📤 Gönder</button></div>
+  </div>
+
+  <div class="card"><div class="card-title">Alıcılar</div><div id="rp-alicilar"></div></div>
+  <div id="rp-detay" class="card" style="display:none"></div>
+  <div id="rp-gunluk" class="card" style="display:none"></div>
+  <div class="card"><div class="card-title">Hazırlanan Raporlar</div><div id="rp-yayinlar"></div></div>
+</div>
+
 <!-- KULLANICI LOGLARI (yönetici) -->
 <div id="kullanici-loglari" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:8px">
@@ -2605,6 +2661,7 @@
 <script src="js/envanter.js"></script>
 <script src="js/depostok.js"></script>
 <script src="js/bagimsiz.js"></script>
+<script src="js/raporpaylasim.js"></script>
 <script src="js/aktarim.js"></script>
 <script src="js/aktarimenv.js"></script>
 <script src="js/bagenvanter.js"></script>
