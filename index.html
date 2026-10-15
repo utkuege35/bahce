@@ -1933,7 +1933,7 @@
     <div id="rp-ozet" style="font-size:12px;color:var(--yazi3)"></div>
   </div>
   <div style="font-size:12px;color:var(--yazi2);background:var(--krem2);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;margin-bottom:.9rem;line-height:1.6">
-    🔒 Raporu Excel/PDF göndermek yerine <b>kişiye bağlantı + PIN</b> verin; telefonundan ya da bilgisayarından açar. Yalnızca <b>görüntüler</b>, istediğiniz an iptal edersiniz.<br>
+    🔒 Raporu Excel/PDF göndermek yerine kişiye <b>bağlantı + kullanıcı adı + şifre</b> verin; tarayıcıdan açıp giriş yapar. Bilgileri ekrandan <b>kopyalayıp kendiniz iletirsiniz</b> (WhatsApp, SMS, e-posta…). Yalnızca <b>görüntüler</b>, istediğiniz an iptal edersiniz.<br>
     <b>Rapor</b> = hazırladığınız şey (<i>canlı panel</i>: tarih seçilerek bakılır · <i>dondurulmuş</i>: gönderdiğiniz anki dönem raporu). &nbsp;<b>Alıcı</b> = kişi (<i>kalıcı</i>: zamanla yeni rapor gönderirsiniz · <i>tek seferlik</i>: yalnızca tek rapor). &nbsp;Kalıcı alıcıda geçmiş raporları <i>görsün</i> ya da yalnızca <i>son gönderileni</i> açabilsin diye seçersiniz.
   </div>
   <div id="rp-sonuc" class="card" style="display:none;border:2px solid var(--yesil)"></div>
@@ -1967,16 +1967,18 @@
         <div class="fg" id="rp-g-gecmis-kutu" style="margin:0;min-width:190px"><label>Geçmiş raporlar</label><select id="rp-g-gecmis" onchange="rpAliciDegisti()"><option value="tumu">Görebilsin (tümü)</option><option value="sadece_son">Yalnızca son gönderilen</option></select></div>
         <div class="fg" style="margin:0;min-width:140px"><label>Canlı panelde geçmiş gün</label><select id="rp-g-gun"><option value="7">Son 7 gün</option><option value="30" selected>Son 30 gün</option><option value="90">Son 90 gün</option><option value="180">Son 180 gün</option><option value="366">Son 1 yıl</option></select></div>
         <div class="fg" style="margin:0;min-width:130px"><label>Bağlantı geçerliliği</label><select id="rp-g-gecerlilik"><option value="7">7 gün</option><option value="30">30 gün</option><option value="90" selected>90 gün</option><option value="180">180 gün</option><option value="366">1 yıl</option></select></div>
-        <div class="fg" style="margin:0;min-width:170px"><label>PIN</label><select id="rp-g-pin-mod" onchange="rpPinModDegisti()"><option value="oto">Otomatik üret (önerilen)</option><option value="elle">Kendim belirleyeceğim</option></select></div>
-        <div class="fg" style="margin:0;min-width:140px"><input type="text" id="rp-g-pin" maxlength="32" placeholder="en az 6 karakter" style="display:none" autocomplete="off"></div>
+        <div class="fg" style="margin:0;min-width:150px"><label>Kullanıcı adı</label><input type="text" id="rp-g-kullanici" maxlength="32" value="rapor" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+        <div class="fg" style="margin:0;min-width:150px"><label>Şifre</label><input type="text" id="rp-g-sifre" maxlength="32" value="1234" autocomplete="off" spellcheck="false" oninput="rpSifreUyari()"></div>
       </div>
     </div>
+    <div id="rp-g-sifre-uyari" style="font-size:12px;color:var(--turuncu);margin-top:8px;display:none"></div>
     <div id="rp-g-ipucu" style="font-size:12px;color:var(--yazi2);margin-top:8px;min-height:16px"></div>
     <div style="margin-top:10px"><button class="btn pri" id="rp-g-btn" onclick="rpGonder()">📤 Gönder</button></div>
   </div>
 
   <div class="card"><div class="card-title">Alıcılar</div><div id="rp-alicilar"></div></div>
   <div id="rp-detay" class="card" style="display:none"></div>
+  <div id="rp-kimlik" class="card" style="display:none"></div>
   <div id="rp-gunluk" class="card" style="display:none"></div>
   <div class="card"><div class="card-title">Hazırlanan Raporlar</div><div id="rp-yayinlar"></div></div>
 </div>
