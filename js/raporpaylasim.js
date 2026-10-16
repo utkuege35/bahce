@@ -13,7 +13,9 @@ const RP_OLAY={olusturuldu:'Alıcı oluşturuldu',giris:'Giriş yapıldı',liste
   pin_yenilendi:'Şifre yenilendi',kimlik_degisti:'Kullanıcı adı / şifre değiştirildi',link_yenilendi:'Bağlantı yenilendi',rapor_gonderildi:'Rapor gönderildi',rapor_geri_alindi:'Rapor geri alındı',gecmis_ayari:'Geçmiş ayarı değişti',sure_uzatildi:'Süre uzatıldı'};
 const RP_SUPHELI=['hatali_pin','kilitlendi','kilitli_deneme','otomatik_iptal','gecersiz_baglanti','tarih_sinir','yetkisiz_rapor'];
 const RP_TIP={kalici:'Kalıcı',tek_seferlik:'Tek seferlik'},RP_GECMIS={tumu:'Görünsün',sadece_son:'Sadece son'};
-const RP_VARSAYILAN={kullanici:'rapor',sifre:'1234'};
+const RP_VARSAYILAN={kullanici:'rapor'};     // şifre varsayılan DEĞİL: her seferinde rastgele ve güçlü üretilir (aşağıda)
+const RP_ALFABE='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';     // 0/O, 1/l/I gibi karışanlar yok
+function rpSifreUret(){const b=new Uint8Array(10);(window.crypto||window.msCrypto).getRandomValues(b);let s='';for(let i=0;i<10;i++)s+=RP_ALFABE[b[i]%RP_ALFABE.length];return s;}
 const _rpTr=t=>t?new Date(t).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 const _rpTarih=t=>t?new Date(t).toLocaleDateString('tr-TR'):'—';
 const _rpGun=t=>{const p=String(t||'').slice(0,10).split('-');return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:'';};
@@ -99,7 +101,7 @@ window.rpAc=async function(){
   rpStil();rpSonucKapat();
   const ad=_rpId('rp-isyeri-ad');if(ad)ad.textContent=(typeof aktifIsyeri!=='undefined'&&aktifIsyeri&&aktifIsyeri.ad)||'';
   _rpBaslikElle=false;_rpId('rp-acik').value='';
-  rpSec('rp-kaynak','uygulama');_rpId('rp-donem').value='gecenay';rpSec('rp-kip','donmus');
+  rpSec('rp-kaynak','uygulama');_rpId('rp-donem').value='gecenay';rpSec('rp-kip','donmus');rpVarsayilanKimlik();
   rpSekme('yeni');
   await rpYukle();
 };
@@ -207,7 +209,7 @@ window.rpAliciDegisti=function(){
   _rpId('rp-yeni-alici').style.display=yeni?'':'none';
   _rpId('rp-paylas-btn').textContent=yeni?'Bağlantı oluştur':'Gönder';
 };
-function rpVarsayilanKimlik(){_rpId('rp-kullanici').value=RP_VARSAYILAN.kullanici;_rpId('rp-sifre').value=RP_VARSAYILAN.sifre;}
+function rpVarsayilanKimlik(){_rpId('rp-kullanici').value=RP_VARSAYILAN.kullanici;_rpId('rp-sifre').value=rpSifreUret();}
 window.rpPaylas=async function(){
   const yid=_rpSecYayin,sec=_rpId('rp-alici').value;if(!yid)return;
   const y=_rpYayin.find(x=>x.id===yid),btn=_rpId('rp-paylas-btn');
@@ -227,7 +229,7 @@ window.rpPaylas=async function(){
   if(!etiket){bil('"Kime" alanını doldurun (örn. Ahmet Bey)','err');return;}
   const kullanici=(_rpId('rp-kullanici').value||'').trim()||RP_VARSAYILAN.kullanici,sifre=(_rpId('rp-sifre').value||'').trim();
   if(!_rpKulOk(kullanici)){bil('Kullanıcı adı 3-32 karakter olmalı: harf, rakam, nokta, alt çizgi, tire (Türkçe karakter olmadan)','err');return;}
-  if(sifre.length<4||sifre.length>32){bil('Şifre en az 4, en çok 32 karakter olmalı','err');return;}
+  if(sifre.length<8||sifre.length>32){bil('Şifre en az 8, en çok 32 karakter olmalı','err');return;}
   const tip=rpSegDeger('rp-tip');
   btn.disabled=true;
   try{
@@ -347,7 +349,7 @@ window.rpKimlikKaydet=async function(id){
   const kulDegisti=kul&&kul!==String(a.kullanici_adi||'').toLowerCase();
   if(!kulDegisti&&!sif){bil('Değişiklik yok: yeni bir kullanıcı adı ya da şifre yazın','err');return;}
   if(kulDegisti&&!_rpKulOk(kul)){bil('Kullanıcı adı 3-32 karakter olmalı: harf, rakam, nokta, alt çizgi, tire (Türkçe karakter olmadan)','err');return;}
-  if(sif&&(sif.length<4||sif.length>32)){bil('Şifre en az 4, en çok 32 karakter olmalı','err');return;}
+  if(sif&&(sif.length<8||sif.length>32)){bil('Şifre en az 8, en çok 32 karakter olmalı','err');return;}
   const {data,error}=await sb.rpc('rapor_baglanti_kimlik_degistir',{p_id:id,p_kullanici:kulDegisti?kul:null,p_sifre:sif||null});
   if(error){bil(_rpHata(error),'err');return;}
   _rpId('rp-ad-kimlik').innerHTML='';
