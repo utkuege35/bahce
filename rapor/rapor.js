@@ -28,7 +28,17 @@
   const gunKisa = t => { try { return new Date(t + 'T00:00:00Z').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', weekday: 'short', timeZone: 'UTC' }); } catch (e) { return trTarih(t); } };
   const gunEkle = (t, n) => { const d = new Date(t + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const donemMetni = y => (y.donem_bas && y.donem_bit) ? (y.donem_bas === y.donem_bit ? trTarih(y.donem_bas) : trTarih(y.donem_bas) + ' – ' + trTarih(y.donem_bit)) : '';
-  function ekranGoster(ad) { ['yukleniyor', 'pin', 'rapor', 'liste', 'mesaj'].forEach(x => { $('ekran-' + x).hidden = (x !== ad); }); }
+  function ekranGoster(ad) { ['yukleniyor', 'pin', 'rapor', 'liste', 'mesaj'].forEach(x => { $('ekran-' + x).hidden = (x !== ad); }); filigran(ad); }
+  // FİLİGRAN: rapor ve liste ekranlarında alıcının adı + o anki tarih/saat, ekrana tekrar tekrar (eğik, soluk) yazılır.
+  // Ekran görüntüsü alınıp paylaşılırsa kimden sızdığı görünür. Tıklamayı engellemez; tüm metin textContent ile yazılır.
+  function filigran(ad) {
+    let f = document.getElementById('filigran');
+    if (!(ad === 'rapor' || ad === 'liste') || !meta || !meta.kime) { if (f) f.remove(); return; }
+    if (!f) { f = document.createElement('div'); f.id = 'filigran'; f.setAttribute('aria-hidden', 'true'); document.body.appendChild(f); }
+    const metin = meta.kime + ' · ' + new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    f.replaceChildren();
+    for (let i = 0; i < 320; i++) { const s = document.createElement('span'); s.textContent = metin; f.appendChild(s); }
+  }
   function mesajGoster(baslik, metin) { $('mesaj-baslik').textContent = baslik; $('mesaj-metin').textContent = metin; ekranGoster('mesaj'); }
   const ayarEksik = () => !AYAR.url || !AYAR.anahtar || /PROJE_KODUNUZ|GENEL_ANON/.test(AYAR.url + AYAR.anahtar);
 
@@ -74,7 +84,7 @@
     const g = await rpc('rapor_giris', { p_token: jeton, p_kullanici: kullanici, p_sifre: sifre });
     $('pin-girdi').value = '';
     if (g && g.ok) {
-      oturum = g.oturum; meta = { bitis: g.bitis, tip: g.tip, gecmis: g.gecmis, isyeri: g.isyeri, en_eski: g.en_eski, en_yeni: g.en_yeni, varsayilan_tarih: g.varsayilan_tarih };
+      oturum = g.oturum; meta = { bitis: g.bitis, tip: g.tip, gecmis: g.gecmis, isyeri: g.isyeri, kime: g.kime, en_eski: g.en_eski, en_yeni: g.en_yeni, varsayilan_tarih: g.varsayilan_tarih };
       depo.yaz(K_OTURUM, oturum); depo.yaz(K_META, JSON.stringify(meta)); depo.sil(K_YAYIN);
       acilis(null);
     } else {
