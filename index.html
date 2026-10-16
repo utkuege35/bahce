@@ -1975,7 +1975,7 @@
       <div class="rp-satir"><div class="rp-alan rp-genis"><label>Alıcı</label><select id="rp-alici" onchange="rpAliciDegisti()"></select></div></div>
       <div id="rp-yeni-alici">
         <div class="rp-satir">
-          <div class="rp-alan rp-genis"><label>Kime</label><input type="text" id="rp-etiket" maxlength="80" placeholder="Örn: Ahmet Bey"></div>
+          <div class="rp-alan rp-genis"><label>Kime (rapora yazılır)</label><input type="text" id="rp-etiket" maxlength="80" placeholder="Örn: Ahmet Bey"></div>
           <div class="rp-alan"><label>Alıcı tipi</label><div class="rp-seg" id="rp-tip" data-deger="kalici"><button type="button" class="on" data-d="kalici" onclick="rpSec('rp-tip','kalici')">Kalıcı</button><button type="button" data-d="tek_seferlik" onclick="rpSec('rp-tip','tek_seferlik')">Tek seferlik</button></div></div>
           <div class="rp-alan" id="rp-gecmis-kutu"><label>Geçmiş raporlar</label><div class="rp-seg" id="rp-gecmis" data-deger="tumu"><button type="button" class="on" data-d="tumu" onclick="rpSec('rp-gecmis','tumu')">Görünsün</button><button type="button" data-d="sadece_son" onclick="rpSec('rp-gecmis','sadece_son')">Sadece son</button></div></div>
         </div>
@@ -1983,7 +1983,7 @@
           <div class="rp-alan"><label>Geçerlilik</label><select id="rp-sure"><option value="7">7 gün</option><option value="30">30 gün</option><option value="90" selected>90 gün</option><option value="180">180 gün</option><option value="366">1 yıl</option></select></div>
           <div class="rp-alan" id="rp-pencere-kutu"><label>Geriye bakış</label><select id="rp-pencere"><option value="7">7 gün</option><option value="30" selected>30 gün</option><option value="90">90 gün</option><option value="180">180 gün</option><option value="366">1 yıl</option></select></div>
           <div class="rp-alan"><label>Kullanıcı adı</label><input type="text" id="rp-kullanici" maxlength="32" value="rapor" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-          <div class="rp-alan"><label>Şifre</label><input type="text" id="rp-sifre" maxlength="32" value="1234" autocomplete="off" spellcheck="false"></div>
+          <div class="rp-alan"><label>Şifre</label><input type="text" id="rp-sifre" maxlength="32" autocomplete="off" spellcheck="false"></div>
         </div>
       </div>
       <button type="button" class="rp-btn" id="rp-paylas-btn" onclick="rpPaylas()">Bağlantı oluştur</button>
