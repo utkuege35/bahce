@@ -67,3 +67,8 @@ input,button,select{font:inherit}
 .liste-kart .b{font-weight:700;font-size:16px}.liste-kart .a{font-size:13px;color:var(--yazi2);margin-top:3px}
 .liste-kart .m{font-size:12px;color:var(--yazi3);margin-top:8px;display:flex;gap:10px;flex-wrap:wrap}
 .alt-bilgi{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--yazi3);font-size:12px;margin:16px 2px 4px}
+
+/* filigran: alıcı adı + tarih/saat (ekran görüntüsünde de görünür); tıklamayı engellemez */
+#filigran{position:fixed;left:-50%;top:-50%;width:200%;height:200%;display:flex;flex-wrap:wrap;align-content:flex-start;gap:40px 34px;transform:rotate(-24deg);pointer-events:none;user-select:none;-webkit-user-select:none;z-index:60;overflow:hidden;opacity:.09}
+#filigran span{flex:none;font-size:15px;font-weight:700;color:#fff;white-space:nowrap}
+@media print{#filigran{opacity:.14}}
