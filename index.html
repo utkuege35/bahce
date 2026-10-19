@@ -159,6 +159,7 @@
     </div>
   </div>
   <button onclick="gp('bagimsiz-raporlama')" title="Ana sistem verisinden bağımsız çalışan raporlama modülü" style="color:var(--mor);border-left-color:var(--mor)">🧭 Bağımsız Raporlama</button>
+  <button id="nav-analiz" onclick="gp('analiz-raporlari')" style="display:none;color:var(--mor);border-left-color:var(--mor)" title="Standart veri modelinden satış, maliyet ve tüketim analizleri">📈 Analiz Raporları</button>
   <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün Teklifleri ▾</button>
     <div class="nav-grup-icerik">
@@ -1927,6 +1928,18 @@
   <div id="kullanici-liste"></div>
 </div>
 
+<!-- ANALİZ RAPORLARI (yönetici) -->
+<div id="analiz-raporlari" class="page">
+  <div class="an-ust"><div class="an-baslik">Analiz Raporları <span id="an-isyeri-ad" class="an-sol"></span></div></div>
+  <div id="an-bos" class="an-kart" style="display:none"></div>
+  <div id="an-ana" style="display:none">
+    <div class="an-sekme" id="an-sekme"></div>
+    <div class="an-kontrol"><div class="an-alan"><label>Dönem</label><select id="an-donem" onchange="anDonemDegisti()"></select></div></div>
+    <div id="an-sonuc" class="rc-panel"></div>
+    <div class="an-alt"><span id="an-ozet"></span><span><button type="button" class="an-btn2" id="an-yenile" onclick="anOrnekYukle()">Örnek veriyi yenile</button> <button type="button" class="an-btn2 kirmizi" id="an-sil" onclick="anOrnekSil()">Örnek veriyi sil</button></span></div>
+  </div>
+</div>
+
 <!-- RAPOR PAYLAŞIMI (yönetici) -->
 <div id="rapor-paylasim" class="page">
   <div class="rp-ust">
@@ -2673,6 +2686,7 @@
 <script src="js/bagimsiz.js"></script>
 <script src="rapor/cizim.js"></script>
 <script src="js/raporpaylasim.js"></script>
+<script src="js/analiz.js"></script>
 <script src="js/aktarim.js"></script>
 <script src="js/aktarimenv.js"></script>
 <script src="js/bagenvanter.js"></script>
