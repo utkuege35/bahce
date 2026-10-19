@@ -64,9 +64,10 @@
   }
 
   // ---------- günlere göre sütun grafiği ----------
-  function gunlukKart(kok, gunL, baslik, bos, fm) {
+  // (uzun serilerde --i ölçeklenir: toplam canlanma süresi ~1 sn'yi geçmesin)
+  function gunlukKart(kok, gunL, baslik, bos, fm, sinir) {
     let veri = gunL.map(x => ({ e: x.tarih.slice(8), ad: tarihAd(x.tarih), tutar: x.tutar, kalem: x.kalem })), tur = 'günlük';
-    if (gunL.length > 62) {                       // çok uzun dönem: haftalara topla
+    if (gunL.length > (sinir || 62)) {            // çok uzun dönem: haftalara topla
       const h = {}; gunL.forEach(x => { const b = gunEkle(x.tarih, -hGun(x.tarih)); (h[b] = h[b] || { tutar: 0, kalem: 0 }); h[b].tutar += x.tutar; h[b].kalem += x.kalem; });
       veri = Object.keys(h).sort().map(b => ({ e: b.slice(8) + '.' + b.slice(5, 7), ad: trTarih(b) + ' haftası', tutar: h[b].tutar, kalem: h[b].kalem })); tur = 'haftalık';
     }
@@ -79,7 +80,7 @@
     const enI = veri.findIndex(x => x.tutar === mx), sut = [], adim = Math.max(1, Math.ceil(n / 8));
     veri.forEach((x, i) => {
       const cx = sol + slot * i + slot / 2, h = x.tutar / tavan * ih;
-      if (x.tutar > 0) { const r = sv('rect', { x: (cx - bw / 2).toFixed(1), y: (ust + ih - h).toFixed(1), width: bw.toFixed(1), height: Math.max(h, 1.5).toFixed(1), rx: Math.min(4, bw / 2).toFixed(1), fill: `url(#${id}${i === enI ? 'b' : 'a'})`, class: 'rc-sutun' }); r.style.setProperty('--i', i); r.appendChild(sv('title', {}, `${x.ad}: ${para(x.tutar)}`)); s.appendChild(r); sut[i] = r; }
+      if (x.tutar > 0) { const r = sv('rect', { x: (cx - bw / 2).toFixed(1), y: (ust + ih - h).toFixed(1), width: bw.toFixed(1), height: Math.max(h, 1.5).toFixed(1), rx: Math.min(4, bw / 2).toFixed(1), fill: `url(#${id}${i === enI ? 'b' : 'a'})`, class: 'rc-sutun' }); r.style.setProperty('--i', (i * Math.min(1, 36 / n)).toFixed(1)); r.appendChild(sv('title', {}, `${x.ad}: ${para(x.tutar)}`)); s.appendChild(r); sut[i] = r; }
       else s.appendChild(sv('rect', { x: (cx - bw / 2).toFixed(1), y: ust + ih - 2, width: bw.toFixed(1), height: 2, rx: 1, fill: 'rgba(255,255,255,.12)' }));
       if (i % adim === 0) s.appendChild(sv('text', { x: cx.toFixed(1), y: H - 9, 'text-anchor': 'middle', class: 'rc-t' }, x.e));
       const v = sv('rect', { x: (sol + slot * i).toFixed(1), y: ust, width: slot.toFixed(1), height: ih + alt - 6, class: 'rc-vurus' }); v.addEventListener('click', () => sec(i)); s.appendChild(v);
@@ -155,20 +156,21 @@
   }
 
   // ---------- takvim ısı haritası ----------
-  function isiKart(ust, gunL) {
-    const k = kart('Alım takvimi', 'koyu = yoğun gün'), o = oku(); k.appendChild(o);
-    const mx = Math.max(...gunL.map(x => x.tutar), 1), izgara = el('div', 'rc-isi');
+  function isiKart(ust, gunL, baslik, fm, bos) {
+    fm = fm || para; bos = bos || 'alım yok';
+    const k = kart(baslik || 'Alım takvimi', 'koyu = yoğun gün'), o = oku(); k.appendChild(o);
+    const mx = Math.max(...gunL.map(x => x.tutar), 1), mn = Math.min(...gunL.filter(x => x.tutar > 0).map(x => x.tutar), mx), izgara = el('div', 'rc-isi');   // renk: en düşük dolu gün → en yüksek gün
     ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].forEach(a => izgara.appendChild(el('div', 'rc-isi-b', a)));
     for (let i = 0; i < hGun(gunL[0].tarih); i++) izgara.appendChild(el('div', 'rc-hucre dis'));
     const hc = [];
     gunL.forEach((x, i) => {
-      const h = el('div', 'rc-hucre' + (x.tutar > 0 ? '' : ' yok'), String(Number(x.tarih.slice(8)))); h.title = `${tarihAd(x.tarih)}: ${x.tutar > 0 ? para(x.tutar) : 'alım yok'}`;
-      if (x.tutar > 0) { const a = 0.2 + 0.8 * Math.sqrt(x.tutar / mx); h.style.background = `rgba(52,211,153,${a.toFixed(2)})`; if (a > 0.62) h.style.color = '#04281d'; }
-      h.addEventListener('click', () => { hc.forEach(c => c.classList.remove('sec')); h.classList.add('sec'); if (x.tutar > 0) okuYaz(o, tarihAd(x.tarih), x.tutar, x.kalem + ' kalem'); else { o.replaceChildren(); o.appendChild(document.createTextNode(tarihAd(x.tarih) + ' · alım yok')); } });
+      const h = el('div', 'rc-hucre' + (x.tutar > 0 ? '' : ' yok'), String(Number(x.tarih.slice(8)))); if (x.tarih.slice(8) === '01' || i === 0) { h.appendChild(el('small', 'rc-ay', ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][Number(x.tarih.slice(5, 7)) - 1])); h.classList.add('ayb'); } h.title = `${tarihAd(x.tarih)}: ${x.tutar > 0 ? fm(x.tutar) : bos}`;
+      if (x.tutar > 0) { const a = 0.2 + 0.8 * Math.sqrt(mx > mn ? (x.tutar - mn) / (mx - mn) : 1); h.style.background = `rgba(52,211,153,${a.toFixed(2)})`; if (a > 0.62) h.style.color = '#04281d'; }
+      h.addEventListener('click', () => { hc.forEach(c => c.classList.remove('sec')); h.classList.add('sec'); if (x.tutar > 0) okuYaz(o, tarihAd(x.tarih), x.tutar, x.kalem ? x.kalem + ' kalem' : null, fm); else { o.replaceChildren(); o.appendChild(document.createTextNode(tarihAd(x.tarih) + ' · ' + bos)); } });
       hc.push(h); izgara.appendChild(h);
     });
     k.appendChild(izgara);
-    const en = gunL.reduce((a, x) => x.tutar > a.tutar ? x : a, gunL[0]); okuYaz(o, tarihAd(en.tarih), en.tutar, 'en yoğun gün');
+    const en = gunL.reduce((a, x) => x.tutar > a.tutar ? x : a, gunL[0]); okuYaz(o, tarihAd(en.tarih), en.tutar, 'en yoğun gün', fm);
     const l = el('div', 'rc-isi-lej'); l.appendChild(el('span', '', 'az')); l.appendChild(el('i')); l.appendChild(el('span', '', 'çok')); k.appendChild(l); ust.appendChild(k);
   }
 
@@ -224,7 +226,7 @@
       case 'para2': return (n < 0 ? '-' : '') + para(Math.abs(n));
       case 'sayi': return Number.isFinite(n) ? n.toLocaleString('tr-TR', { maximumFractionDigits: 3 }) : String(v);
       case 'sayi1': return Number.isFinite(n) ? n.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : String(v);
-      case 'yuzde': return Number.isFinite(n) ? '%' + n.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : String(v);
+      case 'yuzde': return Number.isFinite(n) ? (n < 0 ? '-' : '') + '%' + Math.abs(n).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : String(v);
       default: return String(v);
     }
   }
@@ -254,7 +256,7 @@
   }
   function analizSutun(kok, sp) {
     const gunL = sp.x.map((d, i) => ({ tarih: String(d).slice(0, 10), tutar: Number(sp.v[i] || 0), kalem: 0 }));
-    gunlukKart(kok, gunL, sp.baslik, sp.etiket || 'kayıt yok', v => bic(sp.b, v));
+    gunlukKart(kok, gunL, sp.baslik, sp.etiket || 'kayıt yok', v => bic(sp.b, v), sp.sinir || 124);   // ~4 aya kadar günlük çubuk; daha uzunsa haftalık
   }
   function eksen(s, defs, W, H, sol, sag, ust, ih, tavan, fm, dip) {
     for (let i = 0; i <= 3; i++) { const y = ust + ih - ih * i / 3; s.appendChild(sv('line', { x1: sol, x2: W - sag, y1: y, y2: y, class: 'rc-izg' })); s.appendChild(sv('text', { x: sol - 5, y: y + 3, 'text-anchor': 'end', class: 'rc-t' }, fm((dip || 0) + (tavan - (dip || 0)) * i / 3))); }
@@ -344,8 +346,26 @@
     }
     if (ara) ara.addEventListener('input', ciz); ciz(); kok.appendChild(k);
   }
-  function bosBolum(sp) { return !sp || !((sp.satirlar || sp.noktalar || sp.dilimler || sp.x || []).length); }
-  const GENIS = { sutun: 1, gruplu_sutun: 1, cizgi: 1, tablo: 1, dortlu: 1 }, BOLUM = { yatay_cubuk: analizYatay, halka: analizHalka, sapma: analizSapma, sutun: analizSutun, gruplu_sutun: analizGruplu, cizgi: analizCizgi, dortlu: analizDortlu, tablo: analizTablo };
+  function analizTakvim(kok, sp) {
+    const gunL = sp.x.map((d, i) => ({ tarih: String(d).slice(0, 10), tutar: Number(sp.v[i] || 0), kalem: 0 }));
+    isiKart(kok, gunL, sp.baslik, v => bic(sp.b, v), sp.etiket || 'kayıt yok');
+  }
+  function analizSiniflar(kok, sp) {
+    const k = kart(sp.baslik), g = el('div', 'rc-sinif-izgara');
+    sp.siniflar.forEach(s => {
+      const c = el('div', 'rc-sinif'), ad = el('div', 'rc-sinif-ad');
+      c.style.borderTopColor = SINIF_RENK[s.ad] || '#94a3b8'; ad.style.color = SINIF_RENK[s.ad] || '#eaf0ff';
+      ad.appendChild(document.createTextNode(s.ad)); ad.appendChild(el('span', 'rc-sinif-n', String(s.adet_urun) + ' ürün')); c.appendChild(ad);
+      c.appendChild(el('div', 'rc-sinif-ac', s.aciklama));
+      const st = el('div', 'rc-sinif-st'); st.appendChild(el('span', '', 'Ciro payı ')); st.appendChild(el('b', '', bic('yuzde', s.ciro_pay))); st.appendChild(el('span', '', '  ·  Kâr payı ')); st.appendChild(el('b', '', bic('yuzde', s.kar_pay))); c.appendChild(st);
+      const ch = el('div', 'rc-sinif-ch'), L = s.urunler || [];
+      L.slice(0, 12).forEach(u => ch.appendChild(el('span', 'rc-chip', u))); if (L.length > 12) ch.appendChild(el('span', 'rc-chip son', '+' + (L.length - 12) + ' ürün')); if (!L.length) ch.appendChild(el('span', 'rc-chip son', 'ürün yok')); c.appendChild(ch);
+      c.appendChild(el('div', 'rc-sinif-on', s.oneri)); g.appendChild(c);
+    });
+    k.appendChild(g); kok.appendChild(k);
+  }
+  function bosBolum(sp) { return !sp || !((sp.satirlar || sp.noktalar || sp.dilimler || sp.siniflar || sp.x || []).length); }
+  const GENIS = { sutun: 1, gruplu_sutun: 1, cizgi: 1, tablo: 1, dortlu: 1, takvim: 1, siniflar: 1 }, BOLUM = { takvim: analizTakvim, siniflar: analizSiniflar, yatay_cubuk: analizYatay, halka: analizHalka, sapma: analizSapma, sutun: analizSutun, gruplu_sutun: analizGruplu, cizgi: analizCizgi, dortlu: analizDortlu, tablo: analizTablo };
   function cizAnaliz(r, kap) {
     const kok = el('div', 'rc'); kap.appendChild(kok);
     const h = el('section', 'rc-hero'); h.appendChild(el('div', 'rc-etiket', 'Analiz raporu')); h.appendChild(el('div', 'rc-bas', r.baslik));
@@ -357,7 +377,7 @@
     (r.bolumler || []).forEach(sp => {
       if (bosBolum(sp) || !BOLUM[sp.tur]) return;
       if (GENIS[sp.tur] || sp.genis) { kapat(); BOLUM[sp.tur](kok, sp); }
-      else { if (!grid) { grid = el('div', 'rc-izgara iki'); kok.appendChild(grid); } BOLUM[sp.tur](grid, sp); }
+      else { if (grid && grid.children.length >= 2) kapat(); if (!grid) { grid = el('div', 'rc-izgara iki'); kok.appendChild(grid); } BOLUM[sp.tur](grid, sp); }      // her ızgara en çok 2 kart; tek kalan tam genişlikte
     });
     kapat();
     if (r.notlar && r.notlar.length) { const n = el('div', 'rc-notlar'); r.notlar.forEach(t => n.appendChild(el('div', '', 'ⓘ ' + t))); kok.appendChild(n); }
