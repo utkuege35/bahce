@@ -90,6 +90,7 @@ function uygulamaAc(){
     document.getElementById('nav-kul-yetkiler')?.style && (document.getElementById('nav-kul-yetkiler').style.display='');
     document.getElementById('nav-loglar')?.style && (document.getElementById('nav-loglar').style.display='');
     document.getElementById('nav-rapor-paylasim')?.style && (document.getElementById('nav-rapor-paylasim').style.display='');
+    document.getElementById('nav-analiz')?.style && (document.getElementById('nav-analiz').style.display='');
     document.getElementById('nav-btn-utg-gonderdiklerim')?.style && (document.getElementById('nav-btn-utg-gonderdiklerim').style.display='none');
     ['btn-yeni-stok-grup','btn-yeni-stok','btn-stok-excel-yukle','btn-stok-cift-excel','btn-yeni-urun-grup','btn-yeni-urun','btn-yeni-yarimamul-grup','btn-yeni-yarimamul'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
   }else{
@@ -100,6 +101,7 @@ function uygulamaAc(){
     const navKY=document.getElementById('nav-kul-yetkiler');if(navKY)navKY.style.display='none';
     const navLG=document.getElementById('nav-loglar');if(navLG)navLG.style.display='none';
     const navRP=document.getElementById('nav-rapor-paylasim');if(navRP)navRP.style.display='none';
+    const navAN=document.getElementById('nav-analiz');if(navAN)navAN.style.display='none';
     // Yetki bazlı nav butonlarını göster/gizle — sadece yetkiVar() kullan
     const navMap={
       'islem_liste':'gp(\'islem-liste\')',
@@ -320,6 +322,7 @@ window.gp=function(id){
   if(id==='kasa-islemleri'&&typeof kiAcilis==='function')kiAcilis();
   if(id==='kullanici-loglari'&&typeof renderLogEkrani==='function')renderLogEkrani(true);
   if(id==='rapor-paylasim'&&typeof rpAc==='function')rpAc();
+  if(id==='analiz-raporlari'&&typeof anAc==='function')anAc();
   if(id==='faturalar'&&typeof fatGorunumListe==='function')fatGorunumListe(typeof _aktifFatTab!=='undefined'?_aktifFatTab:'alis');
   if(id==='urun-teklif-gonder'&&typeof utgBaslat==='function')utgBaslat();
   if(id==='ym-urun-sayim'&&typeof ymSayimSatirRender==='function')ymSayimSatirRender();
