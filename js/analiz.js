@@ -1,9 +1,9 @@
 // ===== ANALİZ RAPORLARI (yönetici) =====
-// Standart veri modelinden (an_* tabloları) hesaplanan raporlar: ürün satış ve maliyet · malzeme tüketim ve maliyet · aylık karşılaştırma · stok tüketim farkı.
+// Standart veri modelinden (an_* tabloları) hesaplanan raporlar: satış analizi (fiyat + birim maliyet + günlük adet) · ürün satış ve maliyet (reçeteli) · malzeme tüketim ve maliyet · aylık karşılaştırma · stok tüketim farkı.
 // Raporu sunucu hazırlar (an_rapor_* işlevleri; satır güvenliği ile yalnızca bu işyerinin verisi), ekranda ortak çizici (rapor/cizim.js) gösterir.
 // Örnek (SAHTE) veri: yöneticinin tek tıkla yükleyip silebildiği 4 aylık restoran verisi. Sunum / gönderim bu sayfanın konusu değil.
-let _anOzet=null,_anTur='urun_satis_maliyet',_anNo=0;
-const AN_TURLER=[['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
+let _anOzet=null,_anTur='satis_analizi',_anNo=0;
+const AN_TURLER=[['satis_analizi','Satış analizi'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
 const AN_AY=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const _anId=id=>document.getElementById(id);
 const _anSayi=n=>Number(n||0).toLocaleString('tr-TR');
@@ -57,12 +57,14 @@ function anAylar(bas,bit){const L=[];let [y,m]=String(bas).slice(0,7).split('-')
 function anAyAdi(ym){const [y,m]=ym.split('-');return AN_AY[+m-1]+' '+y;}
 function anAraligi(d){
   if(d==='tum')return [String(_anOzet.satis_bas).slice(0,10),String(_anOzet.satis_bit).slice(0,10)];
+  if(d==='son3'){const a=anAylar(_anOzet.satis_bas,_anOzet.satis_bit);return [`${a[Math.max(0,a.length-3)]}-01`,String(_anOzet.satis_bit).slice(0,10)];}
   const [y,m]=d.split('-').map(Number),son=new Date(Date.UTC(y,m,0)).getUTCDate();return [`${d}-01`,`${d}-${String(son).padStart(2,'0')}`];
 }
 function anDonemDoldur(ilk){
   const s=_anId('an-donem'),onceki=s.value,aylar=anAylar(_anOzet.satis_bas,_anOzet.satis_bit).reverse();
-  s.innerHTML='<option value="tum">Tüm dönem ('+_rpEscAn(anAyAdi(aylar[aylar.length-1]))+' – '+_rpEscAn(anAyAdi(aylar[0]))+')</option>'+aylar.map(a=>`<option value="${a}">${_rpEscAn(anAyAdi(a))}</option>`).join('');
-  s.value=(!ilk&&onceki&&[...s.options].some(o=>o.value===onceki))?onceki:(_anTur==='aylik_karsilastirma'?'tum':aylar[0]);
+  const son3=aylar.length>3;
+  s.innerHTML=(son3?'<option value="son3">Son 3 ay ('+_rpEscAn(anAyAdi(aylar[2]))+' – '+_rpEscAn(anAyAdi(aylar[0]))+')</option>':'')+'<option value="tum">Tüm dönem ('+_rpEscAn(anAyAdi(aylar[aylar.length-1]))+' – '+_rpEscAn(anAyAdi(aylar[0]))+')</option>'+aylar.map(a=>`<option value="${a}">${_rpEscAn(anAyAdi(a))}</option>`).join('');
+  s.value=(!ilk&&onceki&&[...s.options].some(o=>o.value===onceki))?onceki:(_anTur==='aylik_karsilastirma'?'tum':(_anTur==='satis_analizi'?(son3?'son3':'tum'):aylar[0]));
 }
 function anSekmeCiz(){
   const k=_anId('an-sekme');k.innerHTML='';
@@ -75,8 +77,8 @@ function anOzetYaz(){
   _anId('an-yenile').style.display=_anId('an-sil').style.display=o.ornek?'':'none';
 }
 window.anTurSec=function(t){
-  _anTur=t;const s=_anId('an-donem');
-  if(t==='aylik_karsilastirma'&&s.value!=='tum')s.value='tum';
+  _anTur=t;const s=_anId('an-donem'),tekAy=/^\d{4}-\d{2}$/.test(s.value);
+  if((t==='aylik_karsilastirma'||t==='satis_analizi')&&tekAy)s.value=[...s.options].some(o=>o.value==='son3')?'son3':'tum';      // karşılaştırma ve satış analizi birden çok ay ister
   anSekmeCiz();anGoster();
 };
 window.anDonemDegisti=function(){anGoster();};
