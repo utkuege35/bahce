@@ -3,7 +3,7 @@
 // Raporu sunucu hazırlar (an_rapor_* işlevleri; satır güvenliği ile yalnızca bu işyerinin verisi), ekranda ortak çizici (rapor/cizim.js) gösterir.
 // Örnek (SAHTE) veri: yöneticinin tek tıkla yükleyip silebildiği 4 aylık restoran verisi. Sunum / gönderim bu sayfanın konusu değil.
 let _anOzet=null,_anTur='satis_analizi',_anNo=0;
-const AN_TURLER=[['satis_analizi','Satış analizi'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
+const AN_TURLER=[['satis_analizi','Satış analizi'],['iki_ay','İki ay karşılaştır'],['yillik','Yıllık ciro'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
 const AN_AY=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const _anId=id=>document.getElementById(id);
 const _anSayi=n=>Number(n||0).toLocaleString('tr-TR');
@@ -62,6 +62,25 @@ function anStil(){
 #analiz-raporlari .an-kucuk{margin-top:14px;font-size:12px}#analiz-raporlari .an-kucuk a{color:var(--s)}`;
   document.head.appendChild(s);
 }
+function anKontrolEkle(){
+  const kont=document.querySelector('#analiz-raporlari .an-kontrol');if(!kont||_anId('an-alan-ay1'))return;
+  const alan=(id,etiket,sid)=>{const d=document.createElement('div');d.className='an-alan';d.id=id;d.style.display='none';const l=document.createElement('label');l.textContent=etiket;const s=document.createElement('select');s.id=sid;s.addEventListener('change',()=>anGoster());d.appendChild(l);d.appendChild(s);kont.appendChild(d);};
+  alan('an-alan-ay1','1. ay','an-ay1');alan('an-alan-ay2','2. ay','an-ay2');alan('an-alan-yil','Yıl','an-yil');
+}
+// Seçili sekmeye göre hangi seçicilerin görüneceği: İki ay → 1. ay + 2. ay; Yıllık → Yıl; diğerleri → Dönem
+function anKontrolGoster(){
+  anKontrolEkle();const iki=_anTur==='iki_ay',yil=_anTur==='yillik',d=_anId('an-donem'),w=d&&d.parentElement;
+  if(w)w.style.display=(iki||yil)?'none':'';
+  const g=(id,v)=>{const e=_anId(id);if(e)e.style.display=v?'':'none';};g('an-alan-ay1',iki);g('an-alan-ay2',iki);g('an-alan-yil',yil);
+}
+function anAyYilDoldur(ilk){
+  anKontrolEkle();if(!_anOzet||!_anOzet.satis_bas)return;
+  const aylar=anAylar(_anOzet.satis_bas,_anOzet.satis_bit).reverse(),yb=+String(_anOzet.satis_bas).slice(0,4),ys=+String(_anOzet.satis_bit).slice(0,4);
+  const doldur=(id,degerler,varsayilan)=>{const s=_anId(id);if(!s)return;const onceki=s.value;s.innerHTML=degerler.map(([v,t])=>`<option value="${v}">${_rpEscAn(t)}</option>`).join('');s.value=(!ilk&&onceki&&degerler.some(x=>x[0]===onceki))?onceki:varsayilan;};
+  const ayL=aylar.map(m=>[m,anAyAdi(m)]);
+  doldur('an-ay2',ayL,aylar[0]);doldur('an-ay1',ayL,aylar[1]||aylar[0]);
+  const yillar=[];for(let y=ys;y>=yb;y--)yillar.push([String(y),String(y)]);doldur('an-yil',yillar,String(ys));
+}
 function anHazirlik(){
   const sayfa=_anId('analiz-raporlari');if(!sayfa)return;
   if(!_anId('ay-panel')){const p=document.createElement('div');p.id='ay-panel';p.style.display='none';sayfa.insertBefore(p,_anId('an-bos'));}
@@ -80,7 +99,7 @@ async function anYukle(ilk){
   if(!data||!Number(data.satis)){_anId('an-ana').style.display='none';_anId('an-bos').style.display='';
     _anId('an-bos').innerHTML='<b>Bu işyerinde henüz analiz verisi yok</b>Kendi verinizi Excel/CSV dosyasından ya da kopyaladığınız bir tablodan yükleyin: ürün listesi (grup, fiyat, KDV, maliyet) ve günlük satışlar.<br><br><button type="button" class="an-btn" id="an-yukle-ac" onclick="ayAc()">Veri yükle</button><div class="an-kucuk"><a href="#" id="an-ornek-link" onclick="anOrnekYukle();return false">deneme için örnek (sahte) veri yükle</a></div>';return;}
   _anId('an-bos').style.display='none';_anId('an-ana').style.display='';
-  anDonemDoldur(ilk);anSekmeCiz();anOzetYaz();await anGoster();
+  anDonemDoldur(ilk);anAyYilDoldur(ilk);anKontrolGoster();anSekmeCiz();anOzetYaz();await anGoster();
 }
 function _rpEscAn(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function anAylar(bas,bit){const L=[];let [y,m]=String(bas).slice(0,7).split('-').map(Number);const [y2,m2]=String(bit).slice(0,7).split('-').map(Number);while(y<y2||(y===y2&&m<=m2)){L.push(`${y}-${String(m).padStart(2,'0')}`);m++;if(m>12){m=1;y++;}}return L;}
@@ -109,13 +128,19 @@ function anOzetYaz(){
 window.anTurSec=function(t){
   _anTur=t;const s=_anId('an-donem'),tekAy=/^\d{4}-\d{2}$/.test(s.value);
   if((t==='aylik_karsilastirma'||t==='satis_analizi')&&tekAy)s.value=[...s.options].some(o=>o.value==='son3')?'son3':'tum';      // karşılaştırma ve satış analizi birden çok ay ister
-  anSekmeCiz();anGoster();
+  anKontrolGoster();anSekmeCiz();anGoster();
 };
 window.anDonemDegisti=function(){anGoster();};
 async function anGoster(){
-  if(!_anOzet)return;const no=++_anNo,panel=_anId('an-sonuc'),[bas,bit]=anAraligi(_anId('an-donem').value);
+  if(!_anOzet)return;const no=++_anNo,panel=_anId('an-sonuc');
   panel.className='rc-panel';panel.innerHTML='<div class="an-bos">Rapor hazırlanıyor…</div>';
-  const {data,error}=await sb.rpc('an_rapor_'+_anTur,{p_isyeri:aktifIsyeri.id,p_bas:bas,p_bit:bit});
+  let args;
+  if(_anTur==='iki_ay'){const a1=(_anId('an-ay1')||{}).value,a2=(_anId('an-ay2')||{}).value;
+    if(!a1||!a2||a1===a2){panel.innerHTML='<div class="an-bos"><b>İki farklı ay seçin</b>'+(anAylar(_anOzet.satis_bas,_anOzet.satis_bit).length<2?'Karşılaştırmak için en az iki ayın satış verisi gerekir.':'1. ve 2. ay aynı olamaz.')+'</div>';return;}
+    args={p_isyeri:aktifIsyeri.id,p_ay1:a1+'-01',p_ay2:a2+'-01'};}
+  else if(_anTur==='yillik')args={p_isyeri:aktifIsyeri.id,p_yil:parseInt((_anId('an-yil')||{}).value,10)};
+  else{const [bas,bit]=anAraligi(_anId('an-donem').value);args={p_isyeri:aktifIsyeri.id,p_bas:bas,p_bit:bit};}
+  const {data,error}=await sb.rpc('an_rapor_'+_anTur,args);
   if(no!==_anNo)return;
   if(error){panel.innerHTML=`<div class="an-bos"><b>Rapor hazırlanamadı</b>${_rpEscAn(_anHata(error))}</div>`;return;}
   panel.replaceChildren();
