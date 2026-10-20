@@ -367,8 +367,30 @@
     });
     k.appendChild(g); kok.appendChild(k);
   }
+  // Sade karşılaştırma özeti: ilk satırın BÜYÜK % değişimi + her satır için iki ayın yan yana çubukları ve değişim rozeti
+  function karsDegisim(v1, v2) { const a = Number(v1) || 0, b = Number(v2) || 0; return a > 0 ? (b / a - 1) * 100 : null; }
+  function karsEtiket(d, iyi) { return d === null ? '—' : (d >= 0 ? '▲ ' : '▼ ') + bic('yuzde', Math.abs(d)); }
+  function karsTon(d, iyi) { return d === null || d === 0 ? '' : ((d > 0) === (iyi !== 'azalis') ? 'iyi' : 'kotu'); }
+  function analizKars(kok, sp) {
+    const k = kart(sp.baslik), L = sp.satirlar, E = sp.etiketler || ['1', '2'], a = L[0], d0 = karsDegisim(a.v1, a.v2), fm = (b, v) => bic(b, Math.round(Number(v) || 0) === Number(v) ? v : Number(v));
+    const hero = el('div', 'rc-kars-hero'), yz = el('div', 'rc-kars-yuzde ' + karsTon(d0, sp.iyi_yon), karsEtiket(d0, sp.iyi_yon)), alt = el('div', 'rc-kars-alt');
+    alt.appendChild(el('div', '', a.ad + ' · ' + E[0] + ' → ' + E[1]));
+    const fark = (Number(a.v2) || 0) - (Number(a.v1) || 0); alt.appendChild(el('div', 'rc-kars-fark', (fark >= 0 ? '+' : '-') + bic(a.b, Math.abs(fark))));
+    hero.appendChild(yz); hero.appendChild(alt); k.appendChild(hero);
+    L.forEach(s => {
+      const mx = Math.max(Number(s.v1) || 0, Number(s.v2) || 0, 1e-9), d = karsDegisim(s.v1, s.v2), r = el('div', 'rc-kars-satir'), ust = el('div', 'rc-kars-ad');
+      ust.appendChild(el('span', '', s.ad)); ust.appendChild(el('span', 'rc-kars-rozet ' + karsTon(d, sp.iyi_yon), karsEtiket(d, sp.iyi_yon))); r.appendChild(ust);
+      [[s.v1, E[0], '#60a5fa'], [s.v2, E[1], '#34d399']].forEach(([v, et, renk], i) => {
+        const b = el('div', 'rc-kars-b'), iz = el('div', 'rc-kars-iz'), dg = el('div', 'rc-kars-dolgu');
+        dg.style.width = Math.max(((Number(v) || 0) / mx) * 100, (Number(v) || 0) > 0 ? 2 : 0) + '%'; dg.style.background = `linear-gradient(90deg,${renk}aa,${renk})`; dg.style.setProperty('--i', i); iz.appendChild(dg);
+        b.appendChild(el('span', 'rc-kars-et', et)); b.appendChild(iz); b.appendChild(el('b', 'rc-kars-v', v === null || v === undefined ? '—' : bic(s.b, v))); r.appendChild(b);
+      });
+      k.appendChild(r);
+    });
+    kok.appendChild(k);
+  }
   function bosBolum(sp) { return !sp || !((sp.satirlar || sp.noktalar || sp.dilimler || sp.siniflar || sp.x || []).length); }
-  const GENIS = { sutun: 1, gruplu_sutun: 1, cizgi: 1, tablo: 1, dortlu: 1, takvim: 1, siniflar: 1 }, BOLUM = { takvim: analizTakvim, siniflar: analizSiniflar, yatay_cubuk: analizYatay, halka: analizHalka, sapma: analizSapma, sutun: analizSutun, gruplu_sutun: analizGruplu, cizgi: analizCizgi, dortlu: analizDortlu, tablo: analizTablo };
+  const GENIS = { sutun: 1, gruplu_sutun: 1, cizgi: 1, tablo: 1, dortlu: 1, takvim: 1, siniflar: 1, karsilastirma: 1 }, BOLUM = { karsilastirma: analizKars, takvim: analizTakvim, siniflar: analizSiniflar, yatay_cubuk: analizYatay, halka: analizHalka, sapma: analizSapma, sutun: analizSutun, gruplu_sutun: analizGruplu, cizgi: analizCizgi, dortlu: analizDortlu, tablo: analizTablo };
   function cizAnaliz(r, kap) {
     const kok = el('div', 'rc'); kap.appendChild(kok);
     const h = el('section', 'rc-hero'); h.appendChild(el('div', 'rc-etiket', 'Analiz raporu')); h.appendChild(el('div', 'rc-bas', r.baslik));
