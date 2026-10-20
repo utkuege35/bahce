@@ -18,12 +18,14 @@
 .rc svg.rc-spark{width:calc(100% + 36px);max-width:none;margin:8px -18px 0;height:56px}
 
 /* ---- küçük göstergeler ---- */
-.rc-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
-@media (min-width:720px){.rc-kpi{grid-template-columns:repeat(4,1fr)}}
+.rc-kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+@media (min-width:720px){.rc-kpi{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .rc-kpi>div{background:var(--kart);border:1px solid var(--kenar);border-radius:18px;padding:12px 14px}
 .rc-kpi-i{font-size:18px;line-height:1}
 .rc-kpi-e{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--y2);margin-top:8px}
-.rc-kpi-d{font-size:22px;font-weight:800;margin-top:2px}
+.rc-kpi-d{font-size:22px;font-weight:800;margin-top:2px;overflow-wrap:anywhere}
+.rc-kpi>div{min-width:0}
+@media (max-width:480px){.rc-kpi>div{padding:10px 11px}.rc-kpi-d{font-size:clamp(16px,5.4vw,22px)}.rc-kpi-e{font-size:10px;letter-spacing:.05em}}
 .rc-kpi-k{font-size:11px;color:var(--y3);margin-top:2px}
 
 /* ---- kartlar ve ızgara ---- */
