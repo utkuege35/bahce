@@ -276,7 +276,8 @@
       const vr = sv('rect', { x: (sol + slot * j).toFixed(1), y: ust, width: slot.toFixed(1), height: ih + alt - 6, class: 'rc-vurus' }); vr.addEventListener('click', () => sec(j)); s.appendChild(vr);
     });
     function sec(j) { grup.forEach((g, a) => g.forEach(r => r.classList.toggle('sec', a === j))); o.replaceChildren(); o.appendChild(document.createTextNode(X[j] + ' · ')); S.forEach((se, i) => { if (i) o.appendChild(document.createTextNode(' · ')); o.appendChild(document.createTextNode(se.ad + ' ')); o.appendChild(el('b', '', fm(se.v[j]))); }); }
-    sec(n - 1); k.appendChild(s); lejant(k, S); kok.appendChild(k);
+    let son = n - 1; while (son > 0 && !Number(S[0].v[son])) son--;      // ilk serinin (örn. içinde bulunulan yıl) verisi olan son grubu seç
+    sec(son); k.appendChild(s); lejant(k, S); kok.appendChild(k);
   }
   function analizCizgi(kok, sp) {
     const k = kart(sp.baslik), o = oku(); k.appendChild(o);
@@ -284,18 +285,20 @@
     const tum = S.flatMap(s => s.v.filter(v => v !== null && v !== undefined).map(Number)); if (!tum.length) return;
     let mn = Math.min(...tum), mx = Math.max(...tum); const pay = Math.max((mx - mn) * 0.25, 0.5); mn = Math.floor(mn - pay); mx = Math.ceil(mx + pay);
     const px = j => sol + (n === 1 ? iw / 2 : iw * (j + 0.5) / n), py = v => ust + ih - (v - mn) / (mx - mn) * ih;
-    const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': sp.baslik }); eksen(s, null, W, H, sol, sag, ust, ih, mx, v => (sp.b === 'yuzde' ? '%' + Math.round(v) : kisa(v)), mn);
-    X.forEach((xe, j) => { s.appendChild(sv('text', { x: px(j).toFixed(1), y: H - 10, 'text-anchor': 'middle', class: 'rc-t' }, (iw / n < 105 ? String(xe).split(' ')[0] : xe))); });
+    const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': sp.baslik }); eksen(s, null, W, H, sol, sag, ust, ih, mx, v => (sp.b === 'yuzde' ? (v < 0 ? '-' : '') + '%' + Math.abs(Math.round(v)) : kisa(v)), mn);
+    const adim = Math.max(1, Math.ceil(n / 12));      // çok noktalı serilerde (örn. 31 gün) etiketleri seyrelt
+    X.forEach((xe, j) => { if (j % adim === 0) s.appendChild(sv('text', { x: px(j).toFixed(1), y: H - 10, 'text-anchor': 'middle', class: 'rc-t' }, (iw / n < 105 ? String(xe).split(' ')[0] : xe))); });
     S.forEach((se, i) => {
       const pts = se.v.map((v, j) => (v === null || v === undefined) ? null : [px(j), py(Number(v)), Number(v)]); let seg = [];
       const bitir = () => { if (seg.length > 1) { const c = sv('path', { d: egri(seg.map(p => [p[0], p[1]])), fill: 'none', stroke: SERI[i % 4][1], 'stroke-width': 2.6, 'stroke-linecap': 'round', class: 'rc-cizgi' }); c.style.setProperty('--u', '2000'); s.appendChild(c); } seg = []; };
       pts.forEach(p => { if (p) seg.push(p); else bitir(); }); bitir();
-      pts.forEach((p, j) => { if (!p) return; const nk = sv('circle', { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: 4.5, fill: SERI[i % 4][0], stroke: '#0b1220', 'stroke-width': 2, class: 'rc-nokta-s' }); nk.appendChild(sv('title', {}, `${X[j]} · ${se.ad}: ${fm(p[2])}`)); s.appendChild(nk);
-        s.appendChild(sv('text', { x: p[0].toFixed(1), y: (p[1] - 9).toFixed(1), 'text-anchor': 'middle', class: 'rc-t', fill: SERI[i % 4][0] }, fm(p[2]))); });
+      pts.forEach((p, j) => { if (!p) return; const nk = sv('circle', { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: n > 16 ? 2.6 : 4.5, fill: SERI[i % 4][0], stroke: '#0b1220', 'stroke-width': 2, class: 'rc-nokta-s' }); nk.appendChild(sv('title', {}, `${X[j]} · ${se.ad}: ${fm(p[2])}`)); s.appendChild(nk);
+        if (n <= 12) s.appendChild(sv('text', { x: p[0].toFixed(1), y: (p[1] - 9).toFixed(1), 'text-anchor': 'middle', class: 'rc-t', fill: SERI[i % 4][0] }, fm(p[2]))); });
     });
     const okuj = j => { o.replaceChildren(); o.appendChild(document.createTextNode(X[j] + ' · ')); S.forEach((se, i) => { if (i) o.appendChild(document.createTextNode(' · ')); o.appendChild(document.createTextNode(se.ad + ' ')); o.appendChild(el('b', '', fm(se.v[j]))); }); };
     X.forEach((_, j) => { const vr = sv('rect', { x: (sol + iw * j / n).toFixed(1), y: ust, width: (iw / n).toFixed(1), height: ih + 16, class: 'rc-vurus' }); vr.addEventListener('click', () => okuj(j)); s.appendChild(vr); });
-    okuj(n - 1); k.appendChild(s); lejant(k, S); kok.appendChild(k);
+    let sn = n - 1; while (sn > 0 && S.every(se => se.v[sn] === null || se.v[sn] === undefined)) sn--;
+    okuj(sn); k.appendChild(s); lejant(k, S); kok.appendChild(k);
   }
   function analizSapma(ust, sp) {
     const L = sp.satirlar, k = kart(sp.baslik), mx = Math.max(...L.map(x => Math.abs(Number(x.v))), 1e-9), kotuArtis = sp.iyi_yon === 'azalis';
@@ -334,12 +337,12 @@
     let ara = null; if (sp.arama) { ara = el('input', 'rc-arama'); ara.type = 'search'; ara.placeholder = 'Ara…'; ara.setAttribute('aria-label', 'Tabloda ara'); k.appendChild(ara); }
     const sar = el('div', 'rc-tablo-sar'), tb = el('table', 'rc-tablo'), bas = el('thead'), hr = el('tr'), govde = el('tbody'); sar.appendChild(tb); k.appendChild(sar);
     let sk = -1, yon = 1; const ths = [];
-    K.forEach((c, i) => { const th = el('th', 'sirala' + (c.b === 'metin' ? '' : ' s'), c.ad); th.addEventListener('click', () => { if (sk === i) yon = -yon; else { sk = i; yon = c.b === 'metin' ? 1 : -1; } ths.forEach((t, j) => t.classList.toggle('aktif', j === sk)); ths.forEach((t, j) => { t.dataset.yon = j === sk ? (yon > 0 ? '▲' : '▼') : ''; }); ciz(); }); ths.push(th); hr.appendChild(th); });
+    K.forEach((c, i) => { const th = el('th', 'sirala' + (c.b === 'metin' && !c.sag ? '' : ' s'), c.ad); th.addEventListener('click', () => { if (sk === i) yon = -yon; else { sk = i; yon = c.b === 'metin' ? 1 : -1; } ths.forEach((t, j) => t.classList.toggle('aktif', j === sk)); ths.forEach((t, j) => { t.dataset.yon = j === sk ? (yon > 0 ? '▲' : '▼') : ''; }); ciz(); }); ths.push(th); hr.appendChild(th); });
     bas.appendChild(hr); tb.appendChild(bas); tb.appendChild(govde);
     function ciz() {
       const q = ara ? ara.value.trim().toLocaleLowerCase('tr') : ''; let R = R0.filter(r => !q || r.some((v, i) => K[i].b === 'metin' && String(v == null ? '' : v).toLocaleLowerCase('tr').includes(q)));
       if (sk >= 0) R = R.slice().sort((a, b) => { const x = a[sk], y = b[sk]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'tr')) * yon; });
-      govde.replaceChildren(); R.slice(0, lim).forEach(r => { const tr = el('tr'); r.forEach((v, i) => { const c = K[i], td = el('td', (i === 0 ? 'ilk' : '') + (c.b === 'metin' ? '' : ' s'), bic(c.b, v)); td.setAttribute('data-et', c.ad);
+      govde.replaceChildren(); R.slice(0, lim).forEach(r => { const tr = el('tr'); r.forEach((v, i) => { const c = K[i], td = el('td', (i === 0 ? 'ilk' : '') + (c.b === 'metin' && !c.sag ? '' : ' s'), bic(c.b, v)); td.setAttribute('data-et', c.ad);
         if (c.ton === 'fark' && v != null) { const e = Number(c.esik || 5); if (Number(v) > e) td.classList.add('kotu'); else if (Number(v) < -e) td.classList.add('uyari'); } tr.appendChild(td); }); govde.appendChild(tr); });
       if (!R.length) { const tr = el('tr'), td = el('td', 'ilk', 'Eşleşen kayıt yok.'); td.colSpan = K.length; tr.appendChild(td); govde.appendChild(tr); }
       else if (R.length > lim) { const tr = el('tr'), td = el('td', 'ilk', `İlk ${lim} satır gösteriliyor (${R.length}). Aramayla daraltın.`); td.colSpan = K.length; tr.appendChild(td); govde.appendChild(tr); }
