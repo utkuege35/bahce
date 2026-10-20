@@ -142,3 +142,18 @@
 .rc-sinif-on{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08);font-size:12.5px;line-height:1.5;color:var(--y1)}
 
 .rc-hucre.ayb{flex-direction:column;line-height:1.1}.rc-hucre .rc-ay{display:block;font-size:9px;font-weight:700;letter-spacing:.04em;opacity:.85;text-transform:uppercase}
+
+/* ---- sade iki ay özeti ---- */
+.rc-kars-hero{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:6px 0 16px}
+.rc-kars-yuzde{font-size:clamp(34px,10vw,54px);font-weight:800;line-height:1;letter-spacing:-.02em;color:#eaf0ff}
+.rc-kars-yuzde.iyi{color:#34d399}.rc-kars-yuzde.kotu{color:#f87171}
+.rc-kars-alt{font-size:13px;color:var(--y2);line-height:1.5}.rc-kars-fark{font-size:18px;font-weight:700;color:#fff}
+.rc-kars-satir{margin:16px 0 4px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}
+.rc-kars-ad{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--y2);margin-bottom:4px}
+.rc-kars-rozet{font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.07);color:#eaf0ff}
+.rc-kars-rozet.iyi{background:rgba(52,211,153,.15);color:#34d399}.rc-kars-rozet.kotu{background:rgba(248,113,113,.15);color:#f87171}
+.rc-kars-b{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;align-items:center;margin:5px 0;font-size:12.5px}
+.rc-kars-et{color:var(--y2);white-space:nowrap}.rc-kars-iz{height:16px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden}
+.rc-kars-dolgu{height:100%;border-radius:8px;animation:rc-gen .9s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 120ms);transform-origin:left}
+.rc-kars-v{color:#fff;min-width:78px;text-align:right}
+@media (max-width:480px){.rc-kars-b{grid-template-columns:78px minmax(0,1fr) auto;font-size:12px}.rc-kars-v{min-width:70px}}
