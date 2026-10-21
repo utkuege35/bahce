@@ -40,6 +40,12 @@ function anStil(){
 #analiz-raporlari .ay-dosya{cursor:pointer;display:inline-block}
 #analiz-raporlari .ay-chip{font-size:13px;padding:5px 11px;border:1px solid var(--k);border-radius:999px;background:var(--a)}
 #analiz-raporlari .ay-pano{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--k);border-radius:9px;background:var(--a);color:var(--y);font:inherit;font-size:13px;margin-top:8px}
+#analiz-raporlari .ay-yuklu-satir{display:grid;grid-template-columns:20px 112px minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1fr);gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--k);font-size:13px}
+#analiz-raporlari .ay-yuklu-satir:first-child{border-top:0}
+#analiz-raporlari .ay-yuklu-isaret{color:#34d399;font-weight:800}
+#analiz-raporlari .ay-yuklu-satir.ay-yuklu-yok{opacity:.65}#analiz-raporlari .ay-yuklu-satir.ay-yuklu-yok .ay-yuklu-isaret{color:var(--y2,#94a3b8)}
+#analiz-raporlari .ay-yuklu-ar,#analiz-raporlari .ay-yuklu-son{color:var(--y2,#94a3b8);font-size:12px}
+@media (max-width:640px){#analiz-raporlari .ay-yuklu-satir{grid-template-columns:20px minmax(0,1fr)}#analiz-raporlari .ay-yuklu-ozet,#analiz-raporlari .ay-yuklu-ar,#analiz-raporlari .ay-yuklu-son{grid-column:2}}
 #analiz-raporlari .ay-not{font-size:12px;color:var(--s)}#analiz-raporlari .ay-metin{font-size:14px;margin:4px 0}
 #analiz-raporlari .ay-uyari{background:rgba(217,130,43,.12);border:1px solid rgba(217,130,43,.45);padding:8px 10px;border-radius:9px;font-size:13px;margin:8px 0}
 #analiz-raporlari .ay-seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
@@ -569,6 +575,7 @@ window.aySablonYukle=async function(){
 };
 async function ayYuklemeleriGetir(){
   try{const l=await ayRpc('an_yuklemeler_liste',{p_isyeri:aktifIsyeri.id});if(_ay){_ay.yuklemeler=l;ayCiz();}}catch(e){if(_ay){_ay.yuklemeler=[];}}
+  ayOzetGetir();          // "Sistemde yüklü veriler" kartını da tazele (yükleme, geri alma ve ekran açılışından sonra)
 }
 window.ayGeriAl=async function(id,ad){
   if(!(await onay(`"${ad}" yüklemesi geri alınacak: bu yüklemeyle gelen satırlar silinir. (Ürün ve malzeme kartları silinmez.)`,'↩️','Geri al','Vazgeç')))return;
@@ -577,6 +584,25 @@ window.ayGeriAl=async function(id,ad){
 };
 
 // ---------- Ekran ----------
+// "Sistemde yüklü veriler": şablondaki her sayfanın verisi sistemde var mı, kaç satır, hangi tarihler, ne zaman yüklendi
+function ayYukluKart(d){
+  const k=ayKart('Sistemde yüklü veriler'),o=d.ozet;
+  if(!o){k.appendChild(ayEl('div','ay-not','Yükleniyor…'));return k;}
+  const tr=x=>_ayTrTarih(String(x).slice(0,10)),aralik=(b,s)=>!b?'':(String(b).slice(0,10)===String(s).slice(0,10)?tr(b):`${tr(b)} – ${tr(s)}`),
+    son=ts=>{try{return ts?'son yükleme '+new Date(ts).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';}catch(e){return '';}};
+  const S=[['Ürünler',Number(o.urun),`${_aySay(o.urun)} ürün`,'',o.son_urun],
+    ['Günlük Satış',Number(o.satis),`${_aySay(o.satis)} satır`,aralik(o.satis_bas,o.satis_bit),o.son_satis],
+    ['Alımlar',Number(o.alim),`${_aySay(o.alim)} satır`+(o.alim_tutar!==undefined&&o.alim_tutar!==null?` · ₺${_aySay(Math.round(Number(o.alim_tutar)))} net`:''),aralik(o.alim_bas,o.alim_bit),o.son_alim],
+    ['Envanter',Number(o.sayim),`${_aySay(o.sayim)} satır`+(o.sayim_gun?` · ${_aySay(o.sayim_gun)} sayım günü`:''),aralik(o.sayim_bas,o.sayim_bit),o.son_sayim]];
+  const t=ayEl('div','ay-yuklu');
+  S.forEach(([ad,n,oz,ar,ts])=>{const r=ayEl('div','ay-yuklu-satir'+(n?'':' ay-yuklu-yok'));r.dataset.sayfa=ad;r.appendChild(ayEl('span','ay-yuklu-isaret',n?'✓':'○'));r.appendChild(ayEl('b','ay-yuklu-ad',ad));r.appendChild(ayEl('span','ay-yuklu-ozet',n?oz:'henüz yüklenmedi'));r.appendChild(ayEl('span','ay-yuklu-ar',n?ar:''));r.appendChild(ayEl('span','ay-yuklu-son',n?son(ts):''));t.appendChild(r);});
+  k.appendChild(t);
+  k.appendChild(ayEl('div','ay-not',`Malzeme kartı: ${_aySay(o.malzeme)} · Reçete satırı: ${_aySay(o.recete)} · Fire: ${_aySay(o.fire)}`+(o.ornek?' · Örnek (sahte) veri de var':'')));
+  return k;
+}
+async function ayOzetGetir(){
+  try{const o=await ayRpc('an_veri_ozeti',{p_isyeri:aktifIsyeri.id});if(_ay){_ay.ozet=o;ayCiz();}}catch(e){}
+}
 function ayKart(baslik){const k=ayEl('div','an-kart ay-kart');if(baslik)k.appendChild(ayEl('div','ay-bas',baslik));return k;}
 function ayOrnek(aoa,hdr,i){for(let r=hdr+1;r<Math.min(aoa.length,hdr+8);r++){const v=(aoa[r]||[])[i];if(!ayBos(v))return String(v).slice(0,16);}return '';}
 function ayKaynakKarti(d){
@@ -693,7 +719,7 @@ function ayOrnekUyarisi(){
 }
 function ayCiz(){
   const p=_ayId('ay-panel');if(!p||!_ay)return;const d=_ay;p.replaceChildren();
-  const ust=ayEl('div','an-ust');ust.appendChild(ayEl('div','an-baslik','Veri yükle'));ust.appendChild(ayBtn('Kapat','an-btn2',()=>ayKapat()));p.appendChild(ust);
+  const ust=ayEl('div','an-ust');ust.appendChild(ayEl('div','an-baslik','Veri yükle'));ust.appendChild(ayBtn('Kapat','an-btn2',()=>ayKapat()));p.appendChild(ust);p.appendChild(ayYukluKart(d));
   if(typeof _anOzet!=='undefined'&&_anOzet&&_anOzet.ornek)p.appendChild(ayOrnekUyarisi());
   p.appendChild(ayKaynakKarti(d));
   if(d.sablon)p.appendChild(aySablonKarti(d));
