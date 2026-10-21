@@ -559,7 +559,7 @@ window.ayYukle=async function(){
   d.calisiyor=false;d.ilerleme=null;ayCiz();ayYuklemeleriGetir();
 };
 window.aySablonYukle=async function(){
-  const d=_ay;if(!d||d.calisiyor||!d.sablon)return;const SIRA={urun:0,satis:1,alim:2,sayim:3},P=d.sablon.parcalar.filter(p=>p.hazir.satirlar.length).sort((x,y)=>SIRA[x.tur]-SIRA[y.tur]),ETK={urun:'Ürünler',satis:'Satışlar',alim:'Alımlar',sayim:'Envanter'},satirlar=[],hatalar=[];let fiyatsiz=0;
+  const d=_ay;if(!d||d.calisiyor||!d.sablon)return;const SIRA={urun:0,satis:1,alim:2,sayim:3},P=d.sablon.parcalar.filter(p=>p.sec!==false&&p.hazir.satirlar.length).sort((x,y)=>SIRA[x.tur]-SIRA[y.tur]),ETK={urun:'Ürünler',satis:'Satışlar',alim:'Alımlar',sayim:'Envanter'},satirlar=[],hatalar=[];let fiyatsiz=0;
   d.calisiyor=true;d.sonuc=null;d.ilerleme={yapilan:0,toplam:P[0]?P[0].hazir.satirlar.length:0,etiket:'Hazırlanıyor'};ayCiz();ayIlerlemeYaz();
   try{
     for(const p of P){
@@ -601,9 +601,11 @@ function aySablonKarti(d){
     satis:(p)=>`"${p.sayfa}" sayfasında ${_aySay(p.hazir.satirlar.length)} satış satırı (${_ayTrTarih(p.hazir.tarihBas)} – ${_ayTrTarih(p.hazir.tarihBit)})`,
     alim:(p)=>`"${p.sayfa}" sayfasında ${_aySay(p.hazir.satirlar.length)} alım satırı (${_ayTrTarih(p.hazir.tarihBas)} – ${_ayTrTarih(p.hazir.tarihBit)}, ₺${_aySay(Math.round(p.hazir.tutarToplam||0))} net)`,
     sayim:(p)=>`"${p.sayfa}" sayfasında ${_aySay(p.hazir.satirlar.length)} sayım satırı (${p.hazir.tarihBas===p.hazir.tarihBit?_ayTrTarih(p.hazir.tarihBas):_ayTrTarih(p.hazir.tarihBas)+' – '+_ayTrTarih(p.hazir.tarihBit)})`};
-  k.appendChild(ayEl('div','ay-metin',P.map(p=>ad[p.tur](p)).join('; ')+'. '+(P.length>1?'Hepsi birlikte':'Sayfa')+', sütun eşleştirmeden yüklenebilir.'));
-  const hata=P.reduce((x,p)=>x+p.hazir.hataSayisi,0);if(hata)k.appendChild(ayEl('div','ay-uyari',`${_aySay(hata)} hatalı satır atlanacak.`));
-  const b=ayBtn(P.length>1?'Hazır şablonu yükle (bulunan sayfaların hepsi)':'Hazır şablonu yükle','an-btn',()=>aySablonYukle());b.id='ay-sablon-btn';b.disabled=d.calisiyor;k.appendChild(b);return k;
+  k.appendChild(ayEl('div','ay-metin','Yüklemek istediğiniz sayfaları işaretleyin. İşaretini kaldırdığınız sayfaya (örneğin daha önce yüklediğiniz ürünler ve satışlar) hiç dokunulmaz; o veriler olduğu gibi kalır.'));
+  P.forEach(p=>{const l=ayEl('label','ay-onay'),c=document.createElement('input');c.type='checkbox';c.className='ay-sablon-sec';c.dataset.tur=p.tur;c.checked=p.sec!==false&&p.hazir.satirlar.length>0;c.disabled=d.calisiyor||!p.hazir.satirlar.length;
+    c.addEventListener('change',()=>{p.sec=c.checked;ayCiz();});l.appendChild(c);l.appendChild(document.createTextNode(' '+ad[p.tur](p)));k.appendChild(l);});
+  const S=P.filter(p=>p.sec!==false&&p.hazir.satirlar.length),hata=S.reduce((x,p)=>x+p.hazir.hataSayisi,0);if(hata)k.appendChild(ayEl('div','ay-uyari',`${_aySay(hata)} hatalı satır atlanacak.`));
+  const b=ayBtn(S.length?`Seçili ${S.length} sayfayı yükle`:'Yüklenecek sayfa seçin','an-btn',()=>aySablonYukle());b.id='ay-sablon-btn';b.disabled=d.calisiyor||!S.length;k.appendChild(b);return k;
 }
 function ayAyarKarti(d){
   const k=ayKart('2 · Ne yükleniyor?'),seg=ayEl('div','ay-seg');
