@@ -303,7 +303,7 @@
   function analizSapma(ust, sp) {
     const L = sp.satirlar, k = kart(sp.baslik), mx = Math.max(...L.map(x => Math.abs(Number(x.v))), 1e-9), kotuArtis = sp.iyi_yon === 'azalis';
     L.forEach((x, i) => {
-      const v = Number(x.v), kotu = v === 0 ? null : (kotuArtis ? v > 0 : v < 0), renk = kotu === null ? '#94a3b8' : kotu ? '#f87171' : '#34d399', w = Math.abs(v) / mx * 50;
+      const v = Number(x.v), notr = sp.iyi_yon === 'notr', kotu = v === 0 ? null : (kotuArtis ? v > 0 : v < 0), renk = v === 0 ? '#94a3b8' : notr ? (v > 0 ? '#60a5fa' : '#fbbf24') : kotu ? '#f87171' : '#34d399', w = Math.abs(v) / mx * 50;   // "notr": artış/azalış iyi ya da kötü değildir (örn. stok değeri) → mavi / sarı
       const s = el('div', 'rc-sap-s'), ad = el('div'), iz = el('div', 'rc-sap-iz'), b = el('div', 'rc-sap-b'), dg = el('div', 'rc-tut', (v > 0 ? '+' : '') + bic(sp.b, v));
       ad.appendChild(el('div', 'rc-ad', x.ad)); if (x.ek) ad.appendChild(el('div', 'rc-sap-ek', x.ek)); dg.style.color = renk;
       b.style.width = Math.max(w, v === 0 ? 0 : 1.5) + '%'; b.style.left = (v >= 0 ? 50 : 50 - Math.max(w, 1.5)) + '%'; b.style.background = `linear-gradient(90deg,${renk}aa,${renk})`; b.style.transformOrigin = v >= 0 ? 'left' : 'right'; b.style.setProperty('--i', i);
