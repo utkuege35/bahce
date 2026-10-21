@@ -3,7 +3,7 @@
 // Raporu sunucu hazırlar (an_rapor_* işlevleri; satır güvenliği ile yalnızca bu işyerinin verisi), ekranda ortak çizici (rapor/cizim.js) gösterir.
 // Örnek (SAHTE) veri: yöneticinin tek tıkla yükleyip silebildiği 4 aylık restoran verisi. Sunum / gönderim bu sayfanın konusu değil.
 let _anOzet=null,_anTur='satis_analizi',_anNo=0;
-const AN_TURLER=[['satis_analizi','Satış analizi'],['iki_ay','İki ay karşılaştır'],['yillik','Yıllık ciro'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
+const AN_TURLER=[['satis_analizi','Satış analizi'],['iki_ay','İki ay karşılaştır'],['yillik','Yıllık ciro'],['envanter','Envanter'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
 const AN_AY=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const _anId=id=>document.getElementById(id);
 const _anSayi=n=>Number(n||0).toLocaleString('tr-TR');
@@ -65,13 +65,13 @@ function anStil(){
 function anKontrolEkle(){
   const kont=document.querySelector('#analiz-raporlari .an-kontrol');if(!kont||_anId('an-alan-ay1'))return;
   const alan=(id,etiket,sid)=>{const d=document.createElement('div');d.className='an-alan';d.id=id;d.style.display='none';const l=document.createElement('label');l.textContent=etiket;const s=document.createElement('select');s.id=sid;s.addEventListener('change',()=>anGoster());d.appendChild(l);d.appendChild(s);kont.appendChild(d);};
-  alan('an-alan-ay1','1. ay','an-ay1');alan('an-alan-ay2','2. ay','an-ay2');alan('an-alan-yil','Yıl','an-yil');
+  alan('an-alan-ay1','1. ay','an-ay1');alan('an-alan-ay2','2. ay','an-ay2');alan('an-alan-yil','Yıl','an-yil');alan('an-alan-sayim','Sayım tarihi','an-sayim');
 }
 // Seçili sekmeye göre hangi seçicilerin görüneceği: İki ay → 1. ay + 2. ay; Yıllık → Yıl; diğerleri → Dönem
 function anKontrolGoster(){
-  anKontrolEkle();const iki=_anTur==='iki_ay',yil=_anTur==='yillik',d=_anId('an-donem'),w=d&&d.parentElement;
-  if(w)w.style.display=(iki||yil)?'none':'';
-  const g=(id,v)=>{const e=_anId(id);if(e)e.style.display=v?'':'none';};g('an-alan-ay1',iki);g('an-alan-ay2',iki);g('an-alan-yil',yil);
+  anKontrolEkle();const iki=_anTur==='iki_ay',yil=_anTur==='yillik',env=_anTur==='envanter',d=_anId('an-donem'),w=d&&d.parentElement;
+  if(w)w.style.display=(iki||yil||env)?'none':'';
+  const g=(id,v)=>{const e=_anId(id);if(e)e.style.display=v?'':'none';};g('an-alan-ay1',iki);g('an-alan-ay2',iki);g('an-alan-yil',yil);g('an-alan-sayim',env);
 }
 function anAyYilDoldur(ilk){
   anKontrolEkle();if(!_anOzet||!_anOzet.satis_bas)return;
@@ -80,6 +80,12 @@ function anAyYilDoldur(ilk){
   const ayL=aylar.map(m=>[m,anAyAdi(m)]);
   doldur('an-ay2',ayL,aylar[0]);doldur('an-ay1',ayL,aylar[1]||aylar[0]);
   const yillar=[];for(let y=ys;y>=yb;y--)yillar.push([String(y),String(y)]);doldur('an-yil',yillar,String(ys));
+}
+// Sayım tarihleri (yeniden eskiye); varsayılan en son sayım
+async function anSayimDoldur(ilk){
+  anKontrolEkle();const s=_anId('an-sayim');if(!s)return;let L=[];
+  try{const r=await sb.rpc('an_sayim_tarihleri',{p_isyeri:aktifIsyeri.id});if(!r.error&&Array.isArray(r.data))L=r.data.map(x=>String(x).slice(0,10));}catch(e){}
+  const onceki=s.value;s.innerHTML=L.map(t=>`<option value="${t}">${_rpEscAn(_ayTrTarih(t))}</option>`).join('');s.value=(!ilk&&onceki&&L.includes(onceki))?onceki:(L[0]||'');
 }
 function anHazirlik(){
   const sayfa=_anId('analiz-raporlari');if(!sayfa)return;
@@ -96,10 +102,11 @@ async function anYukle(ilk){
   const {data,error}=await sb.rpc('an_veri_ozeti',{p_isyeri:aktifIsyeri.id});
   if(error){_anId('an-ana').style.display='none';_anId('an-bos').style.display='';_anId('an-bos').innerHTML=`<b>Analiz verisi okunamadı</b>${_rpEscAn(_anHata(error))}`;return;}
   _anOzet=data;
-  if(!data||!Number(data.satis)){_anId('an-ana').style.display='none';_anId('an-bos').style.display='';
-    _anId('an-bos').innerHTML='<b>Bu işyerinde henüz analiz verisi yok</b>Kendi verinizi Excel/CSV dosyasından ya da kopyaladığınız bir tablodan yükleyin: ürün listesi (grup, fiyat, KDV, maliyet) ve günlük satışlar.<br><br><button type="button" class="an-btn" id="an-yukle-ac" onclick="ayAc()">Veri yükle</button><div class="an-kucuk"><a href="#" id="an-ornek-link" onclick="anOrnekYukle();return false">deneme için örnek (sahte) veri yükle</a></div>';return;}
+  if(!data||(!Number(data.satis)&&!Number(data.sayim))){_anId('an-ana').style.display='none';_anId('an-bos').style.display='';
+    _anId('an-bos').innerHTML='<b>Bu işyerinde henüz analiz verisi yok</b>Kendi verinizi Excel/CSV dosyasından ya da kopyaladığınız bir tablodan yükleyin: ürün listesi (grup, fiyat, KDV, maliyet), günlük satışlar ve envanter (stok sayımı).<br><br><button type="button" class="an-btn" id="an-yukle-ac" onclick="ayAc()">Veri yükle</button><div class="an-kucuk"><a href="#" id="an-ornek-link" onclick="anOrnekYukle();return false">deneme için örnek (sahte) veri yükle</a></div>';return;}
   _anId('an-bos').style.display='none';_anId('an-ana').style.display='';
-  anDonemDoldur(ilk);anAyYilDoldur(ilk);anKontrolGoster();anSekmeCiz();anOzetYaz();await anGoster();
+  if(!Number(data.satis)&&Number(data.sayim))_anTur='envanter';          // satış yoksa envanter raporuyla aç
+  anDonemDoldur(ilk);anAyYilDoldur(ilk);await anSayimDoldur(ilk);anKontrolGoster();anSekmeCiz();anOzetYaz();await anGoster();
 }
 function _rpEscAn(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function anAylar(bas,bit){const L=[];let [y,m]=String(bas).slice(0,7).split('-').map(Number);const [y2,m2]=String(bit).slice(0,7).split('-').map(Number);while(y<y2||(y===y2&&m<=m2)){L.push(`${y}-${String(m).padStart(2,'0')}`);m++;if(m>12){m=1;y++;}}return L;}
@@ -110,6 +117,7 @@ function anAraligi(d){
   const [y,m]=d.split('-').map(Number),son=new Date(Date.UTC(y,m,0)).getUTCDate();return [`${d}-01`,`${d}-${String(son).padStart(2,'0')}`];
 }
 function anDonemDoldur(ilk){
+  if(!_anOzet.satis_bas){_anId('an-donem').innerHTML='';return;}
   const s=_anId('an-donem'),onceki=s.value,aylar=anAylar(_anOzet.satis_bas,_anOzet.satis_bit).reverse();
   const son3=aylar.length>3;
   s.innerHTML=(son3?'<option value="son3">Son 3 ay ('+_rpEscAn(anAyAdi(aylar[2]))+' – '+_rpEscAn(anAyAdi(aylar[0]))+')</option>':'')+'<option value="tum">Tüm dönem ('+_rpEscAn(anAyAdi(aylar[aylar.length-1]))+' – '+_rpEscAn(anAyAdi(aylar[0]))+')</option>'+aylar.map(a=>`<option value="${a}">${_rpEscAn(anAyAdi(a))}</option>`).join('');
@@ -135,7 +143,11 @@ async function anGoster(){
   if(!_anOzet)return;const no=++_anNo,panel=_anId('an-sonuc');
   panel.className='rc-panel';panel.innerHTML='<div class="an-bos">Rapor hazırlanıyor…</div>';
   let args;
-  if(_anTur==='iki_ay'){const a1=(_anId('an-ay1')||{}).value,a2=(_anId('an-ay2')||{}).value;
+  if(_anTur==='envanter'){const t=(_anId('an-sayim')||{}).value;
+    if(!t){panel.innerHTML='<div class="an-bos"><b>Henüz stok sayımı yok</b>Envanter raporu için şablondaki "Envanter" sayfasını (sayım tarihi, malzeme, miktar, birim maliyet) yükleyin.</div>';return;}
+    args={p_isyeri:aktifIsyeri.id,p_tarih:t};}
+  else if(!_anOzet.satis_bas){panel.innerHTML='<div class="an-bos"><b>Bu rapor için satış verisi gerekir</b>Şablondaki "Ürünler" ve "Günlük Satış" sayfalarını yükleyin.</div>';return;}
+  else if(_anTur==='iki_ay'){const a1=(_anId('an-ay1')||{}).value,a2=(_anId('an-ay2')||{}).value;
     if(!a1||!a2||a1===a2){panel.innerHTML='<div class="an-bos"><b>İki farklı ay seçin</b>'+(anAylar(_anOzet.satis_bas,_anOzet.satis_bit).length<2?'Karşılaştırmak için en az iki ayın satış verisi gerekir.':'1. ve 2. ay aynı olamaz.')+'</div>';return;}
     args={p_isyeri:aktifIsyeri.id,p_ay1:a1+'-01',p_ay2:a2+'-01'};}
   else if(_anTur==='yillik')args={p_isyeri:aktifIsyeri.id,p_yil:parseInt((_anId('an-yil')||{}).value,10)};
@@ -168,12 +180,12 @@ window.anOrnekSil=async function(){
 // PDF ve web sayfası: tabloyu kopyalayıp "Yapıştır" ile aynı akıştan geçirilir.
 const AY_AYLAR={ocak:1,oca:1,subat:2,sub:2,mart:3,mar:3,nisan:4,nis:4,mayis:5,may:5,haziran:6,haz:6,temmuz:7,tem:7,agustos:8,agu:8,eylul:9,eyl:9,ekim:10,eki:10,kasim:11,kas:11,aralik:12,ara:12};
 const AY_GUNLER=new Set(['pzt','sal','car','per','cum','cmt','paz','pazartesi','sali','carsamba','persembe','cuma','cumartesi','pazar']);
-const AY_KOD=['kod','urunkodu','stokkodu','barkod','urunno','stokno','kodu'];
-const AY_AD=['urun','urunadi','urunad','stokadi','stokad','malzeme','yemek','menu','urunhizmet','urunismi','adi','ad','productname','product','kalem','mamul'];
+const AY_KOD=['kod','urunkodu','stokkodu','malzemekodu','stokkartikodu','barkod','urunno','stokno','kodu'];
+const AY_AD=['urun','urunadi','urunad','stokadi','stokad','malzemeadi','malzemeismi','stokismi','malzeme','yemek','menu','urunhizmet','urunismi','adi','ad','productname','product','kalem','mamul'];
 const AY_ES={
-  tarih:['tarih','gun','gunluk','satistarihi','islemtarihi','belgetarihi','fistarihi','date','tarihi'],
+  tarih:['tarih','gun','gunluk','satistarihi','islemtarihi','belgetarihi','fistarihi','sayimtarihi','sayimgunu','envantertarihi','date','tarihi'],
   urun:[...AY_KOD,...AY_AD], ad:AY_AD, kod:AY_KOD,
-  adet:['adet','satisadedi','satisadet','miktar','mik','qty','quantity','satismiktari','porsiyon','toplamadet'],
+  adet:['adet','satisadedi','satisadet','miktar','mik','qty','quantity','satismiktari','porsiyon','toplamadet','sayimmiktari','stokmiktari','mevcutstok','mevcut','bakiye','kalan','stok','sayim'],
   tutar:['tutar','toplamtutar','satistutari','ciro','toplam','nettutar','bruttutar','tutartl','satisbedeli'],
   grup:['grup','urungrubu','kategori','anagrup','reyon','category','grubu','sinif','altgrup'],
   birim:['birim','olcubirimi','birimi'],
@@ -185,6 +197,7 @@ const AY_ES={
 const AY_ALANLAR={
   satis:[['tarih','Tarih',1],['urun','Ürün (kod ya da ad)',1],['adet','Adet',1],['tutar','Tutar (isteğe bağlı)',0],['grup','Grup (yeni ürünler için)',0],['birim','Birim (yeni ürünler için)',0]],
   matris:[['urun','Ürün (kod ya da ad)',1],['grup','Grup (yeni ürünler için)',0]],
+  envanter:[['tarih','Sayım tarihi',1],['ad','Malzeme adı',0],['kod','Malzeme kodu',0],['adet','Miktar',1],['mal','Birim maliyet (net)',0],['grup','Grup',0],['birim','Birim',0]],
   urun:[['ad','Ürün adı',1],['kod','Ürün kodu',0],['grup','Grup',0],['birim','Birim',0],['sf','Satış fiyatı (KDV dahil)',0],['kdv','KDV oranı %',0],['nf','Net fiyat (KDV hariç)',0],['mal','Birim maliyet (net)',0]]
 };
 function ayNorm(s){return String(s==null?'':s).replace(/\u0307/g,'').replace(/[İI]/g,'i').replace(/ı/g,'i').toLowerCase().replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u').replace(/â/g,'a').replace(/î/g,'i').replace(/û/g,'u').replace(/[^a-z0-9]/g,'');}
@@ -242,11 +255,13 @@ function ayEsleOner(basliklar,alanlar){
   adaylar.forEach(([a,i])=>{if(es[a]!==undefined||kul.has(i))return;es[a]=i;kul.add(i);});
   return es;
 }
-function ayTurOner(aoa,hdr){
+function ayTurOner(aoa,hdr,sayfa){
   const row=aoa[hdr]||[],tarihSay=row.filter((c,i)=>i>0&&ayTarih(c,2026)!==null).length;
+  if(/envanter|sayim/.test(ayNorm(sayfa||'')))return 'envanter';
   if(tarihSay>=3&&tarihSay>=(row.length-1)*0.4)return 'matris';
-  const has=f=>row.some(c=>AY_ES[f].includes(ayNorm(c)));
-  if(has('tarih')&&has('adet'))return 'satis';
+  const has=f=>row.some(c=>AY_ES[f].includes(ayNorm(c))),env=row.some(c=>/sayim|envanter|malzeme/.test(ayNorm(c)));
+  if(has('tarih')&&has('adet'))return env?'envanter':'satis';
+  if(!has('tarih')&&env&&has('adet'))return 'envanter';
   if(['sf','nf','mal','kdv'].some(has)&&!has('tarih'))return 'urun';
   return 'satis';
 }
@@ -271,6 +286,22 @@ function ayHazirlaSatis(aoa,hdr,es){      // es.tarih yoksa es.tarihSabit (yyyy-
     if(a===0){bos++;okunan--;continue;}if(a<0){hatalar.push({s:no,m:'Adet eksi'});continue;}
     let x=null;if(es.tutar!==undefined&&!ayBos(_ayHucre(row,es.tutar))){x=aySayi(_ayHucre(row,es.tutar));if(Number.isNaN(x)){hatalar.push({s:no,m:'Tutar sayı değil'});continue;}if(x<0){hatalar.push({s:no,m:'Tutar eksi'});continue;}}
     const o={s:no,t,u,a};if(x!==null)o.x=x;const g=_ayMetin(_ayHucre(row,es.grup));if(g)o.g=g;const b=_ayMetin(_ayHucre(row,es.birim));if(b)o.b=b;satirlar.push(o);
+  }
+  return _ayOzet(satirlar,hatalar,okunan,bos);
+}
+// Envanter (stok sayımı): sıfır miktar GEÇERLİDİR; es.tarih yoksa es.tarihSabit tüm satırlara yazılır
+function ayHazirlaEnvanter(aoa,hdr,es){
+  const satirlar=[],hatalar=[];let okunan=0,bos=0;
+  for(let r=hdr+1;r<aoa.length;r++){
+    const row=aoa[r]||[];if(row.every(ayBos)){bos++;continue;}
+    const no=r+1,ad=_ayMetin(_ayHucre(row,es.ad)),kod=_ayMetin(_ayHucre(row,es.kod)),u=ad||kod,tc=es.tarih===undefined?'':_ayMetin(_ayHucre(row,es.tarih));
+    if((u&&_ayToplamSatiri(u))||(tc&&_ayToplamSatiri(tc))){bos++;continue;}
+    okunan++;
+    const t=es.tarih===undefined?(ayTarih(es.tarihSabit)||null):ayTarih(_ayHucre(row,es.tarih));if(!t){hatalar.push({s:no,m:'Tarih okunamadı'});continue;}
+    if(!u){hatalar.push({s:no,m:'Malzeme boş'});continue;}
+    const a=aySayi(_ayHucre(row,es.adet));if(Number.isNaN(a)){hatalar.push({s:no,m:'Miktar sayı değil'});continue;}if(a<0){hatalar.push({s:no,m:'Miktar eksi'});continue;}
+    let m=null;if(es.mal!==undefined&&!ayBos(_ayHucre(row,es.mal))){m=aySayi(_ayHucre(row,es.mal));if(Number.isNaN(m)){hatalar.push({s:no,m:'Birim maliyet sayı değil'});continue;}if(m<0){hatalar.push({s:no,m:'Birim maliyet eksi'});continue;}}
+    const o={s:no,t,u,a};if(ad&&kod)o.k=kod;if(m!==null)o.m=m;const g=_ayMetin(_ayHucre(row,es.grup));if(g)o.g=g;const b=_ayMetin(_ayHucre(row,es.birim));if(b)o.b=b;satirlar.push(o);
   }
   return _ayOzet(satirlar,hatalar,okunan,bos);
 }
@@ -364,27 +395,29 @@ function ayKdvTahmin(d){
 }
 function ayAnaliz(d,turuOner){
   const aoa=d.aoa||[];if(!aoa.length){d.hazir=null;d.eksik=[];return;}
-  d.hdr=Math.min(Math.max(0,d.hdr),aoa.length-1);if(turuOner)d.tur=ayTurOner(aoa,d.hdr);
+  d.hdr=Math.min(Math.max(0,d.hdr),aoa.length-1);if(turuOner)d.tur=ayTurOner(aoa,d.hdr,d.sayfa);
   d.es=ayEsleOner(ayBaslikMetinleri(d),AY_ALANLAR[d.tur].map(a=>a[0]));ayKdvTahmin(d);ayHazirla(d);
 }
 function ayHazirla(d){
-  const sabit=d.tur==='satis'&&d.es.tarih===undefined&&ayTarih(d.sabitTarih)!==null;
+  const sabit=(d.tur==='satis'||d.tur==='envanter')&&d.es.tarih===undefined&&ayTarih(d.sabitTarih)!==null;
   d.eksik=AY_ALANLAR[d.tur].filter(a=>a[2]&&(d.es[a[0]]===undefined||d.es[a[0]]===null)&&!(a[0]==='tarih'&&sabit)).map(a=>a[1]);
+  if(d.tur==='envanter'&&d.es.ad===undefined&&d.es.kod===undefined)d.eksik.push('Malzeme adı ya da kodu');
   if(d.eksik.length||!d.aoa){d.hazir=null;return;}
   if(d.tur==='satis')d.hazir=ayHazirlaSatis(d.aoa,d.hdr,{...d.es,tarihSabit:d.sabitTarih});
+  else if(d.tur==='envanter')d.hazir=ayHazirlaEnvanter(d.aoa,d.hdr,{...d.es,tarihSabit:d.sabitTarih});
   else if(d.tur==='matris')d.hazir=ayHazirlaMatris(d.aoa,d.hdr,d.es,d.yil);
   else d.hazir=ayHazirlaUrun(d.aoa,d.hdr,d.es);
 }
 const aySayfaAoa=(wb,ad)=>XLSX.utils.sheet_to_json(wb.Sheets[ad],{header:1,raw:true,defval:null,blankrows:true});
-// Kendi şablonumuz: "Ürünler" + "Günlük Satış" sayfaları varsa ikisini birlikte hazırla
+// Kendi şablonumuz: "Ürünler", "Günlük Satış", "Envanter" sayfalarından BULUNAN hepsi sırayla, sütun eşleştirmeden yüklenir
 function aySablonBul(d){
   d.sablon=null;if(!d.wb)return;
-  const bul=(...adlar)=>d.sayfalar.find(s=>adlar.includes(ayNorm(s)));
-  const su=bul('urunler'),ss=bul('gunluksatis','gunluksatislar','satislar');if(!su||!ss)return;
-  const au=aySayfaAoa(d.wb,su),as=aySayfaAoa(d.wb,ss),hu=ayBaslikSatiri(au),hs=ayBaslikSatiri(as),m=a=>(a||[]).map(x=>ayBos(x)?'':String(x));
-  const eu=ayEsleOner(m(au[hu]),['ad','kod','grup','birim','sf','kdv','nf','mal']),es=ayEsleOner(m(as[hs]),['tarih','urun','adet','grup','birim']);
-  if(eu.ad===undefined||es.tarih===undefined||es.urun===undefined||es.adet===undefined)return;
-  d.sablon={urunSayfa:su,satisSayfa:ss,urun:ayHazirlaUrun(au,hu,eu),satis:ayHazirlaSatis(as,hs,es)};
+  const bul=(...adlar)=>d.sayfalar.find(s=>adlar.includes(ayNorm(s))),m=a=>(a||[]).map(x=>ayBos(x)?'':String(x)),parcalar=[];
+  const su=bul('urunler'),ss=bul('gunluksatis','gunluksatislar','satislar'),se=bul('envanter','stoksayimi','sayim');
+  if(su){const a=aySayfaAoa(d.wb,su),h=ayBaslikSatiri(a),e=ayEsleOner(m(a[h]),['ad','kod','grup','birim','sf','kdv','nf','mal']);if(e.ad!==undefined)parcalar.push({tur:'urun',sayfa:su,hazir:ayHazirlaUrun(a,h,e)});}
+  if(ss){const a=aySayfaAoa(d.wb,ss),h=ayBaslikSatiri(a),e=ayEsleOner(m(a[h]),['tarih','urun','adet','grup','birim']);if(e.tarih!==undefined&&e.urun!==undefined&&e.adet!==undefined)parcalar.push({tur:'satis',sayfa:ss,hazir:ayHazirlaSatis(a,h,e)});}
+  if(se){const a=aySayfaAoa(d.wb,se),h=ayBaslikSatiri(a),e=ayEsleOner(m(a[h]),['tarih','ad','kod','adet','mal','grup','birim']);if(e.tarih!==undefined&&(e.ad!==undefined||e.kod!==undefined)&&e.adet!==undefined)parcalar.push({tur:'sayim',sayfa:se,hazir:ayHazirlaEnvanter(a,h,e)});}
+  if(parcalar.length)d.sablon={parcalar};
 }
 // Birden çok sayfa varsa: başlıkları en çok tanınan (tarih, ürün, adet, fiyat…) sayfa; açıklama/boş sayfalar elenir
 function ayEnIyiSayfa(wb,sayfalar){
@@ -441,11 +474,12 @@ async function ayGonder(tur,satirlar,sec,dosyaAdi){
   let parti=null;
   try{
     parti=await ayRpc('an_yukleme_baslat',{p_isyeri:isy,p_tur:tur,p_ad:dosyaAdi});
-    const parcalar=ayParcala(satirlar,tur==='urun'?1000:1500);let yapilan=0;
+    const etiket=tur==='urun'?'Ürün kartları':(tur==='sayim'?'Envanter':'Günlük satışlar'),parcalar=ayParcala(satirlar,tur==='urun'?1000:1500);let yapilan=0;
     for(const p of parcalar){
       if(tur==='urun'){const r=await ayRpc('an_urun_aktar',{p_isyeri:isy,p_satirlar:p});ozet.eklenen+=r.eklenen;ozet.guncellenen+=r.guncellenen;ozet.atlanan+=r.atlanan;ozet.ciro+=r.ciro_guncellenen||0;ozet.hatalar.push(...r.hatalar);}
+      else if(tur==='sayim'){const r=await ayRpc('an_envanter_aktar',{p_isyeri:isy,p_parti:parti,p_satirlar:p,p_otomatik:!!sec.otomatik});ozet.eklenen+=r.eklenen;ozet.yeniUrun+=r.yeni_malzeme;ozet.atlanan+=r.atlanan;ozet.hatalar.push(...r.hatalar);}
       else{const r=await ayRpc('an_satis_aktar',{p_isyeri:isy,p_parti:parti,p_satirlar:p,p_otomatik:!!sec.otomatik,p_kdv_dahil:sec.kdvDahil!==false});ozet.eklenen+=r.eklenen;ozet.yeniUrun+=r.yeni_urun;ozet.atlanan+=r.atlanan;ozet.fiyatsiz+=r.fiyatsiz;ozet.hatalar.push(...r.hatalar);}
-      yapilan+=p.length;if(_ay){_ay.ilerleme={yapilan,toplam:satirlar.length,etiket:tur==='urun'?'Ürün kartları':'Günlük satışlar'};ayIlerlemeYaz();}
+      yapilan+=p.length;if(_ay){_ay.ilerleme={yapilan,toplam:satirlar.length,etiket};ayIlerlemeYaz();}
     }
     if(tur==='satis'&&sec.degistir&&ozet.eklenen>0){
       const t=satirlar.map(x=>x.t).sort(),anahtarlar=[...new Set(satirlar.map(x=>x.u))];
@@ -454,13 +488,14 @@ async function ayGonder(tur,satirlar,sec,dosyaAdi){
     const b=await ayRpc('an_yukleme_bitir',{p_parti:parti,p_satir:tur==='urun'?ozet.eklenen+ozet.guncellenen:null});ozet.bas=b&&b.bas;ozet.bit=b&&b.bit;
     return ozet;
   }catch(e){
-    if(parti&&tur==='satis'){try{await sb.rpc('an_yukleme_sil',{p_parti:parti});}catch(x){}}   // yarım kalan yüklemeyi geri al
+    if(parti&&(tur==='satis'||tur==='sayim')){try{await sb.rpc('an_yukleme_sil',{p_parti:parti});}catch(x){}}   // yarım kalan yüklemeyi geri al
     throw e;
   }
 }
 function ayOzetMetni(o){
   const p=[];
   if(o.tur==='urun')p.push(`${_aySay(o.eklenen)} yeni ürün, ${_aySay(o.guncellenen)} ürün güncellendi`);
+  else if(o.tur==='sayim'){p.push(`${_aySay(o.eklenen)} sayım satırı yüklendi`);if(o.bas)p.push(o.bas===o.bit?_ayTrTarih(o.bas):`${_ayTrTarih(o.bas)} – ${_ayTrTarih(o.bit)}`);if(o.yeniUrun)p.push(`${_aySay(o.yeniUrun)} yeni malzeme oluşturuldu`);}
   else{p.push(`${_aySay(o.eklenen)} satış satırı yüklendi`);if(o.bas)p.push(`${_ayTrTarih(o.bas)} – ${_ayTrTarih(o.bit)}`);if(o.yeniUrun)p.push(`${_aySay(o.yeniUrun)} yeni ürün oluşturuldu`);if(o.silinen)p.push(`${_aySay(o.silinen)} eski satır değiştirildi`);}
   if(o.atlanan)p.push(`${_aySay(o.atlanan)} satır atlandı`);
   if(o.ciro)p.push(`${_aySay(o.ciro)} satışın cirosu güncellendi`);
@@ -468,31 +503,33 @@ function ayOzetMetni(o){
 }
 window.ayYukle=async function(){
   const d=_ay;if(!d||d.calisiyor||!d.hazir||!d.hazir.satirlar.length)return;
-  const h=d.hazir,satis=d.tur!=='urun';
+  const h=d.hazir,gtur=d.tur==='urun'?'urun':(d.tur==='envanter'?'sayim':'satis'),satis=gtur==='satis';
   if(satis&&d.degistir&&typeof _anOzet!=='undefined'&&_anOzet&&Number(_anOzet.satis)>0&&!(await onay(`Aynı tarih aralığında (${_ayTrTarih(h.tarihBas)} – ${_ayTrTarih(h.tarihBit)}) bu dosyadaki ürünlere ait ESKİ satışlar silinip yerine bu dosyadaki satışlar yazılacak. Devam edilsin mi?`,'🔁','Devam','Vazgeç')))return;
   d.calisiyor=true;d.sonuc=null;d.hata='';d.ilerleme={yapilan:0,toplam:h.satirlar.length,etiket:'Hazırlanıyor'};ayCiz();ayIlerlemeYaz();
   try{
-    const o=await ayGonder(satis?'satis':'urun',h.satirlar,{degistir:d.degistir,otomatik:d.otomatik,kdvDahil:d.kdvDahil},d.dosyaAdi);
+    const o=await ayGonder(gtur,h.satirlar,{degistir:d.degistir,otomatik:d.otomatik,kdvDahil:d.kdvDahil},d.dosyaAdi);o.atlanan+=h.hataSayisi||0;     // önizlemede elenen hatalı satırlar da "atlandı" sayılır
     d.sonuc={ok:true,satirlar:[ayOzetMetni(o)],fiyatsiz:o.fiyatsiz,hatalar:o.hatalar,tur:d.tur};
   }catch(e){d.sonuc={ok:false,hata:e.message||String(e)};}
   d.calisiyor=false;d.ilerleme=null;ayCiz();ayYuklemeleriGetir();
 };
 window.aySablonYukle=async function(){
-  const d=_ay;if(!d||d.calisiyor||!d.sablon)return;const s=d.sablon;
-  d.calisiyor=true;d.sonuc=null;d.ilerleme={yapilan:0,toplam:s.urun.satirlar.length,etiket:'Ürün kartları'};ayCiz();ayIlerlemeYaz();
+  const d=_ay;if(!d||d.calisiyor||!d.sablon)return;const P=d.sablon.parcalar.filter(p=>p.hazir.satirlar.length),ETK={urun:'Ürünler',satis:'Satışlar',sayim:'Envanter'},satirlar=[],hatalar=[];let fiyatsiz=0;
+  d.calisiyor=true;d.sonuc=null;d.ilerleme={yapilan:0,toplam:P[0]?P[0].hazir.satirlar.length:0,etiket:'Hazırlanıyor'};ayCiz();ayIlerlemeYaz();
   try{
-    const o1=await ayGonder('urun',s.urun.satirlar,{},d.dosyaAdi+' › '+s.urunSayfa);
-    d.ilerleme={yapilan:0,toplam:s.satis.satirlar.length,etiket:'Günlük satışlar'};ayIlerlemeYaz();
-    const o2=await ayGonder('satis',s.satis.satirlar,{degistir:true,otomatik:true,kdvDahil:true},d.dosyaAdi+' › '+s.satisSayfa);
-    d.sonuc={ok:true,satirlar:['Ürünler: '+ayOzetMetni(o1),'Satışlar: '+ayOzetMetni(o2)],fiyatsiz:o2.fiyatsiz,hatalar:[...o1.hatalar,...o2.hatalar],tur:'satis'};
-  }catch(e){d.sonuc={ok:false,hata:e.message||String(e)};}
+    for(const p of P){
+      d.ilerleme={yapilan:0,toplam:p.hazir.satirlar.length,etiket:ETK[p.tur]};ayIlerlemeYaz();
+      const o=await ayGonder(p.tur,p.hazir.satirlar,{degistir:true,otomatik:true,kdvDahil:true},d.dosyaAdi+' › '+p.sayfa);
+      o.atlanan+=p.hazir.hataSayisi||0;satirlar.push(ETK[p.tur]+': '+ayOzetMetni(o));hatalar.push(...o.hatalar);fiyatsiz+=o.fiyatsiz||0;
+    }
+    d.sonuc={ok:true,satirlar,fiyatsiz,hatalar,tur:'satis'};
+  }catch(e){d.sonuc={ok:false,hata:e.message||String(e),tamam:satirlar};}
   d.calisiyor=false;d.ilerleme=null;ayCiz();ayYuklemeleriGetir();
 };
 async function ayYuklemeleriGetir(){
   try{const l=await ayRpc('an_yuklemeler_liste',{p_isyeri:aktifIsyeri.id});if(_ay){_ay.yuklemeler=l;ayCiz();}}catch(e){if(_ay){_ay.yuklemeler=[];}}
 }
 window.ayGeriAl=async function(id,ad){
-  if(!(await onay(`"${ad}" yüklemesi geri alınacak: bu yüklemeyle gelen satış satırları silinir. (Ürün kartları silinmez.)`,'↩️','Geri al','Vazgeç')))return;
+  if(!(await onay(`"${ad}" yüklemesi geri alınacak: bu yüklemeyle gelen satırlar silinir. (Ürün ve malzeme kartları silinmez.)`,'↩️','Geri al','Vazgeç')))return;
   try{const n=await ayRpc('an_yukleme_sil',{p_parti:id});bil(`Geri alındı (${_aySay(n)} satır silindi)`,'ok');}catch(e){bil(e.message||'Geri alınamadı','err');return;}
   await ayYuklemeleriGetir();
 };
@@ -514,14 +551,16 @@ function ayKaynakKarti(d){
   return k;
 }
 function aySablonKarti(d){
-  const s=d.sablon,k=ayKart('Hazır şablon bulundu');
-  k.appendChild(ayEl('div','ay-metin',`"${s.urunSayfa}" sayfasında ${_aySay(s.urun.satirlar.length)} ürün, "${s.satisSayfa}" sayfasında ${_aySay(s.satis.satirlar.length)} satış satırı var (${_ayTrTarih(s.satis.tarihBas)} – ${_ayTrTarih(s.satis.tarihBit)}). İkisi birlikte, sütun eşleştirmeden yüklenebilir.`));
-  const hata=s.urun.hataSayisi+s.satis.hataSayisi;if(hata)k.appendChild(ayEl('div','ay-uyari',`${_aySay(hata)} hatalı satır atlanacak.`));
-  const b=ayBtn('Ürünleri ve satışları birlikte yükle','an-btn',()=>aySablonYukle());b.id='ay-sablon-btn';b.disabled=d.calisiyor;k.appendChild(b);return k;
+  const P=d.sablon.parcalar,k=ayKart('Hazır şablon bulundu'),ad={urun:(p)=>`"${p.sayfa}" sayfasında ${_aySay(p.hazir.satirlar.length)} ürün`,
+    satis:(p)=>`"${p.sayfa}" sayfasında ${_aySay(p.hazir.satirlar.length)} satış satırı (${_ayTrTarih(p.hazir.tarihBas)} – ${_ayTrTarih(p.hazir.tarihBit)})`,
+    sayim:(p)=>`"${p.sayfa}" sayfasında ${_aySay(p.hazir.satirlar.length)} sayım satırı (${p.hazir.tarihBas===p.hazir.tarihBit?_ayTrTarih(p.hazir.tarihBas):_ayTrTarih(p.hazir.tarihBas)+' – '+_ayTrTarih(p.hazir.tarihBit)})`};
+  k.appendChild(ayEl('div','ay-metin',P.map(p=>ad[p.tur](p)).join('; ')+'. '+(P.length>1?'Hepsi birlikte':'Sayfa')+', sütun eşleştirmeden yüklenebilir.'));
+  const hata=P.reduce((x,p)=>x+p.hazir.hataSayisi,0);if(hata)k.appendChild(ayEl('div','ay-uyari',`${_aySay(hata)} hatalı satır atlanacak.`));
+  const b=ayBtn(P.length>1?'Hazır şablonu yükle (bulunan sayfaların hepsi)':'Hazır şablonu yükle','an-btn',()=>aySablonYukle());b.id='ay-sablon-btn';b.disabled=d.calisiyor;k.appendChild(b);return k;
 }
 function ayAyarKarti(d){
   const k=ayKart('2 · Ne yükleniyor?'),seg=ayEl('div','ay-seg');
-  [['satis','Günlük satış (satır satır)'],['matris','Günlük satış (ürün × gün matrisi)'],['urun','Ürün kartları (fiyat, KDV, maliyet)']].forEach(([t,ad])=>{const b=ayBtn(ad,d.tur===t?'on':'',()=>ayTurSec(t));b.dataset.t=t;seg.appendChild(b);});
+  [['satis','Günlük satış (satır satır)'],['matris','Günlük satış (ürün × gün matrisi)'],['urun','Ürün kartları (fiyat, KDV, maliyet)'],['envanter','Envanter (stok sayımı)']].forEach(([t,ad])=>{const b=ayBtn(ad,d.tur===t?'on':'',()=>ayTurSec(t));b.dataset.t=t;seg.appendChild(b);});
   k.appendChild(seg);
   const sat=ayEl('div','ay-satir'),hl=ayEl('label','ay-alan','Başlık satırı '),hi=document.createElement('input');hi.type='number';hi.id='ay-hdr';hi.min=1;hi.max=Math.max(1,(d.aoa||[]).length);hi.value=d.hdr+1;hi.className='ay-sayi';
   hi.addEventListener('change',()=>{d.hdr=Math.max(0,(parseInt(hi.value,10)||1)-1);ayAnaliz(d,false);ayCiz();});hl.appendChild(hi);sat.appendChild(hl);
@@ -537,16 +576,16 @@ function ayAyarKarti(d){
     s.addEventListener('change',()=>{if(s.value==='')delete d.es[f];else d.es[f]=+s.value;if(f==='tutar')ayKdvTahmin(d);ayHazirla(d);ayCiz();});l.appendChild(s);g.appendChild(l);
   });
   k.appendChild(g);
-  if(d.tur==='satis'&&d.es.tarih===undefined){
-    const sb_=ayEl('div','ay-secenek'),l=ayEl('label','ay-alan','Dosyada tarih sütunu yoksa: tüm satırlar için tarih '),i=document.createElement('input');i.type='date';i.id='ay-sabit-tarih';i.className='ay-sec';i.value=d.sabitTarih||'';
+  if((d.tur==='satis'||d.tur==='envanter')&&d.es.tarih===undefined){
+    const sb_=ayEl('div','ay-secenek'),l=ayEl('label','ay-alan',d.tur==='envanter'?'Dosyada tarih sütunu yoksa: sayım tarihi ':'Dosyada tarih sütunu yoksa: tüm satırlar için tarih '),i=document.createElement('input');i.type='date';i.id='ay-sabit-tarih';i.className='ay-sec';i.value=d.sabitTarih||'';
     i.addEventListener('change',()=>{d.sabitTarih=i.value;ayHazirla(d);ayCiz();});l.appendChild(i);sb_.appendChild(l);
-    if(ayTarih(d.sabitTarih))sb_.appendChild(ayEl('div','ay-uyari','Günlük dağılım olmayacak: tüm satışlar tek güne yazılır, günlük grafikler o güne yığılır. Ürün sıralamaları ve toplamlar için uygundur.'));
+    if(d.tur==='satis'&&ayTarih(d.sabitTarih))sb_.appendChild(ayEl('div','ay-uyari','Günlük dağılım olmayacak: tüm satışlar tek güne yazılır, günlük grafikler o güne yığılır. Ürün sıralamaları ve toplamlar için uygundur.'));
     k.appendChild(sb_);
   }
   if(d.tur!=='urun'){
     const sec=ayEl('div','ay-secenek');
-    const c1=ayEl('label','ay-onay'),i1=document.createElement('input');i1.type='checkbox';i1.id='ay-degistir';i1.checked=d.degistir;i1.addEventListener('change',()=>{d.degistir=i1.checked;});c1.appendChild(i1);c1.appendChild(document.createTextNode(' Aynı tarih ve ürünlerin eski kayıtlarını değiştir (çift sayımı önler)'));sec.appendChild(c1);
-    const c2=ayEl('label','ay-onay'),i2=document.createElement('input');i2.type='checkbox';i2.id='ay-otomatik';i2.checked=d.otomatik;i2.addEventListener('change',()=>{d.otomatik=i2.checked;});c2.appendChild(i2);c2.appendChild(document.createTextNode(' Kayıtlı olmayan ürünleri otomatik oluştur'));sec.appendChild(c2);
+    const c1=ayEl('label','ay-onay'),i1=document.createElement('input');i1.type='checkbox';i1.id='ay-degistir';i1.checked=d.degistir;i1.addEventListener('change',()=>{d.degistir=i1.checked;});c1.appendChild(i1);c1.appendChild(document.createTextNode(' Aynı tarih ve ürünlerin eski kayıtlarını değiştir (çift sayımı önler)'));if(d.tur!=='envanter')sec.appendChild(c1);
+    const c2=ayEl('label','ay-onay'),i2=document.createElement('input');i2.type='checkbox';i2.id='ay-otomatik';i2.checked=d.otomatik;i2.addEventListener('change',()=>{d.otomatik=i2.checked;});c2.appendChild(i2);c2.appendChild(document.createTextNode(d.tur==='envanter'?' Kayıtlı olmayan malzemeleri otomatik oluştur':' Kayıtlı olmayan ürünleri otomatik oluştur'));sec.appendChild(c2);
     if(d.tur==='satis'&&d.es.tutar!==undefined){const c3=ayEl('label','ay-onay','Tutar sütunu '),s3=ayEl('select','ay-sec');s3.id='ay-kdv';[['1','KDV dahil'],['0','KDV hariç']].forEach(([v,a])=>{const o=ayEl('option','',a);o.value=v;s3.appendChild(o);});s3.value=d.kdvDahil?'1':'0';s3.addEventListener('change',()=>{d.kdvDahil=s3.value==='1';});c3.appendChild(s3);sec.appendChild(c3);}
     k.appendChild(sec);
   }
@@ -557,12 +596,12 @@ function ayOnizlemeKarti(d){
   if(d.eksik.length){k.appendChild(ayEl('div','ay-uyari','Önce şunları eşleştirin: '+d.eksik.join(', ')+'.'));return k;}
   if(!h)return k;
   const ozet=[`${_aySay(h.satirlar.length)} geçerli satır`];
-  if(d.tur!=='urun'){if(h.tarihBas)ozet.push(`${_ayTrTarih(h.tarihBas)} – ${_ayTrTarih(h.tarihBit)}`);ozet.push(`${_aySay(h.urunSayisi)} ürün`);}else ozet.push(`${_aySay(h.urunSayisi)} ürün`);
+  if(d.tur!=='urun'){if(h.tarihBas)ozet.push(h.tarihBas===h.tarihBit?_ayTrTarih(h.tarihBas):`${_ayTrTarih(h.tarihBas)} – ${_ayTrTarih(h.tarihBit)}`);ozet.push(`${_aySay(h.urunSayisi)} ${d.tur==='envanter'?'malzeme':'ürün'}`);}else ozet.push(`${_aySay(h.urunSayisi)} ürün`);
   if(h.hataSayisi)ozet.push(`${_aySay(h.hataSayisi)} hatalı (atlanacak)`);if(h.bos)ozet.push(`${_aySay(h.bos)} boş/toplam satırı atlandı`);
   const ol=ayEl('div','ay-ozet',ozet.join(' · '));ol.id='ay-ozet';k.appendChild(ol);
   if(h.satirlar.length){
     const sar=ayEl('div','ay-tablo-sar'),t=ayEl('table','ay-tablo'),bas=ayEl('tr');
-    const kol=d.tur==='urun'?[['s','Satır'],['kod','Kod'],['ad','Ürün'],['grup','Grup'],['birim','Birim'],['sf','Satış fiyatı'],['kdv','KDV %'],['nf','Net fiyat'],['mal','Maliyet']]:[['s','Satır'],['t','Tarih'],['u','Ürün'],['a','Adet'],['x','Tutar'],['g','Grup']];
+    const kol=d.tur==='urun'?[['s','Satır'],['kod','Kod'],['ad','Ürün'],['grup','Grup'],['birim','Birim'],['sf','Satış fiyatı'],['kdv','KDV %'],['nf','Net fiyat'],['mal','Maliyet']]:(d.tur==='envanter'?[['s','Satır'],['t','Tarih'],['k','Kod'],['u','Malzeme'],['a','Miktar'],['m','Birim maliyet'],['g','Grup'],['b','Birim']]:[['s','Satır'],['t','Tarih'],['u','Ürün'],['a','Adet'],['x','Tutar'],['g','Grup']]);
     kol.forEach(([f,a])=>bas.appendChild(ayEl('th','',a)));const th=ayEl('thead');th.appendChild(bas);t.appendChild(th);const tb=ayEl('tbody');
     h.satirlar.slice(0,8).forEach(r=>{const tr=ayEl('tr');kol.forEach(([f])=>tr.appendChild(ayEl('td','',r[f]===undefined?'':(f==='t'?_ayTrTarih(r[f]):String(r[f])))));tb.appendChild(tr);});
     t.appendChild(tb);sar.appendChild(t);k.appendChild(sar);if(h.satirlar.length>8)k.appendChild(ayEl('div','ay-not','İlk 8 satır gösteriliyor.'));
@@ -575,7 +614,7 @@ function ayOnizlemeKarti(d){
 }
 function aySonucKarti(d){
   const s=d.sonuc,k=ayKart(s.ok?'✓ Yükleme tamamlandı':'Yükleme başarısız');k.id='ay-sonuc';k.classList.add(s.ok?'ay-iyi':'ay-kotu');
-  if(!s.ok){k.appendChild(ayEl('div','ay-metin',s.hata));k.appendChild(ayEl('div','ay-not','Yarım kalan yükleme otomatik geri alındı; veride değişiklik olmadı.'));return k;}
+  if(!s.ok){k.appendChild(ayEl('div','ay-metin',s.hata));if(s.tamam&&s.tamam.length){k.appendChild(ayEl('div','ay-not','Önceki sayfalar yüklendi:'));s.tamam.forEach(x=>k.appendChild(ayEl('div','ay-not',x)));}k.appendChild(ayEl('div','ay-not','Yarım kalan sayfa otomatik geri alındı; o sayfa için veride değişiklik olmadı.'));return k;}
   s.satirlar.forEach(x=>k.appendChild(ayEl('div','ay-metin',x)));
   if(s.fiyatsiz)k.appendChild(ayEl('div','ay-uyari',`${_aySay(s.fiyatsiz)} satışın fiyatı/tutarı yok, cirosu 0. Ürün kartlarını (satış fiyatı) da yüklerseniz ciro otomatik hesaplanır.`));
   if(s.hatalar.length){const e=ayEl('div','ay-hatalar');e.appendChild(ayEl('b','','Sunucunun atladığı satırlar'));s.hatalar.slice(0,8).forEach(x=>e.appendChild(ayEl('div','',`Satır ${x.s}: ${x.m}`)));k.appendChild(e);}
@@ -587,9 +626,9 @@ function ayGecmisKarti(d){
   if(!d.yuklemeler.length){k.appendChild(ayEl('div','ay-not','Henüz yükleme yok.'));return k;}
   d.yuklemeler.forEach(y=>{
     const s=ayEl('div','ay-gecmis'),sol=ayEl('div'),ad=y.kaynak==='ornek'?'Örnek (sahte) veri':y.ad;
-    sol.appendChild(ayEl('b','',`${y.tur==='urun'?'Ürün kartları':'Satışlar'} · ${ad}`));
+    sol.appendChild(ayEl('b','',`${y.tur==='urun'?'Ürün kartları':(y.tur==='sayim'?'Envanter':'Satışlar')} · ${ad}`));
     sol.appendChild(ayEl('div','ay-not',`${_aySay(y.satir)} satır${y.bas?` · ${_ayTrTarih(String(y.bas).slice(0,10))} – ${_ayTrTarih(String(y.bit).slice(0,10))}`:''} · ${new Date(y.ts).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}`));
-    s.appendChild(sol);if(y.tur==='satis'&&y.kaynak!=='ornek')s.appendChild(ayBtn('Geri al','an-btn2 kirmizi',()=>ayGeriAl(y.id,ad)));
+    s.appendChild(sol);if((y.tur==='satis'||y.tur==='sayim')&&y.kaynak!=='ornek')s.appendChild(ayBtn('Geri al','an-btn2 kirmizi',()=>ayGeriAl(y.id,ad)));
     k.appendChild(s);
   });
   return k;
