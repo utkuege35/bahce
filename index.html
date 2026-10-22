@@ -158,7 +158,6 @@
       </div>
     </div>
   </div>
-  <button onclick="gp('bagimsiz-raporlama')" title="Ana sistem verisinden bağımsız çalışan raporlama modülü" style="color:var(--mor);border-left-color:var(--mor)">🧭 Bağımsız Raporlama</button>
   <button id="nav-analiz" onclick="gp('analiz-raporlari')" style="display:none;color:var(--mor);border-left-color:var(--mor)" title="Standart veri modelinden satış, maliyet ve tüketim analizleri">📈 Analiz Raporları</button>
   <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Ürün Teklifleri ▾</button>
@@ -1955,7 +1954,7 @@
 
   <section id="rp-s-yeni" class="rp-kart">
     <div class="rp-satir">
-      <div class="rp-alan"><label>Veri kaynağı</label>
+      <div class="rp-alan" style="display:none"><label>Veri kaynağı</label>
         <div class="rp-seg" id="rp-kaynak" data-deger="uygulama"><button type="button" class="on" data-d="uygulama" onclick="rpSec('rp-kaynak','uygulama')">Uygulama</button><button type="button" data-d="bagimsiz" onclick="rpSec('rp-kaynak','bagimsiz')">Bağımsız Raporlama</button></div></div>
       <div class="rp-alan rp-genis" id="rp-parti-kutu" style="display:none"><label>Yükleme</label><select id="rp-parti" onchange="rpPartiDegisti()"></select></div>
     </div>
