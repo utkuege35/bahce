@@ -41,6 +41,7 @@ function anStil(){
 #analiz-raporlari .ay-chip{font-size:13px;padding:5px 11px;border:1px solid var(--k);border-radius:999px;background:var(--a)}
 #analiz-raporlari .ay-pano{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--k);border-radius:9px;background:var(--a);color:var(--y);font:inherit;font-size:13px;margin-top:8px}
 #analiz-raporlari .ay-yuklem{padding:8px 0;border-bottom:1px solid var(--k);font-size:13px}#analiz-raporlari .an-yuklu-panel{background:none;border:0;padding:0}
+#analiz-raporlari .an-paylas-alan{margin-left:auto;align-self:flex-end}#analiz-raporlari .an-paylas-alan .an-btn2{white-space:nowrap}
 #analiz-raporlari .ay-yuklu-satir{display:grid;grid-template-columns:20px 112px minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1fr);gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--k);font-size:13px}
 #analiz-raporlari .ay-yuklu-satir:first-child{border-top:0}
 #analiz-raporlari .ay-yuklu-isaret{color:#34d399;font-weight:800}
@@ -69,11 +70,46 @@ function anStil(){
 #analiz-raporlari .an-kucuk{margin-top:14px;font-size:12px}#analiz-raporlari .an-kucuk a{color:var(--s)}`;
   document.head.appendChild(s);
 }
+let _anSon=null;      // ekranda şu an görünen raporun paylaşılabilir özeti: {tur, args, baslik, bas, bit}
 function anKontrolEkle(){
   const kont=document.querySelector('#analiz-raporlari .an-kontrol');if(!kont||_anId('an-alan-ay1'))return;
   const alan=(id,etiket,sid)=>{const d=document.createElement('div');d.className='an-alan';d.id=id;d.style.display='none';const l=document.createElement('label');l.textContent=etiket;const s=document.createElement('select');s.id=sid;s.addEventListener('change',()=>anGoster());d.appendChild(l);d.appendChild(s);kont.appendChild(d);};
   alan('an-alan-ay1','1. ay','an-ay1');alan('an-alan-ay2','2. ay','an-ay2');alan('an-alan-yil','Yıl','an-yil');alan('an-alan-sayim','Sayım tarihi','an-sayim');
+  const pd=document.createElement('div');pd.className='an-alan an-paylas-alan';pd.id='an-alan-paylas';pd.style.display='none';
+  const pb=document.createElement('button');pb.type='button';pb.className='an-btn2';pb.id='an-paylas-ac';pb.textContent='📤 Raporu paylaş';pb.addEventListener('click',()=>anPaylasAc());pd.appendChild(pb);kont.appendChild(pd);
+  const kutu=document.createElement('div');kutu.id='an-paylas-kutu';kutu.style.display='none';const sn=_anId('an-sonuc');if(sn&&sn.parentNode)sn.parentNode.insertBefore(kutu,sn);
 }
+function anPaylasGoster(v){const e=_anId('an-alan-paylas');if(e)e.style.display=v?'':'none';if(!v){const k=_anId('an-paylas-kutu');if(k){k.style.display='none';k.replaceChildren();}}}
+// Raporu paylaş: ekrandaki raporu DONDURULMUŞ olarak yayınlar (rapor_analiz_yayinla); sonra Rapor Paylaşımı'ndan alıcıya gönderilir
+window.anPaylasAc=function(){
+  if(!_anSon)return;const kutu=_anId('an-paylas-kutu');if(!kutu)return;kutu.replaceChildren();kutu.style.display='';
+  const ad=Object.fromEntries(AN_TURLER)[_anSon.tur]||'Rapor',b=_anSon.bas?String(_anSon.bas).slice(0,10):'',s=_anSon.bit?String(_anSon.bit).slice(0,10):'',donem=b?(b===s?_ayTrTarih(b):`${_ayTrTarih(b)} – ${_ayTrTarih(s)}`):'';
+  const k=ayKart('Raporu paylaş');
+  k.appendChild(ayEl('div','ay-metin','Rapor, şu an ekranda gördüğünüz haliyle dondurulur: veri sonradan değişse de alıcı yayın anındaki halini görür. Yayınladıktan sonra alıcıya Rapor Paylaşımı ekranından göndereceksiniz.'));
+  const l1=ayEl('label','ay-alan','Başlık (alıcı görür)'),i1=document.createElement('input');i1.id='an-paylas-bslk';i1.type='text';i1.maxLength=120;i1.value=`${ad}${donem?' · '+donem:''}`;i1.className='ay-pano';i1.style.marginTop='0';l1.appendChild(i1);k.appendChild(l1);
+  const l2=ayEl('label','ay-alan','Açıklama (isteğe bağlı)'),i2=document.createElement('textarea');i2.id='an-paylas-acik';i2.rows=2;i2.maxLength=500;i2.className='ay-pano';l2.appendChild(i2);k.appendChild(l2);
+  const sat=ayEl('div','ay-satir'),yb=ayBtn('Yayınla','an-btn',()=>anPaylasYayinla());yb.id='an-paylas-yayinla';sat.appendChild(yb);sat.appendChild(ayBtn('Vazgeç','an-btn2',()=>anPaylasGoster(true)));k.appendChild(sat);
+  kutu.appendChild(k);
+};
+window.anPaylasYayinla=async function(){
+  if(!_anSon)return;const b=_anId('an-paylas-yayinla'),baslik=(_anId('an-paylas-bslk').value||'').trim(),acik=(_anId('an-paylas-acik').value||'').trim()||null;
+  if(!baslik){bil('Rapora bir başlık verin','err');return;}
+  const a=_anSon.args,t=_anSon.tur;let p_bas,p_bit=null;
+  if(t==='iki_ay'){p_bas=a.p_ay1;p_bit=a.p_ay2;}else if(t==='yillik'){p_bas=`${a.p_yil}-01-01`;}else if(t==='envanter'){p_bas=a.p_tarih;}else{p_bas=a.p_bas;p_bit=a.p_bit;}
+  if(b)b.disabled=true;
+  try{
+    const {data,error}=await sb.rpc('rapor_analiz_yayinla',{p_isyeri:aktifIsyeri.id,p_rapor:t,p_baslik:baslik,p_aciklama:acik,p_bas,p_bit});
+    if(error){bil(_anHata(error),'err');return;}
+    const kutu=_anId('an-paylas-kutu');kutu.replaceChildren();const k=ayKart('✓ Rapor yayınlandı');
+    k.appendChild(ayEl('div','ay-metin',`"${baslik}" dondurulmuş rapor olarak yayınlandı. Şimdi bir alıcıya gönderebilirsiniz.`));
+    const sat=ayEl('div','ay-satir'),gb=ayBtn('Alıcıya gönder (Rapor Paylaşımı)','an-btn',()=>anPaylasGit(data.id));gb.id='an-paylas-git';sat.appendChild(gb);sat.appendChild(ayBtn('Kapat','an-btn2',()=>anPaylasGoster(true)));k.appendChild(sat);kutu.appendChild(k);
+  }catch(e){bil(e.message||'Rapor yayınlanamadı','err');}
+  finally{if(b)b.disabled=false;}
+};
+window.anPaylasGit=async function(id){
+  gp('rapor-paylasim');
+  try{await new Promise(r=>setTimeout(r,250));if(typeof rpYukle==='function')await rpYukle();if(typeof rpRaporAc==='function')await rpRaporAc(id);}catch(e){}
+};
 // Seçili sekmeye göre hangi seçicilerin görüneceği: İki ay → 1. ay + 2. ay; Yıllık → Yıl; diğerleri → Dönem
 function anKontrolGoster(){
   anKontrolEkle();const iki=_anTur==='iki_ay',yil=_anTur==='yillik',env=_anTur==='envanter',yk=_anTur==='yuklu',d=_anId('an-donem'),w=d&&d.parentElement;
@@ -169,6 +205,7 @@ async function anYukluCiz(panel,no){
 }
 async function anGoster(){
   if(!_anOzet)return;const no=++_anNo,panel=_anId('an-sonuc');
+  _anSon=null;anKontrolEkle();anPaylasGoster(false);
   if(_anTur==='yuklu'){panel.className='an-yuklu-panel';panel.innerHTML='<div class="an-bos">Yükleniyor…</div>';return anYukluCiz(panel,no);}
   panel.className='rc-panel';panel.innerHTML='<div class="an-bos">Rapor hazırlanıyor…</div>';
   let args;
@@ -189,6 +226,7 @@ async function anGoster(){
   if(error){panel.innerHTML=`<div class="an-bos"><b>Rapor hazırlanamadı</b>${_rpEscAn(_anHata(error))}</div>`;return;}
   panel.replaceChildren();
   if(window.RaporCizim)window.RaporCizim.ciz(data,panel);else panel.innerHTML='<div class="an-bos">Çizici yüklü değil (rapor/cizim.js).</div>';
+  if(data&&data.kayit_var){_anSon={tur:_anTur,args,baslik:data.baslik,bas:data.donem_bas,bit:data.donem_bit};anPaylasGoster(true);}          // boş rapor paylaşılamaz
 }
 window.anOrnekYukle=async function(){
   if(!(await onay('Bu işyerine 4 aylık SAHTE örnek restoran verisi yüklenecek (32 ürün, 47 malzeme, satış, alım, sayım). Mevcut örnek veri varsa yenilenir; sizin gerçek verileriniz etkilenmez.','📈','Yükle','Vazgeç')))return;
@@ -751,3 +789,4 @@ window.ayAc=function(){
   _ay=ayYeniDurum();_anId('an-bos').style.display='none';_anId('an-ana').style.display='none';p.style.display='';ayCiz();ayYuklemeleriGetir();
 };
 window.ayKapat=function(){const p=_ayId('ay-panel');if(p)p.style.display='none';_ay=null;anYukle(false);};
+
