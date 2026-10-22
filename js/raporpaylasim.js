@@ -20,7 +20,8 @@ const _rpTr=t=>t?new Date(t).toLocaleString('tr-TR',{day:'2-digit',month:'2-digi
 const _rpTarih=t=>t?new Date(t).toLocaleDateString('tr-TR'):'—';
 const _rpGun=t=>{const p=String(t||'').slice(0,10).split('-');return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:'';};
 const _rpDonem=y=>y.kip==='canli'?'Canlı panel':(y.donem_bas===y.donem_bit?_rpGun(y.donem_bas):_rpGun(y.donem_bas)+' – '+_rpGun(y.donem_bit));
-const _rpKaynak=y=>y.tur==='alimlar_bagimsiz'?('Bağımsız Raporlama'+(y.parti_ad?' · '+y.parti_ad:'')):'Uygulama';
+const _rpAnAd={an_satis_analizi:'Satış analizi',an_iki_ay:'İki ay karşılaştırma',an_yillik:'Yıllık ciro',an_envanter:'Envanter',an_alim:'Alım analizi',an_urun_satis_maliyet:'Ürün satış ve maliyet',an_malzeme_tuketim_maliyet:'Malzeme tüketim ve maliyet',an_aylik_karsilastirma:'Aylık karşılaştırma',an_stok_tuketim_fark:'Stok tüketim farkı'};
+const _rpKaynak=y=>(y.tur&&String(y.tur).startsWith('an_'))?('Analiz · '+(_rpAnAd[y.tur]||String(y.tur).slice(3))):y.tur==='alimlar_bagimsiz'?('Bağımsız Raporlama'+(y.parti_ad?' · '+y.parti_ad:'')):'Uygulama';
 const _rpEsc=s=>typeof _logEsc==='function'?_logEsc(s):String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const _rpPara=n=>'₺'+Number(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const _rpId=id=>document.getElementById(id);
