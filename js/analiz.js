@@ -789,4 +789,3 @@ window.ayAc=function(){
   _ay=ayYeniDurum();_anId('an-bos').style.display='none';_anId('an-ana').style.display='none';p.style.display='';ayCiz();ayYuklemeleriGetir();
 };
 window.ayKapat=function(){const p=_ayId('ay-panel');if(p)p.style.display='none';_ay=null;anYukle(false);};
-
