@@ -3,7 +3,7 @@
 // Raporu sunucu hazırlar (an_rapor_* işlevleri; satır güvenliği ile yalnızca bu işyerinin verisi), ekranda ortak çizici (rapor/cizim.js) gösterir.
 // Örnek (SAHTE) veri: yöneticinin tek tıkla yükleyip silebildiği 4 aylık restoran verisi. Sunum / gönderim bu sayfanın konusu değil.
 let _anOzet=null,_anTur='satis_analizi',_anNo=0;
-const AN_TURLER=[['satis_analizi','Satış analizi'],['iki_ay','İki ay karşılaştır'],['yillik','Yıllık ciro'],['envanter','Envanter'],['alim','Alım analizi'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
+const AN_TURLER=[['yuklu','Yüklü veriler'],['satis_analizi','Satış analizi'],['iki_ay','İki ay karşılaştır'],['yillik','Yıllık ciro'],['envanter','Envanter'],['alim','Alım analizi'],['urun_satis_maliyet','Ürün satış ve maliyet'],['malzeme_tuketim_maliyet','Malzeme tüketim ve maliyet'],['aylik_karsilastirma','Aylık karşılaştırma'],['stok_tuketim_fark','Stok tüketim farkı']];
 const AN_AY=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const _anId=id=>document.getElementById(id);
 const _anSayi=n=>Number(n||0).toLocaleString('tr-TR');
@@ -40,6 +40,7 @@ function anStil(){
 #analiz-raporlari .ay-dosya{cursor:pointer;display:inline-block}
 #analiz-raporlari .ay-chip{font-size:13px;padding:5px 11px;border:1px solid var(--k);border-radius:999px;background:var(--a)}
 #analiz-raporlari .ay-pano{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--k);border-radius:9px;background:var(--a);color:var(--y);font:inherit;font-size:13px;margin-top:8px}
+#analiz-raporlari .ay-yuklem{padding:8px 0;border-bottom:1px solid var(--k);font-size:13px}#analiz-raporlari .an-yuklu-panel{background:none;border:0;padding:0}
 #analiz-raporlari .ay-yuklu-satir{display:grid;grid-template-columns:20px 112px minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1fr);gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--k);font-size:13px}
 #analiz-raporlari .ay-yuklu-satir:first-child{border-top:0}
 #analiz-raporlari .ay-yuklu-isaret{color:#34d399;font-weight:800}
@@ -75,8 +76,8 @@ function anKontrolEkle(){
 }
 // Seçili sekmeye göre hangi seçicilerin görüneceği: İki ay → 1. ay + 2. ay; Yıllık → Yıl; diğerleri → Dönem
 function anKontrolGoster(){
-  anKontrolEkle();const iki=_anTur==='iki_ay',yil=_anTur==='yillik',env=_anTur==='envanter',d=_anId('an-donem'),w=d&&d.parentElement;
-  if(w)w.style.display=(iki||yil||env)?'none':'';
+  anKontrolEkle();const iki=_anTur==='iki_ay',yil=_anTur==='yillik',env=_anTur==='envanter',yk=_anTur==='yuklu',d=_anId('an-donem'),w=d&&d.parentElement;
+  if(w)w.style.display=(iki||yil||env||yk)?'none':'';
   const g=(id,v)=>{const e=_anId(id);if(e)e.style.display=v?'':'none';};g('an-alan-ay1',iki);g('an-alan-ay2',iki);g('an-alan-yil',yil);g('an-alan-sayim',env);
 }
 function anAyYilDoldur(ilk){
@@ -149,8 +150,26 @@ window.anTurSec=function(t){
   anKontrolGoster();anSekmeCiz();anGoster();
 };
 window.anDonemDegisti=function(){anGoster();};
+// "Yüklü veriler" sekmesi: Veri yükle ekranına girmeden, hangi sayfanın verisi sistemde (satır, tarih aralığı, son yükleme) + son yüklemeler
+async function anYukluCiz(panel,no){
+  try{
+    const [o,l]=await Promise.all([ayRpc('an_veri_ozeti',{p_isyeri:aktifIsyeri.id}),ayRpc('an_yuklemeler_liste',{p_isyeri:aktifIsyeri.id})]);
+    if(no!==_anNo)return;_anOzet=o;anOzetYaz();
+    panel.className='an-yuklu-panel';panel.replaceChildren();panel.appendChild(ayYukluKart({ozet:o}));
+    const k=ayKart('Son yüklemeler'),TUR={urun:'Ürünler',satis:'Günlük Satış',alim:'Alımlar',sayim:'Envanter'};
+    if(!l||!l.length)k.appendChild(ayEl('div','ay-not','Henüz yükleme yapılmadı.'));
+    (l||[]).slice(0,15).forEach(y=>{const s=ayEl('div','ay-yuklem'),sol=ayEl('div','');
+      sol.appendChild(ayEl('b','',`${TUR[y.tur]||y.tur} · ${y.ad||''}`));
+      const ar=y.bas?(String(y.bas).slice(0,10)===String(y.bit).slice(0,10)?_ayTrTarih(String(y.bas).slice(0,10)):`${_ayTrTarih(String(y.bas).slice(0,10))} – ${_ayTrTarih(String(y.bit).slice(0,10))}`):'';
+      sol.appendChild(ayEl('div','ay-not',[y.tur!=='urun'?`${_aySay(y.satir)} satır`:`${_aySay(y.satir)} ürün`,ar,y.kaynak==='ornek'?'örnek (sahte) veri':'',y.ts?new Date(y.ts).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):''].filter(Boolean).join(' · ')));
+      s.appendChild(sol);k.appendChild(s);});
+    k.appendChild(ayEl('div','ay-not','Bir yüklemeyi geri almak için: Veri yükle → Önceki yüklemeler.'));
+    panel.appendChild(k);
+  }catch(e){if(no===_anNo){panel.className='';panel.innerHTML='<div class="an-bos"><b>Yüklü veriler okunamadı</b>'+_rpEscAn(e.message||'')+'</div>';}}
+}
 async function anGoster(){
   if(!_anOzet)return;const no=++_anNo,panel=_anId('an-sonuc');
+  if(_anTur==='yuklu'){panel.className='an-yuklu-panel';panel.innerHTML='<div class="an-bos">Yükleniyor…</div>';return anYukluCiz(panel,no);}
   panel.className='rc-panel';panel.innerHTML='<div class="an-bos">Rapor hazırlanıyor…</div>';
   let args;
   if(_anTur==='envanter'){const t=(_anId('an-sayim')||{}).value;
