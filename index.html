@@ -175,7 +175,6 @@
       <button id="nav-yetkiler" onclick="gp('yetkiler')" style="display:none">Yetki Şablonları</button>
       <button id="nav-kul-yetkiler" onclick="gp('kul-yetkiler')" style="display:none">Kullanıcı Yetkileri</button>
       <button id="nav-loglar" onclick="gp('kullanici-loglari')" style="display:none">Kullanıcı Logları</button>
-      <button id="nav-rapor-paylasim" onclick="gp('rapor-paylasim')" style="display:none" title="Yöneticiye link + PIN ile salt-okunur rapor paylaş">🔗 Rapor Paylaşımı</button>
     </div>
   </div>
 </nav>
@@ -1940,68 +1939,6 @@
 </div>
 
 <!-- RAPOR PAYLAŞIMI (yönetici) -->
-<div id="rapor-paylasim" class="page">
-  <div class="rp-ust">
-    <div class="rp-baslik">Rapor Paylaşımı <span id="rp-isyeri-ad" class="rp-sol"></span></div>
-    <div class="rp-sekmeler">
-      <button type="button" class="on" data-sekme="yeni" onclick="rpSekme('yeni')">Yeni rapor</button>
-      <button type="button" data-sekme="raporlar" onclick="rpSekme('raporlar')">Raporlar</button>
-      <button type="button" data-sekme="alicilar" onclick="rpSekme('alicilar')">Alıcılar</button>
-    </div>
-  </div>
-
-  <div id="rp-sonuc" class="rp-kart" style="display:none"></div>
-
-  <section id="rp-s-yeni" class="rp-kart">
-    <div class="rp-satir">
-      <div class="rp-alan" style="display:none"><label>Veri kaynağı</label>
-        <div class="rp-seg" id="rp-kaynak" data-deger="uygulama"><button type="button" class="on" data-d="uygulama" onclick="rpSec('rp-kaynak','uygulama')">Uygulama</button><button type="button" data-d="bagimsiz" onclick="rpSec('rp-kaynak','bagimsiz')">Bağımsız Raporlama</button></div></div>
-      <div class="rp-alan rp-genis" id="rp-parti-kutu" style="display:none"><label>Yükleme</label><select id="rp-parti" onchange="rpPartiDegisti()"></select></div>
-    </div>
-    <div class="rp-satir">
-      <div class="rp-alan"><label>Rapor türü</label>
-        <div class="rp-seg" id="rp-kip" data-deger="donmus"><button type="button" class="on" data-d="donmus" onclick="rpSec('rp-kip','donmus')">Dönem raporu</button><button type="button" data-d="canli" onclick="rpSec('rp-kip','canli')">Canlı panel</button></div></div>
-      <div class="rp-alan" id="rp-donem-kutu"><label>Dönem</label><select id="rp-donem" onchange="rpDonemSec()"><option value="gecenay">Geçen ay</option><option value="buay">Bu ay</option><option value="7gun">Son 7 gün</option><option value="dun">Dün</option><option value="ozel">Özel aralık…</option></select></div>
-      <div class="rp-alan" id="rp-ozel-kutu" style="display:none"><label>Başlangıç</label><input type="date" id="rp-bas" onchange="rpBaslikOner()"></div>
-      <div class="rp-alan" id="rp-ozel-kutu2" style="display:none"><label>Bitiş</label><input type="date" id="rp-bit" onchange="rpBaslikOner()"></div>
-    </div>
-    <div class="rp-satir">
-      <div class="rp-alan rp-genis"><label>Başlık</label><input type="text" id="rp-bslk" maxlength="120" oninput="rpBaslikElle()"></div>
-      <div class="rp-alan rp-genis"><label>Açıklama</label><input type="text" id="rp-acik" maxlength="500" placeholder="İsteğe bağlı"></div>
-    </div>
-    <button type="button" class="rp-btn" id="rp-olustur" onclick="rpRaporOlustur()">Raporu oluştur</button>
-  </section>
-
-  <section id="rp-s-raporlar" class="rp-kart" style="display:none"><div id="rp-yayinlar"></div></section>
-  <section id="rp-s-alicilar" class="rp-kart" style="display:none"><div id="rp-alicilar"></div></section>
-  <div id="rp-alici-detay" class="rp-kart" style="display:none"></div>
-
-  <div id="rp-rapor-detay" style="display:none">
-    <div class="rp-kart">
-      <div class="rp-detay-ust"><div><div class="rp-d-baslik" id="rp-d-baslik"></div><div class="rp-sol" id="rp-d-meta"></div></div>
-        <div class="rp-d-sag"><input type="date" id="rp-d-tarih" style="display:none" onchange="rpOnizleTarih()"><button type="button" class="rp-ikon" title="Raporu sil" onclick="rpYayinSil()">🗑</button><button type="button" class="rp-ikon" title="Kapat" onclick="rpDetayKapat()">✕</button></div></div>
-      <div id="rp-onizleme"></div>
-    </div>
-    <div class="rp-kart" id="rp-paylas">
-      <div class="rp-baslik-k">Paylaş</div>
-      <div class="rp-satir"><div class="rp-alan rp-genis"><label>Alıcı</label><select id="rp-alici" onchange="rpAliciDegisti()"></select></div></div>
-      <div id="rp-yeni-alici">
-        <div class="rp-satir">
-          <div class="rp-alan rp-genis"><label>Kime (rapora yazılır)</label><input type="text" id="rp-etiket" maxlength="80" placeholder="Örn: Ahmet Bey"></div>
-          <div class="rp-alan"><label>Alıcı tipi</label><div class="rp-seg" id="rp-tip" data-deger="kalici"><button type="button" class="on" data-d="kalici" onclick="rpSec('rp-tip','kalici')">Kalıcı</button><button type="button" data-d="tek_seferlik" onclick="rpSec('rp-tip','tek_seferlik')">Tek seferlik</button></div></div>
-          <div class="rp-alan" id="rp-gecmis-kutu"><label>Geçmiş raporlar</label><div class="rp-seg" id="rp-gecmis" data-deger="tumu"><button type="button" class="on" data-d="tumu" onclick="rpSec('rp-gecmis','tumu')">Görünsün</button><button type="button" data-d="sadece_son" onclick="rpSec('rp-gecmis','sadece_son')">Sadece son</button></div></div>
-        </div>
-        <div class="rp-satir">
-          <div class="rp-alan"><label>Geçerlilik</label><select id="rp-sure"><option value="7">7 gün</option><option value="30">30 gün</option><option value="90" selected>90 gün</option><option value="180">180 gün</option><option value="366">1 yıl</option></select></div>
-          <div class="rp-alan" id="rp-pencere-kutu"><label>Geriye bakış</label><select id="rp-pencere"><option value="7">7 gün</option><option value="30" selected>30 gün</option><option value="90">90 gün</option><option value="180">180 gün</option><option value="366">1 yıl</option></select></div>
-          <div class="rp-alan"><label>Kullanıcı adı</label><input type="text" id="rp-kullanici" maxlength="32" value="rapor" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-          <div class="rp-alan"><label>Şifre</label><input type="text" id="rp-sifre" maxlength="32" autocomplete="off" spellcheck="false"></div>
-        </div>
-      </div>
-      <button type="button" class="rp-btn" id="rp-paylas-btn" onclick="rpPaylas()">Bağlantı oluştur</button>
-    </div>
-  </div>
-</div>
 
 <!-- KULLANICI LOGLARI (yönetici) -->
 <div id="kullanici-loglari" class="page">
@@ -2684,7 +2621,6 @@
 <script src="js/depostok.js"></script>
 <script src="js/bagimsiz.js"></script>
 <script src="rapor/cizim.js"></script>
-<script src="js/raporpaylasim.js"></script>
 <script src="js/analiz.js"></script>
 <script src="js/aktarim.js"></script>
 <script src="js/aktarimenv.js"></script>
