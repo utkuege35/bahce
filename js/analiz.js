@@ -41,7 +41,7 @@ function anStil(){
 #analiz-raporlari .ay-chip{font-size:13px;padding:5px 11px;border:1px solid var(--k);border-radius:999px;background:var(--a)}
 #analiz-raporlari .ay-pano{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--k);border-radius:9px;background:var(--a);color:var(--y);font:inherit;font-size:13px;margin-top:8px}
 #analiz-raporlari .ay-yuklem{padding:8px 0;border-bottom:1px solid var(--k);font-size:13px}#analiz-raporlari .an-yuklu-panel{background:none;border:0;padding:0}
-#analiz-raporlari .an-paylas-alan{margin-left:auto;align-self:flex-end}#analiz-raporlari .an-paylas-alan .an-btn2{white-space:nowrap}
+#analiz-raporlari .an-indir-alan{margin-left:auto;align-self:flex-end}#analiz-raporlari .an-indir-alan .an-btn2{white-space:nowrap}
 #analiz-raporlari .ay-yuklu-satir{display:grid;grid-template-columns:20px 112px minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1fr);gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--k);font-size:13px}
 #analiz-raporlari .ay-yuklu-satir:first-child{border-top:0}
 #analiz-raporlari .ay-yuklu-isaret{color:#34d399;font-weight:800}
@@ -70,45 +70,94 @@ function anStil(){
 #analiz-raporlari .an-kucuk{margin-top:14px;font-size:12px}#analiz-raporlari .an-kucuk a{color:var(--s)}`;
   document.head.appendChild(s);
 }
-let _anSon=null;      // ekranda şu an görünen raporun paylaşılabilir özeti: {tur, args, baslik, bas, bit}
+let _anSon=null;      // ekranda şu an görünen raporun indirilebilir özeti: {tur, args, baslik, bas, bit, veri}
 function anKontrolEkle(){
   const kont=document.querySelector('#analiz-raporlari .an-kontrol');if(!kont||_anId('an-alan-ay1'))return;
   const alan=(id,etiket,sid)=>{const d=document.createElement('div');d.className='an-alan';d.id=id;d.style.display='none';const l=document.createElement('label');l.textContent=etiket;const s=document.createElement('select');s.id=sid;s.addEventListener('change',()=>anGoster());d.appendChild(l);d.appendChild(s);kont.appendChild(d);};
   alan('an-alan-ay1','1. ay','an-ay1');alan('an-alan-ay2','2. ay','an-ay2');alan('an-alan-yil','Yıl','an-yil');alan('an-alan-sayim','Sayım tarihi','an-sayim');
-  const pd=document.createElement('div');pd.className='an-alan an-paylas-alan';pd.id='an-alan-paylas';pd.style.display='none';
-  const pb=document.createElement('button');pb.type='button';pb.className='an-btn2';pb.id='an-paylas-ac';pb.textContent='📤 Raporu paylaş';pb.addEventListener('click',()=>anPaylasAc());pd.appendChild(pb);kont.appendChild(pd);
-  const kutu=document.createElement('div');kutu.id='an-paylas-kutu';kutu.style.display='none';const sn=_anId('an-sonuc');if(sn&&sn.parentNode)sn.parentNode.insertBefore(kutu,sn);
+  const pd=document.createElement('div');pd.className='an-alan an-indir-alan';pd.id='an-alan-indir';pd.style.display='none';
+  const pb=document.createElement('button');pb.type='button';pb.className='an-btn2';pb.id='an-indir-ac';pb.textContent='📥 Raporu indir';pb.addEventListener('click',()=>anIndirAc());pd.appendChild(pb);kont.appendChild(pd);
+  const kutu=document.createElement('div');kutu.id='an-indir-kutu';kutu.style.display='none';const sn=_anId('an-sonuc');if(sn&&sn.parentNode)sn.parentNode.insertBefore(kutu,sn);
 }
-function anPaylasGoster(v){const e=_anId('an-alan-paylas');if(e)e.style.display=v?'':'none';if(!v){const k=_anId('an-paylas-kutu');if(k){k.style.display='none';k.replaceChildren();}}}
-// Raporu paylaş: ekrandaki raporu DONDURULMUŞ olarak yayınlar (rapor_analiz_yayinla); sonra Rapor Paylaşımı'ndan alıcıya gönderilir
-window.anPaylasAc=function(){
-  if(!_anSon)return;const kutu=_anId('an-paylas-kutu');if(!kutu)return;kutu.replaceChildren();kutu.style.display='';
-  const ad=Object.fromEntries(AN_TURLER)[_anSon.tur]||'Rapor',b=_anSon.bas?String(_anSon.bas).slice(0,10):'',s=_anSon.bit?String(_anSon.bit).slice(0,10):'',donem=b?(b===s?_ayTrTarih(b):`${_ayTrTarih(b)} – ${_ayTrTarih(s)}`):'';
-  const k=ayKart('Raporu paylaş');
-  k.appendChild(ayEl('div','ay-metin','Rapor, şu an ekranda gördüğünüz haliyle dondurulur: veri sonradan değişse de alıcı yayın anındaki halini görür. Yayınladıktan sonra alıcıya Rapor Paylaşımı ekranından göndereceksiniz.'));
-  const l1=ayEl('label','ay-alan','Başlık (alıcı görür)'),i1=document.createElement('input');i1.id='an-paylas-bslk';i1.type='text';i1.maxLength=120;i1.value=`${ad}${donem?' · '+donem:''}`;i1.className='ay-pano';i1.style.marginTop='0';l1.appendChild(i1);k.appendChild(l1);
-  const l2=ayEl('label','ay-alan','Açıklama (isteğe bağlı)'),i2=document.createElement('textarea');i2.id='an-paylas-acik';i2.rows=2;i2.maxLength=500;i2.className='ay-pano';l2.appendChild(i2);k.appendChild(l2);
-  const sat=ayEl('div','ay-satir'),yb=ayBtn('Yayınla','an-btn',()=>anPaylasYayinla());yb.id='an-paylas-yayinla';sat.appendChild(yb);sat.appendChild(ayBtn('Vazgeç','an-btn2',()=>anPaylasGoster(true)));k.appendChild(sat);
+function anIndirGoster(v){const e=_anId('an-alan-indir');if(e)e.style.display=v?'':'none';if(!v){const k=_anId('an-indir-kutu');if(k){k.style.display='none';k.replaceChildren();}}}
+// ---- Raporu dosya olarak indir (PDF / HTML) ----
+// Ekrandaki rapor, çizici (rapor/cizim.js + cizim.css) ve verisiyle birlikte TEK bir HTML dosyasına gömülür: internetsiz açılır, link / giriş gerekmez.
+// PDF: aynı dosya yeni pencerede açılır ve yazdırma penceresi gelir ("PDF olarak kaydet").
+let _anKaynak=null;   // rapor/cizim.css ve rapor/cizim.js metinleri
+async function anKaynakYukle(){
+  if(_anKaynak)return _anKaynak;
+  const al=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(u+' okunamadı');return r.text();};
+  const [css,js]=await Promise.all([al('rapor/cizim.css'),al('rapor/cizim.js')]);
+  return _anKaynak={css,js};
+}
+const AN_DOSYA_CSS=`html{background:#0b1220;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;padding:18px;background:#0b1220;color:#eaf0ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#dosya{max-width:1080px;margin:0 auto}
+.dosya-ust{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;letter-spacing:.04em;color:#a9b6d3;margin:2px 4px 10px}
+.dosya-alt{font-size:11px;line-height:1.5;color:#6f7fa3;margin:12px 4px 4px}
+.dosya-fil{position:fixed;inset:0;pointer-events:none;z-index:50}
+@page{size:A4;margin:10mm;background:#0b1220}
+@media print{
+  body{padding:0}#dosya{max-width:none}
+  .rc-panel{border:0;padding:0;background:transparent}
+  .rc,.rc *{animation:none!important;transition:none!important}
+  .rc-hero,.rc-kart,.rc-kpi>div{break-inside:avoid;page-break-inside:avoid}
+  .rc-kart:has(table){break-inside:auto;page-break-inside:auto}
+  tr{break-inside:avoid}thead{display:table-header-group}
+  .rc-arama{display:none!important}
+  .rc-tablo-sar{overflow:visible!important}
+  .rc-tablo{font-size:9px}.rc-tablo th{font-size:7.5px;letter-spacing:.02em;padding:5px 3px;white-space:normal}.rc-tablo td{padding:5px 3px}.rc-tablo td.s,.rc-tablo th.s{white-space:normal}
+}`;
+// Dosyanın içinde çalışan başlatıcı: dışarıdaki hiçbir değişkene bağlı değildir (metne çevrilip dosyaya gömülür)
+function _anDosyaBaslat(M,R){
+  document.title=M.dosya||M.baslik;
+  var ust=document.getElementById('dosya-ust'),alt=document.getElementById('dosya-alt'),pn=document.getElementById('rapor');
+  var s1=document.createElement('span');s1.textContent=M.isyeri||'';ust.appendChild(s1);
+  var s2=document.createElement('span');s2.textContent=M.baslik;ust.appendChild(s2);
+  try{window.RaporCizim.ciz(R,pn);}catch(e){pn.textContent='Rapor çizilemedi: '+e.message;}
+  alt.textContent='Rapor tarihi: '+M.tarih+(M.kime?' · '+M.kime+' için hazırlandı':'')+' · Bu dosya hazırlandığı andaki verileri gösterir; sonradan değişen veriler buna yansımaz.';
+  var t=(M.kime?M.kime+' · ':'')+M.tarih;
+  var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="420" height="230"><text x="30" y="140" transform="rotate(-24 210 115)" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff" fill-opacity="0.06">'+esc(t)+'</text></svg>';
+  document.getElementById('dosya-fil').style.backgroundImage='url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+  if(M.yazdir){var git=function(){window.focus();window.print();};if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){setTimeout(git,700);});else setTimeout(git,900);}
+}
+function anDosyaHtml(kaynak,veri,meta){
+  const j=s=>JSON.stringify(s).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+  const js=kaynak.js.replace(/<\/script/gi,'<\\/script');
+  return '<!doctype html>\n<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>Rapor</title>\n<style>'+kaynak.css+'</style>\n<style>'+AN_DOSYA_CSS+'</style></head>\n<body><main id="dosya"><div class="dosya-ust" id="dosya-ust"></div><div class="rc-panel" id="rapor"></div><div class="dosya-alt" id="dosya-alt"></div></main><div class="dosya-fil" id="dosya-fil" aria-hidden="true"></div>\n<script>'+js+'<\/script>\n<script>('+_anDosyaBaslat.toString()+')('+j(meta)+','+j(veri)+');<\/script>\n</body></html>';
+}
+function _anSlug(s){return String(s||'').replace(/ç/g,'c').replace(/Ç/g,'C').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ı/g,'i').replace(/İ/g,'I').replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ü/g,'u').replace(/Ü/g,'U').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+function anDosyaBilgi(){
+  const ad=Object.fromEntries(AN_TURLER)[_anSon.tur]||'Rapor',b=_anSon.bas?String(_anSon.bas).slice(0,10):'',s=_anSon.bit?String(_anSon.bit).slice(0,10):'';
+  const donem=b?(b===s||!s?_ayTrTarih(b):`${_ayTrTarih(b)} – ${_ayTrTarih(s)}`):'',isy=(typeof aktifIsyeri!=='undefined'&&aktifIsyeri&&aktifIsyeri.ad)||'';
+  const dosya=[_anSon.tur&&_anSlug(isy),_anSlug(ad),b&&(_anSlug(b)+(s&&s!==b?'_'+_anSlug(s):''))].filter(Boolean).join('_')||'rapor';
+  return {baslik:`${ad}${donem?' · '+donem:''}`,isyeri:isy,dosya};
+}
+window.anIndirAc=async function(){
+  if(!_anSon)return;const kutu=_anId('an-indir-kutu');if(!kutu)return;kutu.replaceChildren();kutu.style.display='';
+  const k=ayKart('Raporu indir');
+  k.appendChild(ayEl('div','ay-metin','Rapor, şu an ekranda gördüğünüz haliyle tek bir dosyaya dönüşür. Dosya internetsiz açılır, veri sonradan değişse de aynı kalır. Göndermeyi siz yaparsınız (e-posta, WhatsApp vb.).'));
+  const l=ayEl('label','ay-alan','Kime hazırlandı (dosyaya yazılır, isteğe bağlı)'),i=document.createElement('input');i.id='an-indir-kime';i.type='text';i.maxLength=60;i.className='ay-pano';i.style.marginTop='0';i.placeholder='Örn. Ahmet Bey, Lezzet Restoran';l.appendChild(i);k.appendChild(l);
+  const sat=ayEl('div','ay-satir'),b1=ayBtn('PDF indir','an-btn',()=>anIndirYap('pdf')),b2=ayBtn('HTML indir','an-btn2',()=>anIndirYap('html'));b1.id='an-indir-pdf';b2.id='an-indir-html';b1.disabled=b2.disabled=true;
+  sat.appendChild(b1);sat.appendChild(b2);sat.appendChild(ayBtn('Vazgeç','an-btn2',()=>anIndirGoster(true)));k.appendChild(sat);
+  k.appendChild(ayEl('div','ay-not','PDF için açılan pencerede “Hedef” olarak “PDF olarak kaydet”i seçin ve “Üstbilgi ve altbilgi” kutusunu kapatın. HTML dosyası tarayıcıda açılır.'));
   kutu.appendChild(k);
+  try{await anKaynakYukle();b1.disabled=b2.disabled=false;}catch(e){bil('Dosya hazırlanamadı: '+(e.message||e),'err');}
 };
-window.anPaylasYayinla=async function(){
-  if(!_anSon)return;const b=_anId('an-paylas-yayinla'),baslik=(_anId('an-paylas-bslk').value||'').trim(),acik=(_anId('an-paylas-acik').value||'').trim()||null;
-  if(!baslik){bil('Rapora bir başlık verin','err');return;}
-  const a=_anSon.args,t=_anSon.tur;let p_bas,p_bit=null;
-  if(t==='iki_ay'){p_bas=a.p_ay1;p_bit=a.p_ay2;}else if(t==='yillik'){p_bas=`${a.p_yil}-01-01`;}else if(t==='envanter'){p_bas=a.p_tarih;}else{p_bas=a.p_bas;p_bit=a.p_bit;}
-  if(b)b.disabled=true;
-  try{
-    const {data,error}=await sb.rpc('rapor_analiz_yayinla',{p_isyeri:aktifIsyeri.id,p_rapor:t,p_baslik:baslik,p_aciklama:acik,p_bas,p_bit});
-    if(error){bil(_anHata(error),'err');return;}
-    const kutu=_anId('an-paylas-kutu');kutu.replaceChildren();const k=ayKart('✓ Rapor yayınlandı');
-    k.appendChild(ayEl('div','ay-metin',`"${baslik}" dondurulmuş rapor olarak yayınlandı. Şimdi bir alıcıya gönderebilirsiniz.`));
-    const sat=ayEl('div','ay-satir'),gb=ayBtn('Alıcıya gönder (Rapor Paylaşımı)','an-btn',()=>anPaylasGit(data.id));gb.id='an-paylas-git';sat.appendChild(gb);sat.appendChild(ayBtn('Kapat','an-btn2',()=>anPaylasGoster(true)));k.appendChild(sat);kutu.appendChild(k);
-  }catch(e){bil(e.message||'Rapor yayınlanamadı','err');}
-  finally{if(b)b.disabled=false;}
-};
-window.anPaylasGit=async function(id){
-  gp('rapor-paylasim');
-  try{await new Promise(r=>setTimeout(r,250));if(typeof rpYukle==='function')await rpYukle();if(typeof rpRaporAc==='function')await rpRaporAc(id);}catch(e){}
+window.anIndirYap=function(bicim){
+  if(!_anSon||!_anKaynak)return;
+  const kime=((_anId('an-indir-kime')||{}).value||'').trim(),bilgi=anDosyaBilgi();
+  const meta={baslik:bilgi.baslik,isyeri:bilgi.isyeri,dosya:bilgi.dosya,kime,tarih:new Date().toLocaleDateString('tr-TR'),yazdir:bicim==='pdf'};
+  const html=anDosyaHtml(_anKaynak,_anSon.veri,meta);
+  if(bicim==='pdf'){
+    const w=window.open('','_blank');
+    if(!w){bil('Pencere açılamadı. Tarayıcının açılır pencere engelini bu site için kapatıp tekrar deneyin ya da HTML indirin.','err');return;}
+    w.document.open();w.document.write(html);w.document.close();return;
+  }
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');
+  a.href=url;a.download=bilgi.dosya+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),8000);
+  bil('Dosya indirildi: '+bilgi.dosya+'.html');
 };
 // Seçili sekmeye göre hangi seçicilerin görüneceği: İki ay → 1. ay + 2. ay; Yıllık → Yıl; diğerleri → Dönem
 function anKontrolGoster(){
@@ -205,7 +254,7 @@ async function anYukluCiz(panel,no){
 }
 async function anGoster(){
   if(!_anOzet)return;const no=++_anNo,panel=_anId('an-sonuc');
-  _anSon=null;anKontrolEkle();anPaylasGoster(false);
+  _anSon=null;anKontrolEkle();anIndirGoster(false);
   if(_anTur==='yuklu'){panel.className='an-yuklu-panel';panel.innerHTML='<div class="an-bos">Yükleniyor…</div>';return anYukluCiz(panel,no);}
   panel.className='rc-panel';panel.innerHTML='<div class="an-bos">Rapor hazırlanıyor…</div>';
   let args;
@@ -226,7 +275,7 @@ async function anGoster(){
   if(error){panel.innerHTML=`<div class="an-bos"><b>Rapor hazırlanamadı</b>${_rpEscAn(_anHata(error))}</div>`;return;}
   panel.replaceChildren();
   if(window.RaporCizim)window.RaporCizim.ciz(data,panel);else panel.innerHTML='<div class="an-bos">Çizici yüklü değil (rapor/cizim.js).</div>';
-  if(data&&data.kayit_var){_anSon={tur:_anTur,args,baslik:data.baslik,bas:data.donem_bas,bit:data.donem_bit};anPaylasGoster(true);}          // boş rapor paylaşılamaz
+  if(data&&data.kayit_var){_anSon={tur:_anTur,args,baslik:data.baslik,bas:data.donem_bas,bit:data.donem_bit,veri:data};anIndirGoster(true);}          // boş rapor indirilemez
 }
 window.anOrnekYukle=async function(){
   if(!(await onay('Bu işyerine 4 aylık SAHTE örnek restoran verisi yüklenecek (32 ürün, 47 malzeme, satış, alım, sayım). Mevcut örnek veri varsa yenilenir; sizin gerçek verileriniz etkilenmez.','📈','Yükle','Vazgeç')))return;
