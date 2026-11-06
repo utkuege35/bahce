@@ -69,6 +69,7 @@
     for (i = 0; i < n - 1; i++) { const h = dx[i] / 3; d += ' C' + (P[i][0] + h).toFixed(1) + ',' + (P[i][1] + t[i] * h).toFixed(1) + ' ' + (P[i + 1][0] - h).toFixed(1) + ',' + (P[i + 1][1] - t[i + 1] * h).toFixed(1) + ' ' + P[i + 1][0].toFixed(1) + ',' + P[i + 1][1].toFixed(1); }
     return d;
   }
+  function duzelt(P) { if (P.length > 1) { const ys = P.map(p => p[1]); if (Math.max(...ys) - Math.min(...ys) < 0.6) P[P.length - 1][1] += 0.6; } return P; }   // yüksekliği sıfır olan yol, parlama süzgecinde görünmez olur
   function lejant(k, adlar, renkler) { const l = el('div', 'rc-leg'); adlar.forEach((a, i) => { const e = el('span'), n = el('i'); n.style.background = renkler[i % renkler.length]; n.style.boxShadow = '0 0 8px ' + renkler[i % renkler.length]; e.appendChild(n); e.appendChild(document.createTextNode(a)); l.appendChild(e); }); k.appendChild(l); }
 
   // ---------- üst özet (hero) ve göstergeler ----------
@@ -134,7 +135,7 @@
       const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': sp.baslik, class: 'rc-svg rc-dokun' }), f = tanim(s);
       const alan = degrade(f.d, f.id + 'ga', false, [[0, CY, .5], [.6, BL, .16], [1, BL, 0]]), cizgi = degrade(f.d, f.id + 'gl', true, [[0, BL], [.5, CY], [1, MINT]]);
       [0.33, 0.66, 1].forEach(a => { const y = py(tavan / 1.12 * a); s.appendChild(sv('line', { x1: sol, x2: W - sag, y1: y, y2: y, stroke: 'rgba(120,160,255,.09)', 'stroke-dasharray': '2 5' })); s.appendChild(sv('text', { x: sol + 2, y: y - 4, class: 'rc-m' }, eksenFm(sp.b)(tavan / 1.12 * a))); });
-      const P = V.map((v, i) => [px(i), py(v)]), yol = egri(P);
+      const P = duzelt(V.map((v, i) => [px(i), py(v)])), yol = egri(P);
       s.appendChild(sv('path', { d: `${yol} L${px(n - 1).toFixed(1)},${H - alt} L${px(0).toFixed(1)},${H - alt} Z`, fill: alan, class: 'rc-alan' }));
       s.appendChild(sv('path', { d: yol, fill: 'none', stroke: cizgi, 'stroke-width': 2.4, 'stroke-linecap': 'round', filter: f.hafif, class: 'rc-cizgi', pathLength: 1 }));
       let son = '';
@@ -195,7 +196,7 @@
         const c = SERI[i], pts = se.v.map((v, j) => v === null || v === undefined ? null : [px(j), py(Number(v)), Number(v)]); let seg = []; const parcalar = [];
         pts.forEach(p => { if (p) seg.push(p); else { if (seg.length) parcalar.push(seg); seg = []; } }); if (seg.length) parcalar.push(seg);
         const al = degrade(f.d, f.id + 'ga' + i, false, [[0, c, .26], [.7, c, .04], [1, c, 0]]), ln = degrade(f.d, f.id + 'gl' + i, true, [[0, karis(c, '#ffffff', .1)], [1, c]]);
-        parcalar.forEach(sg => { if (sg.length < 2) { s.appendChild(sv('circle', { cx: sg[0][0], cy: sg[0][1], r: 4, fill: c, filter: f.hafif })); return; } const yol = egri(sg.map(p => [p[0], p[1]]));
+        parcalar.forEach(sg => { if (sg.length < 2) { s.appendChild(sv('circle', { cx: sg[0][0], cy: sg[0][1], r: 4, fill: c, filter: f.hafif })); return; } const yol = egri(duzelt(sg.map(p => [p[0], p[1]])));
           if (S.length <= 2 && !yuz) s.appendChild(sv('path', { d: `${yol} L${sg[sg.length - 1][0].toFixed(1)},${zero} L${sg[0][0].toFixed(1)},${zero} Z`, fill: al, class: 'rc-alan' }));
           s.appendChild(sv('path', { d: yol, fill: 'none', stroke: ln, 'stroke-width': 2.3, 'stroke-linecap': 'round', filter: f.hafif, class: 'rc-cizgi', pathLength: 1 })); });
         if (n <= 14) pts.forEach(p => { if (p) s.appendChild(sv('circle', { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: 3.6, fill: ZEMIN, stroke: c, 'stroke-width': 2 })); });
@@ -392,22 +393,225 @@
     kok.appendChild(k);
   }
 
+  // ---------- ek grafikler: mevcut tablolardan türetilir (sunucuda değişiklik gerekmez) ----------
+  const bolumBul = (r, bas, tur) => (r.bolumler || []).find(b => String(b.baslik || '').indexOf(bas) === 0 && (!tur || b.tur === tur)) || null;
+  const kolIdx = (t, ...adlar) => { const ks = t.kolonlar.map(k => k.ad); for (const a of adlar) { const i = ks.indexOf(a); if (i >= 0) return i; } return -1; };
+  const isaret = n => n > 0 ? '+' : n < 0 ? '−' : '';
+  const farkTL = n => isaret(n) + '₺' + Math.abs(Math.round(n)).toLocaleString('tr-TR');
+  const yzS = (n, d) => isaret(n) + '%' + Math.abs(n).toLocaleString('tr-TR', { minimumFractionDigits: d === undefined ? 1 : d, maximumFractionDigits: d === undefined ? 1 : d });
+  const kes = (s, n) => { s = String(s); return s.length > n ? s.slice(0, Math.max(1, n - 1)).trimEnd() + '…' : s; };
+  const kisaTL = n => '₺' + kisa(n);
+  function dagit(yler, aralik, alt, ust) {   // etiket çakışmasını gider
+    const L = yler.slice().sort((a, b) => a.y - b.y);
+    for (let i = 0; i < L.length; i++) { L[i].gy = L[i].y; if (i && L[i].gy < L[i - 1].gy + aralik) L[i].gy = L[i - 1].gy + aralik; }
+    if (L.length && L[L.length - 1].gy > ust) { L[L.length - 1].gy = ust; for (let j = L.length - 2; j >= 0; j--) if (L[j].gy > L[j + 1].gy - aralik) L[j].gy = L[j + 1].gy - aralik; }
+    if (L.length && L[0].gy < alt) { const d = alt - L[0].gy; L.forEach(x => { x.gy += d; }); }
+    return L;
+  }
+  function seg(k, secenekler, ilk, degis) {   // düğmeli seçici
+    const sc = el('div', 'rc-sec'), d = {};
+    secenekler.forEach(s => { const b = el('button', ilk === s[0] ? 'on' : '', s[1]); b.type = 'button'; b.addEventListener('click', () => { Object.keys(d).forEach(x => { d[x].className = x === s[0] ? 'on' : ''; }); degis(s[0]); }); d[s[0]] = b; sc.appendChild(b); });
+    k.appendChild(sc); return d;
+  }
+
+  // ===== EĞİM GRAFİĞİ: iki ay arasında her ürünün ciro değişimi =====
+  function egim(kok, r) {
+    const t = bolumBul(r, 'Ürün karşılaştırması', 'tablo'); if (!t || t.kolonlar.length < 9 || t.kolonlar[0].ad !== 'Ürün') return;
+    const z = bolumBul(r, 'Özet', 'karsilastirma'), et = (z && z.etiketler) || ['1. ay', '2. ay'];
+    const S = t.satirlar.map(x => ({ ad: String(x[0]), grup: x[1], a1: Number(x[2]) || 0, a2: Number(x[3]) || 0, c1: Number(x[5]) || 0, c2: Number(x[6]) || 0, d: Number(x[7]) || 0, p: x[8] === null || x[8] === undefined ? null : Number(x[8]) }));
+    const yuk = S.filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 6), dus = S.filter(x => x.d < 0).sort((a, b) => a.d - b.d).slice(0, 6), L = yuk.concat(dus); if (!L.length) return;
+    const k = kart('Ürün ciro değişimi: kim yükseldi, kim düştü', 'en çok değişen ' + L.length + ' ürün'), o = oku(), gov = el('div', 'rc-gov'); k.appendChild(o); k.appendChild(gov);
+    k.appendChild(el('div', 'rc-not', 'Çizginin eğimi değişimi gösterir. Bir ürüne dokunun ya da üzerine gelin. Toplam ' + S.length + ' üründen yalnızca ciroda en çok değişenler çizilir.')); kok.appendChild(k);
+    let grup = [];
+    const varsayilan = () => { const u = yuk[0], d = dus[0], p = []; if (u) p.push(['En çok yükselen '], [u.ad, true, MINT], [' ' + farkTL(u.d)]); if (u && d) p.push(['  ·  ']); if (d) p.push(['En çok düşen '], [d.ad, true, ROSE], [' ' + farkTL(d.d)]); yaz(o, p); };
+    const sec = i => { grup.forEach((g, j) => g.setAttribute('class', 'rc-g' + (i === null ? '' : j === i ? ' ak' : ' sol'))); if (i === null) { varsayilan(); return; } const x = L[i]; yaz(o, [[x.ad, true], [' · ' + x.grup + ' · ' + et[0] + ' ' + TL0(x.c1) + ' → ' + et[1] + ' ' + TL0(x.c2) + ' · '], [farkTL(x.d) + (x.p === null ? '' : ' (' + yzS(x.p) + ')'), true, x.d > 0 ? MINT : x.d < 0 ? ROSE : SOLUK], [' · adet ' + sayi(x.a1) + ' → ' + sayi(x.a2)]]); };
+    function ciz(W) {
+      gov.replaceChildren(); grup = []; const dar = W < 520, LW = Math.round(W * (dar ? 0.40 : 0.26)), RW = Math.round(W * (dar ? 0.20 : 0.24)), x1 = LW, x2 = W - RW, ust = 36, H = dar ? 380 : 430, alt = H - 14;
+      const M = Math.max(...L.map(x => Math.max(x.c1, x.c2)), 1) * 1.04, Y = v => ust + (alt - ust) * (1 - v / M), s = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Eğim grafiği: ' + et[0] + ' ve ' + et[1] + ' arasında ürün ciro değişimi', class: 'rc-svg' }), f = tanim(s);
+      [[x1, et[0]], [x2, et[1]]].forEach(a => { s.appendChild(sv('line', { x1: a[0], x2: a[0], y1: ust - 8, y2: alt + 6, stroke: 'rgba(120,160,255,.22)', 'stroke-width': 1 })); s.appendChild(sv('text', { x: a[0], y: 14, 'text-anchor': 'middle', class: 'rc-tt', fill: '#a9c6ff' }, kes(a[1], dar ? 12 : 22))); });
+      const sol = dagit(L.map((x, i) => ({ i, y: Y(x.c1) })), dar ? 15 : 17, ust, alt), sag = dagit(L.map((x, i) => ({ i, y: Y(x.c2) })), dar ? 15 : 17, ust, alt), solY = {}, sagY = {}; sol.forEach(q => { solY[q.i] = q.gy; }); sag.forEach(q => { sagY[q.i] = q.gy; });
+      L.forEach((x, i) => {
+        const renk = x.d > 0 ? MINT : x.d < 0 ? ROSE : SOLUK, g = sv('g', { class: 'rc-g', tabindex: 0, role: 'button', 'aria-label': x.ad + ', ' + farkTL(x.d) }), ya = Y(x.c1), yb = Y(x.c2);
+        if (Math.abs(solY[i] - ya) > 3) g.appendChild(sv('line', { x1: x1 - 3, y1: ya, x2: x1 - 9, y2: solY[i], stroke: renk, 'stroke-opacity': .5 })); if (Math.abs(sagY[i] - yb) > 3) g.appendChild(sv('line', { x1: x2 + 3, y1: yb, x2: x2 + 9, y2: sagY[i], stroke: renk, 'stroke-opacity': .5 }));
+        g.appendChild(sv('line', { x1, y1: ya, x2, y2: Math.abs(ya - yb) < 0.6 ? ya + 0.6 : yb, stroke: renk, 'stroke-width': 2.6, 'stroke-linecap': 'round', filter: f.hafif, class: 'rc-cizgi', pathLength: 1 }));
+        g.appendChild(sv('circle', { cx: x1, cy: ya, r: 4.2, fill: ZEMIN, stroke: renk, 'stroke-width': 2 })); g.appendChild(sv('circle', { cx: x2, cy: yb, r: 4.8, fill: renk, filter: f.hafif }));
+        g.appendChild(sv('text', { x: x1 - 12, y: solY[i] + 4, 'text-anchor': 'end', class: 'rc-t' }, kes(x.ad, Math.floor((LW - 16) / 6.1))));
+        const tg = sv('text', { x: x2 + 12, y: sagY[i] + 4, class: 'rc-t' }); if (!dar) tg.appendChild(sv('tspan', { class: 'rc-m' }, kisaTL(x.c2) + ' ')); tg.appendChild(sv('tspan', { fill: renk, 'font-weight': 700 }, x.p === null ? '—' : yzS(x.p, 0))); g.appendChild(tg);
+        g.appendChild(sv('line', { x1, y1: ya, x2, y2: yb, stroke: 'transparent', 'stroke-width': 16, 'stroke-linecap': 'round' }));
+        g.addEventListener('mouseenter', () => sec(i)); g.addEventListener('focus', () => sec(i)); g.addEventListener('click', e => { e.stopPropagation(); sec(i); }); s.appendChild(g); grup.push(g);
+      });
+      s.addEventListener('mouseleave', () => sec(null)); s.addEventListener('click', () => sec(null)); gov.appendChild(s); varsayilan();
+    }
+    uyarla(gov, ciz);
+  }
+
+  // ===== KÖPRÜ GRAFİĞİ: ciro neden değişti =====
+  function kopru(kok, r) {
+    const t = bolumBul(r, 'Ürün karşılaştırması', 'tablo'), z = bolumBul(r, 'Özet', 'karsilastirma'); if (!t || !z || t.kolonlar.length < 9 || t.kolonlar[0].ad !== 'Ürün') return;
+    const et = z.etiketler || ['1. ay', '2. ay'], sat = {}; z.satirlar.forEach(x => { sat[x.ad] = x; });
+    const C = sat['Net ciro'], P = sat['Satılan porsiyon'], G = sat['Günlük ortalama ciro']; if (!C) return;
+    const S = t.satirlar.map(x => ({ ad: String(x[0]), grup: x[1], c1: Number(x[5]) || 0, c2: Number(x[6]) || 0, d: Number(x[7]) || 0, p: x[8] === null || x[8] === undefined ? null : Number(x[8]) })), toplamFark = C.v2 - C.v1, adimlar = {};
+    const ozetle = (liste, enAz) => { const sir = liste.slice().sort((a, b) => Math.abs(b.d) - Math.abs(a.d)), sc = sir.slice(0, enAz), kalan = sir.slice(enAz); sc.sort((a, b) => b.d - a.d); if (kalan.length) sc.push({ ad: 'Diğer ' + kalan.length, d: kalan.reduce((a, x) => a + x.d, 0), not: 'Gösterilmeyenlerin toplam etkisi', diger: true }); return sc; };
+    if (P && G && G.v1 > 0 && G.v2 > 0 && P.v1 > 0 && P.v2 > 0) {   // ciro = gün sayısı × günlük porsiyon × porsiyon başına ciro (toplamı tam olarak açıklar)
+      const D1 = Math.round(C.v1 / G.v1), D2 = Math.round(C.v2 / G.v2), p1 = P.v1 / D1, p2 = P.v2 / D2, a1 = C.v1 / P.v1, a2 = C.v2 / P.v2;
+      adimlar.neden = [{ ad: 'Gün sayısı', d: (D2 - D1) * p1 * a1, not: D1 + ' gün → ' + D2 + ' gün (diğer her şey ' + et[0] + ' düzeyinde)' }, { ad: 'Günlük porsiyon', d: D2 * (p2 - p1) * a1, not: sayi(p1) + ' → ' + sayi(p2) + ' porsiyon/gün (talep)' }, { ad: 'Porsiyon başına ciro', d: P.v2 * (a2 - a1), not: para(a1) + ' → ' + para(a2) + ' (fiyat ve ürün karışımı)' }];
+    }
+    const gm = {}; S.forEach(x => { const g = gm[x.grup] = gm[x.grup] || { ad: String(x.grup), c1: 0, c2: 0, n: 0 }; g.c1 += x.c1; g.c2 += x.c2; g.n++; });
+    adimlar.grup = ozetle(Object.keys(gm).map(q => { const g = gm[q]; g.d = g.c2 - g.c1; g.not = g.n + ' ürün · ' + et[0] + ' ' + TL0(g.c1) + ' → ' + et[1] + ' ' + TL0(g.c2) + ' (' + (g.c1 ? yzS(g.d / g.c1 * 100) : '—') + ')'; return g; }), 7);
+    adimlar.urun = ozetle(S.map(x => ({ ad: x.ad, d: x.d, not: x.grup + ' · ' + et[0] + ' ' + TL0(x.c1) + ' → ' + et[1] + ' ' + TL0(x.c2) + (x.p === null ? '' : ' (' + yzS(x.p) + ')') })), 7);
+    let mod = adimlar.neden ? 'neden' : 'grup', seciliSatir = null, satirEls = [];
+    const k = kart('Ciro neden değişti?', et[0] + ' → ' + et[1]), o = oku(), gov = el('div', 'rc-gov'), nt = el('div', 'rc-not');
+    const secenek = [['neden', 'Neden?'], ['grup', 'Hangi gruplar?'], ['urun', 'Hangi ürünler?']].filter(m => adimlar[m[0]]);
+    seg(k, secenek, mod, m => { mod = m; seciliSatir = null; ciz(Math.round(gov.clientWidth)); }); k.appendChild(o); k.appendChild(gov); k.appendChild(nt); kok.appendChild(k);
+    const varsayilan = () => yaz(o, [[et[0] + ' ' + TL0(C.v1) + ' → ' + et[1] + ' ' + TL0(C.v2) + ' · '], [farkTL(toplamFark) + ' (' + (C.v1 ? yzS(toplamFark / C.v1 * 100) : '—') + ')', true, toplamFark >= 0 ? MINT : ROSE]]);
+    const sec = i => { seciliSatir = i; satirEls.forEach((g, j) => g.setAttribute('class', 'rc-g' + (i === null ? '' : j === i ? ' ak' : ' sol'))); if (i === null) { varsayilan(); return; } const a = adimlar[mod][i]; if (!a) { varsayilan(); return; } yaz(o, [[a.ad, true], [' · ' + a.not + ' · '], [farkTL(a.d), true, a.d >= 0 ? MINT : ROSE]]); };
+    function ciz(W) {
+      gov.replaceChildren(); satirEls = []; const A = adimlar[mod], dar = W < 520, LW = Math.round(W * (dar ? 0.4 : 0.28)), sagBos = dar ? 62 : 84, x0 = LW + 6, x1 = W - sagBos, rh = dar ? 36 : 40, bh = dar ? 18 : 20, ust = 6;
+      const satirlar = [{ ad: et[0], v: C.v1, uc: true }].concat(A.map(a => ({ a }))).concat([{ ad: et[1], v: C.v2, uc: true }]); let kum = C.v1; const tum = [C.v1, C.v2];
+      satirlar.forEach(q => { if (q.a) { q.bas = kum; kum += q.a.d; q.son = kum; tum.push(q.bas, q.son); } });
+      const mn = Math.min(...tum), mx = Math.max(...tum), pay = (mx - mn) * 0.35 + 1, lo = mn - pay, hi = mx + (mx - mn) * 0.05 + 1, X = v => x0 + (x1 - x0) * (v - lo) / (hi - lo), H = ust + satirlar.length * rh + 8;
+      const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Köprü grafiği: ' + et[0] + ' cirosundan ' + et[1] + ' cirosuna', class: 'rc-svg' }), f = tanim(s), arka = sv('g', {}); s.appendChild(arka);
+      satirlar.forEach((st, i) => {
+        const y = ust + i * rh, yb = y + (rh - bh) / 2, ym = y + rh / 2 + 4;
+        if (st.uc) {
+          const g = sv('g', { class: 'rc-g rc-sabit-g' }); g.appendChild(sv('text', { x: LW, y: ym, 'text-anchor': 'end', class: 'rc-t' }, kes(st.ad, Math.floor((LW - 6) / 6.1))));
+          g.appendChild(sv('rect', { x: x0, y: yb, width: Math.max(2, X(st.v) - x0), height: bh, rx: 5, fill: degrade(f.d, f.id + 'u' + i, true, [[0, '#2748a8'], [1, CY]]), filter: f.hafif, class: 'rc-bar' }));
+          g.appendChild(sv('polygon', { points: `${x0 + 10},${yb + bh + 1} ${x0 + 15},${yb - 1} ${x0 + 19},${yb - 1} ${x0 + 14},${yb + bh + 1}`, fill: ZEMIN })); g.appendChild(sv('text', { x: X(st.v) + 8, y: ym, class: 'rc-t' }, dar ? kisaTL(st.v) : TL0(st.v))); s.appendChild(g);
+        } else {
+          const a = st.a, up = a.d >= 0, c1 = a.diger ? '#64748b' : up ? '#10b981' : '#be123c', c2 = a.diger ? SOLUK : up ? MINT : ROSE, xa = X(Math.min(st.bas, st.son)), xb = X(Math.max(st.bas, st.son)), idx = i - 1;
+          const g = sv('g', { class: 'rc-g', tabindex: 0, role: 'button', 'aria-label': a.ad + ', ' + farkTL(a.d) }); g.appendChild(sv('rect', { x: 0, y, width: W, height: rh, fill: 'transparent' })); g.appendChild(sv('text', { x: LW, y: ym, 'text-anchor': 'end', class: 'rc-t' }, kes(a.ad, Math.floor((LW - 6) / 6.1))));
+          g.appendChild(sv('rect', { x: xa, y: yb, width: Math.max(3, xb - xa), height: bh, rx: 4, fill: degrade(f.d, f.id + 'a' + i, true, [[0, c1], [1, c2]]), filter: f.hafif, class: 'rc-bar' }));
+          const tx = sv('text', { x: xb + 7, y: ym, class: 'rc-t', 'font-weight': 700 }, farkTL(a.d)); tx.style.fill = a.diger ? '#cbd5e1' : c2; g.appendChild(tx);
+          g.addEventListener('mouseenter', () => sec(idx)); g.addEventListener('focus', () => sec(idx)); g.addEventListener('click', e => { e.stopPropagation(); sec(idx); }); s.appendChild(g); satirEls.push(g);
+        }
+      });
+      for (let i = 0; i < satirlar.length - 1; i++) { const cur = satirlar[i], v = cur.uc ? cur.v : cur.son; arka.appendChild(sv('line', { x1: X(v), x2: X(v), y1: ust + i * rh + (rh - bh) / 2 + bh, y2: ust + (i + 1) * rh + (rh - bh) / 2, stroke: 'rgba(255,255,255,.3)', 'stroke-dasharray': '2 3' })); }
+      s.addEventListener('mouseleave', () => sec(null)); s.addEventListener('click', () => sec(null)); gov.appendChild(s);
+      nt.textContent = { neden: 'Üç etkenin toplamı, iki ay arasındaki ciro farkına eşittir: ciro = gün sayısı × günlük porsiyon × porsiyon başına ciro.', grup: 'Yeşil: ciroyu artıran, kırmızı: azaltan grup.', urun: 'Yeşil: ciroyu artıran, kırmızı: azaltan ürün. Gri çubuk, gösterilmeyen ürünlerin toplamıdır.' }[mod] + ' Mavi çubuklar eksen ' + kisaTL(lo) + ' düzeyinden başlar (farkların görünmesi için eksen kesilmiştir).'; sec(seciliSatir);
+    }
+    uyarla(gov, ciz);
+  }
+
+  // ===== AĞAÇ HARİTASI: gruplara ve ürünlere göre ciro payı =====
+  function kareler(ogeler, x, y, w, h) {   // squarified treemap; ogeler büyükten küçüğe
+    const top = ogeler.reduce((a, o) => a + o.v, 0), sonuc = []; if (top <= 0 || w <= 0 || h <= 0) return sonuc;
+    const olc = (w * h) / top, rest = ogeler.map(o => ({ o, a: o.v * olc })); let cx = x, cy = y, cw = w, ch = h;
+    const enKotu = (satir, kenar) => { let s = 0, mx = 0, mn = Infinity; satir.forEach(q => { s += q.a; mx = Math.max(mx, q.a); mn = Math.min(mn, q.a); }); return Math.max(kenar * kenar * mx / (s * s), s * s / (kenar * kenar * mn)); };
+    while (rest.length) {
+      const kenar = Math.min(cw, ch), satir = [rest.shift()]; while (rest.length && enKotu(satir.concat([rest[0]]), kenar) <= enKotu(satir, kenar)) satir.push(rest.shift());
+      const s = satir.reduce((a, q) => a + q.a, 0);
+      if (cw >= ch) { const rw = s / ch; let yy = cy; satir.forEach(q => { const hh = q.a / rw; sonuc.push({ o: q.o, x: cx, y: yy, w: rw, h: hh }); yy += hh; }); cx += rw; cw -= rw; }
+      else { const rh = s / cw; let xx = cx; satir.forEach(q => { const ww = q.a / rh; sonuc.push({ o: q.o, x: xx, y: cy, w: ww, h: rh }); xx += ww; }); cy += rh; ch -= rh; }
+    }
+    return sonuc;
+  }
+  const marjRenk = m => { const t = Math.max(0, Math.min(1, (m - 45) / 40)); return t < .5 ? karis(ROSE, AMBER, t * 2) : karis(AMBER, MINT, (t - .5) * 2); };
+  function etiketSatirlari(ad, ch, qh) {   // sığıyorsa tek satır; sığmıyorsa ve yer varsa iki satıra böl; yoksa kısalt
+    if (ad.length <= ch) return [ad]; const kel = ad.split(' ');
+    if (qh >= 46 && kel.length > 1) { let en = 0, fk = 1e9; for (let i = 1; i < kel.length; i++) { const a = kel.slice(0, i).join(' '), b = kel.slice(i).join(' '), f = Math.abs(a.length - b.length); if (Math.max(a.length, b.length) <= ch * 1.25 && f < fk) { fk = f; en = i; } } if (en) return [kes(kel.slice(0, en).join(' '), ch), kes(kel.slice(en).join(' '), ch)]; }
+    return [kes(ad, ch)];
+  }
+  function agac(kok, r) {
+    const t = bolumBul(r, 'Ürün detayı', 'tablo'); if (!t) return;
+    const ig = kolIdx(t, 'Grup', 'Kategori'), iu = kolIdx(t, 'Ürün'), iv = kolIdx(t, 'Net ciro', 'Net satış'), im = kolIdx(t, 'Marj %'), ik = kolIdx(t, 'Brüt kâr'), is = kolIdx(t, 'Sınıf'), ia = kolIdx(t, 'Adet'); if (ig < 0 || iu < 0 || iv < 0) return;
+    const P = t.satirlar.map(x => { const v = Number(x[iv]) || 0; return { grup: String(x[ig]), ad: String(x[iu]), v, marj: im >= 0 ? (x[im] === null ? null : Number(x[im])) : (ik >= 0 && v > 0 ? Number(x[ik]) / v * 100 : null), adet: ia >= 0 ? x[ia] : null, sinif: is >= 0 ? x[is] : null }; }).filter(x => x.v > 0); if (P.length < 2) return;
+    const toplam = P.reduce((a, x) => a + x.v, 0), gm = {}; P.forEach(x => { (gm[x.grup] = gm[x.grup] || { ad: x.grup, v: 0, u: [] }); gm[x.grup].v += x.v; gm[x.grup].u.push(x); });
+    const G = Object.keys(gm).map(q => gm[q]).sort((a, b) => b.v - a.v); G.forEach((g, i) => { g.renk = PALET[i % PALET.length]; g.u.sort((a, b) => b.v - a.v); g.u.forEach(u => { u.g = g; }); });
+    const marjVar = P.some(x => x.marj !== null && Number.isFinite(x.marj)), k = kart('Cironun haritası: hangi grup, hangi ürün', 'alan = net ciro payı'), o = oku(), gov = el('div', 'rc-gov'), lej = el('div', 'rc-leg rc-leg-t');
+    let mod = 'grup', kutular = [], vGrup = null, vUrun = null; if (marjVar) seg(k, [['grup', 'Renk: grup'], ['marj', 'Renk: kâr marjı']], 'grup', m => { mod = m; vUrun = null; vGrup = null; lejandi(); ciz(Math.round(gov.clientWidth)); });
+    k.appendChild(o); k.appendChild(gov); k.appendChild(lej); kok.appendChild(k);
+    const varsayilan = () => yaz(o, [['Toplam '], [TL0(toplam), true], [' · ' + P.length + ' ürün · ' + G.length + ' grup. Bir kutuya dokunun ya da üzerine gelin.']]);
+    function uygula() {
+      kutular.forEach(q => { const sol = (vGrup && q.u.g !== vGrup) || (vUrun && q.u !== vUrun); q.e.setAttribute('class', 'rc-kutu' + (sol ? ' sol' : '') + (vUrun === q.u ? ' ak' : '')); });
+      if (vUrun) { const u = vUrun; yaz(o, [[u.ad, true], [' · ' + u.grup + ' · '], [TL0(u.v), true], [' (%' + yz1(u.v / toplam * 100) + ' pay)' + (u.marj !== null && Number.isFinite(u.marj) ? ' · marj %' + yz1(u.marj) : '') + (u.adet !== null && u.adet !== undefined ? ' · ' + sayi(u.adet) + ' adet' : '') + (u.sinif ? ' · ' + u.sinif : '')]]); }
+      else if (vGrup) yaz(o, [[vGrup.ad, true, vGrup.renk], [' grubu · '], [TL0(vGrup.v), true], [' (%' + yz1(vGrup.v / toplam * 100) + ') · ' + vGrup.u.length + ' ürün']]); else varsayilan();
+    }
+    function ciz(W) {
+      gov.replaceChildren(); kutular = []; const dar = W < 520, H = dar ? Math.round(W * 1.15) : Math.max(320, Math.round(W * 0.56));
+      const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Ağaç haritası: gruplara ve ürünlere göre net ciro', class: 'rc-svg' }), f = tanim(s), defs = f.d;
+      kareler(G.map(g => ({ v: g.v, g })), 0, 0, W, H).forEach(c => {
+        const g = c.o.g, bas = (c.w > 70 && c.h > 46) ? 17 : 0, ic = { x: c.x + 2, y: c.y + 2 + bas, w: c.w - 4, h: c.h - 4 - bas };
+        s.appendChild(sv('rect', { x: c.x + 1, y: c.y + 1, width: Math.max(0, c.w - 2), height: Math.max(0, c.h - 2), rx: 8, fill: g.renk, 'fill-opacity': .07, stroke: g.renk, 'stroke-opacity': .5, 'stroke-width': 1.2 }));
+        if (bas) { const gt = sv('text', { x: c.x + 8, y: c.y + 14, class: 'rc-tt', fill: g.renk }); gt.appendChild(document.createTextNode(kes(g.ad, Math.floor((c.w - 16) / 6.6)))); if (c.w > 150) gt.appendChild(sv('tspan', { class: 'rc-m', dx: 6, 'font-weight': 500 }, '%' + Math.round(g.v / toplam * 100))); s.appendChild(gt); }
+        kareler(g.u.map(u => ({ v: u.v, u })), ic.x, ic.y, ic.w, ic.h).forEach(q => {
+          const u = q.o.u, id = 'rcc' + (++uid), qw = Math.max(0, q.w - 2), qh = Math.max(0, q.h - 2), e = sv('g', { class: 'rc-kutu', tabindex: 0, role: 'button', 'aria-label': u.ad + ', ' + TL0(u.v) });
+          const cp = sv('clipPath', { id }); cp.appendChild(sv('rect', { x: q.x + 1, y: q.y + 1, width: qw, height: qh, rx: 4 })); defs.appendChild(cp);
+          const c1 = mod === 'grup' ? g.renk : marjRenk(u.marj === null || !Number.isFinite(u.marj) ? 45 : u.marj), rc = sv('rect', { x: q.x + 1, y: q.y + 1, width: qw, height: qh, rx: 4, fill: degrade(defs, id + 'g', false, [[0, karis(c1, '#ffffff', .18)], [1, karis(c1, '#0a1030', .18)]]), 'fill-opacity': mod === 'grup' ? (0.78 + 0.2 * (u.v / g.u[0].v)).toFixed(2) : '.9', class: 'rc-kr' }); e.appendChild(rc);
+          if (qw >= 34 && qh >= 20) { const tg = sv('g', { 'clip-path': 'url(#' + id + ')' }), ch = Math.floor((qw - 9) / 6.3), satir = etiketSatirlari(u.ad, ch, qh); let yy = q.y + 14; satir.forEach(sa => { tg.appendChild(sv('text', { x: q.x + 6, y: yy, class: 'rc-kad' }, sa)); yy += 13; }); if (qh >= yy - q.y + 6 && qw >= 52) tg.appendChild(sv('text', { x: q.x + 6, y: yy + 1, class: 'rc-kdeg' }, kisaTL(u.v))); e.appendChild(tg); }
+          e.addEventListener('mouseenter', () => { vUrun = u; vGrup = null; uygula(); }); e.addEventListener('focus', () => { vUrun = u; vGrup = null; uygula(); }); e.addEventListener('click', ev => { ev.stopPropagation(); vUrun = vUrun === u ? null : u; vGrup = null; uygula(); }); s.appendChild(e); kutular.push({ e, u });
+        });
+      });
+      s.addEventListener('mouseleave', () => { vUrun = null; uygula(); }); s.addEventListener('click', () => { vUrun = null; vGrup = null; uygula(); }); gov.appendChild(s); uygula();
+    }
+    function lejandi() {
+      lej.replaceChildren();
+      if (mod === 'grup') G.forEach(g => { const c = el('button', 'rc-chip-b'), n = el('i'); c.type = 'button'; n.style.background = g.renk; n.style.boxShadow = '0 0 8px ' + g.renk; c.appendChild(n); c.appendChild(document.createTextNode(g.ad + ' %' + Math.round(g.v / toplam * 100))); c.addEventListener('mouseenter', () => { vGrup = g; vUrun = null; uygula(); }); c.addEventListener('mouseleave', () => { vGrup = null; uygula(); }); c.addEventListener('click', () => { vGrup = vGrup === g ? null : g; vUrun = null; uygula(); }); lej.appendChild(c); });
+      else { lej.appendChild(el('div', 'rc-lejyazi', 'Kutu rengi = ürünün brüt kâr marjı')); const b = el('div', 'rc-skala'); b.appendChild(el('span', '', '%45 ve altı')); const bar = el('div', 'rc-skala-bar'); bar.style.background = `linear-gradient(90deg,${marjRenk(45)},${marjRenk(65)},${marjRenk(85)})`; b.appendChild(bar); b.appendChild(el('span', '', '%85 ve üstü')); lej.appendChild(b); }
+    }
+    lejandi(); uyarla(gov, ciz);
+  }
+
+  // ===== HALTER GRAFİĞİ: malzeme alım fiyatı, ilk alım → son alım =====
+  function halter(kok, r) {
+    const t = bolumBul(r, 'Malzeme detayı', 'tablo'); if (!t) return;
+    const im = kolIdx(t, 'Malzeme'), ig = kolIdx(t, 'Grup'), ib = kolIdx(t, 'Birim'), it = kolIdx(t, 'Tutar'), i1 = kolIdx(t, 'İlk fiyat'), i2 = kolIdx(t, 'Son fiyat'), ip = kolIdx(t, 'Fiyat Δ %'), ia = kolIdx(t, 'Alım sayısı'), is = kolIdx(t, 'Son alım'); if (im < 0 || i1 < 0 || i2 < 0 || ip < 0) return;
+    const M = t.satirlar.map(x => ({ ad: String(x[im]), grup: ig >= 0 ? x[ig] : '', birim: ib >= 0 ? x[ib] : '', tutar: it >= 0 ? Number(x[it]) : null, f1: Number(x[i1]), f2: Number(x[i2]), p: Number(x[ip]), n: ia >= 0 ? Number(x[ia]) : 2, son: is >= 0 ? x[is] : '' })).filter(x => x.f1 > 0 && x.f2 > 0 && Number.isFinite(x.p) && x.n > 1); if (!M.length) return;
+    const art = M.filter(x => x.p > 0).sort((a, b) => b.p - a.p).slice(0, 9), azl = M.filter(x => x.p < 0).sort((a, b) => a.p - b.p).slice(0, 3), L = art.concat(azl); if (!L.length) return;
+    const renkTur = p => p >= 10 ? ROSE : p >= 5 ? '#fb923c' : p > 0 ? AMBER : p < 0 ? MINT : SOLUK, k = kart('Malzeme fiyatları: kim zamlandı', 'ilk alımdan son alıma'), o = oku(), gov = el('div', 'rc-gov'), lej = el('div', 'rc-leg');
+    k.appendChild(o); k.appendChild(gov); [['%10 ve üstü', ROSE], ['%5 – %10', '#fb923c'], ['%0 – %5', AMBER], ['Fiyat düştü', MINT]].forEach(a => { const e = el('span'), n = el('i'); n.style.background = a[1]; n.style.boxShadow = '0 0 8px ' + a[1]; e.appendChild(n); e.appendChild(document.createTextNode(a[0])); lej.appendChild(e); }); k.appendChild(lej);
+    k.appendChild(el('div', 'rc-not', 'Her malzemenin ilk alım fiyatı 100 kabul edilir. Nokta sağa kaydıkça zam büyür. ' + M.length + ' malzemeden en çok değişen ' + L.length + ' tanesi gösterilir.')); kok.appendChild(k);
+    let satirEls = [];
+    const varsayilan = () => { const u = art[0]; if (u) yaz(o, [['En çok zamlanan '], [u.ad, true, renkTur(u.p)], [' ' + yzS(u.p) + ' (' + para(u.f1) + ' → ' + para(u.f2) + ' / ' + u.birim + ')']]); else yaz(o, [['Dönemde zamlanan malzeme yok.']]); };
+    const sec = i => { satirEls.forEach((g, j) => g.setAttribute('class', 'rc-g' + (i === null ? '' : j === i ? ' ak' : ' sol'))); if (i === null) { varsayilan(); return; } const x = L[i]; yaz(o, [[x.ad, true], [' · ' + x.grup + ' · ' + para(x.f1) + ' → ' + para(x.f2) + ' / ' + x.birim + ' · '], [yzS(x.p), true, renkTur(x.p)], [' · ' + x.n + ' alım' + (x.tutar !== null ? ' · toplam ' + TL0(x.tutar) : '') + (x.son ? ' · son alım ' + x.son : '')]]); };
+    function ciz(W) {
+      gov.replaceChildren(); satirEls = []; const dar = W < 520, LW = Math.round(W * (dar ? 0.38 : 0.28)), sagBos = dar ? 60 : 74, x0 = LW + 8, x1 = W - sagBos, rh = dar ? 44 : 42, ust = 26;
+      const vals = L.map(x => 100 + x.p).concat([100]), lo = Math.floor(Math.min(...vals) / 5) * 5 - 3, hi = Math.ceil(Math.max(...vals) / 5) * 5 + 3, X = v => x0 + (x1 - x0) * (v - lo) / (hi - lo), H = ust + L.length * rh + 24;
+      const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Halter grafiği: malzemelerin ilk ve son alım fiyatı', class: 'rc-svg' }), f = tanim(s);
+      for (let v = Math.ceil(lo / 5) * 5; v <= hi; v += 5) if (v % 10 === 0 || hi - lo < 30) { s.appendChild(sv('line', { x1: X(v), x2: X(v), y1: ust - 8, y2: H - 20, stroke: v === 100 ? 'rgba(255,255,255,.45)' : 'rgba(120,160,255,.10)', 'stroke-dasharray': v === 100 ? '3 3' : '0' })); s.appendChild(sv('text', { x: X(v), y: H - 6, 'text-anchor': 'middle', class: 'rc-m' }, String(v))); }
+      s.appendChild(sv('text', { x: X(100), y: 12, 'text-anchor': 'middle', class: 'rc-m' }, 'ilk alım fiyatı'));
+      L.forEach((x, i) => {
+        const y = ust + i * rh, cy = y + rh / 2, renk = renkTur(x.p), xa = X(100), xb = X(100 + x.p), g = sv('g', { class: 'rc-g', tabindex: 0, role: 'button', 'aria-label': x.ad + ', ' + yzS(x.p) });
+        g.appendChild(sv('rect', { x: 0, y, width: W, height: rh, fill: 'transparent' })); g.appendChild(sv('text', { x: LW, y: cy - 2, 'text-anchor': 'end', class: 'rc-t' }, kes(x.ad, Math.floor((LW - 6) / 6.1)))); g.appendChild(sv('text', { x: LW, y: cy + 12, 'text-anchor': 'end', class: 'rc-m' }, para(x.f1) + ' → ' + para(x.f2)));
+        const cb = sv('rect', { x: Math.min(xa, xb), y: cy - 2.4, width: Math.max(2, Math.abs(xb - xa)), height: 4.8, rx: 2.4, fill: renk, 'fill-opacity': .85, filter: f.hafif, class: 'rc-bar' }); cb.style.transformOrigin = x.p >= 0 ? 'left center' : 'right center'; g.appendChild(cb);
+        g.appendChild(sv('circle', { cx: xa, cy, r: 5.2, fill: ZEMIN, stroke: SOLUK, 'stroke-width': 2 })); g.appendChild(sv('circle', { cx: xb, cy, r: 6.4, fill: renk, filter: f.hafif }));
+        const tx = sv('text', { x: W - 6, y: cy + 4, 'text-anchor': 'end', class: 'rc-t', 'font-weight': 800 }, yzS(x.p)); tx.style.fill = renk; g.appendChild(tx);
+        g.addEventListener('mouseenter', () => sec(i)); g.addEventListener('focus', () => sec(i)); g.addEventListener('click', e => { e.stopPropagation(); sec(i); }); s.appendChild(g); satirEls.push(g);
+        if (i < L.length - 1) s.insertBefore(sv('line', { x1: 6, x2: W - 6, y1: y + rh, y2: y + rh, stroke: 'rgba(120,160,255,.07)' }), s.firstChild);
+      });
+      s.addEventListener('mouseleave', () => sec(null)); s.addEventListener('click', () => sec(null)); gov.appendChild(s); varsayilan();
+    }
+    uyarla(gov, ciz);
+  }
+
   // ---------- rapor ----------
   const bosBolum = sp => !sp || !((sp.satirlar || sp.noktalar || sp.dilimler || sp.siniflar || sp.x || []).length);
   const GENIS = { sutun: 1, gruplu_sutun: 1, cizgi: 1, tablo: 1, dortlu: 1, takvim: 1, siniflar: 1, karsilastirma: 1 };
   const BOLUM = { karsilastirma, takvim, siniflar, yatay_cubuk: sira, halka, sapma, sutun: gunluk, gruplu_sutun: gruplu, cizgi, dortlu, tablo };
+  // Ek grafiklerin yeri: hangi bölümün ÖNÜNE konacağı (tablolardaki sütun adlarına göre; veri yoksa çizilmez)
+  function ekYerler(L) {
+    const yer = {}, ekle = (i, f) => { (yer[i] = yer[i] || []).push(f); }, ilk = f => L.findIndex(f);
+    const kars = ilk(sp => sp.tur === 'karsilastirma'), ukt = ilk(sp => sp.tur === 'tablo' && String(sp.baslik).indexOf('Ürün karşılaştırması') === 0);
+    if (kars >= 0 && ukt >= 0) { ekle(kars + 1, kopru); ekle(ukt, egim); }
+    const ud = ilk(sp => sp.tur === 'tablo' && String(sp.baslik).indexOf('Ürün detayı') === 0 && kolIdx(sp, 'Ürün') >= 0 && kolIdx(sp, 'Net ciro', 'Net satış') >= 0);
+    if (ud >= 0) { let h = ilk(sp => sp.tur === 'halka'); if (h < 0) h = ilk(sp => sp.tur === 'yatay_cubuk' && !haftaGunleri(sp)); if (h < 0) h = ud; ekle(h, agac); }
+    const md = ilk(sp => sp.tur === 'tablo' && String(sp.baslik).indexOf('Malzeme detayı') === 0 && kolIdx(sp, 'İlk fiyat') >= 0 && kolIdx(sp, 'Son fiyat') >= 0);
+    if (md >= 0) ekle(md, halter);
+    return yer;
+  }
   function cizAnaliz(r, kap) {
     const kok = el('div', 'rc'); kap.appendChild(kok); hero(kok, r);
     if (r.kpi && r.kpi.length) kpiGoster(kok, r.kpi);
     if (!r.kayit_var) kok.appendChild(el('div', 'rc-kart rc-bos', 'Seçilen dönem için veri yok.'));
     let grid = null; const kapat = () => { if (grid && grid.children.length === 1) grid.classList.remove('iki'); grid = null; };
-    (r.bolumler || []).forEach(sp => {
-      if (bosBolum(sp) || !BOLUM[sp.tur]) return;
+    const L = (r.bolumler || []).filter(sp => !bosBolum(sp) && BOLUM[sp.tur]), yer = r.kayit_var ? ekYerler(L) : {};
+    const eklerle = i => (yer[i] || []).forEach(f => { kapat(); f(kok, r); });
+    L.forEach((sp, i) => {
+      eklerle(i);
       const genis = GENIS[sp.tur] || sp.genis || (sp.tur === 'yatay_cubuk' && haftaGunleri(sp));
       if (genis) { kapat(); BOLUM[sp.tur](kok, sp); }
       else { if (grid && grid.children.length >= 2) kapat(); if (!grid) { grid = el('div', 'rc-izgara iki'); kok.appendChild(grid); } BOLUM[sp.tur](grid, sp); }      // her ızgara en çok 2 kart; tek kalan tam genişlikte
     });
-    kapat();
+    eklerle(L.length); kapat();
     if (r.notlar && r.notlar.length) { const n = el('div', 'rc-notlar'); r.notlar.forEach(t => n.appendChild(el('div', '', 'ⓘ ' + t))); kok.appendChild(n); }
   }
 
