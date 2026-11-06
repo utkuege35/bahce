@@ -90,13 +90,13 @@ async function anKaynakYukle(){
   const [css,js]=await Promise.all([al('rapor/cizim.css'),al('rapor/cizim.js')]);
   return _anKaynak={css,js};
 }
-const AN_DOSYA_CSS=`html{background:#0b1220;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{margin:0;padding:18px;background:#0b1220;color:#eaf0ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+const AN_DOSYA_CSS=`html{background:#050a1c;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;padding:18px;background:#050a1c;color:#eaf0ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 #dosya{max-width:1080px;margin:0 auto}
 .dosya-ust{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;letter-spacing:.04em;color:#a9b6d3;margin:2px 4px 10px}
 .dosya-alt{font-size:11px;line-height:1.5;color:#6f7fa3;margin:12px 4px 4px}
 .dosya-fil{position:fixed;inset:0;pointer-events:none;z-index:50}
-@page{size:A4;margin:10mm;background:#0b1220}
+@page{size:A4;margin:10mm;background:#050a1c}
 @media print{
   body{padding:0}#dosya{max-width:none}
   .rc-panel{border:0;padding:0;background:transparent}
