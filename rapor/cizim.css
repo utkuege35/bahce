@@ -2,7 +2,7 @@
    Tüm kurallar .rc / .rc-panel kapsamındadır (uygulamanın stilini etkilemez, ondan etkilenmez). Renkler bu dosyada sabittir.
    KURAL: animasyonun başlangıç durumu yalnızca @keyframes içinde tanımlanır; animasyon kapanınca (PDF, yazdırma, "hareketi azalt") her şey görünür kalır. */
 .rc-panel{background:radial-gradient(900px 420px at 0% -12%,rgba(34,211,238,.13),transparent 60%),radial-gradient(760px 380px at 100% 0%,rgba(139,92,246,.15),transparent 60%),linear-gradient(180deg,#050a1c,#0a1230);border:1px solid rgba(99,160,255,.15);border-radius:20px;padding:14px}
-.rc{color:#eaf4ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;line-height:1.35;text-align:left}
+.rc{font-size:14px;color:#eaf4ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;line-height:1.35;text-align:left}
 .rc *,.rc *::before,.rc *::after{box-sizing:border-box}
 .rc svg{display:block;max-width:100%}
 .rc-svg{width:100%;height:auto;overflow:visible}.rc-svg.rc-sabit{width:auto;max-width:100%;margin:0 auto}.rc-dokun{touch-action:pan-y;cursor:crosshair}
@@ -112,7 +112,7 @@
 .rc-tablo{width:100%;border-collapse:collapse;font-size:13px}
 .rc-tablo th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8ea3d4;padding:8px;border-bottom:1px solid rgba(120,160,255,.28);white-space:nowrap}
 .rc-tablo th.sirala{cursor:pointer;user-select:none}.rc-tablo th.aktif{color:#7ff3ff}.rc-tablo th.aktif::after{content:" " attr(data-yon)}
-.rc-tablo td{padding:10px 8px;border-bottom:1px solid rgba(120,160,255,.08);vertical-align:top}
+.rc-tablo td{padding:10px 8px;border-bottom:1px solid rgba(120,160,255,.08);vertical-align:top;color:#cfe0ff}
 .rc-tablo td.s,.rc-tablo th.s{text-align:right;white-space:nowrap}.rc-tablo td.ilk{font-weight:600;color:#fff}
 .rc-tablo tbody tr:hover td{background:rgba(34,211,238,.06)}
 .rc-tablo td.kotu{color:#fb7185;font-weight:700}.rc-tablo td.uyari{color:#fbbf24;font-weight:700}
