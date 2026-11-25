@@ -42,13 +42,19 @@ window.fatBilgiBlokYenile=async function(tur){
 };
 
 // Yeni boş satır; Alış sekmesinde üstteki Çıkış Deposu seçimini devralır.
-function _fatYeniSatir(tur){return {satirTur:'malzeme',kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:'',cikisDepoId:'',aciklama:'',merkezId:''};}
+function _fatYeniSatir(tur){return {satirTur:'',dahilSabit:false,dahilGirilen:'',kaynakTur:'',kaynakId:'',birimId:'',miktar:'',fiyat:'',tutar:'',kdvOraniId:'',cikisDepoId:'',aciklama:'',merkezId:''};}
 // ===== ALIŞ FATURASI SATIR TÜRLERİ =====
 // Malzeme: stoklu kalem (stoğa girer). Hizmet: gider kalemi seçilir (maliyet merkezi kalemden gelir). Diğer: serbest açıklama + merkez.
 // Hizmet/Diğer stoğa dokunmaz, ama kaydedilince Panel/gider raporlarını besleyen "gider" hareketi üretir.
 // Satış ve İade faturalarında tür yoktur (hep stok/ürün).
 const FAT_SATIR_TURLERI=[['malzeme','Malzeme'],['hizmet','Hizmet'],['diger','Diğer']];
 const _fatSatirTuru=s=>s.satirTur||'malzeme';
+// KDV tutarı ve KDV dahil tutar. Satıra KDV dahil tutar elle girildiyse o tutar aynen korunur (yuvarlama farkı çıkmaz).
+function _fatKdvHesapla(s){
+  const dahil=parseFloat(s.dahilGirilen)||0;
+  if(s.dahilSabit&&dahil>0){const t=parseFloat(s.tutar)||0;return {kdvTutar:Math.round((dahil-t)*100)/100,dahil};}
+  return _irsKdvHesapla(s);
+}
 function _fatKalemListesi(){
   return (typeof isyeriFiltre==='function'?isyeriFiltre(giderKalemleri):giderKalemleri).filter(k=>k.tip==='kalem'&&k.aktif!==false);
 }
@@ -150,7 +156,7 @@ window.fatSatirRender=function(tur){
   const alis=tur==='alis';
   el.innerHTML=fatSatirListesi[tur].map((s,i)=>{
     const st=_fatSatirTuru(s);
-    const turTd=alis?`<td><select id="fat-tur-${tur}-${i}" onchange="fatSatirTurDegis('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 2px;font-size:11px;background:var(--beyaz)">${FAT_SATIR_TURLERI.map(([k,ad])=>`<option value="${k}"${k===st?' selected':''}>${ad}</option>`).join('')}</select></td>`:'';
+    const turTd=alis?`<td><select id="fat-tur-${tur}-${i}" onchange="fatSatirTurDegis('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i};if(!this.value){this.value='malzeme';fatSatirListesi['${tur}'][${i}].satirTur='malzeme';}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 2px;font-size:11px;background:var(--beyaz)"><option value=""${s.satirTur?'':' selected'}></option>${FAT_SATIR_TURLERI.map(([k,ad])=>`<option value="${k}"${k===s.satirTur?' selected':''}>${ad}</option>`).join('')}</select></td>`:'';
     let secimTd;
     if(alis&&st==='diger'){
       secimTd=`<td><input type="text" data-satir-ana="1" autocomplete="off" value="${_logEsc(s.aciklama||'')}" placeholder="Açıklama" onblur="fatDigerAciklama('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 6px;font-size:12px"></td>`;
@@ -206,17 +212,17 @@ window.fatCikisUstDegis=function(tur){
   fatSatirRender(tur);
 };
 function _fatKdvHucreleri(tur,i,s){
-  const {kdvTutar,dahil}=_irsKdvHesapla(s);
+  const {kdvTutar,dahil}=_fatKdvHesapla(s);
   return `<td><select id="fat-kdv-${tur}-${i}" onchange="fatKdvSec('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 4px;font-size:12px;background:var(--beyaz);text-align:right;text-align-last:right">
       <option value=""></option>
       ${kdvOranlari.map(k=>`<option value="${k.id}"${k.id===s.kdvOraniId?' selected':''}>%${k.oran}</option>`).join('')}
     </select></td>
     <td id="fat-kdvtutar-${tur}-${i}" style="text-align:right;color:var(--yazi3)">${kdvTutar>0?_irsSayi(kdvTutar):''}</td>
-    <td id="fat-kdvdahil-${tur}-${i}" style="text-align:right;font-weight:500">${dahil>0?_irsSayi(dahil):''}</td>`;
+    <td><input type="number" step="0.01" id="fat-kdvdahil-${tur}-${i}" value="${dahil>0?dahil.toFixed(2):''}" onblur="fatDahilGir('${tur}',${i},this.value)" onfocus="_fatHoverIndex['${tur}']=${i}" onkeydown="satirAsagiGec(event)" style="width:100%;padding:3px 5px;font-size:12px;text-align:right;font-weight:500"></td>`;
 }
 function fatToplamGuncelle(tur){
   let net=0,kdv=0;
-  fatSatirListesi[tur].forEach(r=>{net+=parseFloat(r.tutar)||0;kdv+=_irsKdvHesapla(r).kdvTutar;});
+  fatSatirListesi[tur].forEach(r=>{net+=parseFloat(r.tutar)||0;kdv+=_fatKdvHesapla(r).kdvTutar;});
   const yaz=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=_irsSayi(v);};
   yaz('fat-'+tur+'-toplam',net);
   yaz('fat-'+tur+'-kdvtoplam',kdv);
@@ -259,12 +265,36 @@ window.fatMalzemeSecildi=function(tur,i,kaynakTur,kaynakId){
 };
 window.fatBirimSec=function(tur,i,birimId){fatSatirListesi[tur][i].birimId=birimId;};
 function _fatKdvHucreGuncelle(tur,i){
-  const {kdvTutar,dahil}=_irsKdvHesapla(fatSatirListesi[tur][i]);
+  const {kdvTutar,dahil}=_fatKdvHesapla(fatSatirListesi[tur][i]);
   const t=document.getElementById(`fat-kdvtutar-${tur}-${i}`);if(t)t.textContent=kdvTutar>0?_irsSayi(kdvTutar):'';
-  const d=document.getElementById(`fat-kdvdahil-${tur}-${i}`);if(d)d.textContent=dahil>0?_irsSayi(dahil):'';
+  const d=document.getElementById(`fat-kdvdahil-${tur}-${i}`);if(d&&document.activeElement!==d)d.value=dahil>0?dahil.toFixed(2):'';
 }
+// Satırın KDV dahil tutarından tutar (KDV hariç), birim fiyat ve ekrandaki kutuları günceller
+function _fatDahildenHesapla(tur,i){
+  const s=fatSatirListesi[tur][i];
+  const dahil=parseFloat(s.dahilGirilen)||0;
+  const oran=typeof kdvOraniDegeri==='function'?kdvOraniDegeri(s.kdvOraniId):0;
+  const tutar=Math.round(dahil/(1+oran/100)*100)/100;
+  s.tutar=tutar.toFixed(2);
+  const mik=parseFloat(s.miktar)||0;
+  if(mik>0)s.fiyat=(tutar/mik).toFixed(2);
+  const row=document.querySelectorAll(`#fat-${tur}-satirlar tr`)[i];
+  const inputs=row?row.querySelectorAll('input[type="number"]'):[];
+  if(inputs[1]&&mik>0)inputs[1].value=s.fiyat;
+  if(inputs[2])inputs[2].value=s.tutar;
+}
+// KDV dahil tutar elle girilince: tutar, KDV tutarı ve birim fiyat otomatik hesaplanır
+window.fatDahilGir=function(tur,i,val){
+  const s=fatSatirListesi[tur][i];
+  const dahil=parseFloat(val)||0;
+  if(dahil>0){s.dahilSabit=true;s.dahilGirilen=dahil;_fatDahildenHesapla(tur,i);}
+  else{s.dahilSabit=false;s.dahilGirilen='';}
+  _fatKdvHucreGuncelle(tur,i);
+  fatToplamGuncelle(tur);
+};
 window.fatKdvSec=function(tur,i,kdvOraniId){
   fatSatirListesi[tur][i].kdvOraniId=kdvOraniId;
+  if(fatSatirListesi[tur][i].dahilSabit)_fatDahildenHesapla(tur,i);
   const kdvEl=document.getElementById(`fat-kdv-${tur}-${i}`);if(kdvEl&&kdvOraniId)kdvEl.style.outline='';
   _fatKdvHucreGuncelle(tur,i);
   fatToplamGuncelle(tur);
@@ -272,10 +302,14 @@ window.fatKdvSec=function(tur,i,kdvOraniId){
 window.fatSatirHesapla=function(tur,i,kaynak,val){
   const s=fatSatirListesi[tur][i];
   s[kaynak]=val;
+  if(kaynak==='fiyat'||kaynak==='tutar'){s.dahilSabit=false;s.dahilGirilen='';} // fiyat/tutar elle girildiyse KDV dahil tutar yeniden hesaplanır
   const mik=parseFloat(s.miktar)||0,fiy=parseFloat(s.fiyat)||0,tut=parseFloat(s.tutar)||0;
   const row=document.querySelectorAll(`#fat-${tur}-satirlar tr`)[i];if(!row)return;
   const inputs=row.querySelectorAll('input[type="number"]');
-  if(kaynak==='miktar'||kaynak==='fiyat'){if(mik>0&&fiy>0){const y=(mik*fiy).toFixed(2);s.tutar=y;if(inputs[2])inputs[2].value=y;}}
+  if(kaynak==='miktar'&&s.dahilSabit){ // KDV dahil tutar sabit: tutar korunur, birim fiyat yeniden hesaplanır
+    if(mik>0&&tut>0){const y=(tut/mik).toFixed(2);s.fiyat=y;if(inputs[1])inputs[1].value=y;}
+  }
+  else if(kaynak==='miktar'||kaynak==='fiyat'){if(mik>0&&fiy>0){const y=(mik*fiy).toFixed(2);s.tutar=y;if(inputs[2])inputs[2].value=y;}}
   else if(kaynak==='tutar'){if(mik>0&&tut>0){const y=(tut/mik).toFixed(2);s.fiyat=y;if(inputs[1])inputs[1].value=y;}}
   _fatKdvHucreGuncelle(tur,i);
   fatToplamGuncelle(tur);
@@ -379,14 +413,14 @@ window.kaydetFatura=async function(tur){
     return;
   }
   let net=0,kdv=0;
-  gecerli.forEach(s=>{net+=parseFloat(s.tutar)||0;kdv+=_irsKdvHesapla(s).kdvTutar;});
+  gecerli.forEach(s=>{net+=parseFloat(s.tutar)||0;kdv+=_fatKdvHesapla(s).kdvTutar;});
   const duzenlenen=_fatDuzenlenenId[tur];
   const id=duzenlenen||crypto.randomUUID();
   const baslik={id,isyeri_id:aktifIsyeri?.id||null,tur,fatura_no:faturaNo,tarih,cari_id:cariId,aciklama:an,
     odeme_tipi:odeme,kasa_id:odeme==='pesin'?kasaId:null,depo_id:stoguGirecek?depoId:null,
     toplam:net,kdv_toplam:kdv,genel_toplam:net+kdv,kalem_sayisi:gecerli.length,kullanici:aktifKullanici?.ad||'',ts:Date.now()};
   const kalemler=gecerli.map((s,i)=>{
-    const {kdvTutar,dahil}=_irsKdvHesapla(s);
+    const {kdvTutar,dahil}=_fatKdvHesapla(s);
     return {
       stok_id:s.kaynakTur==='stok'?s.kaynakId:null,
       urun_id:s.kaynakTur==='urun'?s.kaynakId:null,
