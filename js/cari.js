@@ -112,18 +112,31 @@ window.kaydetCari = async function () {
 };
 
 window.cariSil = async function (id) {
+  const pasifeAl = async () => {
+    const { error } = await sb.from('cari').update({ aktif: false }).eq('id', id);
+    if (error) { bil('Pasife alınamadı: ' + error.message, 'err'); return false; }
+    await cariYukle(); renderCari(); bil('Pasife alındı ✓');
+    return true;
+  };
   const hv = islemler.some(i => i.cari_id === id);
   if (hv) {
-    if (await onay('Bu cariye bağlı işlem var, silinemez.<br><small>Tamam\'a basarsan pasife alınır.</small>','⚠️'))
-      await sb.from('cari').update({ aktif: false }).eq('id', id);
-    else return;
-  } else {
-    if (!(await onay('Kalıcı olarak silmek istiyor musunuz?','🗑️'))) return;
-    await sb.from('cari').delete().eq('id', id);
+    if (await onay('Bu cariye bağlı işlem var, silinemez.<br><small>Tamam\'a basarsan pasife alınır.</small>','⚠️')) await pasifeAl();
+    return;
   }
+  if (!(await onay('Kalıcı olarak silmek istiyor musunuz?','🗑️'))) return;
+  const { data, error } = await sb.from('cari').delete().eq('id', id).select('id');
+  if (error) {
+    // 23503: başka kayıtlar (fatura, irsaliye, kasa vb.) bu cariyi kullanıyor
+    if (error.code === '23503') {
+      if (await onay('Bu cariye bağlı kayıtlar (fatura, irsaliye, kasa vb.) var, silinemez.<br><small>Tamam\'a basarsan pasife alınır.</small>','⚠️')) await pasifeAl();
+      return;
+    }
+    bil('Silinemedi: ' + error.message, 'err'); return;
+  }
+  if (!data || !data.length) { bil('Silinemedi: kayıt silinemedi (silme yetkisi olmayabilir)', 'err'); return; }
   await cariYukle();
   renderCari();
-  bil(hv ? 'Pasife alındı ✓' : 'Silindi ✓');
+  bil('Silindi ✓');
 };
 
 function renderCariGrup(tip, baslik, renk) {
