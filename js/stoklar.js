@@ -79,8 +79,9 @@ window.stokGirisHazirla=function(satirlar,b){
     const kart=stoklar.find(k=>k.id===x.kaynakId);
     const mik=parseFloat(x.miktar)||0,fiy=parseFloat(x.fiyat)||0,tut=parseFloat(x.tutar)||(mik*fiy);
     const hFiy=mik>0?tut/mik:0;
+    const kdvT=(b.faturaId&&typeof _fatKdvHesapla==='function'?_fatKdvHesapla(x):(typeof _irsKdvHesapla==='function'?_irsKdvHesapla(x):{kdvTutar:0})).kdvTutar||0; // hareketin KDV tutarı (gelir-gider raporları KDV dahil okur)
     if(hFiy>0)maliyetler.push({stok_id:x.kaynakId,maliyet:hFiy/(birimTemelCarp(x.birimId)||1)});
-    return {tur:'giris',tarih:b.tarih,stok_id:x.kaynakId,birim_id:x.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,
+    return {tur:'giris',tarih:b.tarih,stok_id:x.kaynakId,birim_id:x.birimId||null,miktar:mik,fiyat:fiy,tutar:tut,kdv_tutar:kdvT,
       aciklama:`${kart?.ad||''} alışı`,kat:b.kat,aciklama_not:b.not||null,belge_no:b.belgeNo||null,belge_id:b.belgeId,
       irsaliye_id:b.irsaliyeId||null,fatura_id:b.faturaId||null,cari_id:b.cariId||null,depo_id:b.depoId||null,
       kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:baz+i};
