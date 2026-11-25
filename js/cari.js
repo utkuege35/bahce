@@ -154,8 +154,7 @@ function renderCariGrup(tip, baslik, renk) {
 
 function renderCari() {
   const el = document.getElementById('cari-liste');
-  if (!el) return;
-  el.innerHTML = `
+  if (el) el.innerHTML = `
     <div style="margin-bottom:1.2rem">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:12px;font-weight:600;color:var(--yesil);text-transform:uppercase;letter-spacing:.05em">Alıcılar</div>
@@ -163,13 +162,15 @@ function renderCari() {
       </div>
       ${renderCariGrup('alici', 'Alıcı', 'var(--yesil)')}
     </div>
-    <div style="margin-bottom:1.2rem">
+    <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:12px;font-weight:600;color:var(--mavi);text-transform:uppercase;letter-spacing:.05em">Satıcılar</div>
         <button class="btn sm sec" onclick="cariModalAc('satici')">+ Satıcı Ekle</button>
       </div>
       ${renderCariGrup('satici', 'Satıcı', 'var(--mavi)')}
-    </div>
+    </div>`;
+  const pl = document.getElementById('personel-liste');
+  if (pl) pl.innerHTML = `
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:12px;font-weight:600;color:var(--mor);text-transform:uppercase;letter-spacing:.05em">Personel</div>
