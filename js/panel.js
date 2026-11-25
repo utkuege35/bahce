@@ -1,3 +1,4 @@
+window.hrkTutar=i=>(parseFloat(i.tutar)||0)+(parseFloat(i.kdv_tutar)||0); // gelir/gider raporlarında KDV dahil tutar
 // ===== PANEL / DASHBOARD =====
 let _panelFiltre='bugun';
 let _panelChart=null,_panelGrafikler={};
@@ -109,15 +110,15 @@ async function renderPanel(){
   let aralik,topKasa;
   try{[aralik,topKasa]=await Promise.all([islemlerAralik(bas,bit),kasaToplamDb()]);}
   catch(e){const m=document.getElementById('panel-met');if(m)m.innerHTML=`<div class="bos">Panel verisi okunamadı: ${e.message}</div>`;return;}
-  const gelir=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
-  const gider=aralik.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const gelir=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
+  const gider=aralik.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
   const net=gelir-gider;
   const alisCount=aralik.filter(i=>i.tur==='giris').length;
   const satisCount=aralik.filter(i=>i.tur==='satis').length;
   const giderCount=aralik.filter(i=>i.tur==='gider').length;
-  const alisTutar=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
-  const satisTutar=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
-  const giderTutar=aralik.filter(i=>i.tur==='gider').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const alisTutar=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+hrkTutar(i),0);
+  const satisTutar=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
+  const giderTutar=aralik.filter(i=>i.tur==='gider').reduce((s,i)=>s+hrkTutar(i),0);
 
   // Kar marjı
   const marj=gelir>0?Math.round(net/gelir*100):0;
@@ -185,7 +186,7 @@ async function renderPanel(){
       if(i.urun_id){const u=urunler.find(x=>x.id===i.urun_id);ad=u?.ad||'Ürün';}
       else if(i.stok_id){const s=stoklar.find(x=>x.id===i.stok_id);ad=s?.ad||'Stok';}
       else ad=i.aciklama||'Diğer';
-      satisMap[ad]=(satisMap[ad]||0)+parseFloat(i.tutar||0);
+      satisMap[ad]=(satisMap[ad]||0)+hrkTutar(i);
     });
     _doughnut('panel-satis-chart',satisMap,['#284a65','#355f82','#a9c8e0','#cce0ef','#eaf2f8'],'Bu dönem satış yok');
 
@@ -195,7 +196,7 @@ async function renderPanel(){
       let ad='Diğer';
       if(i.stok_id){const s=stoklar.find(x=>x.id===i.stok_id);ad=s?.ad||'Stok';}
       else ad=i.aciklama||'Diğer';
-      alisMap[ad]=(alisMap[ad]||0)+parseFloat(i.tutar||0);
+      alisMap[ad]=(alisMap[ad]||0)+hrkTutar(i);
     });
     _doughnut('panel-alis-chart',alisMap,['#1d4e89','#4a90d9','#74b9ff','#a8d8ff','#d0ecff'],'Bu dönem alış yok');
 
@@ -205,7 +206,7 @@ async function renderPanel(){
       let ad='Diğer';
       if(i.gider_kalem_id){const k=giderKalemleri.find(x=>x.id===i.gider_kalem_id);ad=k?.ad||'Gider';}
       else ad=i.aciklama||i.kat||'Diğer';
-      giderMap[ad]=(giderMap[ad]||0)+parseFloat(i.tutar||0);
+      giderMap[ad]=(giderMap[ad]||0)+hrkTutar(i);
     });
     _doughnut('panel-gider-chart',giderMap,['#bc4a0e','#f4a261','#ffc8a0','#e76f51','#ffe0cc'],'Bu dönem gider yok');
   },50);
@@ -216,7 +217,7 @@ async function renderPanel(){
     const urunMap={};
     aralik.filter(i=>i.tur==='satis'&&i.urun_id).forEach(i=>{
       const u=urunler.find(x=>x.id===i.urun_id);const ad=u?.ad||i.urun_id;
-      urunMap[ad]=(urunMap[ad]||0)+parseFloat(i.tutar||0);
+      urunMap[ad]=(urunMap[ad]||0)+hrkTutar(i);
     });
     const sirali=Object.entries(urunMap).sort((a,b)=>b[1]-a[1]);
     return sirali.slice(0,3);
@@ -439,8 +440,8 @@ window.renderIslemListe=async function(){
   if(_ilSira==='tarih-artan')liste.sort((a,b)=>a.tarih>b.tarih?1:-1);
   else liste.sort((a,b)=>b.tarih>a.tarih?1:-1);
 
-  const topGelir=liste.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
-  const topGider=liste.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const topGelir=liste.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
+  const topGider=liste.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
   const ozEl=document.getElementById('il-ozet');
   if(ozEl)ozEl.innerHTML=`${liste.length} işlem &nbsp;·&nbsp; <span style="color:var(--yesil)">${para(topGelir)}</span> &nbsp;·&nbsp; <span style="color:var(--turuncu)">${para(topGider)}</span>${not}`;
 
