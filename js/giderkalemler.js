@@ -1,4 +1,5 @@
 // ===== GİDER KALEMLERİ =====
+function _gkIkonGizle(){const e=document.getElementById('gk-ikon');if(e&&e.closest('.fg'))e.closest('.fg').style.display='none';}
 // Listeyi yenilerken sadece aktif işyerinin (ve işyeri belirtilmemiş ortak) kayıtlarını getirir.
 async function _gkYenile(){
   const {data}=await sb.from('gider_kalemleri').select('*').or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`).order('kod');
@@ -25,9 +26,9 @@ window.giderKalemModalAc=function(ustId,tip){
   document.getElementById('gk-varsayilan-birim').value='';
   const tipAd=tip==='grup'?'Grup':'Hizmet Kalemi';
   document.getElementById('gk-title').textContent=ustId?`Alt ${tipAd} Ekle`:`Yeni ${tipAd}`;
-  if(ustId){const ust=giderKalemleri.find(g=>g.id===ustId);document.getElementById('gk-ust-bilgi').textContent=`Üst: ${ust?.ikon||''} ${ust?.ad||''} [${ust?.kod||''}]`;}
+  if(ustId){const ust=giderKalemleri.find(g=>g.id===ustId);document.getElementById('gk-ust-bilgi').textContent=`Üst: ${ust?.ad||''} [${ust?.kod||''}]`;}
   else document.getElementById('gk-ust-bilgi').textContent=tip==='grup'?'Ana gider grubu':'Grupsuz kalem';
-  doldurMerkezSecleri();modalAc('modal-gider-kalem');
+  doldurMerkezSecleri();_gkIkonGizle();modalAc('modal-gider-kalem');
 };
 window.giderKalemGoruntule=function(id){giderKalemDuzenle(id,'goruntule');};
 window.giderKalemDuzenle=function(id,mod='duzenle'){
@@ -44,8 +45,8 @@ window.giderKalemDuzenle=function(id,mod='duzenle'){
   if(vbEl){vbEl.innerHTML='<option value="">— Seçin —</option>'+birimler.map(b=>`<option value="${b.id}"${b.id===g.varsayilan_birim_id?' selected':''}>${b.ad} (${b.kisaltma})</option>`).join('');}
   setTimeout(()=>document.getElementById('gk-merkez').value=g.merkez_id||'',100);
   const ust=giderKalemleri.find(x=>x.id===g.ust_id);
-  document.getElementById('gk-ust-bilgi').textContent=ust?`Üst: ${ust.ikon||''} ${ust.ad} [${ust.kod}]`:(g.tip==='grup'?'Ana gider grubu':'Grupsuz');
-  modalAc('modal-gider-kalem');
+  document.getElementById('gk-ust-bilgi').textContent=ust?`Üst: ${ust.ad} [${ust.kod}]`:(g.tip==='grup'?'Ana gider grubu':'Grupsuz');
+  _gkIkonGizle();modalAc('modal-gider-kalem');
 };
 window.kaydetGiderKalem=async function(){
   const id=document.getElementById('gk-id').value||uid();
@@ -58,7 +59,7 @@ window.kaydetGiderKalem=async function(){
   const dupKod=giderKalemleri.find(x=>x.id!==id&&x.kod===kod);
   if(dupKod){bil(`"${kod}" kodu zaten kullanımda!`,'err');return;}
   const mevcut=giderKalemleri.find(x=>x.id===id);
-  const data={id,ad,tip,kod,ikon:document.getElementById('gk-ikon').value.trim()||'💸',renk:document.getElementById('gk-renk').value};
+  const data={id,ad,tip,kod,ikon:'',renk:document.getElementById('gk-renk').value};
   if(tip==='kalem'){
     data.merkez_id=document.getElementById('gk-merkez').value||null;
     data.varsayilan_birim_id=document.getElementById('gk-varsayilan-birim').value||null;
@@ -91,7 +92,6 @@ function renderGiderKalemTree(){
     const isGrup=g.tip==='grup';
     const merkezAd=!isGrup&&g.merkez_id?merkezler.find(m=>m.id===g.merkez_id)?.ad:'';
     return `<div class="tree-row${isGrup?' is-grup':''}" style="padding-left:${10+depth*18}px;border-left:${isGrup?'4':'3'}px solid ${renk}">
-      <span style="font-size:${isGrup?15:13}px">${g.ikon||'💸'}</span>
       <span style="flex:1;font-size:${isGrup?13:12}px">${g.ad}</span>
       <span class="tree-kod">${g.kod}</span>
       ${merkezAd?`<span style="font-size:10px;color:var(--turuncu);background:var(--turuncu-cok-ac);padding:1px 6px;border-radius:10px">${merkezAd}</span>`:''}
