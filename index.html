@@ -97,6 +97,7 @@
       <button onclick="gp('faturalar')">Faturalar</button>
       <button onclick="gp('stok-islemleri')">Stok İşlemleri</button>
       <button onclick="gp('kasa-islemleri')">Kasa İşlemleri</button>
+      <button onclick="gp('iscilik')">İşçilik Kayıtları</button>
     </div>
   </div>
     <div class="nav-grup">
@@ -1766,6 +1767,28 @@
 </div>
 
 <!-- HİZMETLER -->
+<div id="iscilik" class="page">
+  <div class="card" id="isc-form-karti">
+    <div class="card-title"><span id="isc-form-baslik">Yeni İşçilik Kaydı</span></div>
+    <div class="fg" style="max-width:200px;margin-bottom:10px"><label>Tarih</label><input type="date" id="isc-tarih"></div>
+    <div id="isc-satirlar"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn sm" id="isc-satir-ekle" onclick="iscSatirEkle()">+ Satır (başka kişi)</button>
+      <button class="btn sm ghost" id="isc-iptal" style="display:none" onclick="iscIptal()">Vazgeç</button>
+      <button class="btn sm pri" onclick="iscKaydet()">Kaydet</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>Kayıtlar & Rapor</span><button class="btn sm" onclick="iscCsv()">Excel'e indir (CSV)</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px">
+      <div class="fg"><label>Başlangıç</label><input type="date" id="isc-f-bas" onchange="iscListele()"></div>
+      <div class="fg"><label>Bitiş</label><input type="date" id="isc-f-bit" onchange="iscListele()"></div>
+      <div class="fg"><label>Kişi</label><select id="isc-f-kisi" onchange="iscListele()"></select></div>
+      <div class="fg"><label>Gider kalemi</label><select id="isc-f-kalem" onchange="iscListele()"></select></div>
+    </div>
+    <div id="isc-rapor"></div>
+  </div>
+</div>
 <div id="hizmetler" class="page">
   <div class="card">
     <div class="card-title">
@@ -2626,6 +2649,7 @@
 <script src="js/aktarimenv.js"></script>
 <script src="js/bagenvanter.js"></script>
 <script src="js/alisanaliz.js"></script>
+<script src="js/iscilik.js"></script>
 <script src="js/yetkikontrol.js"></script>
 
 </body>
