@@ -108,10 +108,18 @@ window.kaydetKasa_kart = async function() {
 };
 
 window.kasaSil = async function(id) {
-  const var_mi = islemler.some(i => i.kasa_id === id);
-  if (var_mi) { bil('Bu kasaya ait işlemler var, silinemez!', 'err'); return; }
+  // Bellekteki liste sadece aktif işyerini kapsar; bu yüzden veritabanında da kontrol edilir
+  const {count:islemSay}=await sb.from('islemler').select('id',{count:'exact',head:true}).eq('kasa_id',id);
+  if (islemSay>0 || islemler.some(i => i.kasa_id === id)) { bil('Bu kasaya ait '+(islemSay||'')+' işlem var, silinemez!', 'err'); return; }
   if(!(await onay('Bu kasayı silmek istiyor musunuz?','🗑️')))return;
-  await sb.from('kasalar').delete().eq('id', id);
+  await sb.from('kullanici_kasalar').delete().eq('kasa_id', id); // kullanıcı-kasa yetki bağlantıları
+  const {data,error}=await sb.from('kasalar').delete().eq('id', id).select('id');
+  if(error){
+    if(error.code==='23503')bil('Bu kasaya bağlı başka kayıtlar (fatura, irsaliye vb.) var, silinemez!','err');
+    else bil('Silinemedi: '+error.message,'err');
+    return;
+  }
+  if(!data||!data.length){bil('Silinemedi: silme yetkisi olmayabilir','err');return;}
   await renderKasalar();
   bil('Kasa silindi ✓');
 };
