@@ -1,3 +1,4 @@
+window.hrkTutar=i=>(parseFloat(i.tutar)||0)+(parseFloat(i.kdv_tutar)||0); // gelir/gider raporlarında KDV dahil tutar
 // ===== RAPOR =====
 let aylikC=null,gelirP=null,giderP=null,kasaC=null;
 
@@ -37,8 +38,8 @@ function _gelirAralik(){
 function renderRaporGenel(){
   const {bas,bit}=_gelirAralik();
   const yv=islemler.filter(i=>i.tarih>=bas&&i.tarih<=bit);
-  const gelirT=yv.filter(i=>i.tur==='satis').reduce((s,i)=>s+parseFloat(i.tutar||0),0);
-  const giderT=yv.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+parseFloat(i.tutar||0),0);
+  const gelirT=yv.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
+  const giderT=yv.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
   const karT=gelirT-giderT;
   document.getElementById('rapor-met').innerHTML=`
     <div class="met"><div class="ml">Gelir</div><div class="mv g">${para(gelirT)}</div></div>
@@ -52,8 +53,8 @@ function renderRaporGenel(){
   yv.forEach(i=>{
     const key=gunlukMu?i.tarih:i.tarih?.substring(0,7);if(!key)return;
     if(!veriMap[key])veriMap[key]={g:0,d:0};
-    if(i.tur==='satis')veriMap[key].g+=parseFloat(i.tutar||0);
-    else if(['gider','giris'].includes(i.tur))veriMap[key].d+=parseFloat(i.tutar||0);
+    if(i.tur==='satis')veriMap[key].g+=hrkTutar(i);
+    else if(['gider','giris'].includes(i.tur))veriMap[key].d+=hrkTutar(i);
   });
   const labels=Object.keys(veriMap).sort();
   if(aylikC)aylikC.destroy();
@@ -69,9 +70,9 @@ function renderRaporGenel(){
   // Pasta grafikler
   const gelirKat={},giderKat={};
   yv.forEach(i=>{
-    if(i.tur==='satis')gelirKat[i.kat||'Diğer']=(gelirKat[i.kat||'Diğer']||0)+parseFloat(i.tutar||0);
-    else if(i.tur==='gider')giderKat[i.kat||'Diğer']=(giderKat[i.kat||'Diğer']||0)+parseFloat(i.tutar||0);
-    else if(i.tur==='giris')giderKat['Hammadde']=(giderKat['Hammadde']||0)+parseFloat(i.tutar||0);
+    if(i.tur==='satis')gelirKat[i.kat||'Diğer']=(gelirKat[i.kat||'Diğer']||0)+hrkTutar(i);
+    else if(i.tur==='gider')giderKat[i.kat||'Diğer']=(giderKat[i.kat||'Diğer']||0)+hrkTutar(i);
+    else if(i.tur==='giris')giderKat['Hammadde']=(giderKat['Hammadde']||0)+hrkTutar(i);
   });
   if(gelirP)gelirP.destroy();
   gelirP=new Chart(document.getElementById('gelir-pie'),{type:'doughnut',data:{labels:Object.keys(gelirKat),datasets:[{data:Object.values(gelirKat).map(v=>Math.round(v)),backgroundColor:['#284a65','#355f82','#a9c8e0','#cce0ef','#eaf2f8']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:8,padding:6}}}}});
