@@ -21,10 +21,7 @@ const iscSureMetin = (saat, gun) => { const p = []; if (saat) p.push(iscSayi(saa
 function iscKalemSecenekleri() {
   const liste = (typeof giderKalemleri !== 'undefined' ? giderKalemleri : [])
     .filter(g => g.tip === 'kalem' && g.aktif !== false)
-    .map(g => {
-      const ust = giderKalemleri.find(x => x.id === g.ust_id);
-      return { id: g.id, ad: (ust ? ust.ad + ' › ' : '') + g.ad };
-    });
+    .map(g => ({ id: g.id, ad: g.ad }));
   Object.keys(iscKalemYedek).forEach(id => { if (!liste.some(k => k.id === id)) liste.push({ id, ad: iscKalemYedek[id] }); });
   return liste.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
 }
