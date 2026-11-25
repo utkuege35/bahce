@@ -33,7 +33,7 @@
     aktarimDosyaSecildi:()=>e('bagimsiz_raporlama','ekle'), aktarimOnayla:()=>e('bagimsiz_raporlama','ekle'), aktarimPartiSil:()=>e('bagimsiz_raporlama','sil'),
     aktarimEnvDosyaSecildi:()=>e('bagimsiz_raporlama','ekle'), aktarimEnvOnayla:()=>e('bagimsiz_raporlama','ekle'),
     // KDV Tanımları
-    iscKaydet:()=>e('iscilik_kayitlari',KAYDET), iscDuzenle:()=>e('iscilik_kayitlari','duzenle'), iscSil:()=>e('iscilik_kayitlari','sil'),
+    iscYeniBaslat:()=>e('iscilik_kayitlari','ekle'), iscListeIslem:a=>liste('iscilik_kayitlari',a[0]), iscKaydet:()=>e('iscilik_kayitlari',KAYDET),
     kdvYeniAc:()=>e('kdv_tanimlari','ekle'), kdvDuzenleAc:()=>e('kdv_tanimlari','duzenle'), kdvKaydet:()=>e('kdv_tanimlari',KAYDET), kdvSil:()=>e('kdv_tanimlari','sil')
   };
   const izinVar=gerekli=>gerekli.every(([ekran,eylem])=>eylem.split('|').some(ey=>yetkiVar(ekran,ey)));
@@ -49,7 +49,7 @@
     window[ad]=sarmal;
   });
   // Araç çubuğu düğmeleri: onclick="irsListeIslem('alis','duzenle')" gibi çağrıları okuyup yetkisizse gizler
-  const DUGME=/^\s*(irsYeniBaslat|irsListeIslem|fatYeniBaslat|fatListeIslem|dvrYeniBaslat|dvrListeIslem|trfYeniBaslat|trfListeIslem|scYeniBaslat|scListeIslem|urYeniBaslat|urListeIslem|syYeniBaslat|syListeIslem|kiYeniBaslat|kiListeIslem|kdvYeniAc)\(([^)]*)\)/;
+  const DUGME=/^\s*(irsYeniBaslat|irsListeIslem|fatYeniBaslat|fatListeIslem|dvrYeniBaslat|dvrListeIslem|trfYeniBaslat|trfListeIslem|scYeniBaslat|scListeIslem|urYeniBaslat|urListeIslem|syYeniBaslat|syListeIslem|kiYeniBaslat|kiListeIslem|iscYeniBaslat|iscListeIslem|kdvYeniAc)\(([^)]*)\)/;
   window.yetkiEylemleriUygula=function(){
     document.querySelectorAll('button[onclick]').forEach(b=>{
       const m=(b.getAttribute('onclick')||'').match(DUGME);
