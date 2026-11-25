@@ -1,4 +1,9 @@
 // ===== GİDER KALEMLERİ =====
+// Listeyi yenilerken sadece aktif işyerinin (ve işyeri belirtilmemiş ortak) kayıtlarını getirir.
+async function _gkYenile(){
+  const {data}=await sb.from('gider_kalemleri').select('*').or(`isyeri_id.eq.${aktifIsyeri?.id},isyeri_id.is.null`).order('kod');
+  if(data)giderKalemleri=data;
+}
 function kodOlusturGiderKalem(ustId){
   if(!ustId){
     const analar=giderKalemleri.filter(g=>g.seviye===1).map(g=>parseInt(g.kod)).filter(n=>!isNaN(n));
@@ -63,18 +68,20 @@ window.kaydetGiderKalem=async function(){
     const ustKod=ustBilgi.match(/\[([^\]]+)\]/)?.[1];
     const ust=ustKod?giderKalemleri.find(g=>g.kod===ustKod):null;
     data.ust_id=ust?.id||null;data.seviye=ust?(ust.seviye||1)+1:1;data.aktif=true;
+    data.isyeri_id=aktifIsyeri?.id||null;
   }
-  if(mevcut)await sb.from('gider_kalemleri').update(data).eq('id',id);
-  else await sb.from('gider_kalemleri').insert(data);
-  const {data:gk}=await sb.from('gider_kalemleri').select('*').order('kod');if(gk)giderKalemleri=gk;
+  const {error:kErr}=mevcut?await sb.from('gider_kalemleri').update(data).eq('id',id):await sb.from('gider_kalemleri').insert(data);
+  if(kErr){bil('Kaydedilemedi: '+kErr.message,'err');return;}
+  await _gkYenile();
   modalKapat('modal-gider-kalem');renderGiderKalemTree();bil('Kaydedildi ✓');
 };
 window.giderKalemSil=async function(id){
   if(islemler.some(i=>i.gider_kalem_id===id)){bil('Hareketi olan kalem silinemez!','err');return;}
   if(tumAltlar(giderKalemleri,id).length){bil('Alt kayıtları silin!','err');return;}
   if(!(await onay('Silmek istiyor musunuz?','🗑️')))return;
-  await sb.from('gider_kalemleri').delete().eq('id',id);
-  const {data}=await sb.from('gider_kalemleri').select('*').order('kod');if(data)giderKalemleri=data;
+  const {error:sErr}=await sb.from('gider_kalemleri').delete().eq('id',id);
+  if(sErr){bil('Silinemedi: '+sErr.message,'err');return;}
+  await _gkYenile();
   renderGiderKalemTree();bil('Silindi ✓');
 };
 function renderGiderKalemTree(){
