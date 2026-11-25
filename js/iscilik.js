@@ -166,7 +166,10 @@ window.iscSatirSil = function (i) {
   iscFormCiz();
 };
 
-window.iscKaydetmedenCik = function () { iscFormKapat(); };
+window.iscKaydetmedenCik = async function () {
+  const ok = await onay('Kaydetmeden çıkmak istiyor musunuz?', '⚠️', 'Evet', 'Hayır');
+  if (ok) iscFormKapat();
+};
 
 window.iscKaydet = async function () {
   if (!aktifIsyeri?.id) { bil('İşyeri seçili değil', 'err'); return; }
