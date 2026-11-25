@@ -454,7 +454,7 @@ window.kaydetFatura=async function(tur){
   giderSatirlari.forEach((s,n)=>{
     const mik=parseFloat(s.miktar)||0,tut=parseFloat(s.tutar)||(mik*(parseFloat(s.fiyat)||0));
     const hizmet=s.kaynakTur==='gider';
-    giris.push({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:mik>0?tut/mik:(parseFloat(s.fiyat)||0),tutar:tut,
+    giris.push({tur:'gider',tarih,birim_id:s.birimId||null,miktar:mik,fiyat:mik>0?tut/mik:(parseFloat(s.fiyat)||0),tutar:tut,kdv_tutar:_fatKdvHesapla(s).kdvTutar||0,
       aciklama:_fatSatirAdi(s),kat:hizmet?_fatSatirAdi(s):'Diğer',gider_kalem_id:hizmet?s.kaynakId:null,aciklama_not:an,
       belge_no:faturaNo,belge_id:id,fatura_id:id,cari_id:cariId,merkez_id:s.merkezId||null,
       kullanici:aktifKullanici?.ad||'',isyeri_id:aktifIsyeri?.id||null,ts:Date.now()+500+n});
