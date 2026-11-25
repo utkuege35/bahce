@@ -109,7 +109,7 @@ function uygulamaAc(){
       'depo_stok':'gp(\'depo-stok\')', 'stok_envanter':'gp(\'stok-envanter\')', 'kdv_tanimlari':'gp(\'kdv-tanimlari\')',
       'bagimsiz_raporlama':'gp(\'bagimsiz-raporlama\')',
       'stok':'gp(\'stok\')', 'stok_liste':'gp(\'stok-liste\')', 'urunler':'gp(\'urunler\')', 'urun_liste':'gp(\'urun-liste\')', 'yarimamuller':'gp(\'yarimamuller\')', 'ym_liste':'gp(\'ym-liste\')',
-      'hizmetler':'gp(\'hizmetler\')', 'kasalar':'gp(\'kasalar\')',
+      'hizmetler':'gp(\'hizmetler\')', 'iscilik_kayitlari':'gp(\'iscilik\')', 'kasalar':'gp(\'kasalar\')',
       'cari':'gp(\'cari\')', 'birimler':'gp(\'birimler\')', 'alt_birimler':'gp(\'alt-birimler\')',
       'merkezler':'gp(\'merkezler\')', 'receteler':'gp(\'receteler\')', 'recete_normalize':'gp(\'recete-normalize\')', 'rapor':'gp(\'rapor\')', 'depolar':'gp(\'depolar\')', 'sayim_raporu':'gp(\'sayim-raporu\')', 'recete_kullanim_raporu':'gp(\'recete-kullanim-raporu\')', 'ym_sayim_ozeti':'gp(\'ym-sayim-ozeti\')', 'urun_teklifleri':'gp(\'urun-teklifleri\')', 'urun_teklif_gonder':'gp(\'urun-teklif-gonder\')'
     };
@@ -276,7 +276,7 @@ window.navGrupToggle=function(btn){
   btn.classList.toggle('acik',acik);
 };
 // Yetki gerektiren yeni ekranlar: sayfa kimliği → yetki anahtarı. Menü gizlenmiş olsa bile doğrudan açılışı engeller.
-const SAYFA_YETKI={'irsaliyeler':'irsaliyeler','faturalar':'faturalar','stok-islemleri':'stok_islemleri','kasa-islemleri':'kasa_islemleri','depo-stok':'depo_stok','stok-envanter':'stok_envanter','kdv-tanimlari':'kdv_tanimlari','bagimsiz-raporlama':'bagimsiz_raporlama'};
+const SAYFA_YETKI={'irsaliyeler':'irsaliyeler','faturalar':'faturalar','stok-islemleri':'stok_islemleri','kasa-islemleri':'kasa_islemleri','depo-stok':'depo_stok','stok-envanter':'stok_envanter','kdv-tanimlari':'kdv_tanimlari','iscilik':'iscilik_kayitlari','bagimsiz-raporlama':'bagimsiz_raporlama'};
 window.gp=function(id){
   if(SAYFA_YETKI[id]&&typeof yetkiVar==='function'&&!yetkiVar(SAYFA_YETKI[id],'goruntule')){bil('Bu ekran için yetkiniz yok','err');return;}
   navKapat();
@@ -299,6 +299,7 @@ window.gp=function(id){
   if(id==='kasalar')renderKasalar();
   if(id==='merkezler')renderMerkezler();
   if(id==='hizmetler')renderGiderKalemTree();
+  if(id==='iscilik'&&typeof renderIscilik==='function')renderIscilik();
   if(id==='cari')renderCari();if(id==='islem-liste')renderIslemListe();
   if(id==='depolar'&&typeof renderDepolar==='function')renderDepolar();
   if(id==='rapor')renderRapor();if(id==='kullanicilar')renderKullanicilar();if(id==='isyerleri'&&typeof renderIsyerleri==='function')renderIsyerleri();if(id==='yetkiler'&&typeof renderYetkiler==='function'){sablonYetkiTabloOlustur();renderYetkiler();}
