@@ -15,31 +15,36 @@
 <link rel="stylesheet" href="rapor/cizim.css">
 <script>try{var _v=localStorage.getItem('sb_yazi_olcek');if(['1','1.1','1.2'].indexOf(_v)<0)_v='1.1';document.documentElement.style.setProperty('--yazi-olcek',_v);}catch(e){}</script>
 <style id="panel-css">
-#panel .pn-ust{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
-#panel .pn-baslik{font-size:18px;font-weight:600;color:var(--yazi)}
-#panel .pn-alt{font-size:12px;font-weight:400;color:var(--yazi3);margin-left:6px}
-#panel .pn-sekme{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:3px;background:var(--krem2);border:1px solid var(--border);border-radius:12px}
-#panel .pn-sekme .btn{border:none;background:transparent;border-radius:9px}
-#panel .pn-sekme .btn.active{background:var(--beyaz);color:var(--yazi);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-#panel .pn-sekme input{font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:6px}
-#panel .pn-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
-#panel .pn-k{background:var(--beyaz);border:1px solid var(--border);border-radius:14px;padding:16px;border-left:5px solid var(--yazi3)}
-#panel .pn-k.g{border-left-color:#2e8b57}#panel .pn-k.d{border-left-color:#e07b4a}#panel .pn-k.n{border-left-color:#355f82}#panel .pn-k.z{border-left-color:#c62828}
-#panel .pn-kl{font-size:12px;color:var(--yazi3);text-transform:uppercase;letter-spacing:.04em}
-#panel .pn-kv{font-size:calc(24px*var(--yazi-olcek,1));font-weight:600;margin-top:4px;font-family:'Lora',serif;color:var(--yazi)}
-#panel .pn-kv.g{color:#2e8b57}#panel .pn-kv.d{color:#e07b4a}#panel .pn-kv.z{color:#c62828}
-#panel .pn-ks{font-size:11px;color:var(--yazi3);margin-top:2px}
-#panel .pn-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px}
+#panel{background:radial-gradient(1200px 600px at 20% -10%,#0d2a5c 0%,#071334 45%,#040a1f 100%);border-radius:16px;padding:18px;color:#e6f3ff;--c1:#22d3ee;--c2:#3b82f6;--c3:#f59e0b;--ac:rgba(56,189,248,.35)}
+#panel .pn-ust{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+#panel .pn-baslik{font-size:20px;font-weight:600;color:#fff;letter-spacing:.02em}
+#panel .pn-alt{font-size:12px;font-weight:400;color:#8fb4d9;margin-left:8px}
+#panel .pn-sekme{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:3px;background:rgba(10,30,70,.7);border:1px solid var(--ac);border-radius:12px}
+#panel .pn-sekme .btn{border:none;background:transparent;color:#a9c9ea;border-radius:9px}
+#panel .pn-sekme .btn.active{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-weight:600;box-shadow:0 0 12px rgba(14,165,233,.6)}
+#panel .pn-sekme input{font-size:11px;padding:4px 6px;border:1px solid var(--ac)!important;border-radius:6px;background:#0a1e46!important;color:#e6f3ff!important;color-scheme:dark}
+#panel .pn-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:14px}
+#panel .pn-k,#panel .pn-kart{background:linear-gradient(160deg,rgba(14,40,90,.75),rgba(6,18,48,.85));border:1px solid var(--ac);border-radius:14px;padding:16px;box-shadow:0 0 18px rgba(34,211,238,.10),inset 0 0 24px rgba(34,211,238,.04);min-width:0}
+#panel .pn-k{display:flex;justify-content:space-between;align-items:center;gap:10px}
+#panel .pn-kl{font-size:12px;color:#8fb4d9;text-transform:uppercase;letter-spacing:.08em}
+#panel .pn-kv{font-size:calc(28px*var(--yazi-olcek,1));font-weight:600;margin-top:6px;color:#fff;text-shadow:0 0 14px rgba(34,211,238,.55)}
+#panel .pn-kv.g{color:#5eead4}#panel .pn-kv.d{color:#fbbf24;text-shadow:0 0 14px rgba(245,158,11,.5)}#panel .pn-kv.z{color:#fb7185;text-shadow:0 0 14px rgba(251,113,133,.5)}#panel .pn-kv.n{color:#67e8f9}
+#panel .pn-ks{font-size:11px;color:#7fa3c9;margin-top:4px}
+#panel .pn-ring{width:70px;height:70px;flex:0 0 70px;position:relative}
+#panel .pn-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:600}
+#panel .pn-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
 #panel .pn-grid.pn-iki{grid-template-columns:1fr 1fr}
 @media(max-width:760px){#panel .pn-grid,#panel .pn-grid.pn-iki{grid-template-columns:1fr}}
-#panel .pn-kart{background:var(--beyaz);border:1px solid var(--border);border-radius:14px;padding:16px;min-width:0}
-#panel .pn-kt{font-size:13px;font-weight:600;color:var(--yazi2);margin-bottom:10px}
-#panel .pn-grafik{height:240px;position:relative}
-#panel .pn-bt{font-size:14px;font-weight:600;color:var(--yazi);margin:6px 0 10px}
-#panel .pn-toplam{font-size:calc(22px*var(--yazi-olcek,1));font-weight:600;font-family:'Lora',serif;margin-bottom:10px}
-#panel .pn-sat{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--border);font-size:13px}
-#panel .pn-sat span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--yazi2)}
-#panel .pn-bos{font-size:12px;color:var(--yazi3);padding:18px 0;text-align:center}
+#panel .pn-kt{font-size:13px;font-weight:600;color:#bfe0ff;margin-bottom:12px;letter-spacing:.03em}
+#panel .pn-grafik{height:260px;position:relative}
+#panel .pn-bt{font-size:15px;font-weight:600;color:#fff;margin:8px 0 12px}
+#panel .pn-toplam{font-size:calc(26px*var(--yazi-olcek,1));font-weight:600;margin-bottom:12px}
+#panel .pn-sat{padding:6px 0;font-size:13px}
+#panel .pn-sat .s1{display:flex;justify-content:space-between;gap:8px;color:#d6eaff}
+#panel .pn-sat .s1 span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#panel .pn-cubuk{height:6px;border-radius:4px;background:rgba(120,170,230,.15);margin-top:4px;overflow:hidden}
+#panel .pn-cubuk i{display:block;height:100%;border-radius:4px}
+#panel .pn-bos{font-size:13px;color:#8fb4d9;padding:22px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -230,8 +235,8 @@
   <div class="pn-kpi" id="panel-met"></div>
 
   <div class="pn-grid">
-    <div class="pn-kart pn-genis">
-      <div class="pn-kt">Gelir / Gider</div>
+    <div class="pn-kart">
+      <div class="pn-kt">Gelir / Gider Akışı</div>
       <div class="pn-grafik"><canvas id="panel-chart"></canvas></div>
     </div>
     <div class="pn-kart">
@@ -240,7 +245,7 @@
     </div>
   </div>
 
-  <div class="pn-bt">Bekleyen Borçlar ve Alacaklar <span class="pn-alt">(bugüne kadar, bu işyeri)</span></div>
+  <div class="pn-bt">Bekleyen Borçlar ve Alacaklar <span class="pn-alt">bugüne kadar · bu işyeri</span></div>
   <div class="pn-grid pn-iki" id="panel-borc"></div>
 </div>
 
