@@ -50,7 +50,8 @@ async function iscPersonelYukle() {
 window.renderIscilik = async function () {
   if (!aktifIsyeri?.id) return;
   await iscPersonelYukle();
-  const t = document.getElementById('isc-liste-tarih');
+  const t = document.getElementById('isc-liste-tarih'), tb = document.getElementById('isc-liste-bit');
+  if (t && !t.dataset.ilk) { t.dataset.ilk = '1'; t.value = iscBugun().slice(0, 8) + '01'; if (tb) tb.value = iscBugun(); } // varsayılan: ayın 1'i – bugün
   if (t && !t.value) t.value = iscBugun();
   iscFormKapat();
   await iscListeYenile();
@@ -125,7 +126,7 @@ window.iscYeniBaslat = async function () {
   await iscPersonelYukle();
   iscDuzenId = null; iscGoruntuleme = false; iscKalemYedek = {};
   iscSatirlar = [iscBosSatir()];
-  document.getElementById('isc-tarih').value = document.getElementById('isc-liste-tarih').value || iscBugun();
+  document.getElementById('isc-tarih').value = iscBugun();
   document.getElementById('isc-not').value = '';
   iscFormCiz(); iscFormGoster(true);
   document.querySelector('#isc-satirlar [data-ilk]')?.focus();
