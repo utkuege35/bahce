@@ -470,18 +470,22 @@ window.kaydetFatura=async function(tur){
 };
 
 // ===== GÜNLÜK ÖZET LİSTESİ =====
-window.renderFatGunSekmesi=async function(tur){
+window.renderFatGunSekmesi=async function(tur,bitisDegisti){
   const tarihEl=document.getElementById('fat-'+tur+'-liste-tarih');
+  const bitEl=document.getElementById('fat-'+tur+'-liste-bit');
   if(tarihEl&&!tarihEl.value)tarihEl.value=bugun();
   const tarih=tarihEl?.value||bugun();
+  // Bitiş boşsa sadece seçili gün; bitiş başlangıçtan önceyse düzeltilir
+  if(bitEl&&bitEl.value&&bitEl.value<tarih){if(bitisDegisti)tarihEl.value=bitEl.value;else bitEl.value=tarih;}
+  const basT=tarihEl?.value||tarih,bitT=(bitEl&&bitEl.value)||basT;
   const tbEl=document.getElementById('fat-'+tur+'-liste-tb');if(!tbEl)return;
   tbEl.innerHTML='<div class="bos">Yükleniyor...</div>';
-  let q=sb.from('faturalar').select('*').eq('tur',tur).eq('tarih',tarih).eq('silindi',false).order('ts',{ascending:false});
+  let q=sb.from('faturalar').select('*').eq('tur',tur).gte('tarih',basT).lte('tarih',bitT).eq('silindi',false).order('tarih',{ascending:false}).order('ts',{ascending:false});
   if(aktifIsyeri?.id)q=q.eq('isyeri_id',aktifIsyeri.id);
   const {data:liste}=await q;
   const ozEl=document.getElementById('fat-'+tur+'-liste-ozet');
   _fatListeVeri[tur]={};
-  if(!liste||!liste.length){tbEl.innerHTML='<div class="bos">Bu tarihte kayıt yok.</div>';if(ozEl)ozEl.textContent='';_fatSeciliId[tur]=null;return;}
+  if(!liste||!liste.length){tbEl.innerHTML='<div class="bos">Bu tarih aralığında kayıt yok.</div>';if(ozEl)ozEl.textContent='';_fatSeciliId[tur]=null;return;}
   liste.forEach(x=>{_fatListeVeri[tur][x.id]=x;});
   if(!_fatListeVeri[tur][_fatSeciliId[tur]])_fatSeciliId[tur]=null;
   const genel=liste.reduce((t,x)=>t+parseFloat(x.genel_toplam||0),0);
