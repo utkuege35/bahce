@@ -75,8 +75,15 @@ window.sbSayfali=async function(kur,sayfa){
 };
 const _aktifIslemSorgusu=()=>sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).or('silindi.is.null,silindi.eq.false');
 // Tarih aralığındaki hareketler (Panel)
-window.islemlerAralik=function(bas,bit){
-  return sbSayfali(()=>_aktifIslemSorgusu().gte('tarih',bas).lte('tarih',bit).order('ts',{ascending:false}).order('id'));
+window.islemlerAralik=async function(bas,bit){
+  const [liste,isc]=await Promise.all([
+    sbSayfali(()=>_aktifIslemSorgusu().gte('tarih',bas).lte('tarih',bit).order('ts',{ascending:false}).order('id')),
+    sbSayfali(()=>sb.from('isci_belge_satirlari').select('id,tarih,tutar,kalem_ad,kisi_ad').eq('isyeri_id',aktifIsyeri?.id).gte('tarih',bas).lte('tarih',bit).order('id'))
+      .catch(e=>{console.warn('İşçilik satırları okunamadı:',e.message);return [];})
+  ]);
+  // İşçilik kayıtları Panel'de gider sayılır (islemler tablosunda gider satırı yoktur; çift sayım olmaz)
+  isc.forEach(r=>liste.push({id:'isc-'+r.id,tur:'gider',tarih:r.tarih,tutar:r.tutar,kdv_tutar:0,aciklama:r.kalem_ad||'İşçilik',kat:'İşçilik',_isci:true}));
+  return liste;
 };
 // İşlem Listesi: tür ve tarih sunucuda filtrelenir
 window.islemlerListe=function(f){
