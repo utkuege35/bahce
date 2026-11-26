@@ -228,15 +228,16 @@ async function renderPanel(){
 
   // Gider dağılımı
   const giderMap={};
-  aralik.filter(i=>i.tur==='gider').forEach(i=>{
-    let ad='Diğer';
-    if(i.gider_kalem_id){const k=giderKalemleri.find(x=>x.id===i.gider_kalem_id);ad=k?.ad||'Gider';}
-    else ad=i.aciklama||i.kat||'Diğer';
-    ad=_pnBaslik(ad);
-    giderMap[ad]=(giderMap[ad]||0)+hrkTutar(i);
+  const topla=(ad,tt)=>{ad=_pnBaslik(ad);giderMap[ad]=(giderMap[ad]||0)+tt;};
+  const gkAd=id=>{const k=id?giderKalemleri.find(x=>String(x.id)===String(id)):null;return k?k.ad:null;}; // güncel kalem adı
+  aralik.forEach(i=>{
+    if(i.tur==='gider')topla(gkAd(i.gider_kalem_id)||i.aciklama||i.kat||'Diğer',hrkTutar(i));
+    else if(i.tur==='giris'){ // malzeme alışı: stok kartının bağlı olduğu grubun adı
+      const kart=i.stok_id?stoklar.find(x=>String(x.id)===String(i.stok_id)):null;
+      const grup=kart&&kart.ust_id?stoklar.find(x=>String(x.id)===String(kart.ust_id)):null;
+      topla('Malzeme: '+(grup?grup.ad:(kart?kart.ad:'Diğer')),hrkTutar(i));
+    }
   });
-  const alisT=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+hrkTutar(i),0);
-  if(alisT>0)giderMap['Malzeme alışı']=alisT;
   setTimeout(()=>{_pnDonut('panel-gider-chart',giderMap,'Bu dönem gider yok');const g=_panelGrafikler['panel-gider-chart'];if(g)g.resize();},60);
 
   // Bekleyen borç / alacak
