@@ -282,34 +282,40 @@ window.cariDetayAc=async function(cariId){
 
 function _cariDetayRender(cariId){
   const c=cariListesi.find(x=>x.id===cariId);
-  const hareketler=cariHareketler.filter(h=>h.cari_id===cariId).sort((a,b)=>a.tarih>b.tarih?1:-1);
-  let bakiye=0;
+  const alici=c.tip==='alici';
+  const hareketler=cariHareketler.filter(h=>h.cari_id===cariId).sort((a,b)=>a.tarih>b.tarih?1:a.tarih<b.tarih?-1:(a.ts||0)-(b.ts||0));
+  // Muavin (ekstre) düzeni: Borç / Alacak sütunları standart muhasebe yönündedir.
+  // Kayıtlı 'alacak' = alıcıya satış / satıcıya ödeme → BORÇ sütunu; 'borc' = alıcıdan tahsilat / satıcıdan alış → ALACAK sütunu.
+  // Bakiye: alıcıda Borç−Alacak (+ = bize borçlu, B), satıcıda Alacak−Borç (+ = borcumuz, A).
+  const belgeAd=h=>{
+    if(h.kaynak==='fatura')return (alici?'Satış Faturası':'Alış Faturası')+(h.belge_no?' '+h.belge_no:'');
+    if(h.kaynak==='fatura_odeme')return (alici?'Peşin Tahsilat':'Peşin Ödeme')+(h.belge_no?' · '+h.belge_no:'');
+    if(h.belge_id)return h.tip==='alacak'?'Tediye (Kasa)':'Tahsil (Kasa)';
+    return 'Cari Hareket';
+  };
+  let topB=0,topA=0,bakiye=0;
   const rows=hareketler.map(h=>{
-    if(h.tip==='alacak')bakiye+=parseFloat(h.tutar||0);
-    else bakiye-=parseFloat(h.tutar||0);
-    const hareketAd=h.tip==='alacak'
-      ?(c.tip==='alici'?'📋 Satış (Cari)':'💳 Ödeme Alındı')
-      :(c.tip==='alici'?'💳 Tahsilat':'📋 Alış (Cari)');
-    const bakiyeRenk=bakiye>0?'var(--yesil)':bakiye<0?'#c62828':'var(--yazi3)';
+    const t=parseFloat(h.tutar||0);
+    const borc=h.tip==='alacak'?t:0,alacak=h.tip==='alacak'?0:t;
+    topB+=borc;topA+=alacak;
+    bakiye=alici?topB-topA:topA-topB;
+    const bakiyeRenk=Math.abs(bakiye)<0.005?'var(--yazi3)':'var(--yazi)';
     return `<tr>
       <td style="white-space:nowrap">${h.tarih}</td>
-      <td style="font-size:11px">${hareketAd}</td>
-      <td style="font-weight:500;color:${h.tip==='alacak'?'var(--yesil)':'var(--turuncu)'}">${h.tip==='alacak'?'+':'-'}${para(h.tutar)}</td>
-      <td style="font-size:11px;color:var(--yazi3)">${h.aciklama||''}</td>
-      <td style="font-weight:600;color:${bakiyeRenk};white-space:nowrap">${para(Math.abs(bakiye))} ${bakiye>0?(c.tip==='alici'?'alacak':'borç'):bakiye<0?(c.tip==='alici'?'borç':'alacak'):''}</td>
+      <td style="font-size:11px">${_logEsc(belgeAd(h))}</td>
+      <td style="font-size:11px;color:var(--yazi3)">${_logEsc(h.aciklama||'')}</td>
+      <td style="text-align:right;font-weight:500">${borc?para(borc):''}</td>
+      <td style="text-align:right;font-weight:500">${alacak?para(alacak):''}</td>
+      <td style="text-align:right;font-weight:600;color:${bakiyeRenk};white-space:nowrap">${para(Math.abs(bakiye))} ${Math.abs(bakiye)<0.005?'':(bakiye>0?(alici?'B':'A'):(alici?'A':'B'))}</td>
     </tr>`;
   }).join('');
-  document.getElementById('cd-tb').innerHTML=rows||'<tr><td colspan="5" class="bos">Hareket yok</td></tr>';
-
-  // Metrikler
-  const topBorc=hareketler.filter(h=>h.tip==='borc').reduce((s,h)=>s+parseFloat(h.tutar||0),0);
-  const topAlacak=hareketler.filter(h=>h.tip==='alacak').reduce((s,h)=>s+parseFloat(h.tutar||0),0);
-  const netBakiye=topAlacak-topBorc;
-  const bakiyeRenk=netBakiye>0?'var(--yesil)':netBakiye<0?'#c62828':'var(--yazi3)';
+  document.getElementById('cd-tb').innerHTML=rows||'<tr><td colspan="6" class="bos">Hareket yok</td></tr>';
+  const net=alici?topB-topA:topA-topB;
+  const aciklama=Math.abs(net)<0.005?'Hesap Kapalı':net>0?(alici?'Alıcı Borcu (bize borçlu)':'Bizim Borcumuz'):(alici?'Fazla Tahsilat':'Fazla Ödeme');
   document.getElementById('cd-met').innerHTML=`
-    <div class="met"><div class="ml">${c.tip==='alici'?'Toplam Satış':'Toplam Alış'}</div><div class="mv d">${para(topBorc+topAlacak)}</div></div>
-    <div class="met"><div class="ml">${c.tip==='alici'?'Tahsil Edilen':'Ödenen'}</div><div class="mv g">${para(c.tip==='alici'?topBorc:topAlacak)}</div></div>
-    <div class="met"><div class="ml">${Math.abs(netBakiye)<0.01?'Hesap Kapalı':netBakiye<0?(c.tip==='alici'?'Alıcı Borcu':'Bizim Borcumuz'):(c.tip==='alici'?'Fazla Ödeme':'Fazla Ödeme')}</div><div class="mv" style="color:${bakiyeRenk};font-family:'Lora',serif;font-size:1.3rem;font-weight:500">${para(Math.abs(netBakiye))}</div></div>`;
+    <div class="met"><div class="ml">Toplam Borç</div><div class="mv">${para(topB)}</div></div>
+    <div class="met"><div class="ml">Toplam Alacak</div><div class="mv">${para(topA)}</div></div>
+    <div class="met"><div class="ml">${aciklama}</div><div class="mv ${net>0.005?'z':'k'}">${para(Math.abs(net))}</div></div>`;
 }
 
 window.cariOdemeEkle=async function(){
