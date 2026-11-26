@@ -492,13 +492,14 @@ window.renderFatGunSekmesi=async function(tur,bitisDegisti){
   const genel=liste.reduce((t,x)=>t+parseFloat(x.genel_toplam||0),0);
   if(ozEl)ozEl.textContent=`${liste.length} fatura · ${_irsSayi(genel)}`;
   tbEl.innerHTML=`<div class="tw"><table><thead><tr>
-    <th>Tarih</th><th>Fatura No</th><th>Cari</th><th style="text-align:right">Tutar</th><th style="text-align:right">KDV</th><th style="text-align:right">KDV Dahil</th><th>Ödeme</th><th>Muhasebe</th>
+    <th>Tarih</th><th>Fatura No</th><th>Cari</th><th>Açıklama</th><th style="text-align:right">Tutar</th><th style="text-align:right">KDV</th><th style="text-align:right">KDV Dahil</th><th>Ödeme</th><th>Muhasebe</th>
   </tr></thead><tbody>${liste.map(x=>{
     const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===x.cari_id):null;
     return `<tr data-id="${x.id}" onclick="fatSec('${tur}','${x.id}')" ondblclick="fatGoruntule('${tur}','${x.id}')" style="cursor:pointer;${_fatSeciliId[tur]===x.id?'background:var(--yesil-cok-ac);':''}">
       <td style="font-size:12px">${x.tarih}</td>
       <td style="font-size:12px">${x.fatura_no||'—'}</td>
       <td style="font-size:12px">${cari?cari.ad:'—'}</td>
+      <td style="font-size:11px;color:var(--yazi2);max-width:340px">${_logEsc(x.aciklama||'')}</td>
       <td style="text-align:right">${_irsSayi(x.toplam)}</td>
       <td style="text-align:right;color:var(--yazi3)">${_irsSayi(x.kdv_toplam)}</td>
       <td style="text-align:right;font-weight:500">${_irsSayi(x.genel_toplam)}</td>
