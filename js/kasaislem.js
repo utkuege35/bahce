@@ -179,9 +179,16 @@ window.kaydetKasaFisi=async function(tur){
   kiGorunumListe(tur);
 };
 // ===== DÜZENLE / GÖRÜNTÜLE / SİL =====
+// Faturadan otomatik oluşan kasa hareketi mi? (Düzenleme/silme faturadan yapılır)
+async function _kiFaturaMi(r){
+  if(!r||!r.belge_id)return false;
+  const {data}=await sb.from('faturalar').select('id').eq('id',r.belge_id).maybeSingle();
+  return !!data;
+}
 window.kiDuzenleAc=async function(tur,id,salt){
   const r=_kiListe[tur].find(x=>_kiAnahtar(x)===id);
   if(!r){bil('Fiş bulunamadı','err');return;}
+  if(!salt&&await _kiFaturaMi(r)){bil('Bu hareket faturadan oluştu. Düzenleme/silme Faturalar ekranından yapılır.','err');return;}
   if(!salt&&!r.belge_id){bil('Bu kayıt eski İşlem ekranından girilmiş. Düzenleme İşlem Listesi\'nden yapılır.','err');return;}
   await kiYeniBaslat(tur);
   const v=(k,val)=>{const el=document.getElementById(`ki-${tur}-${k}`);if(el)el.value=val;};
@@ -199,6 +206,7 @@ window.kiDuzenleAc=async function(tur,id,salt){
 };
 window.kiSil=async function(tur,id){
   const r=_kiListe[tur].find(x=>_kiAnahtar(x)===id);if(!r)return;
+  if(await _kiFaturaMi(r)){bil('Bu hareket faturadan oluştu. Düzenleme/silme Faturalar ekranından yapılır.','err');return;}
   const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===r.cari_id):null;
   if(!(await onay(`Bu ${KI_TURLER[tur].ad.toLowerCase()} fişi silinsin mi?<br><small>Kasa bakiyesi geri alınır${r.cari_id?' ve cari hareketi de silinir':''}.</small>`,'🗑️')))return;
   try{await kasaFisiSilDb(id);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
