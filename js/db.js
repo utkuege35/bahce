@@ -157,6 +157,7 @@ window.faturaSilDb=async function(id){
 window.islemlerKasa=function(tarih,isaret){
   return sbSayfali(()=>{
     let q=_aktifIslemSorgusu().eq('tur','kasa').eq('tarih',tarih);
+    q=q.or('alt_tur.is.null,alt_tur.neq.kasa_transfer'); // kasa transferleri kendi sekmesinde
     q=isaret>0?q.gt('kasa_etkisi',0):q.lt('kasa_etkisi',0);
     return q.order('ts',{ascending:false}).order('id');
   });
