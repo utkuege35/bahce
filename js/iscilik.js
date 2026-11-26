@@ -80,13 +80,14 @@ window.iscListeYenile = async function (bitisDegisti) {
   if (!iscListeVeri[iscSeciliId]) iscSeciliId = null;
   const gen = iscToplamlar(satirlar || [], iscEfSure, r => r.birim, r => r.tutar);
   if (ozEl) ozEl.textContent = `${belgeler.length} kayıt · ${iscSureMetin(gen.saat, gen.gun)}${gen.tutar ? ' · ' + iscTL(gen.tutar) : ''}`;
-  tbEl.innerHTML = `<div class="tw"><table><thead><tr><th>Tarih</th><th>Not</th><th>Kişiler</th><th style="text-align:right">Satır</th><th>Süre</th><th style="text-align:right">Tutar</th></tr></thead><tbody>${belgeler.map(b => {
+  tbEl.innerHTML = `<div class="tw"><table><thead><tr><th>Tarih</th><th>Not</th><th>Kişiler</th><th>Ödeme</th><th style="text-align:right">Satır</th><th>Süre</th><th style="text-align:right">Tutar</th></tr></thead><tbody>${belgeler.map(b => {
     const v = iscListeVeri[b.id], t = iscToplamlar(v.satirlar, iscEfSure, r => r.birim, r => r.tutar);
     const kisiler = [...new Set(v.satirlar.map(s => s.kisi_ad))].join(', ');
     return `<tr data-id="${b.id}" onclick="iscSec('${b.id}')" ondblclick="iscSec('${b.id}');iscListeIslem('goruntule')" style="cursor:pointer;${iscSeciliId === b.id ? 'background:var(--yesil-cok-ac);' : ''}">
       <td style="font-size:12px">${iscTarihGoster(b.tarih)}</td>
       <td style="font-size:12px">${iscEsc(b.aciklama || '—')}</td>
       <td style="font-size:12px">${iscEsc(kisiler || '—')}</td>
+      <td style="font-size:12px;white-space:nowrap">${iscEsc(iscOdemeMetin(b))}</td>
       <td style="text-align:right;font-size:12px">${v.satirlar.length}</td>
       <td style="font-size:12px;white-space:nowrap">${iscSureMetin(t.saat, t.gun)}</td>
       <td style="text-align:right;font-size:12px">${t.tutar ? iscTL(t.tutar) : '—'}</td>
@@ -160,9 +161,19 @@ window.iscOdemeDegis = function () {
 async function iscOdemeKur(odeme, kasaId) {
   const o = document.getElementById('isc-odeme'), k = document.getElementById('isc-kasa');
   if (typeof kasaSelectDoldur === 'function') await kasaSelectDoldur('isc-kasa', true);
-  if (k && kasaId && ![...k.options].some(x => x.value === kasaId)) k.insertAdjacentHTML('beforeend', `<option value="${kasaId}">(kayıtlı kasa)</option>`);
+  if (k && kasaId && ![...k.options].some(x => x.value === kasaId)) k.insertAdjacentHTML('beforeend', `<option value="${kasaId}">${iscKasaAd(kasaId) || '(kayıtlı kasa)'}</option>`);
   if (o) o.value = odeme; if (k) k.value = kasaId || '';
   iscOdemeDegis();
+}
+
+// Liste için ödeme metni: Cari veya Peşin · kasa adı
+function iscKasaAd(id) {
+  const k = (typeof kasalar_list !== 'undefined' ? kasalar_list : []).find(x => String(x.id) === String(id));
+  return k ? k.ad : '';
+}
+function iscOdemeMetin(b) {
+  if (b.odeme_tipi !== 'pesin') return 'Cari';
+  return 'Peşin · ' + (iscKasaAd(b.kasa_id) || 'kasa ?');
 }
 
 function iscSatirHtml(s, i) {
