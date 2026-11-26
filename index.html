@@ -1804,8 +1804,10 @@
           <thead><tr>
             <th style="min-width:140px">Kişi</th>
             <th style="min-width:170px">Gider Kalemi</th>
-            <th style="min-width:110px">Süre</th>
-            <th style="min-width:100px">Birim</th>
+            <th style="min-width:80px">Kişi Sayısı</th>
+            <th style="min-width:90px">Süre</th>
+            <th style="min-width:90px">Birim</th>
+            <th style="min-width:110px">Birim Fiyat (Yevmiye)</th>
             <th style="min-width:120px">Tutar (TL)</th>
             <th style="min-width:220px">Açıklama</th>
             <th style="width:80px"></th>
@@ -1813,13 +1815,13 @@
           <tbody id="isc-satirlar"></tbody>
           <tfoot><tr>
             <td colspan="2" style="text-align:right;font-weight:500;padding:10px 9px;color:var(--yazi2);font-size:12px">TOPLAM</td>
-            <td colspan="2" id="isc-toplam-sure" style="font-weight:600;font-size:13px;color:var(--yazi2);padding:10px 9px">—</td>
+            <td colspan="4" id="isc-toplam-sure" style="font-weight:600;font-size:13px;color:var(--yazi2);padding:10px 9px">—</td>
             <td id="isc-toplam-tutar" style="font-weight:600;font-family:'Lora',serif;font-size:15px;color:var(--yesil);padding:10px 9px;text-align:right">0,00</td>
             <td></td><td></td>
           </tr></tfoot>
         </table>
       </div>
-      <div style="font-size:11px;color:var(--yazi3);margin-bottom:.75rem">Süre, birim ve tutar boş bırakılabilir. ⧉ düğmesi satırı başka kişi için çoğaltır.</div>
+      <div style="font-size:11px;color:var(--yazi3);margin-bottom:.75rem">Tutar = kişi sayısı × süre × birim fiyat (yevmiye). Örn: 3 kişi, 1 gün, 800 ₺ → 2.400 ₺. Tutarı doğrudan da yazabilirsiniz. Süre, birim ve fiyat boş bırakılabilir. ⧉ düğmesi satırı başka kişi için çoğaltır.</div>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <button class="btn ghost" id="isc-cik-btn" onclick="iscKaydetmedenCik()">Kaydetmeden Çık</button>
         <button class="btn pri" id="isc-kaydet-btn" onclick="iscKaydet()">Kaydet</button>
