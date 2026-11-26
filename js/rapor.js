@@ -289,6 +289,8 @@ function _cariDetayRender(cariId){
   // Bakiye: alıcıda Borç−Alacak (+ = bize borçlu, B), satıcıda Alacak−Borç (+ = borcumuz, A).
   const belgeAd=h=>{
     if(h.kaynak==='fatura')return (alici?'Satış Faturası':'Alış Faturası')+(h.belge_no?' '+h.belge_no:'');
+    if(h.kaynak==='iscilik')return 'İşçilik Kaydı';
+    if(h.kaynak==='iscilik_odeme')return 'İşçilik Ödemesi (Peşin)';
     if(h.kaynak==='fatura_odeme')return (alici?'Peşin Tahsilat':'Peşin Ödeme')+(h.belge_no?' · '+h.belge_no:'');
     if(h.belge_id)return h.tip==='alacak'?'Tediye (Kasa)':'Tahsil (Kasa)';
     return 'Cari Hareket';
