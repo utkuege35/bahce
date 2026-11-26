@@ -1255,6 +1255,9 @@
   <style>
     /* Rapor tüm ekran genişliğini kullanır (genel sayfa sınırı 980px'dir; yan menü payı korunur) */
     /* Stoklar ekranı: tüm genişliği kullan, soldaki menüden biraz uzak dur */
+    /* Faturalar ekranı: tüm genişliği kullan */
+    #faturalar.page{max-width:none;margin-right:0;padding-left:2.5rem;padding-right:1.75rem}
+    @media(max-width:768px){#faturalar.page{padding-left:.85rem;padding-right:.85rem}}
     #stok.page{max-width:none;margin-right:0;padding-left:2.5rem;padding-right:1.75rem}
     @media(max-width:768px){#stok.page{padding-left:.85rem;padding-right:.85rem}}
     #stok-grid{display:grid;grid-template-columns:minmax(360px,.9fr) 1.6fr;gap:1rem}
