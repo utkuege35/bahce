@@ -467,8 +467,10 @@
     <div id="tp-fat-alis-liste">
       <div class="card">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Başlangıç</label>
           <input type="date" id="fat-alis-liste-tarih" onchange="renderFatGunSekmesi('alis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em" title="Boş bırakılırsa sadece seçili gün listelenir">Bitiş</label>
+          <input type="date" id="fat-alis-liste-bit" onchange="renderFatGunSekmesi('alis',true)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="fatYeniBaslat('alis')">Yeni</button>
           <button class="btn sm" onclick="fatListeIslem('alis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
           <button class="btn sm" onclick="fatListeIslem('alis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
@@ -535,8 +537,10 @@
     <div id="tp-fat-satis-liste">
       <div class="card">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Başlangıç</label>
           <input type="date" id="fat-satis-liste-tarih" onchange="renderFatGunSekmesi('satis')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em" title="Boş bırakılırsa sadece seçili gün listelenir">Bitiş</label>
+          <input type="date" id="fat-satis-liste-bit" onchange="renderFatGunSekmesi('satis',true)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="fatYeniBaslat('satis')">Yeni</button>
           <button class="btn sm" onclick="fatListeIslem('satis','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
           <button class="btn sm" onclick="fatListeIslem('satis','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
@@ -595,8 +599,10 @@
     <div id="tp-fat-iade-liste">
       <div class="card">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Başlangıç</label>
           <input type="date" id="fat-iade-liste-tarih" onchange="renderFatGunSekmesi('iade')" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em" title="Boş bırakılırsa sadece seçili gün listelenir">Bitiş</label>
+          <input type="date" id="fat-iade-liste-bit" onchange="renderFatGunSekmesi('iade',true)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <button class="btn sm pri" onclick="fatYeniBaslat('iade')">Yeni</button>
           <button class="btn sm" onclick="fatListeIslem('iade','goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
           <button class="btn sm" onclick="fatListeIslem('iade','duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
@@ -1773,8 +1779,10 @@
   <div id="isc-liste-bolum">
     <div class="card">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
-        <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Tarih</label>
+        <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Başlangıç</label>
         <input type="date" id="isc-liste-tarih" onchange="iscListeYenile()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+        <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em" title="Boş bırakılırsa sadece seçili gün listelenir">Bitiş</label>
+        <input type="date" id="isc-liste-bit" onchange="iscListeYenile(true)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
         <button class="btn sm pri" onclick="iscYeniBaslat()">Yeni</button>
         <button class="btn sm" onclick="iscListeIslem('goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
         <button class="btn sm" onclick="iscListeIslem('duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
