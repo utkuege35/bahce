@@ -104,6 +104,7 @@ window.panelFiltre=function(tip,btn){
   renderPanel();
 };
 
+const _pnPara=n=>String(para(n)).replace(/\s*(₺|TL)\s*/g,'');
 const _PN_YAZI='#cfe6ff',_PN_IZGARA='rgba(120,170,230,.12)';
 function _pnGrad(ctx,c1,c2){
   const ch=ctx.chart,a=ch.chartArea;if(!a)return c1;
@@ -149,12 +150,12 @@ function _pnDonut(id,map,bosYazi){
   _pnDolu(el);
   const renk=['#22d3ee','#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899','#f43f5e','#a3e635','#94a3b8'];
   if(liste)liste.innerHTML=ent.map(([k,v],i)=>{const y=v/top*100;
-    return `<div class="pn-gs"><div class="s1"><i class="nk" style="background:${renk[i%renk.length]}"></i><span class="ad" title="${_logEsc(k)}">${_logEsc(k)}</span><span class="tt">${para(v)}</span><span class="yz">${y<1?'<%1':'%'+Math.round(y)}</span></div><div class="pn-cubuk"><i style="width:${Math.max(2,y)}%;background:${renk[i%renk.length]}"></i></div></div>`;}).join('');
+    return `<div class="pn-gs"><div class="s1"><i class="nk" style="background:${renk[i%renk.length]}"></i><span class="ad" title="${_logEsc(k)}">${_logEsc(k)}</span><span class="tt">${_pnPara(v)}</span><span class="yz">${y<1?'<%1':'%'+Math.round(y)}</span></div><div class="pn-cubuk"><i style="width:${Math.max(2,y)}%;background:${renk[i%renk.length]}"></i></div></div>`;}).join('');
   _panelGrafikler[id]=new Chart(el,{type:'doughnut',
     data:{labels:ent.map(([k])=>k),datasets:[{data:ent.map(([,v])=>Math.round(v)),backgroundColor:renk,borderColor:'#071334',borderWidth:3,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:c=>` ${c.label}: ₺${c.raw.toLocaleString('tr-TR')} (%${Math.round(c.raw/top*100)})`}}}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString('tr-TR')} (%${Math.round(c.raw/top*100)})`}}}},
     plugins:[{id:'yuzde',afterDatasetsDraw(ch){
       const c=ch.ctx,m=ch.getDatasetMeta(0);
       c.save();c.textAlign='center';c.textBaseline='middle';c.font='bold 13px sans-serif';c.fillStyle='#fff';c.shadowColor='rgba(0,0,0,.85)';c.shadowBlur=4;
@@ -165,7 +166,7 @@ function _pnDonut(id,map,bosYazi){
       c.restore();}},{id:'orta',afterDraw(ch){
       const m=ch.getDatasetMeta(0).data[0];if(!m)return;const x=m.x,y=m.y,c=ch.ctx;
       c.save();c.textAlign='center';c.fillStyle='#8fb4d9';c.font='11px sans-serif';c.fillText('Toplam',x,y-10);
-      c.fillStyle='#fff';c.font='bold 16px sans-serif';c.fillText('₺'+Math.round(top).toLocaleString('tr-TR'),x,y+10);c.restore();}}]});
+      c.fillStyle='#fff';c.font='bold 16px sans-serif';c.fillText(''+Math.round(top).toLocaleString('tr-TR'),x,y+10);c.restore();}}]});
 }
 function _pnRing(id,oran,renk){
   const el=document.getElementById(id);if(!el)return;
@@ -190,9 +191,9 @@ async function renderPanel(){
   const net=gelir-gider;
   const marj=(gelir>0&&net>=0)?Math.round(net/gelir*100):null;
   document.getElementById('panel-met').innerHTML=`
-    <div class="pn-k"><div><div class="pn-kl">Gelir</div><div class="pn-kv g">${para(gelir)}</div><div class="pn-ks">KDV dahil</div></div></div>
-    <div class="pn-k"><div><div class="pn-kl">Gider</div><div class="pn-kv d">${para(gider)}</div><div class="pn-ks">KDV dahil</div></div></div>
-    <div class="pn-k"><div><div class="pn-kl">${net>=0?'Kâr':'Zarar'}</div><div class="pn-kv ${net>=0?'n':'z'}">${para(Math.abs(net))}</div><div class="pn-ks">${marj===null?'Gelir – Gider':'Kâr marjı %'+marj}</div></div>
+    <div class="pn-k"><div><div class="pn-kl">Gelir</div><div class="pn-kv g">${_pnPara(gelir)}</div><div class="pn-ks">KDV dahil</div></div></div>
+    <div class="pn-k"><div><div class="pn-kl">Gider</div><div class="pn-kv d">${_pnPara(gider)}</div><div class="pn-ks">KDV dahil</div></div></div>
+    <div class="pn-k"><div><div class="pn-kl">${net>=0?'Kâr':'Zarar'}</div><div class="pn-kv ${net>=0?'n':'z'}">${_pnPara(Math.abs(net))}</div><div class="pn-ks">${marj===null?'Gelir – Gider':'Kâr marjı %'+marj}</div></div>
       <div class="pn-ring"><canvas id="pn-ring"></canvas><b>${marj===null?'—':'%'+marj}</b></div></div>`;
   _pnRing('pn-ring',marj||0,'#22d3ee');
 
@@ -220,8 +221,8 @@ async function renderPanel(){
         ds('Gider',dm,'rgba(245,158,11,.45)','rgba(245,158,11,.02)','#f59e0b')]},
         plugins:[_pnCizgiAd],
         options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:22,right:14}},
-          plugins:{legend:{position:'bottom',labels:{color:_PN_YAZI,boxWidth:10,font:{size:12}}},tooltip:{callbacks:{label:v=>' '+v.dataset.label+': ₺'+v.raw.toLocaleString('tr-TR')}}},
-          scales:{x:{grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11}}},y:{beginAtZero:true,grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11},callback:v=>'₺'+v.toLocaleString('tr-TR')}}}}});
+          plugins:{legend:{position:'bottom',labels:{color:_PN_YAZI,boxWidth:10,font:{size:12}}},tooltip:{callbacks:{label:v=>' '+v.dataset.label+': '+v.raw.toLocaleString('tr-TR')}}},
+          scales:{x:{grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11}}},y:{beginAtZero:true,grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11},callback:v=>''+v.toLocaleString('tr-TR')}}}}});
     }else _pnBos(c1,'Bu dönemde işlem yok');
   }
 
@@ -245,8 +246,8 @@ async function renderPanel(){
     const top=liste.reduce((s,x)=>s+parseFloat(x.bakiye),0);
     const mx=liste.length?parseFloat(liste[0].bakiye):1;
     return `<div class="pn-kart"><div class="pn-kt">${baslik}</div>
-      <div class="pn-toplam" style="color:${renk}">${para(top)}</div>
-      ${liste.length?liste.slice(0,6).map(x=>`<div class="pn-sat"><div class="s1"><span>${_logEsc(x.ad||'')}</span><span style="font-weight:600;color:${renk}">${para(parseFloat(x.bakiye))}</span></div><div class="pn-cubuk"><i style="width:${Math.max(4,parseFloat(x.bakiye)/mx*100)}%;background:${renk}"></i></div></div>`).join('')
+      <div class="pn-toplam" style="color:${renk}">${_pnPara(top)}</div>
+      ${liste.length?liste.slice(0,6).map(x=>`<div class="pn-sat"><div class="s1"><span>${_logEsc(x.ad||'')}</span><span style="font-weight:600;color:${renk}">${_pnPara(parseFloat(x.bakiye))}</span></div><div class="pn-cubuk"><i style="width:${Math.max(4,parseFloat(x.bakiye)/mx*100)}%;background:${renk}"></i></div></div>`).join('')
         +(liste.length>6?`<div class="pn-bos" style="padding:8px 0 0">+${liste.length-6} kişi/firma daha</div>`:''):`<div class="pn-bos">${bos}</div>`}</div>`;
   };
   const bel=document.getElementById('panel-borc');
