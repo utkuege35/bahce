@@ -24,9 +24,11 @@ window.kiTab=function(id,btn){
   document.querySelectorAll('#kasa-islemleri .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tp-ki-'+id)?.classList.add('active');
   btn.classList.add('active');
-  _aktifKiTab=id;kiGorunumListe(id);
+  _aktifKiTab=id;
+  if(id==='transfer'){ktGorunumListe();return;}
+  kiGorunumListe(id);
 };
-window.kiAcilis=function(){kiGorunumListe(_aktifKiTab);};
+window.kiAcilis=function(){if(_aktifKiTab==='transfer')ktGorunumListe();else kiGorunumListe(_aktifKiTab);};
 
 // ===== LİSTE =====
 window.kiGorunumListe=function(tur){
