@@ -115,7 +115,29 @@ function _pnBos(canvas,yazi){
   if(!d){d=document.createElement('div');d.className='pn-bos';canvas.parentNode.appendChild(d);}
   d.textContent=yazi;
 }
+const _pnCizgiAd={id:'cizgiad',afterDatasetsDraw(ch){
+  const c=ch.ctx;
+  const yerler=[];
+  ch.data.datasets.forEach((d,i)=>{
+    const m=ch.getDatasetMeta(i);if(!m.data.length||m.hidden)return;
+    const n=m.data.length-1,pt=m.data[n];
+    yerler.push({d,x:pt.x,y:pt.y,v:d.data[n]});
+  });
+  yerler.sort((a,b)=>a.y-b.y);
+  for(let i=1;i<yerler.length;i++)if(yerler[i].y-yerler[i-1].y<16)yerler[i].y=yerler[i-1].y+16; // üst üste binmesin
+  c.save();c.font='bold 12px sans-serif';c.textAlign='right';c.textBaseline='bottom';
+  yerler.forEach(o=>{
+    c.fillStyle=o.d.borderColor;
+    c.shadowColor=o.d.borderColor;c.shadowBlur=8;
+    c.fillText(o.d.label,o.x,o.y-8);
+  });c.restore();}};
 function _pnDolu(canvas){canvas.style.display='';const d=canvas.parentNode.querySelector('.pn-bos');if(d)d.remove();}
+function _pnBaslik(s){
+  s=String(s||'').trim();
+  if(s.length>3&&s===s.toLocaleUpperCase('tr-TR'))
+    return s.toLocaleLowerCase('tr-TR').replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase('tr-TR'));
+  return s;
+}
 function _pnDonut(id,map,bosYazi){
   const el=document.getElementById(id);if(!el)return;
   if(_panelGrafikler[id]){try{_panelGrafikler[id].destroy();}catch(e){}_panelGrafikler[id]=null;}
@@ -175,7 +197,8 @@ async function renderPanel(){
     else if(['gider','giris'].includes(i.tur))dm[k]=(dm[k]||0)+hrkTutar(i);
   });
   const etk=[...new Set([...Object.keys(gm),...Object.keys(dm)])].sort();
-  const etiket=k=>aylik?k.slice(5)+'.'+k.slice(2,4):k.slice(8,10)+'.'+k.slice(5,7);
+  const AYLAR=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const etiket=k=>aylik?AYLAR[parseInt(k.slice(5,7),10)-1]+' '+k.slice(0,4):k.slice(8,10)+'.'+k.slice(5,7);
   if(_panelChart){_panelChart.destroy();_panelChart=null;}
   const c1=document.getElementById('panel-chart');
   if(c1){
@@ -185,7 +208,8 @@ async function renderPanel(){
       _panelChart=new Chart(c1,{type:'line',data:{labels:etk.map(etiket),datasets:[
         ds('Gelir',gm,'rgba(34,211,238,.55)','rgba(34,211,238,.02)','#22d3ee'),
         ds('Gider',dm,'rgba(245,158,11,.45)','rgba(245,158,11,.02)','#f59e0b')]},
-        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:[_pnCizgiAd],
+        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:22,right:14}},
           plugins:{legend:{position:'bottom',labels:{color:_PN_YAZI,boxWidth:10,font:{size:12}}},tooltip:{callbacks:{label:v=>' '+v.dataset.label+': ₺'+v.raw.toLocaleString('tr-TR')}}},
           scales:{x:{grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11}}},y:{beginAtZero:true,grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11},callback:v=>'₺'+v.toLocaleString('tr-TR')}}}}});
     }else _pnBos(c1,'Bu dönemde işlem yok');
@@ -197,6 +221,7 @@ async function renderPanel(){
     let ad='Diğer';
     if(i.gider_kalem_id){const k=giderKalemleri.find(x=>x.id===i.gider_kalem_id);ad=k?.ad||'Gider';}
     else ad=i.aciklama||i.kat||'Diğer';
+    ad=_pnBaslik(ad);
     giderMap[ad]=(giderMap[ad]||0)+hrkTutar(i);
   });
   const alisT=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+hrkTutar(i),0);
