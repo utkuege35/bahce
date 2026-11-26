@@ -28,7 +28,7 @@
     // İşlem Listesi'nden sayım fişini açma: (belgeAnahtari, salt) — salt=true görüntüleme
     sayimFisiDuzenleAc:a=>e('stok_islemleri',a[1]?'goruntule':'duzenle'),
     // Kasa İşlemleri (tur, islem)
-    kiYeniBaslat:()=>e('kasa_islemleri','ekle'), kiListeIslem:a=>liste('kasa_islemleri',a[1]), kaydetKasaFisi:()=>e('kasa_islemleri',KAYDET),
+    kiYeniBaslat:()=>e('kasa_islemleri','ekle'), kiListeIslem:a=>liste('kasa_islemleri',a[1]), kaydetKasaFisi:()=>e('kasa_islemleri',KAYDET), ktYeniBaslat:()=>e('kasa_islemleri','ekle'), ktListeIslem:a=>liste('kasa_islemleri',a[1]), ktKaydet:()=>e('kasa_islemleri',KAYDET),
     // Bağımsız Raporlama: dosya seçme/yükleme = ekle, parti silme = sil (raporları görmek = görüntüle)
     aktarimDosyaSecildi:()=>e('bagimsiz_raporlama','ekle'), aktarimOnayla:()=>e('bagimsiz_raporlama','ekle'), aktarimPartiSil:()=>e('bagimsiz_raporlama','sil'),
     aktarimEnvDosyaSecildi:()=>e('bagimsiz_raporlama','ekle'), aktarimEnvOnayla:()=>e('bagimsiz_raporlama','ekle'),
@@ -49,7 +49,7 @@
     window[ad]=sarmal;
   });
   // Araç çubuğu düğmeleri: onclick="irsListeIslem('alis','duzenle')" gibi çağrıları okuyup yetkisizse gizler
-  const DUGME=/^\s*(irsYeniBaslat|irsListeIslem|fatYeniBaslat|fatListeIslem|dvrYeniBaslat|dvrListeIslem|trfYeniBaslat|trfListeIslem|scYeniBaslat|scListeIslem|urYeniBaslat|urListeIslem|syYeniBaslat|syListeIslem|kiYeniBaslat|kiListeIslem|iscYeniBaslat|iscListeIslem|kdvYeniAc)\(([^)]*)\)/;
+  const DUGME=/^\s*(irsYeniBaslat|irsListeIslem|fatYeniBaslat|fatListeIslem|dvrYeniBaslat|dvrListeIslem|trfYeniBaslat|trfListeIslem|scYeniBaslat|scListeIslem|urYeniBaslat|urListeIslem|syYeniBaslat|syListeIslem|kiYeniBaslat|kiListeIslem|ktYeniBaslat|ktListeIslem|iscYeniBaslat|iscListeIslem|kdvYeniAc)\(([^)]*)\)/;
   window.yetkiEylemleriUygula=function(){
     document.querySelectorAll('button[onclick]').forEach(b=>{
       const m=(b.getAttribute('onclick')||'').match(DUGME);
