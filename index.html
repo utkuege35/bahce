@@ -1798,6 +1798,13 @@
         <div class="fg"><label>Tarih</label><input type="date" id="isc-tarih"></div>
         <div class="fg" style="grid-column:span 3"><label>Not</label><input type="text" id="isc-not" maxlength="500" placeholder="Açıklama..."></div>
       </div>
+      <div class="fgrid c4" style="margin-bottom:1rem">
+        <div class="fg"><label>Ödeme Tipi</label>
+          <select id="isc-odeme" onchange="iscOdemeDegis()"><option value="cari">Cari (ödenecek)</option><option value="pesin">Peşin</option></select>
+        </div>
+        <div class="fg" id="isc-kasa-fg" style="display:none"><label>Kasa</label><select id="isc-kasa"><option value="">— Kasa seçin —</option></select></div>
+        <div class="fg" style="grid-column:span 2;display:flex;align-items:flex-end;font-size:11px;color:var(--yazi3)">Tutarı olan her satır, seçilen kişinin cari hesabına işlenir. Peşin seçilirse ödeme de yazılır ve kasadan çıkış yapılır.</div>
+      </div>
       <div id="isc-uyari"></div>
       <div class="tw" style="margin-bottom:.75rem">
         <table class="excel-tablo" style="font-size:13px">
