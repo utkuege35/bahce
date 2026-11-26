@@ -173,7 +173,7 @@ async function baslat(){
     isyFil(sb.from('merkezler').select('*')).order('kod'),
     isyFil(sb.from('gider_kalemleri').select('*')).order('kod'),
     sbSayfali(()=>sb.from('islem_loglari').select('*').order('tarih',{ascending:false}).order('id')).then(data=>({data})).catch(()=>({data:null})),
-    isyFil(sb.from('kasalar').select('*')).order('kod'),
+    sb.from('kasalar').select('*').eq('isyeri_id',aktifIsyeri?.id).order('kod'), // kasalar işyeri bazlı (ortak kasa yok)
     isyFil(sb.from('depolar').select('*')).order('ad'),
     sb.from('kdv_oranlari').select('*').order('sira')
   ]);
