@@ -155,7 +155,14 @@ function _pnDonut(id,map,bosYazi){
     options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>` ${c.label}: ₺${c.raw.toLocaleString('tr-TR')} (%${Math.round(c.raw/top*100)})`}}}},
-    plugins:[{id:'orta',afterDraw(ch){
+    plugins:[{id:'yuzde',afterDatasetsDraw(ch){
+      const c=ch.ctx,m=ch.getDatasetMeta(0);
+      c.save();c.textAlign='center';c.textBaseline='middle';c.font='bold 13px sans-serif';c.fillStyle='#fff';c.shadowColor='rgba(0,0,0,.85)';c.shadowBlur=4;
+      m.data.forEach((arc,i)=>{
+        const v=ch.data.datasets[0].data[i],y=v/top*100;if(y<6)return;
+        const a=(arc.startAngle+arc.endAngle)/2,r=(arc.innerRadius+arc.outerRadius)/2;
+        c.fillText('%'+Math.round(y),arc.x+Math.cos(a)*r,arc.y+Math.sin(a)*r);});
+      c.restore();}},{id:'orta',afterDraw(ch){
       const m=ch.getDatasetMeta(0).data[0];if(!m)return;const x=m.x,y=m.y,c=ch.ctx;
       c.save();c.textAlign='center';c.fillStyle='#8fb4d9';c.font='11px sans-serif';c.fillText('Toplam',x,y-10);
       c.fillStyle='#fff';c.font='bold 16px sans-serif';c.fillText('₺'+Math.round(top).toLocaleString('tr-TR'),x,y+10);c.restore();}}]});
