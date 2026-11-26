@@ -131,11 +131,12 @@ window.iscYeniBaslat = async function () {
   iscSatirlar = [iscBosSatir()];
   document.getElementById('isc-tarih').value = iscBugun();
   document.getElementById('isc-not').value = '';
+  await iscOdemeKur('cari', '');
   iscFormCiz(); iscFormGoster(true);
   document.querySelector('#isc-satirlar [data-ilk]')?.focus();
 };
 
-function iscKayitAc(v, salt) {
+async function iscKayitAc(v, salt) {
   const b = v.belge;
   iscDuzenId = b.id; iscGoruntuleme = !!salt;
   iscKalemYedek = {};
@@ -147,7 +148,21 @@ function iscKayitAc(v, salt) {
   if (!salt) iscSatirlar.push(iscBosSatir());
   document.getElementById('isc-tarih').value = b.tarih;
   document.getElementById('isc-not').value = b.aciklama || '';
+  await iscOdemeKur(b.odeme_tipi || 'cari', b.kasa_id || '');
   iscFormCiz(); iscFormGoster(true);
+}
+
+// Ödeme tipi / kasa alanları
+window.iscOdemeDegis = function () {
+  const pesin = document.getElementById('isc-odeme')?.value === 'pesin';
+  const fg = document.getElementById('isc-kasa-fg'); if (fg) fg.style.display = pesin ? '' : 'none';
+};
+async function iscOdemeKur(odeme, kasaId) {
+  const o = document.getElementById('isc-odeme'), k = document.getElementById('isc-kasa');
+  if (typeof kasaSelectDoldur === 'function') await kasaSelectDoldur('isc-kasa', true);
+  if (k && kasaId && ![...k.options].some(x => x.value === kasaId)) k.insertAdjacentHTML('beforeend', `<option value="${kasaId}">(kayıtlı kasa)</option>`);
+  if (o) o.value = odeme; if (k) k.value = kasaId || '';
+  iscOdemeDegis();
 }
 
 function iscSatirHtml(s, i) {
@@ -178,6 +193,8 @@ function iscFormCiz() {
   if (b) b.textContent = iscGoruntuleme ? 'İşçilik Kaydı (Görüntüleme)' : (iscDuzenId ? 'İşçilik Kaydı (Düzenle)' : 'İşçilik Kaydı');
   document.getElementById('isc-tarih').disabled = iscGoruntuleme;
   document.getElementById('isc-not').disabled = iscGoruntuleme;
+  document.getElementById('isc-odeme').disabled = iscGoruntuleme;
+  document.getElementById('isc-kasa').disabled = iscGoruntuleme;
   const kaydet = document.getElementById('isc-kaydet-btn'); if (kaydet) kaydet.style.display = iscGoruntuleme ? 'none' : '';
   const cik = document.getElementById('isc-cik-btn'); if (cik) cik.textContent = iscGoruntuleme ? 'Kapat' : 'Kaydetmeden Çık';
   iscToplamGuncelle();
@@ -231,6 +248,8 @@ window.iscKaydet = async function () {
   if (!aktifIsyeri?.id) { bil('İşyeri seçili değil', 'err'); return; }
   const tarih = document.getElementById('isc-tarih').value;
   if (!tarih) { bil('Tarih seçin!', 'err'); return; }
+  const odeme = document.getElementById('isc-odeme').value || 'cari', kasaId = document.getElementById('isc-kasa').value || null;
+  if (odeme === 'pesin' && !kasaId) { bil('Peşin ödeme seçiliyse kasa seçimi zorunlu!', 'err'); return; }
   const dolu = iscSatirlar.filter(iscSatirDolu);
   if (!dolu.length) { bil('Kaydedilecek satır yok', 'err'); return; }
   const satirlar = [];
@@ -258,7 +277,8 @@ window.iscKaydet = async function () {
   const { error } = await sb.rpc('isci_belge_kaydet', {
     p_id: iscDuzenId || null, p_isyeri: aktifIsyeri.id, p_tarih: tarih,
     p_aciklama: document.getElementById('isc-not').value.trim() || null,
-    p_satirlar: satirlar, p_kullanici: aktifKullanici?.ad || null
+    p_satirlar: satirlar, p_kullanici: aktifKullanici?.ad || null,
+    p_odeme: odeme, p_kasa: odeme === 'pesin' ? kasaId : null
   });
   if (error) { bil('Kaydedilemedi: ' + error.message, 'err'); return; }
   const duzenlemeydi = !!iscDuzenId;
