@@ -56,15 +56,19 @@ window.renderIscilik = async function () {
   await iscListeYenile();
 };
 
-window.iscListeYenile = async function () {
+window.iscListeYenile = async function (bitisDegisti) {
   const tbEl = document.getElementById('isc-liste-tb'); if (!tbEl || !aktifIsyeri?.id) return;
-  const tarih = document.getElementById('isc-liste-tarih').value || iscBugun();
+  const basEl = document.getElementById('isc-liste-tarih'), bitEl = document.getElementById('isc-liste-bit');
+  const tarih = basEl.value || iscBugun();
+  // Bitiş boşsa sadece seçili gün; bitiş başlangıçtan önceyse düzeltilir
+  if (bitEl && bitEl.value && bitEl.value < tarih) { if (bitisDegisti) basEl.value = bitEl.value; else bitEl.value = tarih; }
+  const basT = basEl.value || tarih, bitT = (bitEl && bitEl.value) || basT;
   tbEl.innerHTML = '<div class="bos">Yükleniyor...</div>';
-  const { data: belgeler, error } = await sb.from('isci_belgeleri').select('*').eq('isyeri_id', aktifIsyeri.id).eq('tarih', tarih).order('olusturma', { ascending: true });
+  const { data: belgeler, error } = await sb.from('isci_belgeleri').select('*').eq('isyeri_id', aktifIsyeri.id).gte('tarih', basT).lte('tarih', bitT).order('tarih', { ascending: true }).order('olusturma', { ascending: true });
   if (error) { tbEl.innerHTML = '<div class="bos">Okunamadı: ' + iscEsc(error.message) + '</div>'; return; }
   iscListeVeri = {};
   const ozEl = document.getElementById('isc-liste-ozet');
-  if (!belgeler || !belgeler.length) { iscSeciliId = null; tbEl.innerHTML = '<div class="bos">Bu tarihte kayıt yok.</div>'; if (ozEl) ozEl.textContent = ''; return; }
+  if (!belgeler || !belgeler.length) { iscSeciliId = null; tbEl.innerHTML = '<div class="bos">Bu tarih aralığında kayıt yok.</div>'; if (ozEl) ozEl.textContent = ''; return; }
   const { data: satirlar, error: e2 } = await sb.from('isci_belge_satirlari').select('*').in('belge_id', belgeler.map(b => b.id)).order('sira', { ascending: true });
   if (e2) { tbEl.innerHTML = '<div class="bos">Okunamadı: ' + iscEsc(e2.message) + '</div>'; return; }
   belgeler.forEach(b => { iscListeVeri[b.id] = { belge: b, satirlar: [] }; });
