@@ -104,6 +104,45 @@ window.panelFiltre=function(tip,btn){
   renderPanel();
 };
 
+const _PN_YAZI='#cfe6ff',_PN_IZGARA='rgba(120,170,230,.12)';
+function _pnGrad(ctx,c1,c2){
+  const ch=ctx.chart,a=ch.chartArea;if(!a)return c1;
+  const g=ch.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;
+}
+function _pnBos(canvas,yazi){
+  canvas.style.display='none';
+  let d=canvas.parentNode.querySelector('.pn-bos');
+  if(!d){d=document.createElement('div');d.className='pn-bos';canvas.parentNode.appendChild(d);}
+  d.textContent=yazi;
+}
+function _pnDolu(canvas){canvas.style.display='';const d=canvas.parentNode.querySelector('.pn-bos');if(d)d.remove();}
+function _pnDonut(id,map,bosYazi){
+  const el=document.getElementById(id);if(!el)return;
+  if(_panelGrafikler[id]){try{_panelGrafikler[id].destroy();}catch(e){}_panelGrafikler[id]=null;}
+  const ent=Object.entries(map).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(ent.length>6){const dig=ent.splice(5).reduce((s,[,v])=>s+v,0);ent.push(['Diğer',dig]);}
+  const top=ent.reduce((s,[,v])=>s+v,0);
+  if(!top){_pnBos(el,bosYazi);return;}
+  _pnDolu(el);
+  const renk=['#22d3ee','#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899'];
+  _panelGrafikler[id]=new Chart(el,{type:'doughnut',
+    data:{labels:ent.map(([k])=>k),datasets:[{data:ent.map(([,v])=>Math.round(v)),backgroundColor:renk,borderColor:'#071334',borderWidth:3,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
+      plugins:{legend:{position:'bottom',labels:{color:_PN_YAZI,boxWidth:10,padding:8,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ₺${c.raw.toLocaleString('tr-TR')} (%${Math.round(c.raw/top*100)})`}}}},
+    plugins:[{id:'orta',afterDraw(ch){
+      const m=ch.getDatasetMeta(0).data[0];if(!m)return;const x=m.x,y=m.y,c=ch.ctx;
+      c.save();c.textAlign='center';c.fillStyle='#8fb4d9';c.font='11px sans-serif';c.fillText('Toplam',x,y-10);
+      c.fillStyle='#fff';c.font='bold 16px sans-serif';c.fillText('₺'+Math.round(top).toLocaleString('tr-TR'),x,y+10);c.restore();}}]});
+}
+function _pnRing(id,oran,renk){
+  const el=document.getElementById(id);if(!el)return;
+  if(_panelGrafikler[id]){try{_panelGrafikler[id].destroy();}catch(e){}}
+  const o=Math.max(0,Math.min(100,oran));
+  _panelGrafikler[id]=new Chart(el,{type:'doughnut',data:{datasets:[{data:[o,100-o],backgroundColor:[renk,'rgba(120,170,230,.15)'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'74%',events:[],plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+}
+
 async function renderPanel(){
   const {bas,bit}=_panelAralik();
   const tr=d=>d?d.split('-').reverse().join('.'):'';
@@ -119,11 +158,13 @@ async function renderPanel(){
   const net=gelir-gider;
   const marj=(gelir>0&&net>=0)?Math.round(net/gelir*100):null;
   document.getElementById('panel-met').innerHTML=`
-    <div class="pn-k g"><div class="pn-kl">Gelir</div><div class="pn-kv g">${para(gelir)}</div><div class="pn-ks">KDV dahil</div></div>
-    <div class="pn-k d"><div class="pn-kl">Gider</div><div class="pn-kv d">${para(gider)}</div><div class="pn-ks">KDV dahil</div></div>
-    <div class="pn-k ${net>=0?'n':'z'}"><div class="pn-kl">${net>=0?'Kâr':'Zarar'}</div><div class="pn-kv ${net>=0?'':'z'}">${para(Math.abs(net))}</div><div class="pn-ks">${marj===null?'Gelir – Gider':'Kâr marjı %'+marj}</div></div>`;
+    <div class="pn-k"><div><div class="pn-kl">Gelir</div><div class="pn-kv g">${para(gelir)}</div><div class="pn-ks">KDV dahil</div></div></div>
+    <div class="pn-k"><div><div class="pn-kl">Gider</div><div class="pn-kv d">${para(gider)}</div><div class="pn-ks">KDV dahil</div></div></div>
+    <div class="pn-k"><div><div class="pn-kl">${net>=0?'Kâr':'Zarar'}</div><div class="pn-kv ${net>=0?'n':'z'}">${para(Math.abs(net))}</div><div class="pn-ks">${marj===null?'Gelir – Gider':'Kâr marjı %'+marj}</div></div>
+      <div class="pn-ring"><canvas id="pn-ring"></canvas><b>${marj===null?'—':'%'+marj}</b></div></div>`;
+  _pnRing('pn-ring',marj||0,'#22d3ee');
 
-  // Gelir/Gider: kısa dönemde günlük, uzun dönemde aylık sütunlar
+  // Gelir/Gider akışı
   const gunSay=Math.round((new Date(bit)-new Date(bas))/864e5)+1;
   const aylik=gunSay>62;
   const anahtar=t=>aylik?String(t).slice(0,7):String(t).slice(0,10);
@@ -138,19 +179,19 @@ async function renderPanel(){
   if(_panelChart){_panelChart.destroy();_panelChart=null;}
   const c1=document.getElementById('panel-chart');
   if(c1){
-    const eski=c1.parentNode.querySelector('.pn-bos');if(eski)eski.remove();
     if(etk.length){
-      c1.style.display='';
-      _panelChart=new Chart(c1,{type:'bar',data:{labels:etk.map(etiket),datasets:[
-        {label:'Gelir',data:etk.map(k=>Math.round(gm[k]||0)),backgroundColor:'rgba(46,139,87,.85)',borderRadius:6,maxBarThickness:36},
-        {label:'Gider',data:etk.map(k=>Math.round(dm[k]||0)),backgroundColor:'rgba(224,123,74,.85)',borderRadius:6,maxBarThickness:36}
-      ]},options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}},tooltip:{callbacks:{label:v=>' '+v.dataset.label+': ₺'+v.raw.toLocaleString('tr-TR')}}},
-        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:10}}}}}});
-    }else{c1.style.display='none';const d=document.createElement('div');d.className='pn-bos';d.textContent='Bu dönemde işlem yok';c1.parentNode.appendChild(d);}
+      _pnDolu(c1);
+      const ds=(ad,m,ust,alt,kenar)=>({label:ad,data:etk.map(k=>Math.round(m[k]||0)),borderColor:kenar,backgroundColor:c=>_pnGrad(c,ust,alt),fill:true,tension:.35,borderWidth:2.5,pointRadius:3,pointBackgroundColor:kenar,pointBorderColor:'#071334'});
+      _panelChart=new Chart(c1,{type:'line',data:{labels:etk.map(etiket),datasets:[
+        ds('Gelir',gm,'rgba(34,211,238,.55)','rgba(34,211,238,.02)','#22d3ee'),
+        ds('Gider',dm,'rgba(245,158,11,.45)','rgba(245,158,11,.02)','#f59e0b')]},
+        options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+          plugins:{legend:{position:'bottom',labels:{color:_PN_YAZI,boxWidth:10,font:{size:12}}},tooltip:{callbacks:{label:v=>' '+v.dataset.label+': ₺'+v.raw.toLocaleString('tr-TR')}}},
+          scales:{x:{grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11}}},y:{beginAtZero:true,grid:{color:_PN_IZGARA},ticks:{color:_PN_YAZI,font:{size:11},callback:v=>'₺'+v.toLocaleString('tr-TR')}}}}});
+    }else _pnBos(c1,'Bu dönemde işlem yok');
   }
 
-  // Gider dağılımı (kalem bazında)
+  // Gider dağılımı
   const giderMap={};
   aralik.filter(i=>i.tur==='gider').forEach(i=>{
     let ad='Diğer';
@@ -160,20 +201,21 @@ async function renderPanel(){
   });
   const alisT=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+hrkTutar(i),0);
   if(alisT>0)giderMap['Malzeme alışı']=alisT;
-  setTimeout(()=>_doughnut('panel-gider-chart',giderMap,['#355f82','#e07b4a','#2e8b57','#a67dd4','#d4a843'],'Bu dönem gider yok'),50);
+  setTimeout(()=>{_pnDonut('panel-gider-chart',giderMap,'Bu dönem gider yok');const g=_panelGrafikler['panel-gider-chart'];if(g)g.resize();},60);
 
   // Bekleyen borç / alacak
   const alac=bakiye.filter(x=>x.tip==='alici'&&x.bakiye>0.005).sort((a,b)=>b.bakiye-a.bakiye);
   const borc=bakiye.filter(x=>x.tip!=='alici'&&x.bakiye>0.005).sort((a,b)=>b.bakiye-a.bakiye);
   const kart=(baslik,liste,renk,bos)=>{
     const top=liste.reduce((s,x)=>s+parseFloat(x.bakiye),0);
+    const mx=liste.length?parseFloat(liste[0].bakiye):1;
     return `<div class="pn-kart"><div class="pn-kt">${baslik}</div>
       <div class="pn-toplam" style="color:${renk}">${para(top)}</div>
-      ${liste.length?liste.slice(0,6).map(x=>`<div class="pn-sat"><span>${_logEsc(x.ad||'')}</span><span style="font-weight:600;color:${renk}">${para(parseFloat(x.bakiye))}</span></div>`).join('')
+      ${liste.length?liste.slice(0,6).map(x=>`<div class="pn-sat"><div class="s1"><span>${_logEsc(x.ad||'')}</span><span style="font-weight:600;color:${renk}">${para(parseFloat(x.bakiye))}</span></div><div class="pn-cubuk"><i style="width:${Math.max(4,parseFloat(x.bakiye)/mx*100)}%;background:${renk}"></i></div></div>`).join('')
         +(liste.length>6?`<div class="pn-bos" style="padding:8px 0 0">+${liste.length-6} kişi/firma daha</div>`:''):`<div class="pn-bos">${bos}</div>`}</div>`;
   };
   const bel=document.getElementById('panel-borc');
-  if(bel)bel.innerHTML=kart('Ödenecek Borçlar (tedarikçi / personel)',borc,'#e07b4a','Bekleyen borç yok')+kart('Tahsil Edilecek Alacaklar (müşteri)',alac,'#2e8b57','Bekleyen alacak yok');
+  if(bel)bel.innerHTML=kart('Ödenecek Borçlar (tedarikçi / personel)',borc,'#fbbf24','Bekleyen borç yok')+kart('Tahsil Edilecek Alacaklar (müşteri)',alac,'#5eead4','Bekleyen alacak yok');
 }
 
 // ===== ORTAK BELGE GRUPLAMA / SATIR ÇİZİMİ =====
