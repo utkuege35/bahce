@@ -7,9 +7,12 @@ async function _gkYenile(){
 }
 function kodOlusturGiderKalem(ustId){
   if(!ustId){
-    const analar=giderKalemleri.filter(g=>g.seviye===1).map(g=>parseInt(g.kod)).filter(n=>!isNaN(n));
-    const m=analar.length?Math.max(...analar):0;
-    return 'G'+String(Math.ceil((m+1)/10)*10);
+    // Ana grup kodları G10, G11, G12 ... şeklinde sıradaki numarayla gelir (alt kalem kodları sayılmaz)
+    const analar=giderKalemleri.filter(g=>!g.ust_id).map(g=>parseInt(String(g.kod||'').replace(/\D/g,''))).filter(n=>!isNaN(n));
+    let n=analar.length?Math.max(...analar)+1:10;
+    if(n<10)n=10;
+    while(giderKalemleri.some(g=>g.kod==='G'+n))n++;
+    return 'G'+n;
   }
   const ust=giderKalemleri.find(g=>g.id===ustId);if(!ust)return '';
   const altlar=giderKalemleri.filter(g=>g.ust_id===ustId).map(g=>parseInt(g.kod.replace(/\D/g,''))).filter(n=>!isNaN(n));
