@@ -1,6 +1,6 @@
 window.hrkTutar=i=>(parseFloat(i.tutar)||0)+(parseFloat(i.kdv_tutar)||0); // gelir/gider raporlarında KDV dahil tutar
 // ===== PANEL / DASHBOARD =====
-let _panelFiltre='bugun';
+let _panelFiltre='ay';
 let _panelChart=null,_panelGrafikler={};
 
 function _doughnut(canvasId,dataMap,renkler,bosYazi){
@@ -106,183 +106,74 @@ window.panelFiltre=function(tip,btn){
 
 async function renderPanel(){
   const {bas,bit}=_panelAralik();
-  // Seçilen dönemin hareketleri ve kasa bakiyesi veritabanından alınır (tüm geçmiş tarayıcıya yüklenmez)
-  let aralik,topKasa;
-  try{[aralik,topKasa]=await Promise.all([islemlerAralik(bas,bit),kasaToplamDb()]);}
-  catch(e){const m=document.getElementById('panel-met');if(m)m.innerHTML=`<div class="bos">Panel verisi okunamadı: ${e.message}</div>`;return;}
+  const tr=d=>d?d.split('-').reverse().join('.'):'';
+  const dn=document.getElementById('pn-donem');if(dn)dn.textContent=tr(bas)+' – '+tr(bit);
+  let aralik,bakiye=[];
+  try{
+    aralik=await islemlerAralik(bas,bit);
+    const r=await sb.rpc('panel_cari_bakiyeler',{p_isyeri:aktifIsyeri?.id||null});
+    if(!r.error)bakiye=r.data||[];
+  }catch(e){const m=document.getElementById('panel-met');if(m)m.innerHTML=`<div class="pn-bos">Panel verisi okunamadı: ${e.message}</div>`;return;}
   const gelir=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
   const gider=aralik.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
   const net=gelir-gider;
-  const alisCount=aralik.filter(i=>i.tur==='giris').length;
-  const satisCount=aralik.filter(i=>i.tur==='satis').length;
-  const giderCount=aralik.filter(i=>i.tur==='gider').length;
-  const alisTutar=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+hrkTutar(i),0);
-  const satisTutar=aralik.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
-  const giderTutar=aralik.filter(i=>i.tur==='gider').reduce((s,i)=>s+hrkTutar(i),0);
-
-  // Kar marjı
-  const marj=gelir>0?Math.round(net/gelir*100):0;
-
+  const marj=(gelir>0&&net>=0)?Math.round(net/gelir*100):null;
   document.getElementById('panel-met').innerHTML=`
-    <div class="met"><div class="ml">Gelir</div><div class="mv g">${para(gelir)}</div></div>
-    <div class="met"><div class="ml">Gider</div><div class="mv d">${para(gider)}</div></div>
-    <div class="met"><div class="ml">Net Kar/Zarar</div><div class="mv ${net>=0?'k':'z'}">${para(net)}</div></div>
-    <div class="met"><div class="ml">Kasa Bakiyesi</div><div class="mv ${topKasa>=0?'k':'z'}">${para(topKasa)}</div></div>`;
+    <div class="pn-k g"><div class="pn-kl">Gelir</div><div class="pn-kv g">${para(gelir)}</div><div class="pn-ks">KDV dahil</div></div>
+    <div class="pn-k d"><div class="pn-kl">Gider</div><div class="pn-kv d">${para(gider)}</div><div class="pn-ks">KDV dahil</div></div>
+    <div class="pn-k ${net>=0?'n':'z'}"><div class="pn-kl">${net>=0?'Kâr':'Zarar'}</div><div class="pn-kv ${net>=0?'':'z'}">${para(Math.abs(net))}</div><div class="pn-ks">${marj===null?'Gelir – Gider':'Kâr marjı %'+marj}</div></div>`;
 
-  // Grafik verisi
-  // Grafik — tek gelir / tek gider kolonu (seçilen dönem toplamı)
-  if(_panelChart)_panelChart.destroy();_panelChart=null;
-  const ctx1=document.getElementById('panel-chart');
-  if(ctx1){
-    if(gelir>0||gider>0){
-      _panelChart=new Chart(ctx1,{type:'bar',data:{
-        labels:['Gelir','Gider'],
-        datasets:[{
-          data:[Math.round(gelir),Math.round(gider)],
-          backgroundColor:['rgba(53,95,130,.8)','rgba(244,162,97,.8)'],
-          borderRadius:6,barThickness:60
-        }]
-      },options:{responsive:true,maintainAspectRatio:false,
-        layout:{padding:{top:30}},
-        plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:v=>'₺'+v.raw.toLocaleString('tr-TR')}}},
-        scales:{
-          x:{ticks:{font:{size:12}}},
-          y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:9}}}
-        }
-      },
-      plugins:[{
-        id:'barLabels',
-        afterDatasetsDraw(chart){
-          const {ctx,data}=chart;
-          chart.getDatasetMeta(0).data.forEach((bar,i)=>{
-            const val=data.datasets[0].data[i];
-            ctx.save();
-            ctx.fillStyle='#444';
-            ctx.font='bold 13px sans-serif';
-            ctx.textAlign='center';
-            ctx.textBaseline='bottom';
-            ctx.fillText('₺'+val.toLocaleString('tr-TR'),bar.x,bar.y-4);
-            ctx.restore();
-          });
-        }
-      }]
-      });
-    }else{
-      const c=ctx1.getContext('2d');c.clearRect(0,0,ctx1.width,ctx1.height);
-      c.fillStyle='#bbb';c.font='13px sans-serif';c.textAlign='center';
-      c.fillText('Bu dönemde işlem yok',ctx1.width/2,ctx1.height/2);
-    }
+  // Gelir/Gider: kısa dönemde günlük, uzun dönemde aylık sütunlar
+  const gunSay=Math.round((new Date(bit)-new Date(bas))/864e5)+1;
+  const aylik=gunSay>62;
+  const anahtar=t=>aylik?String(t).slice(0,7):String(t).slice(0,10);
+  const gm={},dm={};
+  aralik.forEach(i=>{
+    const k=anahtar(i.tarih);
+    if(i.tur==='satis')gm[k]=(gm[k]||0)+hrkTutar(i);
+    else if(['gider','giris'].includes(i.tur))dm[k]=(dm[k]||0)+hrkTutar(i);
+  });
+  const etk=[...new Set([...Object.keys(gm),...Object.keys(dm)])].sort();
+  const etiket=k=>aylik?k.slice(5)+'.'+k.slice(2,4):k.slice(8,10)+'.'+k.slice(5,7);
+  if(_panelChart){_panelChart.destroy();_panelChart=null;}
+  const c1=document.getElementById('panel-chart');
+  if(c1){
+    const eski=c1.parentNode.querySelector('.pn-bos');if(eski)eski.remove();
+    if(etk.length){
+      c1.style.display='';
+      _panelChart=new Chart(c1,{type:'bar',data:{labels:etk.map(etiket),datasets:[
+        {label:'Gelir',data:etk.map(k=>Math.round(gm[k]||0)),backgroundColor:'rgba(46,139,87,.85)',borderRadius:6,maxBarThickness:36},
+        {label:'Gider',data:etk.map(k=>Math.round(dm[k]||0)),backgroundColor:'rgba(224,123,74,.85)',borderRadius:6,maxBarThickness:36}
+      ]},options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11}}},tooltip:{callbacks:{label:v=>' '+v.dataset.label+': ₺'+v.raw.toLocaleString('tr-TR')}}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:10}}}}}});
+    }else{c1.style.display='none';const d=document.createElement('div');d.className='pn-bos';d.textContent='Bu dönemde işlem yok';c1.parentNode.appendChild(d);}
   }
 
-  // Yardımcı pasta grafik fonksiyon yukarıda tanımlı (_doughnut)
+  // Gider dağılımı (kalem bazında)
+  const giderMap={};
+  aralik.filter(i=>i.tur==='gider').forEach(i=>{
+    let ad='Diğer';
+    if(i.gider_kalem_id){const k=giderKalemleri.find(x=>x.id===i.gider_kalem_id);ad=k?.ad||'Gider';}
+    else ad=i.aciklama||i.kat||'Diğer';
+    giderMap[ad]=(giderMap[ad]||0)+hrkTutar(i);
+  });
+  const alisT=aralik.filter(i=>i.tur==='giris').reduce((s,i)=>s+hrkTutar(i),0);
+  if(alisT>0)giderMap['Malzeme alışı']=alisT;
+  setTimeout(()=>_doughnut('panel-gider-chart',giderMap,['#355f82','#e07b4a','#2e8b57','#a67dd4','#d4a843'],'Bu dönem gider yok'),50);
 
-  // En çok satılan, alınan, gider — canvas render sonrası çiz
-  setTimeout(()=>{
-    // En çok satılan
-    const satisMap={};
-    aralik.filter(i=>i.tur==='satis').forEach(i=>{
-      let ad='Diğer';
-      if(i.urun_id){const u=urunler.find(x=>x.id===i.urun_id);ad=u?.ad||'Ürün';}
-      else if(i.stok_id){const s=stoklar.find(x=>x.id===i.stok_id);ad=s?.ad||'Stok';}
-      else ad=i.aciklama||'Diğer';
-      satisMap[ad]=(satisMap[ad]||0)+hrkTutar(i);
-    });
-    _doughnut('panel-satis-chart',satisMap,['#284a65','#355f82','#a9c8e0','#cce0ef','#eaf2f8'],'Bu dönem satış yok');
-
-    // En çok alınan
-    const alisMap={};
-    aralik.filter(i=>i.tur==='giris').forEach(i=>{
-      let ad='Diğer';
-      if(i.stok_id){const s=stoklar.find(x=>x.id===i.stok_id);ad=s?.ad||'Stok';}
-      else ad=i.aciklama||'Diğer';
-      alisMap[ad]=(alisMap[ad]||0)+hrkTutar(i);
-    });
-    _doughnut('panel-alis-chart',alisMap,['#1d4e89','#4a90d9','#74b9ff','#a8d8ff','#d0ecff'],'Bu dönem alış yok');
-
-    // En çok gider
-    const giderMap={};
-    aralik.filter(i=>i.tur==='gider').forEach(i=>{
-      let ad='Diğer';
-      if(i.gider_kalem_id){const k=giderKalemleri.find(x=>x.id===i.gider_kalem_id);ad=k?.ad||'Gider';}
-      else ad=i.aciklama||i.kat||'Diğer';
-      giderMap[ad]=(giderMap[ad]||0)+hrkTutar(i);
-    });
-    _doughnut('panel-gider-chart',giderMap,['#bc4a0e','#f4a261','#ffc8a0','#e76f51','#ffe0cc'],'Bu dönem gider yok');
-  },50);
-
-  // Alt bilgi kartları — stok uyarıları, işlem sayıları, en çok satan
-  const dusukStoklar=stoklar.filter(s=>s.tip==='stok'&&s.aktif!==false&&s.min_stok>0&&stokMiktar(s.id)<=s.min_stok);
-  const topSatisUrun=(() => {
-    const urunMap={};
-    aralik.filter(i=>i.tur==='satis'&&i.urun_id).forEach(i=>{
-      const u=urunler.find(x=>x.id===i.urun_id);const ad=u?.ad||i.urun_id;
-      urunMap[ad]=(urunMap[ad]||0)+hrkTutar(i);
-    });
-    const sirali=Object.entries(urunMap).sort((a,b)=>b[1]-a[1]);
-    return sirali.slice(0,3);
-  })();
-
-  const altEl=document.getElementById('panel-alt');
-  if(altEl){
-    let html='';
-    // İşlem özeti
-    html+=`<div class="card" style="margin-bottom:0">
-      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">İşlem Özeti</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><span style="font-size:12px;color:var(--yazi2)">Alış</span> <span style="font-size:10px;color:var(--yazi3)">(${alisCount} işlem)</span></div>
-          <span style="font-size:13px;font-weight:600;color:var(--turuncu)">${alisTutar>0?para(alisTutar):'—'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><span style="font-size:12px;color:var(--yazi2)">Satış</span> <span style="font-size:10px;color:var(--yazi3)">(${satisCount} işlem)</span></div>
-          <span style="font-size:13px;font-weight:600;color:var(--yesil)">${satisTutar>0?para(satisTutar):'—'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><span style="font-size:12px;color:var(--yazi2)">Gider</span> <span style="font-size:10px;color:var(--yazi3)">(${giderCount} işlem)</span></div>
-          <span style="font-size:13px;font-weight:600;color:var(--turuncu)">${giderTutar>0?para(giderTutar):'—'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--krem2)">
-          <span style="font-size:12px;color:var(--yazi2)">Kar Marjı</span>
-          <span style="font-size:13px;font-weight:600;color:${marj>=0?'var(--yesil)':'#c62828'}">${gelir>0?marj+'%':'—'}</span>
-        </div>
-      </div>
-    </div>`;
-
-    // En çok satan
-    if(topSatisUrun.length){
-      html+=`<div class="card" style="margin-bottom:0">
-        <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">En Çok Satan</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${topSatisUrun.map(([ad,tutar],idx)=>`
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="width:18px;height:18px;border-radius:50%;background:${['var(--yesil)','var(--mavi)','var(--turuncu)'][idx]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${idx+1}</span>
-                <span style="font-size:12px;color:var(--yazi1)">${ad}</span>
-              </div>
-              <span style="font-size:12px;font-weight:500;color:var(--yesil)">${para(tutar)}</span>
-            </div>`).join('')}
-        </div>
-      </div>`;
-    }
-
-    // Stok uyarıları
-    html+=`<div class="card" style="margin-bottom:0">
-      <div style="font-size:11px;font-weight:600;color:var(--yazi3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Stok Durumu</div>
-      ${dusukStoklar.length
-        ?dusukStoklar.slice(0,5).map(s=>{
-            const mik=stokMiktar(s.id);const tb=birimler.find(b=>b.id===s.birim_id);
-            return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--yazi1)">${s.ad}</span>
-              <span style="font-size:11px;font-weight:500;color:${mik<=0?'#c62828':'var(--sari)'};background:${mik<=0?'#fdecea':'var(--sari-ac)'};padding:2px 8px;border-radius:10px">${mik<=0?'Tükendi':'⚠ '+mik.toLocaleString('tr-TR',{maximumFractionDigits:1})+' '+(tb?.kisaltma||'')}</span>
-            </div>`;
-          }).join('')
-        :`<div style="font-size:12px;color:var(--yesil);display:flex;align-items:center;gap:6px"><span>✓</span> Tüm stoklar yeterli</div>`}
-      ${dusukStoklar.length>5?`<div style="font-size:11px;color:var(--yazi3);margin-top:6px">+${dusukStoklar.length-5} daha... <span style="cursor:pointer;color:var(--yesil)" onclick="gp('stok')">Stoklar →</span></div>`:''}
-    </div>`;
-
-    altEl.innerHTML=html;
-  }
+  // Bekleyen borç / alacak
+  const alac=bakiye.filter(x=>x.tip==='alici'&&x.bakiye>0.005).sort((a,b)=>b.bakiye-a.bakiye);
+  const borc=bakiye.filter(x=>x.tip!=='alici'&&x.bakiye>0.005).sort((a,b)=>b.bakiye-a.bakiye);
+  const kart=(baslik,liste,renk,bos)=>{
+    const top=liste.reduce((s,x)=>s+parseFloat(x.bakiye),0);
+    return `<div class="pn-kart"><div class="pn-kt">${baslik}</div>
+      <div class="pn-toplam" style="color:${renk}">${para(top)}</div>
+      ${liste.length?liste.slice(0,6).map(x=>`<div class="pn-sat"><span>${_logEsc(x.ad||'')}</span><span style="font-weight:600;color:${renk}">${para(parseFloat(x.bakiye))}</span></div>`).join('')
+        +(liste.length>6?`<div class="pn-bos" style="padding:8px 0 0">+${liste.length-6} kişi/firma daha</div>`:''):`<div class="pn-bos">${bos}</div>`}</div>`;
+  };
+  const bel=document.getElementById('panel-borc');
+  if(bel)bel.innerHTML=kart('Ödenecek Borçlar (tedarikçi / personel)',borc,'#e07b4a','Bekleyen borç yok')+kart('Tahsil Edilecek Alacaklar (müşteri)',alac,'#2e8b57','Bekleyen alacak yok');
 }
 
 // ===== ORTAK BELGE GRUPLAMA / SATIR ÇİZİMİ =====
