@@ -473,6 +473,7 @@ window.kaydetFatura=async function(tur){
 window.renderFatGunSekmesi=async function(tur,bitisDegisti){
   const tarihEl=document.getElementById('fat-'+tur+'-liste-tarih');
   const bitEl=document.getElementById('fat-'+tur+'-liste-bit');
+  if(tarihEl&&!tarihEl.dataset.ilk){tarihEl.dataset.ilk='1';const d=new Date(),p=n=>String(n).padStart(2,'0'),yerel=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());tarihEl.value=yerel.slice(0,8)+'01';if(bitEl)bitEl.value=yerel;} // varsayılan: ayın 1'i – bugün
   if(tarihEl&&!tarihEl.value)tarihEl.value=bugun();
   const tarih=tarihEl?.value||bugun();
   // Bitiş boşsa sadece seçili gün; bitiş başlangıçtan önceyse düzeltilir
