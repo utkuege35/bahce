@@ -1190,11 +1190,11 @@
       <button id="btn-yeni-stok-grup" class="btn sm" onclick="stokModalAc(null,'grup')" style="display:none">+ Grup</button>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:1rem">
+  <div id="stok-grid">
     <!-- Sol: Grup ağacı -->
     <div class="card" style="margin-bottom:0">
       <div class="card-title" style="font-size:12px">Gruplar</div>
-      <div id="stok-grup-agac" style="max-height:520px;overflow-y:auto"></div>
+      <div id="stok-grup-agac" style="max-height:calc(100vh - 200px);overflow-y:auto"></div>
     </div>
     <!-- Sağ: Seçili gruba ait stok kartları -->
     <div class="card" style="margin-bottom:0">
@@ -1207,7 +1207,7 @@
           <button id="btn-yeni-stok" class="btn pri sm" onclick="stokModalAc(_stokSeciliGrupId,'stok')" style="display:none">+ Stok Kartı</button>
         </div>
       </div>
-      <div id="stok-kart-liste" style="max-height:480px;overflow-y:auto"></div>
+      <div id="stok-kart-liste" style="max-height:calc(100vh - 230px);overflow-y:auto"></div>
     </div>
   </div>
 </div>
@@ -1215,6 +1215,11 @@
 <div id="stok-envanter" class="page">
   <style>
     /* Rapor tüm ekran genişliğini kullanır (genel sayfa sınırı 980px'dir; yan menü payı korunur) */
+    /* Stoklar ekranı: tüm genişliği kullan, soldaki menüden biraz uzak dur */
+    #stok.page{max-width:none;margin-right:0;padding-left:2.5rem;padding-right:1.75rem}
+    @media(max-width:768px){#stok.page{padding-left:.85rem;padding-right:.85rem}}
+    #stok-grid{display:grid;grid-template-columns:minmax(360px,.9fr) 1.6fr;gap:1rem}
+    @media(max-width:900px){#stok-grid{grid-template-columns:1fr}}
     #stok-envanter.page{max-width:none;margin-right:0}
     @media(max-width:768px){#stok-envanter.page{margin-left:0}}
     /* Excel benzeri hücreli tablo: kenarlıklı hücreler, sabit başlık ve sabit ilk iki sütun */
