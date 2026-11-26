@@ -80,11 +80,18 @@ window.kaydetGiderKalem=async function(){
   modalKapat('modal-gider-kalem');renderGiderKalemTree();bil('Kaydedildi ✓');
 };
 window.giderKalemSil=async function(id){
-  if(islemler.some(i=>i.gider_kalem_id===id)){bil('Hareketi olan kalem silinemez!','err');return;}
   if(tumAltlar(giderKalemleri,id).length){bil('Alt kayıtları silin!','err');return;}
+  // Güncel durum veritabanından okunur (silinmiş hareketler sayılmaz)
+  const {count:aktif}=await sb.from('islemler').select('id',{count:'exact',head:true}).eq('gider_kalem_id',id).or('silindi.is.null,silindi.eq.false');
+  if(aktif>0){bil(`Bu kalemin ${aktif} hareketi var, silinemez! Önce ilgili faturayı silin.`,'err');return;}
   if(!(await onay('Silmek istiyor musunuz?','🗑️')))return;
-  const {error:sErr}=await sb.from('gider_kalemleri').delete().eq('id',id);
-  if(sErr){bil('Silinemedi: '+sErr.message,'err');return;}
+  const {data:silinen,error:sErr}=await sb.from('gider_kalemleri').delete().eq('id',id).select('id');
+  if(sErr){
+    if(sErr.code==='23503')bil('Bu kalem silinmiş faturaların kayıtlarında geçiyor, silinemedi. Yönetici SQL ile temizlemeli.','err');
+    else bil('Silinemedi: '+sErr.message,'err');
+    return;
+  }
+  if(!silinen||!silinen.length){bil('Silinemedi: silme yetkisi olmayabilir','err');return;}
   await _gkYenile();
   renderGiderKalemTree();bil('Silindi ✓');
 };
