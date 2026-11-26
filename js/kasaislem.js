@@ -39,20 +39,23 @@ window.kiGorunumListe=function(tur){
   document.body.classList.remove('islem-form-acik');
   renderKiListe(tur);
 };
-window.renderKiListe=async function(tur){
-  const tarihEl=document.getElementById(`ki-${tur}-liste-tarih`);
-  if(tarihEl&&!tarihEl.value)tarihEl.value=bugun();
-  const tarih=tarihEl?.value||bugun();
+window.renderKiListe=async function(tur,bitisDegisti){
+  const yerel=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+  const basEl=document.getElementById(`ki-${tur}-liste-tarih`),bitEl=document.getElementById(`ki-${tur}-liste-bit`);
+  if(basEl&&!basEl.dataset.ilk){basEl.dataset.ilk='1';basEl.value=yerel().slice(0,8)+'01';if(bitEl)bitEl.value=yerel();} // varsayılan: ayın 1'i – bugün
+  if(basEl&&!basEl.value)basEl.value=yerel();
+  if(bitEl&&bitEl.value&&bitEl.value<basEl.value){if(bitisDegisti)basEl.value=bitEl.value;else bitEl.value=basEl.value;}
+  const bas=basEl?.value||yerel(),bit=bitEl?.value||bas;
   const tb=document.getElementById(`ki-${tur}-liste-tb`);if(!tb)return;
   tb.innerHTML='<div class="bos">Yükleniyor...</div>';
   let liste;
-  try{liste=await islemlerKasa(tarih,KI_TURLER[tur].isaret);}
+  try{liste=await islemlerKasa(bas,bit,KI_TURLER[tur].isaret);}
   catch(e){tb.innerHTML=`<div class="bos">Liste okunamadı: ${_logEsc(e.message)}</div>`;return;}
   _kiListe[tur]=liste;
   const toplam=liste.reduce((a,r)=>a+Math.abs(parseFloat(r.kasa_etkisi)||0),0);
   const oz=document.getElementById(`ki-${tur}-liste-ozet`);
   if(oz)oz.textContent=liste.length?`${liste.length} fiş · ${_irsSayi(toplam)}`:'';
-  if(!liste.length){tb.innerHTML='<div class="bos">Bu tarihte kayıt yok.</div>';_kiSecili[tur]=null;return;}
+  if(!liste.length){tb.innerHTML='<div class="bos">Bu tarih aralığında kayıt yok.</div>';_kiSecili[tur]=null;return;}
   if(!liste.some(r=>_kiAnahtar(r)===_kiSecili[tur]))_kiSecili[tur]=null;
   tb.innerHTML=`<div class="tw"><table><thead><tr>
     <th>Tarih</th><th>Tür</th><th>Kasa</th><th>Cari</th><th>Belge No</th><th>Açıklama</th><th style="text-align:right">Tutar</th><th>Kullanıcı</th>
@@ -177,7 +180,8 @@ window.kaydetKasaFisi=async function(tur){
     eski:haric?_kiEski[tur]?.snapshot:null,yeni:kasaSnapshotKur({tarih,kasaId,tip,cariId,belgeNo,aciklama:satir.aciklama,tutar})});
   bil(`✓ ${KI_TURLER[tur].ad} fişi ${haric?'güncellendi':'kaydedildi'} (${_irsSayi(tutar)})`);
   renderPanel();
-  const tEl=document.getElementById(`ki-${tur}-liste-tarih`);if(tEl)tEl.value=tarih;
+  {const bE=document.getElementById(`ki-${tur}-liste-tarih`),sE=document.getElementById(`ki-${tur}-liste-bit`); // kaydedilen gün listede görünsün
+   if(bE&&bE.value&&tarih<bE.value)bE.value=tarih; if(sE&&sE.value&&tarih>sE.value)sE.value=tarih;}
   kiGorunumListe(tur);
 };
 // ===== DÜZENLE / GÖRÜNTÜLE / SİL =====
