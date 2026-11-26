@@ -16,13 +16,16 @@ const iscBugun = () => { const d = new Date(); return d.getFullYear() + '-' + St
 const iscSayi = n => Number(n || 0).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
 const iscTL = n => Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const iscTarihGoster = t => { const p = String(t || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : (t || ''); };
-const iscBosSatir = () => ({ kisi: '', kalem: '', sure: '', birim: '', tutar: '', aciklama: '' });
-const iscSatirDolu = s => !!(s.kisi || s.kalem || s.sure || s.tutar || (s.aciklama || '').trim());
+const iscBosSatir = () => ({ kisi: '', kalem: '', adet: '', sure: '', birim: '', fiyat: '', tutar: '', aciklama: '' });
+// Kişi sayısı boşsa 1 kabul edilir; süre toplamı kişi × süre (adam-gün / adam-saat) olarak hesaplanır
+const iscAdet = r => { const a = Number(r.adet); return a > 0 ? a : 1; };
+const iscEfSure = r => (Number(r.sure) || 0) * iscAdet(r);
+const iscSatirDolu = s => !!(s.kisi || s.kalem || s.adet || s.sure || s.fiyat || s.tutar || (s.aciklama || '').trim());
 const iscSureMetin = (saat, gun) => { const p = []; if (saat) p.push(iscSayi(saat) + ' saat'); if (gun) p.push(iscSayi(gun) + ' gün'); return p.length ? p.join(' · ') : '—'; };
 function iscToplamlar(liste, sureAl, birimAl, tutarAl) {
   let saat = 0, gun = 0, tutar = 0;
   liste.forEach(r => {
-    const s = Number(sureAl(r)) || 0, b = birimAl(r);
+    const s = Number(sureAl(r)) || 0, b = birimAl(r); // sureAl: kişi × süre
     if (s && b === 'saat') saat += s;
     if (s && b === 'gun') gun += s;
     tutar += Number(tutarAl(r)) || 0;
@@ -75,10 +78,10 @@ window.iscListeYenile = async function (bitisDegisti) {
   belgeler.forEach(b => { iscListeVeri[b.id] = { belge: b, satirlar: [] }; });
   (satirlar || []).forEach(s => { iscListeVeri[s.belge_id]?.satirlar.push(s); });
   if (!iscListeVeri[iscSeciliId]) iscSeciliId = null;
-  const gen = iscToplamlar(satirlar || [], r => r.sure, r => r.birim, r => r.tutar);
+  const gen = iscToplamlar(satirlar || [], iscEfSure, r => r.birim, r => r.tutar);
   if (ozEl) ozEl.textContent = `${belgeler.length} kayıt · ${iscSureMetin(gen.saat, gen.gun)}${gen.tutar ? ' · ' + iscTL(gen.tutar) : ''}`;
   tbEl.innerHTML = `<div class="tw"><table><thead><tr><th>Tarih</th><th>Not</th><th>Kişiler</th><th style="text-align:right">Satır</th><th>Süre</th><th style="text-align:right">Tutar</th></tr></thead><tbody>${belgeler.map(b => {
-    const v = iscListeVeri[b.id], t = iscToplamlar(v.satirlar, r => r.sure, r => r.birim, r => r.tutar);
+    const v = iscListeVeri[b.id], t = iscToplamlar(v.satirlar, iscEfSure, r => r.birim, r => r.tutar);
     const kisiler = [...new Set(v.satirlar.map(s => s.kisi_ad))].join(', ');
     return `<tr data-id="${b.id}" onclick="iscSec('${b.id}')" ondblclick="iscSec('${b.id}');iscListeIslem('goruntule')" style="cursor:pointer;${iscSeciliId === b.id ? 'background:var(--yesil-cok-ac);' : ''}">
       <td style="font-size:12px">${iscTarihGoster(b.tarih)}</td>
@@ -140,7 +143,7 @@ function iscKayitAc(v, salt) {
     if (s.cari_id && !iscPersoneller.some(p => p.id === s.cari_id)) iscPersoneller.push({ id: s.cari_id, ad: s.kisi_ad, _yedek: true });
     if (s.gider_kalem_id) iscKalemYedek[s.gider_kalem_id] = s.kalem_ad || 'Silinmiş kalem';
   });
-  iscSatirlar = v.satirlar.map(s => ({ kisi: s.cari_id || '', kalem: s.gider_kalem_id || '', sure: s.sure ?? '', birim: s.birim || '', tutar: Number(s.tutar) ? s.tutar : '', aciklama: s.aciklama || '' }));
+  iscSatirlar = v.satirlar.map(s => ({ kisi: s.cari_id || '', kalem: s.gider_kalem_id || '', adet: Number(s.adet) > 1 ? s.adet : '', sure: s.sure ?? '', birim: s.birim || '', fiyat: Number(s.birim_fiyat) ? s.birim_fiyat : '', tutar: Number(s.tutar) ? s.tutar : '', aciklama: s.aciklama || '' }));
   if (!salt) iscSatirlar.push(iscBosSatir());
   document.getElementById('isc-tarih').value = b.tarih;
   document.getElementById('isc-not').value = b.aciklama || '';
@@ -154,10 +157,12 @@ function iscSatirHtml(s, i) {
   return `<tr>
     <td><select ${kis} ${i === 0 ? 'data-ilk="1"' : ''} onchange="iscSatirDeger(${i},'kisi',this.value)" onkeydown="satirAsagiGec(event)">${kisiOpt}</select></td>
     <td><select ${kis} onchange="iscSatirDeger(${i},'kalem',this.value)" onkeydown="satirAsagiGec(event)">${kalemOpt}</select></td>
-    <td><input ${kis} type="number" min="0" step="0.25" value="${iscEsc(s.sure)}" style="text-align:right" oninput="iscSatirDeger(${i},'sure',this.value)" onkeydown="satirAsagiGec(event)"></td>
+    <td><input ${kis} id="isc-adet-${i}" type="number" min="1" step="1" value="${iscEsc(s.adet)}" placeholder="1" style="text-align:right" oninput="iscSatirDeger(${i},'adet',this.value)" onkeydown="satirAsagiGec(event)"></td>
+    <td><input ${kis} id="isc-sure-${i}" type="number" min="0" step="0.25" value="${iscEsc(s.sure)}" style="text-align:right" oninput="iscSatirDeger(${i},'sure',this.value)" onkeydown="satirAsagiGec(event)"></td>
     <td><select ${kis} onchange="iscSatirDeger(${i},'birim',this.value)" onkeydown="satirAsagiGec(event)">
       <option value=""${!s.birim ? ' selected' : ''}></option><option value="saat"${s.birim === 'saat' ? ' selected' : ''}>Saat</option><option value="gun"${s.birim === 'gun' ? ' selected' : ''}>Gün</option></select></td>
-    <td><input ${kis} type="number" min="0" step="0.01" value="${iscEsc(s.tutar)}" placeholder="0" style="text-align:right" oninput="iscSatirDeger(${i},'tutar',this.value)" onkeydown="satirAsagiGec(event)"></td>
+    <td><input ${kis} id="isc-fiyat-${i}" type="number" min="0" step="0.01" value="${iscEsc(s.fiyat)}" placeholder="0" style="text-align:right" oninput="iscSatirDeger(${i},'fiyat',this.value)" onkeydown="satirAsagiGec(event)"></td>
+    <td><input ${kis} id="isc-tutar-${i}" type="number" min="0" step="0.01" value="${iscEsc(s.tutar)}" placeholder="0" style="text-align:right" oninput="iscSatirDeger(${i},'tutar',this.value)" onkeydown="satirAsagiGec(event)"></td>
     <td><input ${kis} type="text" maxlength="500" value="${iscEsc(s.aciklama)}" oninput="iscSatirDeger(${i},'aciklama',this.value)" onkeydown="satirAsagiGec(event)"></td>
     <td style="white-space:nowrap;text-align:center">${iscGoruntuleme ? '' : `<button class="btn sm ghost" title="Aynı işi başka kişi için çoğalt" onclick="iscSatirCogalt(${i})">⧉</button><button class="btn sm ghost" title="Satırı sil" onclick="iscSatirSil(${i})">✕</button>`}</td>
   </tr>`;
@@ -179,7 +184,7 @@ function iscFormCiz() {
 }
 
 function iscToplamGuncelle() {
-  const t = iscToplamlar(iscSatirlar, s => s.sure, s => s.birim, s => s.tutar);
+  const t = iscToplamlar(iscSatirlar, iscEfSure, s => s.birim, s => s.tutar);
   const a = document.getElementById('isc-toplam-sure'), b = document.getElementById('isc-toplam-tutar');
   if (a) a.textContent = iscSureMetin(t.saat, t.gun);
   if (b) b.textContent = iscTL(t.tutar);
@@ -189,6 +194,15 @@ function iscToplamGuncelle() {
 window.iscSatirDeger = function (i, alan, v) {
   const s = iscSatirlar[i]; if (!s) return;
   s[alan] = v;
+  // Fatura mantığı: kişi sayısı × süre × birim fiyat = tutar. Tutar elle yazılırsa birim fiyat geri hesaplanır.
+  const carpan = iscAdet(s) * (Number(s.sure) > 0 ? Number(s.sure) : 1);
+  const yaz = (id, deger) => { const el = document.getElementById(id + '-' + i); if (el) el.value = deger; };
+  if (alan === 'adet' || alan === 'sure' || alan === 'fiyat') {
+    if (Number(s.fiyat) > 0) { s.tutar = (Math.round(carpan * Number(s.fiyat) * 100) / 100).toFixed(2); yaz('isc-tutar', s.tutar); }
+  } else if (alan === 'tutar') {
+    if (Number(s.tutar) > 0 && (Number(s.fiyat) > 0 || Number(s.sure) > 0 || Number(s.adet) > 1)) { s.fiyat = (Number(s.tutar) / carpan).toFixed(2); yaz('isc-fiyat', s.fiyat); }
+    else if (!(Number(s.tutar) > 0)) { s.fiyat = ''; yaz('isc-fiyat', ''); }
+  }
   if (i === iscSatirlar.length - 1 && iscSatirDolu(s)) {
     iscSatirlar.push(iscBosSatir());
     document.getElementById('isc-satirlar').insertAdjacentHTML('beforeend', iscSatirHtml(iscSatirlar[iscSatirlar.length - 1], iscSatirlar.length - 1));
@@ -226,6 +240,10 @@ window.iscKaydet = async function () {
     const sure = (s.sure === '' || s.sure == null) ? null : Number(s.sure);
     if (sure !== null && (isNaN(sure) || sure < 0)) { bil(n + 'süre geçersiz!', 'err'); return; }
     if (sure !== null && !s.birim) { bil(n + 'süre girdiyseniz birim (saat/gün) seçin!', 'err'); return; }
+    const adet = (s.adet === '' || s.adet == null) ? 1 : Number(s.adet);
+    if (isNaN(adet) || adet <= 0) { bil(n + 'kişi sayısı geçersiz!', 'err'); return; }
+    const fiyat = Number(s.fiyat) || 0;
+    if (fiyat < 0) { bil(n + 'birim fiyat eksi olamaz!', 'err'); return; }
     const tutar = Number(s.tutar) || 0;
     if (tutar < 0) { bil(n + 'tutar eksi olamaz!', 'err'); return; }
     const p = iscPersoneller.find(x => x.id === s.kisi);
@@ -233,7 +251,7 @@ window.iscKaydet = async function () {
     satirlar.push({
       sira: i + 1, cari_id: s.kisi, kisi_ad: p?.ad || '',
       gider_kalem_id: s.kalem || null, kalem_ad: k?.ad || iscKalemYedek[s.kalem] || null,
-      sure, birim: sure !== null ? s.birim : null, tutar, aciklama: (s.aciklama || '').trim() || null
+      adet, sure, birim: sure !== null ? s.birim : null, birim_fiyat: fiyat, tutar, aciklama: (s.aciklama || '').trim() || null
     });
   }
   // Başlık ve tüm satırlar tek işlemde kaydedilir
@@ -290,16 +308,17 @@ function iscGrupla(anahtar) {
   const m = new Map();
   iscRaporKayitlar.forEach(r => {
     const a = anahtar(r) || '(Kalemsiz)';
-    if (!m.has(a)) m.set(a, { ad: a, adet: 0, saat: 0, gun: 0, tutar: 0 });
+    if (!m.has(a)) m.set(a, { ad: a, adet: 0, kisi: 0, saat: 0, gun: 0, tutar: 0 });
     const g = m.get(a); g.adet++; g.tutar += Number(r.tutar) || 0;
-    if (r.birim === 'saat') g.saat += Number(r.sure) || 0;
-    if (r.birim === 'gun') g.gun += Number(r.sure) || 0;
+    g.kisi += iscAdet(r);
+    if (r.birim === 'saat') g.saat += iscEfSure(r);
+    if (r.birim === 'gun') g.gun += iscEfSure(r);
   });
   return [...m.values()].sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
 }
 function iscOzetTablo(baslik, satirlar) {
   if (!satirlar.length) return '';
-  return `<div class="tw" style="margin-bottom:12px"><table><thead><tr><th>${baslik}</th><th style="text-align:right">Satır</th><th>Süre</th><th style="text-align:right">Tutar</th></tr></thead><tbody>`
+  return `<div class="tw" style="margin-bottom:12px"><table><thead><tr><th>${baslik}</th><th style="text-align:right">Satır</th><th>Süre (kişi × süre)</th><th style="text-align:right">Tutar</th></tr></thead><tbody>`
     + satirlar.map(g => `<tr><td>${iscEsc(g.ad)}</td><td style="text-align:right">${g.adet}</td><td>${iscSureMetin(g.saat, g.gun)}</td><td style="text-align:right">${g.tutar ? iscSayi(g.tutar) + ' ₺' : '—'}</td></tr>`).join('')
     + '</tbody></table></div>';
 }
@@ -307,33 +326,35 @@ function iscOzetTablo(baslik, satirlar) {
 function iscRaporCiz() {
   const el = document.getElementById('isc-rapor'); if (!el) return;
   if (!iscRaporKayitlar.length) { el.innerHTML = '<div class="bos">Seçilen aralıkta kayıt yok.</div>'; return; }
-  const t = iscToplamlar(iscRaporKayitlar, r => r.sure, r => r.birim, r => r.tutar);
+  const t = iscToplamlar(iscRaporKayitlar, iscEfSure, r => r.birim, r => r.tutar);
   const kayitSayisi = new Set(iscRaporKayitlar.map(r => r.belge_id)).size;
   const detay = iscRaporKayitlar.map(r => `<tr>
       <td style="white-space:nowrap">${iscTarihGoster(r.tarih)}</td>
       <td>${iscEsc(r.kisi_ad)}</td>
       <td>${iscEsc(r.kalem_ad || '')}</td>
+      <td style="text-align:right">${iscSayi(iscAdet(r))}</td>
       <td style="white-space:nowrap">${r.sure != null ? iscSayi(r.sure) + ' ' + (r.birim === 'gun' ? 'gün' : 'saat') : '—'}</td>
+      <td style="text-align:right;white-space:nowrap">${Number(r.birim_fiyat) ? iscSayi(r.birim_fiyat) + ' ₺' : '—'}</td>
       <td style="text-align:right;white-space:nowrap">${Number(r.tutar) ? iscSayi(r.tutar) + ' ₺' : '—'}</td>
       <td style="min-width:200px">${iscEsc(r.aciklama || '')}</td>
       <td style="min-width:140px;color:var(--yazi2)">${iscEsc(r.belge_not)}</td>
     </tr>`).join('');
   el.innerHTML = `
-    <div style="font-size:12px;color:var(--yazi2);margin-bottom:10px"><b>${kayitSayisi}</b> kayıt · <b>${iscRaporKayitlar.length}</b> satır · Toplam süre: <b>${iscSureMetin(t.saat, t.gun)}</b>${t.tutar ? ' · Toplam tutar: <b>' + iscSayi(t.tutar) + ' ₺</b>' : ''}</div>
+    <div style="font-size:12px;color:var(--yazi2);margin-bottom:10px"><b>${kayitSayisi}</b> kayıt · <b>${iscRaporKayitlar.length}</b> satır · Toplam süre (kişi × süre): <b>${iscSureMetin(t.saat, t.gun)}</b>${t.tutar ? ' · Toplam tutar: <b>' + iscSayi(t.tutar) + ' ₺</b>' : ''}</div>
     ${iscOzetTablo('Kişiye göre', iscGrupla(r => r.kisi_ad))}
     ${iscOzetTablo('Gider kalemine göre', iscGrupla(r => r.kalem_ad))}
     <div style="font-size:11px;font-weight:600;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px">Tüm satırlar</div>
-    <div class="tw"><table><thead><tr><th>Tarih</th><th>Kişi</th><th>Kalem</th><th>Süre</th><th style="text-align:right">Tutar</th><th>Satır Açıklaması</th><th>Kayıt Notu</th></tr></thead><tbody>${detay}</tbody></table></div>`;
+    <div class="tw"><table><thead><tr><th>Tarih</th><th>Kişi</th><th>Kalem</th><th style="text-align:right">Kişi</th><th>Süre</th><th style="text-align:right">Birim Fiyat</th><th style="text-align:right">Tutar</th><th>Satır Açıklaması</th><th>Kayıt Notu</th></tr></thead><tbody>${detay}</tbody></table></div>`;
 }
 
 // Raporda listelenen (filtreli) satırları Excel'in açabileceği CSV olarak indirir
 window.iscCsv = function () {
   if (!iscRaporKayitlar.length) { bil('İndirilecek kayıt yok', 'err'); return; }
   const h = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
-  const satirlar = [['Tarih', 'Kişi', 'Gider Kalemi', 'Süre', 'Birim', 'Tutar (TL)', 'Satır Açıklaması', 'Kayıt Notu'].map(h).join(';')];
+  const satirlar = [['Tarih', 'Kişi', 'Gider Kalemi', 'Kişi Sayısı', 'Süre', 'Birim', 'Birim Fiyat', 'Tutar (TL)', 'Satır Açıklaması', 'Kayıt Notu'].map(h).join(';')];
   iscRaporKayitlar.slice().reverse().forEach(r => satirlar.push([
-    iscTarihGoster(r.tarih), r.kisi_ad, r.kalem_ad || '', r.sure != null ? String(r.sure).replace('.', ',') : '',
-    r.sure != null ? (r.birim === 'gun' ? 'Gün' : 'Saat') : '', String(Number(r.tutar) || 0).replace('.', ','), r.aciklama || '', r.belge_not || ''
+    iscTarihGoster(r.tarih), r.kisi_ad, r.kalem_ad || '', String(iscAdet(r)).replace('.', ','), r.sure != null ? String(r.sure).replace('.', ',') : '',
+    r.sure != null ? (r.birim === 'gun' ? 'Gün' : 'Saat') : '', String(Number(r.birim_fiyat) || 0).replace('.', ','), String(Number(r.tutar) || 0).replace('.', ','), r.aciklama || '', r.belge_not || ''
   ].map(h).join(';')));
   const blob = new Blob(['﻿' + satirlar.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
