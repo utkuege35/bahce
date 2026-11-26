@@ -44,6 +44,12 @@
 #panel .pn-sat .s1 span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #panel .pn-cubuk{height:6px;border-radius:4px;background:rgba(120,170,230,.15);margin-top:4px;overflow:hidden}
 #panel .pn-cubuk i{display:block;height:100%;border-radius:4px}
+#panel .pn-gs{padding:6px 0;font-size:13px}
+#panel .pn-gs .s1{display:flex;align-items:center;gap:8px;color:#d6eaff}
+#panel .pn-gs .nk{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+#panel .pn-gs .ad{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#panel .pn-gs .tt{font-weight:600;color:#fff}
+#panel .pn-gs .yz{width:46px;text-align:right;color:#8fd8ff;font-weight:600}
 #panel .pn-bos{font-size:13px;color:#8fb4d9;padding:22px 0;text-align:center}
 </style>
 </head>
@@ -241,7 +247,8 @@
     </div>
     <div class="pn-kart">
       <div class="pn-kt">Gider Dağılımı</div>
-      <div class="pn-grafik"><canvas id="panel-gider-chart"></canvas></div>
+      <div class="pn-grafik" style="height:190px"><canvas id="panel-gider-chart"></canvas></div>
+      <div id="panel-gider-liste"></div>
     </div>
   </div>
 
