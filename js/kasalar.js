@@ -6,7 +6,7 @@ window.renderKasalar = async function() {
   if (!el) return;
 
   // Verilerini çek
-  const { data: kd } = await sb.from('kasalar').select('*').order('kod');
+  const { data: kd } = await sb.from('kasalar').select('*').eq('isyeri_id', aktifIsyeri?.id).order('kod'); // kasalar işyeri bazlıdır
   if (kd) kasalar_list = kd;
 
   const isAdmin = aktifKullanici?.rol === 'admin';
@@ -95,12 +95,15 @@ window.kaydetKasa_kart = async function() {
 
   const data = { ad, kod, tip, baslangic_bakiye: baslangic, aciklama: aciklama || null, aktif };
 
+  let hata;
   if (id) {
-    await sb.from('kasalar').update(data).eq('id', id);
+    ({ error: hata } = await sb.from('kasalar').update(data).eq('id', id));
   } else {
     data.id = uid();
-    await sb.from('kasalar').insert(data);
+    data.isyeri_id = aktifIsyeri?.id || null; // kasa, açıldığı işyerine aittir
+    ({ error: hata } = await sb.from('kasalar').insert(data));
   }
+  if (hata) { bil(hata.code === '23505' ? `"${kod}" kodu bu işyerinde zaten kullanımda!` : 'Kaydedilemedi: ' + hata.message, 'err'); return; }
 
   modalKapat('modal-kasa');
   await renderKasalar();
