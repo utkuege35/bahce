@@ -142,15 +142,18 @@ function _pnDonut(id,map,bosYazi){
   const el=document.getElementById(id);if(!el)return;
   if(_panelGrafikler[id]){try{_panelGrafikler[id].destroy();}catch(e){}_panelGrafikler[id]=null;}
   const ent=Object.entries(map).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
-  if(ent.length>6){const dig=ent.splice(5).reduce((s,[,v])=>s+v,0);ent.push(['Diğer',dig]);}
+  if(ent.length>8){const dig=ent.splice(7).reduce((s,[,v])=>s+v,0);ent.push(['Diğer',dig]);}
   const top=ent.reduce((s,[,v])=>s+v,0);
-  if(!top){_pnBos(el,bosYazi);return;}
+  const liste=document.getElementById(id.replace('-chart','-liste'));
+  if(!top){_pnBos(el,bosYazi);if(liste)liste.innerHTML='';return;}
   _pnDolu(el);
-  const renk=['#22d3ee','#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899'];
+  const renk=['#22d3ee','#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899','#f43f5e','#a3e635','#94a3b8'];
+  if(liste)liste.innerHTML=ent.map(([k,v],i)=>{const y=v/top*100;
+    return `<div class="pn-gs"><div class="s1"><i class="nk" style="background:${renk[i%renk.length]}"></i><span class="ad" title="${_logEsc(k)}">${_logEsc(k)}</span><span class="tt">${para(v)}</span><span class="yz">${y<1?'<%1':'%'+Math.round(y)}</span></div><div class="pn-cubuk"><i style="width:${Math.max(2,y)}%;background:${renk[i%renk.length]}"></i></div></div>`;}).join('');
   _panelGrafikler[id]=new Chart(el,{type:'doughnut',
     data:{labels:ent.map(([k])=>k),datasets:[{data:ent.map(([,v])=>Math.round(v)),backgroundColor:renk,borderColor:'#071334',borderWidth:3,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
-      plugins:{legend:{position:'bottom',labels:{color:_PN_YAZI,boxWidth:10,padding:8,font:{size:11}}},
+      plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>` ${c.label}: ₺${c.raw.toLocaleString('tr-TR')} (%${Math.round(c.raw/top*100)})`}}}},
     plugins:[{id:'orta',afterDraw(ch){
       const m=ch.getDatasetMeta(0).data[0];if(!m)return;const x=m.x,y=m.y,c=ch.ctx;
