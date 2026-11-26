@@ -663,6 +663,7 @@
   <div class="tabs">
     <button class="tab active" onclick="kiTab('tahsil',this)">Tahsil</button>
     <button class="tab" onclick="kiTab('tediye',this)">Tediye</button>
+    <button class="tab" onclick="kiTab('transfer',this)">Kasa Transferi</button>
   </div>
   <div id="tp-ki-tahsil" class="tab-panel active">
     <div id="tp-ki-tahsil-liste">
@@ -736,6 +737,44 @@
         <button class="btn pri" onclick="kaydetKasaFisi('tediye')">Kaydet</button>
       </div>
     </div>
+    </div>
+  </div>
+  <div id="tp-ki-transfer" class="tab-panel">
+    <div id="kt-liste-bolum">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Başlangıç</label>
+          <input type="date" id="kt-liste-tarih" onchange="ktListeYenile()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <label style="font-size:11px;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em">Bitiş</label>
+          <input type="date" id="kt-liste-bit" onchange="ktListeYenile(true)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <button class="btn sm pri" onclick="ktYeniBaslat()">Yeni</button>
+          <button class="btn sm" onclick="ktListeIslem('goruntule')" title="Seçili kaydı görüntüle">👁 Görüntüle</button>
+          <button class="btn sm" onclick="ktListeIslem('duzenle')" title="Seçili kaydı düzenle">✏ Düzenle</button>
+          <button class="btn sm ghost" onclick="ktListeIslem('sil')" title="Seçili kaydı sil">✕ Sil</button>
+          <span id="kt-liste-ozet" style="font-size:12px;color:var(--yazi3)"></span>
+        </div>
+        <div id="kt-liste-tb"></div>
+      </div>
+    </div>
+    <div id="kt-form-bolum" style="display:none">
+      <div class="card"><div class="card-title"><span id="kt-form-baslik">Kasa Transferi</span><button class="btn sm ghost" onclick="ktKaydetmedenCik()">← Listeye Dön</button></div>
+        <div class="fgrid c3" style="margin-bottom:1rem">
+          <div class="fg"><label>Tarih</label><input type="date" id="kt-tarih"></div>
+          <div class="fg"><label>Çıkış Kasası <span style="font-weight:400;color:var(--yazi3)">(para buradan çıkar)</span></label><select id="kt-cikis" onchange="ktBakiyeGoster()"><option value="">— Kasa seçin —</option></select>
+            <div id="kt-cikis-bakiye" style="font-size:11px;color:var(--yazi3);margin-top:3px"></div></div>
+          <div class="fg"><label>Giriş Kasası <span style="font-weight:400;color:var(--yazi3)">(para buraya girer)</span></label><select id="kt-giris" onchange="ktBakiyeGoster()"><option value="">— Kasa seçin —</option></select>
+            <div id="kt-giris-bakiye" style="font-size:11px;color:var(--yazi3);margin-top:3px"></div></div>
+        </div>
+        <div class="fgrid c3" style="margin-bottom:1rem">
+          <div class="fg"><label>Tutar</label><input type="number" id="kt-tutar" placeholder="0,00" min="0" step="0.01" style="text-align:right"></div>
+          <div class="fg" style="grid-column:span 2"><label>Açıklama</label><input type="text" id="kt-aciklama" maxlength="500" placeholder="Opsiyonel"></div>
+        </div>
+        <div style="font-size:11px;color:var(--yazi3);margin-bottom:1rem">Çıkış kasası bu tutar kadar azalır, giriş kasası artar. Transfer Gelir/Gider raporlarına girmez; kasa bakiyelerinde ve Kasa Raporu'nda görünür.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button class="btn ghost" id="kt-cik-btn" onclick="ktKaydetmedenCik()">Kaydetmeden Çık</button>
+          <button class="btn pri" id="kt-kaydet-btn" onclick="ktKaydet()">Kaydet</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2707,6 +2746,7 @@
 <script src="js/stokuretim.js"></script>
 <script src="js/stoksayim.js"></script>
 <script src="js/kasaislem.js"></script>
+<script src="js/kasatransfer.js"></script>
 <script src="js/loglar.js"></script>
 <script src="js/envtablo.js"></script>
 <script src="js/envanter.js"></script>
