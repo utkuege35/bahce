@@ -316,25 +316,27 @@ body.dark .nav-ara{background:#131e2c}
     <table><thead>
       <tr id="il-baslik-satir">
         <th data-s="tarih" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tarih')">Tarih <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th data-s="tur" style="cursor:pointer" onclick="ilSirala('tur')">Tür <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th data-s="aciklama" style="cursor:pointer" onclick="ilSirala('aciklama')">Açıklama <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th data-s="cari" style="cursor:pointer" onclick="ilSirala('cari')">Cari <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th style="text-align:right">Miktar</th>
-        <th data-s="tutar" style="cursor:pointer;text-align:right" onclick="ilSirala('tutar')">Tutar <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th data-s="odeme" style="cursor:pointer" onclick="ilSirala('odeme')">Ödeme <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th data-s="kullanici" style="cursor:pointer" onclick="ilSirala('kullanici')">Kullanıcı <i style="font-style:normal;opacity:.6">↕</i></th>
-        <th colspan="2"></th>
+        <th data-s="tur" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tur')">Tür <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="belgeNo" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('belgeNo')">Belge No <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="cari" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('cari')">Cari <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="aciklama" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('aciklama')">Açıklama <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th style="text-align:right;white-space:nowrap">Miktar</th>
+        <th data-s="tutar" style="cursor:pointer;text-align:right;white-space:nowrap" onclick="ilSirala('tutar')">Tutar <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="odeme" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('odeme')">Ödeme <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="kullanici" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('kullanici')">Kullanıcı <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th></th>
       </tr>
       <tr style="background:var(--krem)">
         <th></th>
         <th><select id="ilf-tur" onchange="ilFiltre()" style="width:100%;font-size:11px;padding:3px;border:1px solid var(--border);border-radius:5px"><option value="">Tümü</option></select></th>
-        <th><input type="text" id="ilf-aciklama" oninput="ilFiltre()" placeholder="filtre..." style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></th>
+        <th><input type="text" id="ilf-belge" oninput="ilFiltre()" placeholder="filtre..." style="width:90px;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></th>
         <th><input type="text" id="ilf-cari" oninput="ilFiltre()" placeholder="filtre..." style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></th>
+        <th><input type="text" id="ilf-aciklama" oninput="ilFiltre()" placeholder="filtre..." style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></th>
         <th></th>
-        <th><input type="text" id="ilf-tutar" oninput="ilFiltre()" placeholder=">1000" title="Örn: 500  veya  >1000  veya  <250" style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px;text-align:right"></th>
+        <th><input type="text" id="ilf-tutar" oninput="ilFiltre()" placeholder=">1000" title="Örn: 500  veya  >1000  veya  <250" style="width:90px;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px;text-align:right"></th>
         <th><select id="ilf-odeme" onchange="ilFiltre()" style="width:100%;font-size:11px;padding:3px;border:1px solid var(--border);border-radius:5px"><option value="">Tümü</option><option value="Peşin">Peşin</option><option value="Cari">Cari</option><option value="-">Belirsiz</option></select></th>
         <th><select id="ilf-kul" onchange="ilFiltre()" style="width:100%;font-size:11px;padding:3px;border:1px solid var(--border);border-radius:5px"><option value="">Tümü</option></select></th>
-        <th colspan="2"></th>
+        <th></th>
       </tr>
     </thead>
     <tbody id="il-tb"></tbody></table>
@@ -1334,8 +1336,8 @@ body.dark .nav-ara{background:#131e2c}
     /* Rapor tüm ekran genişliğini kullanır (genel sayfa sınırı 980px'dir; yan menü payı korunur) */
     /* Stoklar ekranı: tüm genişliği kullan, soldaki menüden biraz uzak dur */
     /* Faturalar ekranı: tüm genişliği kullan */
-    #faturalar.page{max-width:none;margin-right:0;padding-left:2.5rem;padding-right:1.75rem}
-    @media(max-width:768px){#faturalar.page{padding-left:.85rem;padding-right:.85rem}}
+    #faturalar.page,#islem-liste.page{max-width:none;margin-right:0;padding-left:2.5rem;padding-right:1.75rem}
+    @media(max-width:768px){#faturalar.page,#islem-liste.page{padding-left:.85rem;padding-right:.85rem}}
     #stok.page{max-width:none;margin-right:0;padding-left:2.5rem;padding-right:1.75rem}
     @media(max-width:768px){#stok.page{padding-left:.85rem;padding-right:.85rem}}
     #stok-grid{display:grid;grid-template-columns:minmax(360px,.9fr) 1.6fr;gap:1rem}
