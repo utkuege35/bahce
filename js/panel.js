@@ -74,7 +74,7 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
 let _ilSira='tarih-azalan',_ilSayfa=1,_ilAcikId=null;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
-const ISLEM_TUR_ADLARI={giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım',gider:'Gider',kasa:'Kasa',devir:'Devir',transfer_cikis:'Transfer Çıkış',transfer_giris:'Transfer Giriş',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',ikram_sarfiyat:'İkram Sarfiyatı',odenmez_sarfiyat:'Ödenmez Sarfiyatı',hasar_sarfiyat:'Hasar Sarfiyatı',atik_sarfiyat:'Atık Sarfiyatı'};
+const ISLEM_TUR_ADLARI={iscilik:'İşçilik',giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım',gider:'Gider',kasa:'Kasa',devir:'Devir',transfer_cikis:'Transfer Çıkış',transfer_giris:'Transfer Giriş',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',ikram_sarfiyat:'İkram Sarfiyatı',odenmez_sarfiyat:'Ödenmez Sarfiyatı',hasar_sarfiyat:'Hasar Sarfiyatı',atik_sarfiyat:'Atık Sarfiyatı'};
 
 window.idHesapla=function(kaynak){
   const mik=parseFloat(document.getElementById('id-miktar').value)||0;
@@ -279,13 +279,21 @@ function _belgeleriGrupla(liste){
 // buradan düzenlenebilir. Yönetildiği ekranın adını döndürür; serbest kayıtta boş döner.
 const _STOK_FIS_TURLERI=/^(devir|transfer_giris|transfer_cikis|satis|satis_sarfiyat|ikram|ikram_sarfiyat|odenmez|odenmez_sarfiyat|hasar|hasar_sarfiyat|atik|atik_sarfiyat|uretim|uretim_sarfiyat|cikis)$/;
 window._islemYonetilenEkran=function(i){
+  if(i.tur==='iscilik')return 'İşçilik Kayıtları';
   if(i.fatura_id)return 'Faturalar';
   if(i.irsaliye_id)return 'İrsaliyeler';
   if(i.tur==='sayim')return 'Stok İşlemleri › Sayım';
-  if(i.tur==='kasa'&&['alici_tahsilat','satici_odeme','diger_giris','diger_cikis'].includes(i.alt_tur))return 'Kasa İşlemleri';
+  if(i.tur==='kasa'&&['alici_tahsilat','satici_odeme','diger_giris','diger_cikis','kasa_transfer'].includes(i.alt_tur))return 'Kasa İşlemleri';
   if(i.alt_tur&&_STOK_FIS_TURLERI.test(i.tur||''))return 'Stok İşlemleri';
   return '';
 };
+const _IL_KASA_ALT={alici_tahsilat:'Tahsil',diger_giris:'Kasa Girişi',satici_odeme:'Tediye',diger_cikis:'Kasa Çıkışı',kasa_transfer:'Kasa Transferi'};
+function _ilTurAd(satirlar){
+  const turler=[...new Set(satirlar.map(i=>i.tur))];
+  if(turler.length!==1)return 'Karma';
+  if(turler[0]==='kasa'&&_IL_KASA_ALT[satirlar[0].alt_tur])return _IL_KASA_ALT[satirlar[0].alt_tur];
+  return ISLEM_TUR_ADLARI[turler[0]]||turler[0];
+}
 function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin){
   const acik = acikId === belge.key;
   const satirlar = belge.satirlar;
@@ -303,7 +311,7 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin){
   }
   const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
   const topMiktar = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].miktar ? parseFloat(gosterimSatirlari[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(gosterimSatirlari[0].birim_id) : '') : gosterimSatirlari.length + ' kalem';
-  const turAd = turler.length === 1 ? (ISLEM_TUR_ADLARI[turler[0]] || turler[0]) : 'Karma';
+  const turAd = _ilTurAd(satirlar);
   const badgeCls = turler[0]==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
   const yonetim = satirlar.map(i=>_islemYonetilenEkran(i)).find(Boolean) || '';
   const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
@@ -348,6 +356,9 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin){
         </tr>
         ${detaySatirlar}
       </table>
+      ${(()=>{const kasaK=satirlar.find(i=>i.kasa_id);const ks=kasaK&&typeof kasalar_list!=='undefined'?kasalar_list.find(k=>k.id===kasaK.kasa_id):null;
+        const parca=[belge.belge_no?`Belge No: <b>${_logEsc(belge.belge_no)}</b>`:'',cari?`Cari: <b>${_logEsc(cari.ad)}</b>`:'',ks?`Kasa: <b>${_logEsc(ks.ad)}</b>`:'',belge.aciklama_not?`Not: ${_logEsc(belge.aciklama_not)}`:'',belge.kullanici?`Kaydeden: ${_logEsc(belge.kullanici)}`:''].filter(Boolean);
+        return parca.length?`<div style="padding:8px 12px;font-size:11px;color:var(--yazi2);display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid var(--border)">${parca.join('')}</div>`:'';})()}
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--yesil-cok-ac);border-top:1px solid var(--border)">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn sm" onclick="event.stopPropagation();islemGecmisAc('${satirlar[0].id}')">📋 Geçmiş${logSayisi>0?` (${logSayisi})`:''}</button>
@@ -386,65 +397,134 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin){
 }
 
 // ===== İŞLEM LİSTESİ =====
-let _ilCache=null;
+// Seçili tarih aralığındaki TÜM işlem türleri (alış, satış, gider, kasa, transfer, işçilik, stok fişleri...) belge başına tek özet satır.
+// Kolon başlıklarının altındaki kutulardan filtrelenir, başlığa tıklayınca sıralanır; Excel'e aktarılır; satıra tıklayınca detay açılır.
+let _ilCache=null,_ilBelgeler=[],_ilGor=[];
 window.ilCacheSifirla=function(){_ilCache=null;};
+const _ilYerel=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+async function _ilVeriYukle(bas,bit){
+  const iy=aktifIsyeri?.id;
+  const [islem,satirlar,belgeler]=await Promise.all([
+    islemlerListe({bas,bit}),
+    sbSayfali(()=>sb.from('isci_belge_satirlari').select('*').eq('isyeri_id',iy).gte('tarih',bas).lte('tarih',bit).order('sira').order('id')).catch(()=>[]),
+    sbSayfali(()=>sb.from('isci_belgeleri').select('*').eq('isyeri_id',iy).gte('tarih',bas).lte('tarih',bit).order('id')).catch(()=>[])
+  ]);
+  let liste=islem.filter(i=>i.kat!=='YM Sayım Özeti');
+  // Fatura/irsaliye belgesine bağlı kasa satırı ödeme tarafıdır: belgenin kendi satırlarıyla çift sayılmasın
+  const kasaDisi=new Set(liste.filter(i=>i.tur!=='kasa'&&i.belge_id).map(i=>i.belge_id));
+  liste=liste.filter(i=>!(i.tur==='kasa'&&i.belge_id&&kasaDisi.has(i.belge_id)));
+  // Kasa transferi iki satırdır (çıkış/giriş): tek satır olarak göster
+  const kasaAd=id=>(kasalar_list.find(k=>k.id===id)||{}).ad||'?';
+  const trf={};liste.filter(i=>i.alt_tur==='kasa_transfer').forEach(i=>{(trf[i.belge_id||i.id]=trf[i.belge_id||i.id]||[]).push(i);});
+  const trfAtla=new Set();
+  Object.values(trf).forEach(g=>{
+    const cik=g.find(x=>(parseFloat(x.kasa_etkisi)||0)<0)||g[0],gir=g.find(x=>(parseFloat(x.kasa_etkisi)||0)>0);
+    g.forEach(x=>{if(x!==cik)trfAtla.add(x.id);});
+    cik._trfMetin=`${kasaAd(cik.kasa_id)} → ${gir?kasaAd(gir.kasa_id):'?'}`;
+  });
+  liste=liste.filter(i=>!trfAtla.has(i.id)).map(i=>i._trfMetin?{...i,aciklama:i._trfMetin+(i.aciklama?' · '+i.aciklama:'')}:i);
+  // İşçilik kayıtları (islemler tablosunda değil) — belge başına özet
+  const bMap={};belgeler.forEach(b=>{bMap[b.id]=b;});
+  satirlar.forEach(r=>{
+    const b=bMap[r.belge_id]||{};
+    liste.push({id:'isc-'+r.id,belge_id:'isc:'+r.belge_id,tur:'iscilik',tarih:r.tarih,tutar:r.tutar,kdv_tutar:0,
+      aciklama:`${r.kisi_ad||''}${r.kalem_ad?' — '+r.kalem_ad:''}`,miktar:r.adet>1?r.adet:'',fiyat:r.birim_fiyat||'',
+      cari_id:r.cari_id||null,kullanici:b.kullanici||'',odeme_tipi:b.odeme_tipi||null,aciklama_not:b.aciklama||null,
+      ts:b.olusturma?Date.parse(b.olusturma):0,gider_kalem_id:r.gider_kalem_id||null});
+  });
+  return liste;
+}
+function _ilOzet(b){
+  const s=b.satirlar,t=_ilTurAd(s);
+  const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===b.cari_id):null;
+  const acik=s.length===1?(s[0].aciklama||s[0].kat||''):(s[0].aciklama||'')+(s.length>1?` +${s.length-1}`:'');
+  const tutar=s.reduce((x,i)=>x+(parseFloat(i.tutar)||0),0);
+  const odeme=t==='Sayım'?'':(b.odeme_tipi==='cari'?'Cari':b.odeme_tipi==='pesin'?'Peşin':'');
+  return {tur:t,aciklama:acik,cari:cari?cari.ad:'',tutar,odeme,kullanici:b.kullanici||'',tarih:b.tarih||'',belgeNo:b.belge_no||''};
+}
 window.renderIslemListe=async function(){
   const isAdmin=aktifKullanici?.rol==='admin';
-  const th=document.getElementById('il-islem-th');if(th)th.style.display=isAdmin?'':'none';
-  const ara=(document.getElementById('il-ara')?.value||'').toLowerCase();
-  const tur=document.getElementById('il-tur')?.value||'';
-  const bas=document.getElementById('il-bas')?.value||'';
-  const bit=document.getElementById('il-bit')?.value||'';
-  // Tarih seçilmediyse son 90 gün gösterilir (tüm geçmişi her seferinde çekmemek için).
-  let basS=bas,not='';
-  if(!bas&&!bit){const g=new Date();g.setDate(g.getDate()-90);basS=g.toISOString().slice(0,10);not=' &nbsp;·&nbsp; <span style="color:var(--yazi3)">tarih seçilmedi: son 90 gün</span>';}
-  const anahtar=`${aktifIsyeri?.id}|${tur}|${basS}|${bit}`;
-  const tb=document.getElementById('il-tb');
+  const g=id=>document.getElementById(id);
+  const basEl=g('il-bas'),bitEl=g('il-bit'),tb=g('il-tb');if(!basEl||!tb)return;
+  if(!basEl.dataset.ilk){basEl.dataset.ilk='1';basEl.value=_ilYerel().slice(0,8)+'01';bitEl.value=_ilYerel();} // varsayılan: ayın 1'i – bugün
+  if(!basEl.value)basEl.value=_ilYerel().slice(0,8)+'01';
+  if(!bitEl.value)bitEl.value=_ilYerel();
+  if(bitEl.value<basEl.value)bitEl.value=basEl.value;
+  const bas=basEl.value,bit=bitEl.value;
+  const anahtar=`${aktifIsyeri?.id}|${bas}|${bit}`;
   if(!_ilCache||_ilCache.anahtar!==anahtar){
-    if(tb)tb.innerHTML='<tr><td colspan="10" class="bos">Yükleniyor...</td></tr>';
-    try{_ilCache={anahtar,veri:await islemlerListe({tur,bas:basS,bit})};}
-    catch(e){if(tb)tb.innerHTML=`<tr><td colspan="10" class="bos">Liste okunamadı: ${e.message}</td></tr>`;return;}
+    tb.innerHTML='<tr><td colspan="10" class="bos">Yükleniyor...</td></tr>';
+    try{_ilCache={anahtar,veri:await _ilVeriYukle(bas,bit)};}
+    catch(e){tb.innerHTML=`<tr><td colspan="10" class="bos">Liste okunamadı: ${e.message}</td></tr>`;return;}
+    _ilBelgeler=_belgeleriGrupla(_ilCache.veri).map(b=>({...b,_o:_ilOzet(b)}));
   }
-  let liste=_ilCache.veri.filter(i=>i.kat!=='YM Sayım Özeti'); // YM/Ürün seviyesi özet satırları burada gösterilmez, ayrı raporu var
-  if(ara)liste=liste.filter(i=>(i.aciklama||'').toLowerCase().includes(ara)||(i.kat||'').toLowerCase().includes(ara)||(i.kullanici||'').toLowerCase().includes(ara)||(i.satir_not||'').toLowerCase().includes(ara));
-  if(_ilSira==='tarih-artan')liste.sort((a,b)=>a.tarih>b.tarih?1:-1);
-  else liste.sort((a,b)=>b.tarih>a.tarih?1:-1);
-
-  const topGelir=liste.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
-  const topGider=liste.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
-  const ozEl=document.getElementById('il-ozet');
-  if(ozEl)ozEl.innerHTML=`${liste.length} işlem &nbsp;·&nbsp; <span style="color:var(--yesil)">${para(topGelir)}</span> &nbsp;·&nbsp; <span style="color:var(--turuncu)">${para(topGider)}</span>${not}`;
-
-  // Belge bazlı gruplama — ÖNCE tüm filtrelenmiş listeyi belgelere ayır,
-  // SONRA sayfalamayı belge sayısına göre uygula. (Sayfalama ham satırlara
-  // uygulanırsa, çok satırlı tek bir fiş — örn. büyük bir sayım fişi — sayfa
-  // sınırında ikiye bölünüp aynı fiş birden fazla özet satırı gibi görünür.)
-  const belgeler = _belgeleriGrupla(liste);
-
-  const topSayfa=Math.max(1,Math.ceil(belgeler.length/IL_SAYFA_BOY));
+  // Seçenek listelerini (Tür, Kullanıcı) mevcut verilerden doldur
+  const doldur=(id,degerler)=>{const el=g(id);if(!el)return;const sec=el.value;el.innerHTML='<option value="">Tümü</option>'+[...new Set(degerler)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'tr')).map(v=>`<option value="${_logEsc(v)}">${_logEsc(v)}</option>`).join('');el.value=[...el.options].some(o=>o.value===sec)?sec:'';};
+  doldur('ilf-tur',_ilBelgeler.map(b=>b._o.tur));doldur('ilf-kul',_ilBelgeler.map(b=>b._o.kullanici));
+  // Filtreler (kolon başlıklarının altındaki kutular)
+  const norm=s=>String(s||'').toLocaleLowerCase('tr-TR');
+  const fTur=g('ilf-tur').value,fKul=g('ilf-kul').value,fOde=g('ilf-odeme').value;
+  const fAci=norm(g('ilf-aciklama').value),fCari=norm(g('ilf-cari').value),fTutar=(g('ilf-tutar').value||'').trim().replace(',','.');
+  const fAra=norm(g('il-ara')?.value);
+  const tutarUyar=v=>{if(!fTutar)return true;const m=fTutar.match(/^([<>]=?)?\s*([\d.]+)$/);if(!m)return String(v.toFixed(2)).includes(fTutar);const n=parseFloat(m[2]);
+    return m[1]==='>'?v>n:m[1]==='>='?v>=n:m[1]==='<'?v<n:m[1]==='<='?v<=n:Math.abs(v-n)<0.005||String(v.toFixed(2)).includes(m[2]);};
+  let liste=_ilBelgeler.filter(b=>{const o=b._o;
+    if(fTur&&o.tur!==fTur)return false;if(fKul&&o.kullanici!==fKul)return false;
+    if(fOde&&(fOde==='-'?o.odeme!=='':o.odeme!==fOde))return false;
+    if(fAci&&!norm(o.aciklama+' '+o.belgeNo).includes(fAci))return false;
+    if(fCari&&!norm(o.cari).includes(fCari))return false;
+    if(!tutarUyar(o.tutar))return false;
+    if(fAra&&!norm([o.tur,o.aciklama,o.cari,o.kullanici,o.belgeNo,b.aciklama_not,...b.satirlar.map(i=>(i.satir_not||'')+' '+(i.kat||''))].join(' ')).includes(fAra))return false;
+    return true;});
+  // Sıralama (başlığa tıklayınca)
+  const [alan,yon]=_ilSira.split('-');const kat=yon==='artan'?1:-1;
+  liste.sort((a,b)=>{const x=a._o[alan],y=b._o[alan];
+    const c=(typeof x==='number'&&typeof y==='number')?x-y:String(x).localeCompare(String(y),'tr');
+    return (c||((a.ts||0)-(b.ts||0)))*kat;});
+  _ilGor=liste;
+  document.querySelectorAll('#il-baslik-satir th[data-s]').forEach(th=>{const a=th.dataset.s;th.querySelector('i').textContent=a===alan?(yon==='artan'?'▲':'▼'):'↕';});
+  // Özet: gelir / gider (Panel ile aynı kural: KDV dahil)
+  const satirTum=liste.flatMap(b=>b.satirlar);
+  const topGelir=satirTum.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
+  const topGider=satirTum.filter(i=>['gider','giris','iscilik'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
+  const oz=g('il-ozet');if(oz)oz.innerHTML=`${liste.length} kayıt${liste.length!==_ilBelgeler.length?' / '+_ilBelgeler.length:''} &nbsp;·&nbsp; Gelir <b style="color:var(--yesil)">${para(topGelir)}</b> &nbsp;·&nbsp; Gider <b style="color:var(--turuncu)">${para(topGider)}</b>`;
+  // Sayfalama (belge sayısına göre)
+  const topSayfa=Math.max(1,Math.ceil(liste.length/IL_SAYFA_BOY));
   if(_ilSayfa>topSayfa)_ilSayfa=1;
-  const pBelgeler=belgeler.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
-
-  const rows = pBelgeler.map(belge => _belgeSatirHtml(belge,_ilAcikId,'ilToggle',isAdmin)).join('');
-    document.getElementById('il-tb').innerHTML=rows||'<tr><td colspan="10" class="bos">İşlem bulunamadı</td></tr>';
-
+  const p=liste.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
+  tb.innerHTML=p.map(b=>_belgeSatirHtml(b,_ilAcikId,'ilToggle',isAdmin)).join('')||'<tr><td colspan="10" class="bos">Bu filtreyle işlem bulunamadı</td></tr>';
   let sayf='';
   if(topSayfa>1){
     if(_ilSayfa>1)sayf+=`<button class="btn sm" onclick="_ilSayfa=${_ilSayfa-1};renderIslemListe()">‹</button>`;
     const s=Math.max(1,_ilSayfa-2),e=Math.min(topSayfa,_ilSayfa+2);
-    for(let p=s;p<=e;p++)sayf+=`<button class="btn sm${p===_ilSayfa?' active':''}" onclick="_ilSayfa=${p};renderIslemListe()">${p}</button>`;
+    for(let q=s;q<=e;q++)sayf+=`<button class="btn sm${q===_ilSayfa?' active':''}" onclick="_ilSayfa=${q};renderIslemListe()">${q}</button>`;
     if(_ilSayfa<topSayfa)sayf+=`<button class="btn sm" onclick="_ilSayfa=${_ilSayfa+1};renderIslemListe()">›</button>`;
     sayf+=`<span style="font-size:11px;color:var(--yazi3);align-self:center;margin-left:4px">${_ilSayfa}/${topSayfa} sayfa</span>`;
   }
-  document.getElementById('il-sayfalama').innerHTML=sayf;
+  g('il-sayfalama').innerHTML=sayf;
 };
-
 window.ilToggle=function(id){_ilAcikId=_ilAcikId===id?null:id;renderIslemListe();};
-window.ilSirala=function(alan){_ilSira=_ilSira===alan+'-azalan'?alan+'-artan':alan+'-azalan';renderIslemListe();};
+window.ilSirala=function(alan){_ilSira=_ilSira===alan+'-azalan'?alan+'-artan':alan+'-azalan';_ilSayfa=1;renderIslemListe();};
+window.ilFiltre=function(){_ilSayfa=1;renderIslemListe();};
 window.ilFiltreTemizle=function(){
-  ['il-ara','il-bas','il-bit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const t=document.getElementById('il-tur');if(t)t.value='';
-  _ilSayfa=1;renderIslemListe();
+  ['il-ara','ilf-aciklama','ilf-cari','ilf-tutar','ilf-tur','ilf-kul','ilf-odeme'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const b=document.getElementById('il-bas'),s=document.getElementById('il-bit');if(b){b.value=_ilYerel().slice(0,8)+'01';}if(s){s.value=_ilYerel();}
+  _ilSira='tarih-azalan';_ilSayfa=1;renderIslemListe();
+};
+// Excel: ekrandaki (filtrelenmiş) liste — 1. sayfa özet satırları, 2. sayfa satır detayları
+window.ilExcelIndir=function(){
+  if(!_ilGor.length){bil('Aktarılacak kayıt yok','err');return;}
+  const ozet=_ilGor.map(b=>({Tarih:b._o.tarih,Tür:b._o.tur,Açıklama:b._o.aciklama,'Belge No':b._o.belgeNo,Cari:b._o.cari,'Satır Sayısı':b.satirlar.length,Tutar:+b._o.tutar.toFixed(2),Ödeme:b._o.odeme,Kullanıcı:b._o.kullanici,Not:b.aciklama_not||''}));
+  const detay=[];
+  _ilGor.forEach(b=>b.satirlar.forEach(i=>{
+    const stok=stoklar.find(s=>s.id===i.stok_id),urun=urunler.find(u=>u.id===i.urun_id);
+    detay.push({Tarih:b._o.tarih,Tür:b._o.tur,'Belge No':b._o.belgeNo,Cari:b._o.cari,'Malzeme / Ürün / Açıklama':stok?stok.ad:urun?urun.ad:(i.aciklama||''),
+      Birim:(typeof birimAd==='function'?birimAd(i.birim_id):'')||'',Miktar:i.miktar?+parseFloat(i.miktar).toFixed(4):'',Fiyat:i.fiyat?+parseFloat(i.fiyat):'',Tutar:i.tutar?+parseFloat(i.tutar):'',KDV:i.kdv_tutar?+parseFloat(i.kdv_tutar):'',Not:i.satir_not||''});
+  }));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ozet),'İşlem Listesi');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detay),'Satır Detayı');
+  XLSX.writeFile(wb,`islem_listesi_${document.getElementById('il-bas').value}_${document.getElementById('il-bit').value}.xlsx`);
 };
 
 // ===== SEKME İÇİ GÜNLÜK ÖZET (Alış/Satış/Kasa/Üretim/Sayım/Devir sekmeleri) =====
@@ -568,7 +648,7 @@ window.islemSil=async function(id){
 // Bir fişin (belge) detay satırlarını — ekranda göründüğü kümülatif/toplamlı
 // haliyle (sayım fişlerinde aynı stok tek satırda toplanmış) — Excel'e aktarır.
 window.belgeExcelIndir=async function(belgeKey){
-  const satirlar=(await belgeSatirlari(belgeKey)).filter(i=>i.kat!=='YM Sayım Özeti');
+  const satirlar=(String(belgeKey).startsWith('isc:')?(_ilCache?.veri||[]).filter(i=>i.belge_id===belgeKey):(await belgeSatirlari(belgeKey))).filter(i=>i.kat!=='YM Sayım Özeti');
   if(!satirlar.length){bil('Veri bulunamadı','err');return;}
   const turler=[...new Set(satirlar.map(i=>i.tur))];
   let gosterim=satirlar;
