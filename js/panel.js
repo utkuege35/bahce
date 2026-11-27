@@ -74,7 +74,7 @@ function _doughnut(canvasId,dataMap,renkler,bosYazi){
 let _ilSira='tarih-azalan',_ilSayfa=1,_ilAcikId=null;
 const IL_SAYFA_BOY=25;
 const ALAN_ADLARI={tarih:'Tarih',miktar:'Miktar',fiyat:'Birim Fiyat',tutar:'Tutar',satir_not:'Satır Notu',aciklama_not:'Genel Not'};
-const ISLEM_TUR_ADLARI={iscilik:'İşçilik',giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım',gider:'Gider',kasa:'Kasa',devir:'Devir',transfer_cikis:'Transfer Çıkış',transfer_giris:'Transfer Giriş',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',ikram_sarfiyat:'İkram Sarfiyatı',odenmez_sarfiyat:'Ödenmez Sarfiyatı',hasar_sarfiyat:'Hasar Sarfiyatı',atik_sarfiyat:'Atık Sarfiyatı'};
+const ISLEM_TUR_ADLARI={iscilik:'İşçilik',giris:'Alış',satis:'Satış',uretim:'Üretim',uretim_sarfiyat:'Sarfiyat',satis_sarfiyat:'Satış Sarfiyatı',sayim:'Sayım',gider:'Gider',kasa:'Kasa',devir:'Devir',transfer_cikis:'Transfer Çıkış',transfer_giris:'Transfer Giriş',fatura_alis:'Alış Faturası',fatura_satis:'Satış Faturası',fatura_iade:'İade Faturası',irsaliye_alis:'Alış İrsaliyesi',irsaliye_satis:'Satış İrsaliyesi',irsaliye_iade:'İade İrsaliyesi',ikram:'İkram',odenmez:'Ödenmez',hasar:'Hasar',atik:'Atık',ikram_sarfiyat:'İkram Sarfiyatı',odenmez_sarfiyat:'Ödenmez Sarfiyatı',hasar_sarfiyat:'Hasar Sarfiyatı',atik_sarfiyat:'Atık Sarfiyatı'};
 
 window.idHesapla=function(kaynak){
   const mik=parseFloat(document.getElementById('id-miktar').value)||0;
@@ -309,14 +309,14 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin, kompakt){
     });
     gosterimSatirlari = sira.map(k => grup[k]);
   }
-  const topTutar = satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
+  const topTutar = satirlar[0]&&satirlar[0]._belgeToplam!=null ? satirlar[0]._belgeToplam : satirlar.reduce((s, i) => s + parseFloat(i.tutar || 0), 0);
   const topMiktar = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].miktar ? parseFloat(gosterimSatirlari[0].miktar).toLocaleString('tr-TR', {maximumFractionDigits:2}) + ' ' + birimAd(gosterimSatirlari[0].birim_id) : '') : gosterimSatirlari.length + ' kalem';
   const turAd = _ilTurAd(satirlar);
-  const badgeCls = turler[0]==='satis'?'g':['gider','giris','satis_sarfiyat'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
+  const badgeCls = ['satis','fatura_satis'].includes(turler[0])?'g':['gider','giris','satis_sarfiyat','fatura_alis'].includes(turler[0])?'d':turler[0]==='uretim'?'m':'u';
   const yonetim = satirlar.map(i=>_islemYonetilenEkran(i)).find(Boolean) || '';
   const cari = typeof cariListesi!=='undefined' ? cariListesi.find(c=>c.id===belge.cari_id) : null;
   const aciklama = gosterimSatirlari.length === 1 ? (gosterimSatirlari[0].aciklama || gosterimSatirlari[0].kat || '') : (gosterimSatirlari[0].aciklama || '') + (gosterimSatirlari.length > 1 ? ` +${gosterimSatirlari.length-1}` : '');
-  const tutarRenk = turler[0]==='satis'?'var(--yesil)':['gider','giris'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
+  const tutarRenk = ['satis','fatura_satis'].includes(turler[0])?'var(--yesil)':['gider','giris','fatura_alis'].includes(turler[0])?'var(--turuncu)':'var(--yazi2)';
 
   const detaySatirlar = gosterimSatirlari.map((i, si) => {
     const stok = stoklar.find(s => s.id === i.stok_id);
@@ -426,15 +426,20 @@ window.ilCacheSifirla=function(){_ilCache=null;};
 const _ilYerel=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 async function _ilVeriYukle(bas,bit){
   const iy=aktifIsyeri?.id;
-  const [islem,satirlar,belgeler]=await Promise.all([
+  const [islem,satirlar,belgeler,fatlar,irslar]=await Promise.all([
     islemlerListe({bas,bit}),
     sbSayfali(()=>sb.from('isci_belge_satirlari').select('*').eq('isyeri_id',iy).gte('tarih',bas).lte('tarih',bit).order('sira').order('id')).catch(()=>[]),
-    sbSayfali(()=>sb.from('isci_belgeleri').select('*').eq('isyeri_id',iy).gte('tarih',bas).lte('tarih',bit).order('id')).catch(()=>[])
+    sbSayfali(()=>sb.from('isci_belgeleri').select('*').eq('isyeri_id',iy).gte('tarih',bas).lte('tarih',bit).order('id')).catch(()=>[]),
+    sbSayfali(()=>sb.from('faturalar').select('*').eq('isyeri_id',iy).eq('silindi',false).gte('tarih',bas).lte('tarih',bit).order('id')).catch(()=>[]),
+    sbSayfali(()=>sb.from('irsaliyeler').select('*').eq('isyeri_id',iy).eq('silindi',false).gte('tarih',bas).lte('tarih',bit).order('id')).catch(()=>[])
   ]);
   let liste=islem.filter(i=>i.kat!=='YM Sayım Özeti');
   // Fatura/irsaliye belgesine bağlı kasa satırı ödeme tarafıdır: belgenin kendi satırlarıyla çift sayılmasın
   const kasaDisi=new Set(liste.filter(i=>i.tur!=='kasa'&&i.belge_id).map(i=>i.belge_id));
+  fatlar.forEach(f=>kasaDisi.add(f.id));irslar.forEach(f=>kasaDisi.add(f.id));
   liste=liste.filter(i=>!(i.tur==='kasa'&&i.belge_id&&kasaDisi.has(i.belge_id)));
+  // Faturalar/irsaliyeler kendi tablolarından tek belge olarak gelir; bunlara bağlı islemler satırları listeden çıkar (çift görünmesin)
+  liste=liste.filter(i=>!(i.fatura_id||i.irsaliye_id));
   // Kasa transferi iki satırdır (çıkış/giriş): tek satır olarak göster
   const kasaAd=id=>(kasalar_list.find(k=>k.id===id)||{}).ad||'?';
   const trf={};liste.filter(i=>i.alt_tur==='kasa_transfer').forEach(i=>{(trf[i.belge_id||i.id]=trf[i.belge_id||i.id]||[]).push(i);});
@@ -445,6 +450,22 @@ async function _ilVeriYukle(bas,bit){
     cik._trfMetin=`${kasaAd(cik.kasa_id)} → ${gir?kasaAd(gir.kasa_id):'?'}`;
   });
   liste=liste.filter(i=>!trfAtla.has(i.id)).map(i=>i._trfMetin?{...i,aciklama:i._trfMetin+(i.aciklama?' · '+i.aciklama:'')}:i);
+  // Fatura / irsaliye belgeleri (Faturalar ve İrsaliyeler ekranlarıyla aynı kayıtlar ve adlar)
+  const kalemYukle=async(tablo,alan,idler)=>{const o=[];for(let k=0;k<idler.length;k+=80){
+    const {data}=await sb.from(tablo).select('*').in(alan,idler.slice(k,k+80)).order('sira');(data||[]).forEach(x=>o.push(x));}return o;};
+  const [fKal,iKal]=await Promise.all([kalemYukle('fatura_kalemleri','fatura_id',fatlar.map(f=>f.id)).catch(()=>[]),kalemYukle('irsaliye_kalemleri','irsaliye_id',irslar.map(f=>f.id)).catch(()=>[])]);
+  const belgeEkle=(h,onEk,kalemler,idAlan,noAlan)=>{
+    const kl=kalemler.filter(k=>k[idAlan]===h.id);
+    const ortak={belge_id:onEk+h.id,tur:(onEk==='f:'?'fatura_':'irsaliye_')+h.tur,tarih:h.tarih,cari_id:h.cari_id||null,kullanici:h.kullanici||'',
+      odeme_tipi:onEk==='f:'?(h.odeme_tipi||null):null,belge_no:h[noAlan]||'',aciklama_not:h.aciklama||null,ts:+h.ts||0,_belgeToplam:parseFloat(h.genel_toplam)||0,
+      [onEk==='f:'?'fatura_id':'irsaliye_id']:h.id};
+    if(!kl.length)liste.push({...ortak,id:onEk+h.id,tutar:h.toplam||0,kdv_tutar:h.kdv_toplam||0,aciklama:h.aciklama||''});
+    kl.forEach(k=>liste.push({...ortak,id:onEk+k.id,stok_id:k.stok_id||null,urun_id:k.urun_id||null,birim_id:k.birim_id||null,gider_kalem_id:k.gider_kalem_id||null,
+      miktar:k.miktar,fiyat:k.fiyat,tutar:k.tutar,kdv_tutar:k.kdv_tutar||0,
+      aciklama:k.aciklama||(stoklar.find(x=>x.id===k.stok_id)||urunler.find(x=>x.id===k.urun_id)||(typeof giderKalemleri!=='undefined'?giderKalemleri.find(x=>x.id===k.gider_kalem_id):null)||{}).ad||'',satir_not:''}));
+  };
+  fatlar.forEach(h=>belgeEkle(h,'f:',fKal,'fatura_id','fatura_no'));
+  irslar.forEach(h=>belgeEkle(h,'i:',iKal,'irsaliye_id','irsaliye_no'));
   // İşçilik kayıtları (islemler tablosunda değil) — belge başına özet
   const bMap={};belgeler.forEach(b=>{bMap[b.id]=b;});
   satirlar.forEach(r=>{
@@ -460,7 +481,7 @@ function _ilOzet(b){
   const s=b.satirlar,t=_ilTurAd(s);
   const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===b.cari_id):null;
   const acik=s.length===1?(s[0].aciklama||s[0].kat||''):(s[0].aciklama||'')+(s.length>1?` +${s.length-1}`:'');
-  const tutar=s.reduce((x,i)=>x+(parseFloat(i.tutar)||0),0);
+  const tutar=s[0]&&s[0]._belgeToplam!=null?s[0]._belgeToplam:s.reduce((x,i)=>x+(parseFloat(i.tutar)||0),0);
   const odeme=t==='Sayım'?'':(b.odeme_tipi==='cari'?'Cari':b.odeme_tipi==='pesin'?'Peşin':'');
   return {tur:t,aciklama:acik,cari:cari?cari.ad:'',tutar,odeme,kullanici:b.kullanici||'',tarih:b.tarih||'',belgeNo:b.belge_no||''};
 }
@@ -506,11 +527,8 @@ window.renderIslemListe=async function(){
     return (c||((a.ts||0)-(b.ts||0)))*kat;});
   _ilGor=liste;
   document.querySelectorAll('#il-baslik-satir th[data-s]').forEach(th=>{const a=th.dataset.s;th.querySelector('i').textContent=a===alan?(yon==='artan'?'▲':'▼'):'↕';});
-  // Özet: gelir / gider (Panel ile aynı kural: KDV dahil)
-  const satirTum=liste.flatMap(b=>b.satirlar);
-  const topGelir=satirTum.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
-  const topGider=satirTum.filter(i=>['gider','giris','iscilik'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
-  const oz=g('il-ozet');if(oz)oz.innerHTML=`${liste.length} kayıt${liste.length!==_ilBelgeler.length?' / '+_ilBelgeler.length:''} &nbsp;·&nbsp; Gelir <b style="color:var(--yesil)">${para(topGelir)}</b> &nbsp;·&nbsp; Gider <b style="color:var(--turuncu)">${para(topGider)}</b>`;
+  // Özet: yalnız kayıt sayısı (faturalar ve irsaliyeler ayrı belge olduğundan gelir/gider toplamı çift saymaya yol açar; gelir-gider için Finans Raporları kullanılır)
+  const oz=g('il-ozet');if(oz)oz.innerHTML=`${liste.length} kayıt${liste.length!==_ilBelgeler.length?' / '+_ilBelgeler.length:''}`;
   // Sayfalama (belge sayısına göre)
   const topSayfa=Math.max(1,Math.ceil(liste.length/IL_SAYFA_BOY));
   if(_ilSayfa>topSayfa)_ilSayfa=1;
