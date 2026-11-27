@@ -304,7 +304,7 @@ window.renderIscRapor = async function () {
   if (!aktifIsyeri?.id) return;
   await iscPersonelYukle();
   const b1 = document.getElementById('isc-r-bas'), b2 = document.getElementById('isc-r-bit');
-  if (b1 && !b1.value) b1.value = iscBugun().slice(0, 8) + '01';
+  if (b1 && !b1.value) b1.value = iscBugun().slice(0, 4) + '-01-01';
   if (b2 && !b2.value) b2.value = iscBugun();
   const k = document.getElementById('isc-r-kisi'), g = document.getElementById('isc-r-kalem');
   if (k) { const s = k.value; k.innerHTML = '<option value="">Tümü</option>' + iscPersoneller.map(p => `<option value="${p.id}">${iscEsc(p.ad)}</option>`).join(''); k.value = s; }
@@ -317,7 +317,7 @@ window.iscRaporYenile = async function () {
   const bas = document.getElementById('isc-r-bas').value, bit = document.getElementById('isc-r-bit').value;
   const kisi = document.getElementById('isc-r-kisi').value, kalem = document.getElementById('isc-r-kalem').value;
   let q = sb.from('isci_belge_satirlari').select('*').eq('isyeri_id', aktifIsyeri.id)
-    .order('tarih', { ascending: false }).order('belge_id', { ascending: false }).order('sira', { ascending: true }).limit(5000);
+    .order('tarih', { ascending: true }).order('belge_id', { ascending: true }).order('sira', { ascending: true }).limit(5000);
   if (bas) q = q.gte('tarih', bas);
   if (bit) q = q.lte('tarih', bit);
   if (kisi) q = q.eq('cari_id', kisi);
@@ -372,9 +372,6 @@ function iscRaporCiz() {
     </tr>`).join('');
   el.innerHTML = `
     <div style="font-size:12px;color:var(--yazi2);margin-bottom:10px"><b>${kayitSayisi}</b> kayıt · <b>${iscRaporKayitlar.length}</b> satır · Toplam süre (kişi × süre): <b>${iscSureMetin(t.saat, t.gun)}</b>${t.tutar ? ' · Toplam tutar: <b>' + iscSayi(t.tutar) + ' ₺</b>' : ''}</div>
-    ${iscOzetTablo('Kişiye göre', iscGrupla(r => r.kisi_ad))}
-    ${iscOzetTablo('Gider kalemine göre', iscGrupla(r => r.kalem_ad))}
-    <div style="font-size:11px;font-weight:600;color:var(--yazi2);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px">Tüm satırlar</div>
     <div class="tw"><table><thead><tr><th>Tarih</th><th>Kişi</th><th>Kalem</th><th style="text-align:right">Kişi</th><th>Süre</th><th style="text-align:right">Birim Fiyat</th><th style="text-align:right">Tutar</th><th>Satır Açıklaması</th><th>Kayıt Notu</th></tr></thead><tbody>${detay}</tbody></table></div>`;
 }
 
