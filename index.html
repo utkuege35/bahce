@@ -89,6 +89,14 @@ body.dark .nav-ara{background:#131e2c}
 #nav-ara-sonuc button.sec,#nav-ara-sonuc button:hover{background:var(--yesil-cok-ac);color:var(--yesil)}
 #nav-ara-sonuc .bos{padding:.8rem .5rem;font-size:12px;color:var(--yazi3);text-align:center}
 </style>
+<style id="genis-css">
+/* Tüm ekranlar: geniş alan + tablo satırları tek satır (uzun metin ... ile kısalır, üzerine gelince tamamı görünür) */
+.page:not(#panel){max-width:none;margin-right:0;padding-left:1.75rem;padding-right:1.5rem}
+@media(max-width:768px){.page:not(#panel){padding-left:.85rem;padding-right:.85rem}}
+.page table:not(.excel-tablo) td{white-space:nowrap;max-width:380px;overflow:hidden;text-overflow:ellipsis}
+.page table:not(.excel-tablo) th{white-space:nowrap}
+.page table td:has(input),.page table td:has(select),.page table td:has(textarea),.page table td:has(button){overflow:visible;max-width:none}
+</style>
 </head>
 <body>
 <div id="giris-wrap">
