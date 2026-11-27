@@ -52,6 +52,43 @@
 #panel .pn-gs .yz{width:46px;text-align:right;color:#8fd8ff;font-weight:600}
 #panel .pn-bos{font-size:13px;color:#8fb4d9;padding:22px 0;text-align:center}
 </style>
+<style id="nav-css">
+/* ===== Sol menü: ana başlıklar belirgin, alt gruplar girintili ===== */
+.nav{padding:0 0 .75rem}
+.nav-ara{position:sticky;top:0;z-index:5;background:var(--beyaz);padding:.6rem .7rem .5rem;border-bottom:1px solid var(--border)}
+body.dark .nav-ara{background:#131e2c}
+.nav-ara-kutu{position:relative}
+.nav-ara input{width:100%;box-sizing:border-box;padding:.5rem 1.8rem .5rem .7rem;border:1px solid var(--border);border-radius:9px;background:var(--krem);color:var(--yazi);font-size:calc(12.5px*var(--yazi-olcek,1));font-family:'DM Sans',sans-serif;outline:none}
+.nav-ara input:focus{border-color:var(--yesil);box-shadow:0 0 0 2px var(--yesil-cok-ac)}
+.nav-ara-temizle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:22px!important;height:22px;padding:0!important;border-radius:50%!important;font-size:12px!important;display:none;align-items:center;justify-content:center;color:var(--yazi3)!important}
+.nav-ara-temizle.var{display:flex}
+/* ana başlıklar */
+.nav>button,.nav>.nav-grup>.nav-grup-baslik{font-size:calc(14px*var(--yazi-olcek,1))!important;font-weight:600!important;color:var(--yazi)!important;padding:.8rem 1rem!important;border-top:1px solid var(--border)!important;letter-spacing:.01em}
+.nav>.nav-ara+button{border-top:none!important}
+.nav>.nav-grup>.nav-grup-baslik.acik,.nav>button.active{color:var(--yesil)!important;background:var(--yesil-cok-ac)!important;border-left-color:var(--yesil)!important}
+.nav .nav-grup-baslik{display:flex;align-items:center;justify-content:space-between}
+.nav .nav-grup-baslik .ok{font-size:11px;opacity:.7;transition:transform .2s}
+.nav .nav-grup-baslik.acik .ok{transform:rotate(180deg)}
+/* açılan bölüm: sol kılavuz çizgisi */
+.nav .nav-grup-icerik{background:var(--krem);padding:.25rem 0 .4rem}
+.nav>.nav-grup>.nav-grup-icerik{border-left:3px solid var(--yesil);margin-left:0}
+/* ikinci seviye gruplar */
+.nav .nav-grup-icerik .nav-grup-baslik{font-size:calc(13px*var(--yazi-olcek,1))!important;font-weight:600!important;color:var(--yazi2)!important;padding:.55rem 1rem .55rem 1.1rem!important;border-top:none!important}
+.nav .nav-grup-icerik .nav-grup-baslik.acik{color:var(--yesil)!important;background:transparent!important;border-left-color:transparent!important}
+.nav .nav-grup-icerik .nav-grup-icerik{margin:0 .6rem .2rem 1.3rem;border-left:2px solid var(--border);background:transparent;padding:.1rem 0}
+/* tek tek ekranlar */
+.nav .nav-grup-icerik button:not(.nav-grup-baslik){font-size:calc(12.5px*var(--yazi-olcek,1));font-weight:400;color:var(--yazi2);padding:.45rem .9rem .45rem 1.1rem;border-left:3px solid transparent;text-align:left}
+.nav .nav-grup-icerik .nav-grup-icerik button:not(.nav-grup-baslik){padding-left:.9rem;border-radius:0 8px 8px 0}
+.nav .nav-grup-icerik button:not(.nav-grup-baslik).active{color:var(--yesil);font-weight:600;background:var(--yesil-cok-ac);border-left-color:var(--yesil)}
+/* arama sonuçları */
+#ana-nav.nav-ara-modu>:not(.nav-ara):not(#nav-ara-sonuc){display:none!important}
+#nav-ara-sonuc{display:none;padding:.4rem .5rem}
+#nav-ara-sonuc.acik{display:block}
+#nav-ara-sonuc button{display:block;text-align:left;padding:.5rem .7rem;border-radius:8px;border-left:none;margin-bottom:2px}
+#nav-ara-sonuc button small{display:block;font-size:10.5px;color:var(--yazi3);font-weight:400;margin-top:1px}
+#nav-ara-sonuc button.sec,#nav-ara-sonuc button:hover{background:var(--yesil-cok-ac);color:var(--yesil)}
+#nav-ara-sonuc .bos{padding:.8rem .5rem;font-size:12px;color:var(--yazi3);text-align:center}
+</style>
 </head>
 <body>
 <div id="giris-wrap">
@@ -127,6 +164,11 @@
 </div>
 <div class="nav-overlay" id="nav-overlay" onclick="navKapat()"></div>
 <nav class="nav" id="ana-nav">
+  <div class="nav-ara"><div class="nav-ara-kutu">
+    <input type="text" id="nav-ara" placeholder="Menüde ara…" autocomplete="off" oninput="navAra()" onkeydown="navAraTus(event)">
+    <button type="button" class="nav-ara-temizle" id="nav-ara-temizle" onclick="navAraTemizle()" title="Temizle">✕</button>
+  </div></div>
+  <div id="nav-ara-sonuc"></div>
   <button class="active" onclick="gp('panel')">Panel</button>
     <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlemler ▾</button>
@@ -2794,5 +2836,52 @@
 <script src="js/iscilik.js"></script>
 <script src="js/yetkikontrol.js"></script>
 
+<script>
+(function(){
+  const nav=document.getElementById('ana-nav');if(!nav)return;
+  // Başlıklardaki ▾ işaretini döndürülebilir ok yap
+  nav.querySelectorAll('.nav-grup-baslik').forEach(b=>{
+    const t=b.textContent.replace(/\s*▾\s*$/,'').trim();
+    b.innerHTML='<span></span><span class="ok">▾</span>';b.firstChild.textContent=t;
+  });
+  const norm=s=>String(s||'').toLocaleLowerCase('tr-TR').replace(/ı/g,'i').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const gizliMi=b=>{for(let e=b;e&&e!==nav;e=e.parentElement){if(e.style&&e.style.display==='none')return true;if(e.hidden)return true;}return false;};
+  window.navAra=function(){
+    const inp=document.getElementById('nav-ara'),q=norm(inp.value),sn=document.getElementById('nav-ara-sonuc');
+    document.getElementById('nav-ara-temizle').classList.toggle('var',!!inp.value);
+    nav.classList.toggle('nav-ara-modu',!!q);
+    if(!q){sn.classList.remove('acik');sn.innerHTML='';return;}
+    const sonuc=[];
+    nav.querySelectorAll('button[onclick^="gp("]').forEach(b=>{
+      if(b.closest('#nav-ara-sonuc'))return;
+      if(b.dataset.nonav==='1')return;
+      // gizli (yetkisiz) menüleri çıkar: kendi stili ve üst gruplar
+      let gizli=false;for(let e=b;e&&e!==nav;e=e.parentElement){if(e.style&&e.style.display==='none'){gizli=true;break;}}
+      if(gizli)return;
+      const ad=b.textContent.trim();
+      const yol=[];for(let e=b.parentElement;e&&e!==nav;e=e.parentElement){if(e.classList.contains('nav-grup-icerik')){const bs=e.previousElementSibling;if(bs)yol.unshift(bs.textContent.replace('▾','').trim());}}
+      if(norm(ad+' '+yol.join(' ')).includes(q))sonuc.push({b,ad,yol});
+    });
+    sn.classList.add('acik');
+    sn.innerHTML=sonuc.length?'':'<div class="bos">Eşleşen menü yok</div>';
+    sonuc.forEach((s,i)=>{
+      const x=document.createElement('button');x.type='button';if(i===0)x.className='sec';
+      x.innerHTML='<span></span><small></small>';x.firstChild.textContent=s.ad;x.lastChild.textContent=s.yol.join(' › ');
+      x.onclick=()=>{navAraTemizle();s.b.click();};
+      sn.appendChild(x);
+    });
+  };
+  window.navAraTemizle=function(){const i=document.getElementById('nav-ara');i.value='';navAra();};
+  window.navAraTus=function(e){
+    const sn=document.getElementById('nav-ara-sonuc'),bt=[...sn.querySelectorAll('button')];
+    if(e.key==='Escape'){navAraTemizle();return;}
+    if(!bt.length)return;
+    let i=bt.findIndex(b=>b.classList.contains('sec'));
+    if(e.key==='ArrowDown'){e.preventDefault();bt[i]?.classList.remove('sec');bt[Math.min(bt.length-1,i+1)].classList.add('sec');bt[Math.min(bt.length-1,i+1)].scrollIntoView({block:'nearest'});}
+    else if(e.key==='ArrowUp'){e.preventDefault();bt[i]?.classList.remove('sec');bt[Math.max(0,i-1)].classList.add('sec');bt[Math.max(0,i-1)].scrollIntoView({block:'nearest'});}
+    else if(e.key==='Enter'){e.preventDefault();(bt[i]||bt[0]).click();}
+  };
+})();
+</script>
 </body>
 </html>
