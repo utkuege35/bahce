@@ -162,12 +162,12 @@ window.faturaSilDb=async function(id){
 
 // ===== KASA FİŞLERİ =====
 // Kasa günlük listesi: işaret>0 → Tahsil (kasaya giriş), işaret<0 → Tediye (kasadan çıkış)
-window.islemlerKasa=function(tarih,isaret){
+window.islemlerKasa=function(bas,bit,isaret){
   return sbSayfali(()=>{
-    let q=_aktifIslemSorgusu().eq('tur','kasa').eq('tarih',tarih);
+    let q=_aktifIslemSorgusu().eq('tur','kasa').gte('tarih',bas).lte('tarih',bit);
     q=q.or('alt_tur.is.null,alt_tur.neq.kasa_transfer'); // kasa transferleri kendi sekmesinde
     q=isaret>0?q.gt('kasa_etkisi',0):q.lt('kasa_etkisi',0);
-    return q.order('ts',{ascending:false}).order('id');
+    return q.order('tarih',{ascending:false}).order('ts',{ascending:false}).order('id');
   });
 };
 window.kasaBakiyelerDb=async function(isyeriId){
