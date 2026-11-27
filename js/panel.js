@@ -373,6 +373,7 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin, kompakt){
     </div>
   </td></tr>` : '';
 
+  if(kompakt&&acik)window._ilDetayTr=altSatir;
   if(kompakt){ // İşlem Listesi: her kayıt tek satır, bitişik (Faturalar listesi gibi)
     const tek=(s,ek='')=>`<td style="font-size:12px;white-space:nowrap;${ek}">${s}</td>`;
     const yaz=turler[0]==='sayim'?'':(belge.odeme_tipi==='cari'?'Cari':belge.odeme_tipi==='pesin'?'Peşin':'');
@@ -391,9 +392,8 @@ function _belgeSatirHtml(belge, acikId, toggleFnAdi, isAdmin, kompakt){
         ${yonetim?`<span title="${yonetim} ekranından yönetilir" style="font-size:12px;opacity:.7">🔒</span>`:''}
         ${!yonetim&&(isAdmin||yetkiVar('islem_liste','duzenle'))?`<button class="btn sm" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();islemDuzenleAc('${satirlar[0].id}')">✏</button>`:''}
         ${!yonetim&&(isAdmin||yetkiVar('islem_liste','sil'))?`<button class="btn sm ghost" style="font-size:10px;padding:2px 6px" onclick="event.stopPropagation();islemBelgeSilListe('${satirlar.map(s=>s.id).join(',')}')" title="Tüm fişi sil">✕</button>`:''}
-        <span style="font-size:11px;color:var(--yazi3)">${acik?'▲':'▼'}</span>
       </td>
-    </tr>${altSatir}`;
+    </tr>`;
   }
   return `<tr style="cursor:pointer;${acik?'background:var(--yesil-cok-ac);':''}" onclick="${toggleFnAdi}('${belge.key}')">
     <td style="white-space:nowrap;font-size:12px">${belge.tarih||''}</td>
@@ -534,6 +534,14 @@ window.renderIslemListe=async function(){
   if(_ilSayfa>topSayfa)_ilSayfa=1;
   const p=liste.slice((_ilSayfa-1)*IL_SAYFA_BOY,_ilSayfa*IL_SAYFA_BOY);
   tb.innerHTML=p.map(b=>_belgeSatirHtml(b,_ilAcikId,'ilToggle',isAdmin,true)).join('')||'<tr><td colspan="10" class="bos">Bu filtreyle işlem bulunamadı</td></tr>';
+  // Alt bölüm: seçili kaydın detayı
+  const dEl=g('il-detay'),ustEl=g('il-ust');
+  if(dEl){
+    const sec=_ilGor.find(b=>b.key===_ilAcikId);
+    if(sec){window._ilDetayTr='';_belgeSatirHtml(sec,_ilAcikId,'ilToggle',isAdmin,true);dEl.innerHTML=`<table style="width:100%;border-collapse:collapse">${window._ilDetayTr}</table>`;}
+    else dEl.innerHTML='<div style="padding:2rem;text-align:center;color:var(--yazi3);font-size:13px">Detayını görmek için yukarıdaki listeden bir kayda tıklayın</div>';
+  }
+  if(ustEl&&window._ilUstScroll!=null)ustEl.scrollTop=window._ilUstScroll;
   let sayf='';
   if(topSayfa>1){
     if(_ilSayfa>1)sayf+=`<button class="btn sm" onclick="_ilSayfa=${_ilSayfa-1};renderIslemListe()">‹</button>`;
@@ -544,7 +552,7 @@ window.renderIslemListe=async function(){
   }
   g('il-sayfalama').innerHTML=sayf;
 };
-window.ilToggle=function(id){_ilAcikId=_ilAcikId===id?null:id;renderIslemListe();};
+window.ilToggle=function(id){const u=document.getElementById('il-ust');window._ilUstScroll=u?u.scrollTop:0;_ilAcikId=id;renderIslemListe();};
 window.ilSirala=function(alan){_ilSira=_ilSira===alan+'-azalan'?alan+'-artan':alan+'-azalan';_ilSayfa=1;renderIslemListe();};
 window.ilFiltre=function(){_ilSayfa=1;renderIslemListe();};
 window.ilFiltreTemizle=function(){
