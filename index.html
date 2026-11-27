@@ -90,7 +90,10 @@ body.dark .nav-ara{background:#131e2c}
 #nav-ara-sonuc .bos{padding:.8rem .5rem;font-size:12px;color:var(--yazi3);text-align:center}
 </style>
 <style id="genis-css">
-#rapor>.tabs,#kasa-islemleri>.tabs{display:none}
+#rapor>.tabs,#kasa-islemleri>.tabs,#faturalar>.tabs{display:none}
+.alt-ust{max-height:calc(50vh - 170px);min-height:120px;overflow:auto}
+.alt-ayirici{height:6px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--krem2);margin:6px 0 0}
+.alt-detay{height:calc(50vh - 90px);min-height:150px;overflow:auto;border:1px solid var(--border);border-top:0}
 /* Tüm ekranlar: geniş alan + tablo satırları tek satır (uzun metin ... ile kısalır, üzerine gelince tamamı görünür) */
 .page:not(#panel){max-width:none;margin-right:0;padding-left:1.75rem;padding-right:1.5rem}
 @media(max-width:768px){.page:not(#panel){padding-left:.85rem;padding-right:.85rem}}
@@ -201,11 +204,23 @@ body.dark .nav-ara{background:#131e2c}
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">İşlemler ▾</button>
     <div class="nav-grup-icerik">
       <button onclick="gp('irsaliyeler')">İrsaliyeler</button>
-      <button onclick="gp('faturalar')">Faturalar</button>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Faturalar ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="fatHedef('alis');gp('faturalar');fatIsaretle('alis')" data-fat="alis">Alış Faturaları</button>
+          <button onclick="fatHedef('satis');gp('faturalar');fatIsaretle('satis')" data-fat="satis">Satış Faturaları</button>
+          <button onclick="fatHedef('iade');gp('faturalar');fatIsaretle('iade')" data-fat="iade">İade Faturaları</button>
+        </div>
+      </div>
       <button onclick="gp('stok-islemleri')">Stok İşlemleri</button>
-      <button onclick="kiHedef('tahsil');gp('kasa-islemleri');kiIsaretle('tahsil')" data-ki="tahsil">Kasa Tahsil</button>
-      <button onclick="kiHedef('tediye');gp('kasa-islemleri');kiIsaretle('tediye')" data-ki="tediye">Kasa Tediye</button>
-      <button onclick="kiHedef('transfer');gp('kasa-islemleri');kiIsaretle('transfer')" data-ki="transfer">Kasa Transferi</button>
+      <div class="nav-grup">
+        <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Kasa İşlemleri ▾</button>
+        <div class="nav-grup-icerik">
+          <button onclick="kiHedef('tahsil');gp('kasa-islemleri');kiIsaretle('tahsil')" data-ki="tahsil">Tahsil</button>
+          <button onclick="kiHedef('tediye');gp('kasa-islemleri');kiIsaretle('tediye')" data-ki="tediye">Tediye</button>
+          <button onclick="kiHedef('transfer');gp('kasa-islemleri');kiIsaretle('transfer')" data-ki="transfer">Kasa Transferi</button>
+        </div>
+      </div>
       <button onclick="gp('iscilik')">İşçilik Kayıtları</button>
     </div>
   </div>
@@ -2846,6 +2861,7 @@ body.dark .nav-ara{background:#131e2c}
 <script src="js/bagenvanter.js"></script>
 <script src="js/alisanaliz.js"></script>
 <script src="js/iscilik.js"></script>
+<script src="js/altdetay.js"></script>
 <script src="js/yetkikontrol.js"></script>
 
 <script>
