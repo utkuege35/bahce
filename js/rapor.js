@@ -43,11 +43,12 @@ window.raporTab=function(id,btn){
 
 // Sol menüden: Gelir/Gider, Kasa, Cari Hesap raporları ayrı menü seçenekleridir (üstteki sekmeler gizli)
 window._raporHedef='genel';
-window.raporGit=function(id){
+window.raporHedef=function(id){
   window._raporHedef=id;
   document.querySelectorAll('#rapor .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('rt-'+id)?.classList.add('active');
-  gp('rapor');
+};
+window.raporIsaretle=function(id){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   const b=document.querySelector(`.nav button[data-rapor="${id}"]`);
   if(b){b.classList.add('active');const ic=b.closest('.nav-grup-icerik');if(ic){ic.classList.add('acik');ic.previousElementSibling?.classList.add('acik');}}
