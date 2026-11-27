@@ -303,35 +303,40 @@ body.dark .nav-ara{background:#131e2c}
 <div id="islem-liste" class="page">
   <div style="font-size:15px;font-weight:600;color:var(--yazi1);margin-bottom:.25rem">İşlem Listesi</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center">
-    <input type="text" id="il-ara" oninput="renderIslemListe()" placeholder="🔍 Ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:140px">
-    <select id="il-tur" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-      <option value="">Tüm türler</option>
-      <option value="giris">Alış (Malzeme)</option>
-      <option value="gider">Gider / Hizmet</option>
-      <option value="satis">Satış</option>
-      <option value="uretim">Üretim</option>
-      <option value="sayim">Sayım</option>
-      <option value="devir">Devir</option><option value="ikram">İkram</option><option value="odenmez">Ödenmez</option><option value="hasar">Hasar</option><option value="atik">Atık</option><option value="kasa">Kasa</option>
-    </select>
-    <input type="date" id="il-bas" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
-    <input type="date" id="il-bit" onchange="renderIslemListe()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+    <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+    <input type="date" id="il-bas" onchange="ilFiltre()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+    <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+    <input type="date" id="il-bit" onchange="ilFiltre()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
+    <input type="text" id="il-ara" oninput="ilFiltre()" placeholder="🔍 Tümünde ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:140px">
     <button class="btn sm ghost" onclick="ilFiltreTemizle()">✕ Temizle</button>
+    <button class="btn sm sec" onclick="ilExcelIndir()">📤 Excel'e Aktar</button>
     <div id="il-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
   </div>
   <div class="tw">
-    <table><thead><tr>
-      <th style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tarih')">Tarih ↕</th>
-      <th>Tür</th>
-      <th>Açıklama</th>
-      <th>Cari</th>
-      <th style="text-align:right">Miktar</th>
-      <th style="text-align:right">Tutar</th>
-      <th>Ödeme</th>
-      <th>Kullanıcı</th>
-      <th>Detay</th>
-      <th>Geçmiş</th>
-      <th id="il-islem-th">İşlem</th>
-    </tr></thead>
+    <table><thead>
+      <tr id="il-baslik-satir">
+        <th data-s="tarih" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tarih')">Tarih <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="tur" style="cursor:pointer" onclick="ilSirala('tur')">Tür <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="aciklama" style="cursor:pointer" onclick="ilSirala('aciklama')">Açıklama <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="cari" style="cursor:pointer" onclick="ilSirala('cari')">Cari <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th style="text-align:right">Miktar</th>
+        <th data-s="tutar" style="cursor:pointer;text-align:right" onclick="ilSirala('tutar')">Tutar <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="odeme" style="cursor:pointer" onclick="ilSirala('odeme')">Ödeme <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th data-s="kullanici" style="cursor:pointer" onclick="ilSirala('kullanici')">Kullanıcı <i style="font-style:normal;opacity:.6">↕</i></th>
+        <th colspan="2"></th>
+      </tr>
+      <tr style="background:var(--krem)">
+        <th></th>
+        <th><select id="ilf-tur" onchange="ilFiltre()" style="width:100%;font-size:11px;padding:3px;border:1px solid var(--border);border-radius:5px"><option value="">Tümü</option></select></th>
+        <th><input type="text" id="ilf-aciklama" oninput="ilFiltre()" placeholder="filtre..." style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></th>
+        <th><input type="text" id="ilf-cari" oninput="ilFiltre()" placeholder="filtre..." style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></th>
+        <th></th>
+        <th><input type="text" id="ilf-tutar" oninput="ilFiltre()" placeholder=">1000" title="Örn: 500  veya  >1000  veya  <250" style="width:100%;box-sizing:border-box;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:5px;text-align:right"></th>
+        <th><select id="ilf-odeme" onchange="ilFiltre()" style="width:100%;font-size:11px;padding:3px;border:1px solid var(--border);border-radius:5px"><option value="">Tümü</option><option value="Peşin">Peşin</option><option value="Cari">Cari</option><option value="-">Belirsiz</option></select></th>
+        <th><select id="ilf-kul" onchange="ilFiltre()" style="width:100%;font-size:11px;padding:3px;border:1px solid var(--border);border-radius:5px"><option value="">Tümü</option></select></th>
+        <th colspan="2"></th>
+      </tr>
+    </thead>
     <tbody id="il-tb"></tbody></table>
   </div>
   <div id="il-sayfalama" style="display:flex;justify-content:center;gap:6px;margin-top:.75rem;flex-wrap:wrap"></div>
