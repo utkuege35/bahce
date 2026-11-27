@@ -273,6 +273,7 @@ body.dark .nav-ara{background:#131e2c}
       <button onclick="raporHedef('genel');gp('rapor');raporIsaretle('genel')" data-rapor="genel">Gelir / Gider Raporu</button>
       <button onclick="raporHedef('kasa');gp('rapor');raporIsaretle('kasa')" data-rapor="kasa">Kasa Raporu</button>
       <button onclick="raporHedef('cari');gp('rapor');raporIsaretle('cari')" data-rapor="cari">Borç / Alacak Listesi</button>
+      <button onclick="raporHedef('mizan');gp('rapor');raporIsaretle('mizan')" data-rapor="mizan">Cari Mizan</button>
       <button onclick="gp('iscilik-raporu')">İşçilik Raporu</button>
       <button onclick="gp('islem-liste')">İşlem Listesi</button>
       <div class="nav-grup">
@@ -2099,6 +2100,24 @@ body.dark .nav-ara{background:#131e2c}
   </div>
 
   <!-- CARİ HESAP -->
+  <div id="rt-mizan" class="tab-panel">
+    <div class="fr" style="flex-wrap:wrap;gap:8px;margin:0 0 .75rem">
+      <input type="text" id="mz-ara" oninput="renderCariMizan()" placeholder="🔍 Kod veya ad ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px">
+      <select id="mz-tur" onchange="renderCariMizan()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tüm türler</option><option value="alici">Alıcı</option><option value="satici">Satıcı</option><option value="personel">Personel</option>
+      </select>
+      <select id="mz-bakiye" onchange="renderCariMizan()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="">Tümü</option><option value="var">Bakiyesi olanlar</option><option value="borcb">Borç bakiyesi olanlar</option><option value="alacakb">Alacak bakiyesi olanlar</option><option value="sifir">Hesabı kapalı olanlar</option>
+      </select>
+      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+      <input type="date" id="mz-bas" onchange="renderCariMizan()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+      <input type="date" id="mz-bit" onchange="renderCariMizan()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <button class="btn sm sec" onclick="mizanExcel()">📤 Excel'e Aktar</button>
+      <span style="font-size:11px;color:var(--yazi3)">Devir: başlangıçtan önceki hareketler. Bakiye = Borç − Alacak (devir dahil).</span>
+    </div>
+    <div id="mz-tablo"></div>
+  </div>
   <div id="rt-cari" class="tab-panel">
     <div class="mg" id="cari-rap-met"></div>
     <div class="fr" style="flex-wrap:wrap;gap:8px;margin:.75rem 0">
@@ -2106,8 +2125,8 @@ body.dark .nav-ara{background:#131e2c}
       <select id="cari-rap-bakiye" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
         <option value="">Tümü</option>
         <option value="var">Bakiyesi olanlar</option>
-        <option value="borc">Borcumuz olanlar</option>
-        <option value="alacak">Alacağımız olanlar</option>
+        <option value="borcb">Borç bakiyesi olanlar</option>
+        <option value="alacakb">Alacak bakiyesi olanlar</option>
         <option value="sifir">Hesabı kapalı olanlar</option>
       </select>
       <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
@@ -2115,7 +2134,7 @@ body.dark .nav-ara{background:#131e2c}
       <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
       <input type="date" id="cari-rap-bit" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
       <button class="btn sm sec" onclick="cariRapExcel()">📤 Excel'e Aktar</button>
-      <span style="font-size:11px;color:var(--yazi3)">Devir: başlangıçtan önceki bakiye; Borcumuz / Alacağımız devir dahil güncel durumdur</span>
+      <span style="font-size:11px;color:var(--yazi3)">Devir: başlangıçtan önceki bakiye (B: borç, A: alacak). Bakiyeler devir dahildir.</span>
     </div>
     <div id="cari-rap-gruplar"></div>
   </div>
