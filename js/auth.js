@@ -71,38 +71,21 @@ async function isyeriSecimAc(){
   const sonId=localStorage.getItem('bahce_isyeri_'+aktifKullanici.id);
   const sirali=[...yetkiliIsyerleri].sort((x,y)=>(y.id===sonId)-(x.id===sonId)); // son girilen en üstte
   window._isyeriSecili=sirali.some(x=>x.id===sonId)?sonId:(sirali[0]?.id||null);
-  liste.innerHTML=sirali.map(iy=>{
-    const sirket=sirketler.find(s=>s.id===iy.sirket_id);
-    return `<button type="button" data-id="${iy.id}" onclick="isyeriIsaretle('${iy.id}')" ondblclick="isyeriSec('${iy.id}')" style="
-      width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;
-      background:var(--beyaz);color:var(--yazi);cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;
-      transition:all .15s;display:flex;align-items:center;gap:12px">
-      <div style="width:40px;height:40px;border-radius:10px;background:var(--yesil-cok-ac);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏢</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:600;color:var(--yazi)">${iy.ad}</div>
-        <div style="font-size:11px;color:var(--yazi2);margin-top:2px">${sirket?sirket.ad:''} ${iy.kod?'· '+iy.kod:''}</div>
-      </div>
-      ${iy.id===sonId?'<span style="font-size:10px;color:var(--yesil);background:var(--yesil-cok-ac);padding:2px 8px;border-radius:10px;white-space:nowrap">Son girilen</span>':''}
-    </button>`;
-  }).join('');
-  isyeriIsaretle(window._isyeriSecili);
-  const gb=document.getElementById('isyeri-giris-btn');if(gb){gb.style.display=sirali.length?'':'none';setTimeout(()=>gb.focus(),50);}
+  // Açılır liste: son girilen işyeri seçili gelir, diğerleri liste açılınca görünür
+  liste.innerHTML=`<select id="isyeri-sec" onchange="window._isyeriSecili=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();isyeriGiris();}"
+      style="width:100%;padding:14px 16px;border:2px solid var(--yesil);border-radius:10px;background:var(--beyaz);color:var(--yazi);font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer">
+    ${sirali.map(iy=>{const sirket=sirketler.find(s=>s.id===iy.sirket_id);
+      return `<option value="${iy.id}"${iy.id===window._isyeriSecili?' selected':''}>${iy.ad}${sirket?' — '+sirket.ad:''}${iy.id===sonId?'  (son girilen)':''}</option>`;}).join('')}
+  </select>`;
+  const gb=document.getElementById('isyeri-giris-btn');if(gb){gb.style.display=sirali.length?'':'none';}
+  setTimeout(()=>document.getElementById('isyeri-sec')?.focus(),50);
 
   if(!yetkiliIsyerleri.length){
     liste.innerHTML='<div style="text-align:center;color:var(--yazi3);font-size:13px;padding:1rem">Yetkili işyeriniz bulunmuyor.<br>Yöneticinizle iletişime geçin.</div>';
   }
 }
 
-// Listede işyerini işaretle (seçili görünür); girmek için "Giriş" düğmesi veya çift tık
-window.isyeriIsaretle=function(id){
-  window._isyeriSecili=id;
-  document.querySelectorAll('#isyeri-liste button[data-id]').forEach(b=>{
-    const s=b.dataset.id===id;
-    b.style.borderColor=s?'var(--yesil)':'var(--border)';
-    b.style.background=s?'var(--yesil-cok-ac)':'var(--beyaz)';
-  });
-};
-window.isyeriGiris=function(){if(window._isyeriSecili)isyeriSec(window._isyeriSecili);};
+window.isyeriGiris=function(){const s=document.getElementById('isyeri-sec');const id=s?s.value:window._isyeriSecili;if(id)isyeriSec(id);};
 // İşyeri seç ve uygulamayı aç
 window.isyeriSec=async function(isyeriId){
   const iy=isyerleri.find(x=>x.id===isyeriId);
