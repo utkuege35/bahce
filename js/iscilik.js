@@ -367,8 +367,8 @@ function iscRaporCiz() {
       <td style="white-space:nowrap">${r.sure != null ? iscSayi(r.sure) + ' ' + (r.birim === 'gun' ? 'gün' : 'saat') : '—'}</td>
       <td style="text-align:right;white-space:nowrap">${Number(r.birim_fiyat) ? iscSayi(r.birim_fiyat) + ' ₺' : '—'}</td>
       <td style="text-align:right;white-space:nowrap">${Number(r.tutar) ? iscSayi(r.tutar) + ' ₺' : '—'}</td>
-      <td style="min-width:200px">${iscEsc(r.aciklama || '')}</td>
-      <td style="min-width:140px;color:var(--yazi2)">${iscEsc(r.belge_not)}</td>
+      <td title="${iscEsc(r.aciklama || '')}">${iscEsc(r.aciklama || '')}</td>
+      <td title="${iscEsc(r.belge_not)}" style="color:var(--yazi2)">${iscEsc(r.belge_not)}</td>
     </tr>`).join('');
   el.innerHTML = `
     <div style="font-size:12px;color:var(--yazi2);margin-bottom:10px"><b>${kayitSayisi}</b> kayıt · <b>${iscRaporKayitlar.length}</b> satır · Toplam süre (kişi × süre): <b>${iscSureMetin(t.saat, t.gun)}</b>${t.tutar ? ' · Toplam tutar: <b>' + iscSayi(t.tutar) + ' ₺</b>' : ''}</div>
