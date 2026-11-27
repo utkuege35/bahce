@@ -88,6 +88,17 @@ window.fatTab=function(tur,btn){
   _aktifFatTab=tur;
   fatGorunumListe(tur);
 };
+// Sol menüden: Alış / Satış / İade faturaları ayrı menü seçenekleridir (üstteki sekmeler gizli)
+window.fatHedef=function(tur){
+  _aktifFatTab=tur;
+  document.querySelectorAll('#faturalar .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tp-fat-'+tur)?.classList.add('active');
+};
+window.fatIsaretle=function(tur){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  const b=document.querySelector(`.nav button[data-fat="${tur}"]`);
+  if(b){b.classList.add('active');const ic=b.closest('.nav-grup-icerik');if(ic){ic.classList.add('acik');ic.previousElementSibling?.classList.add('acik');}}
+};
 // Başka bir yerden (ör. irsaliye listesinden) belirli bir sekmeyi açmak için
 window.fatTabSec=function(tur){
   const btn=document.querySelector(`#faturalar .tab[data-tur="${tur}"]`);
@@ -473,7 +484,7 @@ window.kaydetFatura=async function(tur){
 window.renderFatGunSekmesi=async function(tur,bitisDegisti){
   const tarihEl=document.getElementById('fat-'+tur+'-liste-tarih');
   const bitEl=document.getElementById('fat-'+tur+'-liste-bit');
-  if(tarihEl&&!tarihEl.dataset.ilk){tarihEl.dataset.ilk='1';const d=new Date(),p=n=>String(n).padStart(2,'0'),yerel=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());tarihEl.value=yerel.slice(0,8)+'01';if(bitEl)bitEl.value=yerel;} // varsayılan: ayın 1'i – bugün
+  if(tarihEl&&!tarihEl.dataset.ilk){tarihEl.dataset.ilk='1';const d=new Date(),p=n=>String(n).padStart(2,'0'),yerel=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());tarihEl.value=yerel.slice(0,4)+'-01-01';if(bitEl)bitEl.value=yerel;} // varsayılan: yıl başı – bugün
   if(tarihEl&&!tarihEl.value)tarihEl.value=bugun();
   const tarih=tarihEl?.value||bugun();
   // Bitiş boşsa sadece seçili gün; bitiş başlangıçtan önceyse düzeltilir
