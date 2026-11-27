@@ -173,9 +173,7 @@ window.kaydetKasaFisi=async function(tur){
     kullanici:aktifKullanici?.ad||'',ts:Date.now()}:null;
   try{await kasaFisiYazDb(satir,cari,haric);}
   catch(e){bil('Kaydedilemedi: '+e.message,'err');return;}
-  if(typeof cariHareketler!=='undefined'){ // cari ekstresi önbelleğini tazele (eski ekranla aynı)
-    const {data:ch}=await sb.from('cari_hareketler').select('*').order('tarih',{ascending:true});if(ch)cariHareketler=ch;
-  }
+  if(typeof cariHareketYukle==='function')await cariHareketYukle(); // cari ekstresi önbelleğini tazele
   await logYaz({islem:haric?'duzenle':'olustur',belgeTuru:'kasa',altTur:tip,belgeId:id,belgeNo,belgeTarihi:tarih,cariId,tutar,
     eski:haric?_kiEski[tur]?.snapshot:null,yeni:kasaSnapshotKur({tarih,kasaId,tip,cariId,belgeNo,aciklama:satir.aciklama,tutar})});
   bil(`✓ ${KI_TURLER[tur].ad} fişi ${haric?'güncellendi':'kaydedildi'} (${_irsSayi(tutar)})`);
@@ -218,9 +216,7 @@ window.kiSil=async function(tur,id){
   const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===r.cari_id):null;
   if(!(await onay(`Bu ${KI_TURLER[tur].ad.toLowerCase()} fişi silinsin mi?<br><small>Kasa bakiyesi geri alınır${r.cari_id?' ve cari hareketi de silinir':''}.</small>`,'🗑️')))return;
   try{await kasaFisiSilDb(id);}catch(e){bil('Silinemedi: '+e.message,'err');return;}
-  if(typeof cariHareketler!=='undefined'){
-    const {data:ch}=await sb.from('cari_hareketler').select('*').order('tarih',{ascending:true});if(ch)cariHareketler=ch;
-  }
+  if(typeof cariHareketYukle==='function')await cariHareketYukle(); // cari ekstresi önbelleğini tazele
   const tip=r.alt_tur||(r.cari_id?KI_TURLER[tur].secenekler[0][0]:KI_TURLER[tur].secenekler[1][0]);
   await logYaz({islem:'sil',belgeTuru:'kasa',altTur:tip,belgeId:id,belgeNo:r.belge_no,belgeTarihi:r.tarih,cariId:r.cari_id,tutar:Math.abs(parseFloat(r.kasa_etkisi)||0),
     eski:kasaSnapshotKur({tarih:r.tarih,kasaId:r.kasa_id,tip,cariId:r.cari_id,belgeNo:r.belge_no,aciklama:r.aciklama,tutar:Math.abs(parseFloat(r.kasa_etkisi)||0)})});
