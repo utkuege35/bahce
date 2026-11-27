@@ -2021,22 +2021,22 @@ body.dark .nav-ara{background:#131e2c}
 
   <!-- KASA -->
   <div id="rt-kasa" class="tab-panel">
-    <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
-      <select id="kasa-filtre-id" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="">🏦 Tüm Kasalar (Birleşik)</option>
-      </select>
-      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
-      <input type="date" id="kasa-bas" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
-      <input type="date" id="kasa-bit" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-    </div>
-    <div class="mg" id="kasa-met"></div>
-    <div class="card"><div class="card-title">Kasa hareketi</div>
-      <div class="legend"><div class="li2"><div class="lb" style="background:#52b788"></div>Gelir</div><div class="li2"><div class="lb" style="background:#f4a261"></div>Gider</div><div class="li2"><div class="lb" style="background:#1d4e89"></div>Bakiye</div></div>
-      <div class="cw" style="height:280px"><canvas id="kasa-chart"></canvas></div>
-    </div>
-    <div class="card"><div class="card-title">Günlük kasa hareketleri</div>
-      <div class="tw"><table><thead><tr><th>Tarih</th><th>Kasa</th><th>Gelir</th><th>Gider</th><th>Günlük Net</th><th>Kümülatif Bakiye</th></tr></thead><tbody id="kasa-tb"></tbody></table></div>
+    <div id="kasa-kartlar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:1rem"></div>
+    <div id="kasa-detay" style="display:none">
+      <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+        <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+        <input type="date" id="kasa-bas" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+        <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+        <input type="date" id="kasa-bit" onchange="renderKasa()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      </div>
+      <div class="mg" id="kasa-met"></div>
+      <div class="card"><div class="card-title">Kasa hareketi</div>
+        <div class="legend"><div class="li2"><div class="lb" style="background:#52b788"></div>Giriş</div><div class="li2"><div class="lb" style="background:#f4a261"></div>Çıkış</div><div class="li2"><div class="lb" style="background:#1d4e89"></div>Bakiye</div></div>
+        <div class="cw" style="height:280px"><canvas id="kasa-chart"></canvas></div>
+      </div>
+      <div class="card"><div class="card-title" id="kasa-detay-baslik">Hareketler</div>
+        <div class="tw"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Cari</th><th>Açıklama</th><th style="text-align:right">Giriş</th><th style="text-align:right">Çıkış</th><th style="text-align:right">Bakiye</th></tr></thead><tbody id="kasa-tb"></tbody></table></div>
+      </div>
     </div>
   </div>
 
