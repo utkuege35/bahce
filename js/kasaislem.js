@@ -28,6 +28,17 @@ window.kiTab=function(id,btn){
   if(id==='transfer'){ktGorunumListe();return;}
   kiGorunumListe(id);
 };
+// Sol menüden: Tahsil / Tediye / Kasa Transferi ayrı menü seçenekleridir (üstteki sekmeler gizli)
+window.kiHedef=function(id){
+  _aktifKiTab=id;
+  document.querySelectorAll('#kasa-islemleri .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tp-ki-'+id)?.classList.add('active');
+};
+window.kiIsaretle=function(id){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  const b=document.querySelector(`.nav button[data-ki="${id}"]`);
+  if(b){b.classList.add('active');const ic=b.closest('.nav-grup-icerik');if(ic){ic.classList.add('acik');ic.previousElementSibling?.classList.add('acik');}}
+};
 window.kiAcilis=function(){if(_aktifKiTab==='transfer')ktGorunumListe();else kiGorunumListe(_aktifKiTab);};
 
 // ===== LİSTE =====
@@ -42,7 +53,7 @@ window.kiGorunumListe=function(tur){
 window.renderKiListe=async function(tur,bitisDegisti){
   const yerel=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
   const basEl=document.getElementById(`ki-${tur}-liste-tarih`),bitEl=document.getElementById(`ki-${tur}-liste-bit`);
-  if(basEl&&!basEl.dataset.ilk){basEl.dataset.ilk='1';basEl.value=yerel().slice(0,8)+'01';if(bitEl)bitEl.value=yerel();} // varsayılan: ayın 1'i – bugün
+  if(basEl&&!basEl.dataset.ilk){basEl.dataset.ilk='1';basEl.value=yerel().slice(0,4)+'-01-01';if(bitEl)bitEl.value=yerel();} // varsayılan: yıl başı – bugün
   if(basEl&&!basEl.value)basEl.value=yerel();
   if(bitEl&&bitEl.value&&bitEl.value<basEl.value){if(bitisDegisti)basEl.value=bitEl.value;else bitEl.value=basEl.value;}
   const bas=basEl?.value||yerel(),bit=bitEl?.value||bas;
