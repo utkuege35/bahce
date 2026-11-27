@@ -41,7 +41,21 @@ window.raporTab=function(id,btn){
   if(id==='cari')renderCariHesap();
 };
 
-function renderRapor(){renderRaporGenel();}
+// Sol menüden: Gelir/Gider, Kasa, Cari Hesap raporları ayrı menü seçenekleridir (üstteki sekmeler gizli)
+window._raporHedef='genel';
+window.raporGit=function(id){
+  window._raporHedef=id;
+  document.querySelectorAll('#rapor .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('rt-'+id)?.classList.add('active');
+  gp('rapor');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  const b=document.querySelector(`.nav button[data-rapor="${id}"]`);
+  if(b){b.classList.add('active');const ic=b.closest('.nav-grup-icerik');if(ic){ic.classList.add('acik');ic.previousElementSibling?.classList.add('acik');}}
+};
+function renderRapor(){
+  const h=window._raporHedef||'genel';
+  if(h==='kasa')renderKasa();else if(h==='cari')renderCariHesap();else renderRaporGenel();
+}
 
 // ===== GENEL =====
 let _gelirFiltre='ay';
@@ -228,8 +242,10 @@ window.renderCariHesap=async function(){
   if(!cariHareketler.length||_cariHareketIsyeri!==raporIsyeri())await cariHareketYukle();
   const ara=(document.getElementById('cari-rap-ara')?.value||'').toLocaleLowerCase('tr-TR');
   const bakiyeFil=document.getElementById('cari-rap-bakiye')?.value??'var';
-  const bas=document.getElementById('cari-rap-bas')?.value||'';
-  const bit=document.getElementById('cari-rap-bit')?.value||'';
+  const _bE=document.getElementById('cari-rap-bas'),_tE=document.getElementById('cari-rap-bit');
+  if(_bE&&!_bE.dataset.ilk){_bE.dataset.ilk='1';const d=new Date();_bE.value=d.getFullYear()+'-01-01';_tE.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  const bas=_bE?.value||'';
+  const bit=_tE?.value||'';
   // Muavin düzeni (ekstre ile aynı): kayıtlı 'alacak' → BORÇ sütunu, kayıtlı 'borc' → ALACAK sütunu.
   // Bakiye: alıcıda Borç−Alacak (+ = bize borçlu), satıcı/personelde Alacak−Borç (+ = borcumuz).
   const m={};
