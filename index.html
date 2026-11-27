@@ -312,8 +312,8 @@ body.dark .nav-ara{background:#131e2c}
     <button class="btn sm sec" onclick="ilExcelIndir()">📤 Excel'e Aktar</button>
     <div id="il-ozet" style="margin-left:auto;font-size:12px;color:var(--yazi3)"></div>
   </div>
-  <div class="tw">
-    <table><thead>
+  <div class="tw" id="il-ust" style="height:calc(50vh - 120px);min-height:200px;overflow:auto;margin-bottom:0">
+    <table><thead style="position:sticky;top:0;z-index:2">
       <tr id="il-baslik-satir">
         <th data-s="tarih" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tarih')">Tarih <i style="font-style:normal;opacity:.6">↕</i></th>
         <th data-s="tur" style="cursor:pointer;white-space:nowrap" onclick="ilSirala('tur')">Tür <i style="font-style:normal;opacity:.6">↕</i></th>
@@ -341,7 +341,9 @@ body.dark .nav-ara{background:#131e2c}
     </thead>
     <tbody id="il-tb"></tbody></table>
   </div>
-  <div id="il-sayfalama" style="display:flex;justify-content:center;gap:6px;margin-top:.75rem;flex-wrap:wrap"></div>
+  <div id="il-sayfalama" style="display:flex;justify-content:center;gap:6px;margin:.4rem 0;flex-wrap:wrap"></div>
+  <div style="border-top:3px solid #e5322d;margin:2px 0 0"></div>
+  <div id="il-detay" style="height:calc(50vh - 60px);min-height:180px;overflow:auto;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px"></div>
 </div>
 <div id="kdv-tanimlari" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
