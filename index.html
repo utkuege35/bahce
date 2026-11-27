@@ -1989,7 +1989,6 @@ body.dark .nav-ara{background:#131e2c}
     <button class="tab active" onclick="raporTab('genel',this)">Gelir / Gider</button>
     <button class="tab" onclick="raporTab('kasa',this)">Kasa</button>
     <button class="tab" onclick="raporTab('cari',this)">Cari Hesap</button>
-    <button class="tab" onclick="raporTab('personel',this)">Personel</button>
   </div>
 
   <!-- GENEL -->
@@ -2042,57 +2041,25 @@ body.dark .nav-ara{background:#131e2c}
 
   <!-- CARİ HESAP -->
   <div id="rt-cari" class="tab-panel">
-    <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
-      <input type="text" id="cari-rap-ara" oninput="renderCariHesap()" placeholder="🔍 Cari ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px">
-      <select id="cari-rap-tip" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="">Tüm tipler</option>
-        <option value="alici">Alıcılar</option>
-        <option value="satici">Satıcılar</option>
-      </select>
-      <select id="cari-rap-bakiye" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="">Tüm bakiyeler</option>
-        <option value="borc">Borçlular</option>
-        <option value="alacak">Alacaklılar</option>
-        <option value="sifir">Bakiyesiz</option>
-      </select>
-      <input type="date" id="cari-rap-bas" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
-      <input type="date" id="cari-rap-bit" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px">
-    </div>
     <div class="mg" id="cari-rap-met"></div>
-    <div class="tw">
-      <table id="cari-ozet-tablo">
-        <thead>
-          <tr>
-            <th style="min-width:180px">Cari</th>
-            <th>Tip</th>
-            <th style="text-align:right">Toplam İşlem</th>
-            <th style="text-align:right">Ödenen / Tahsil</th>
-            <th style="text-align:right">Bakiye</th>
-            <th style="width:80px"></th>
-          </tr>
-        </thead>
-        <tbody id="cari-rap-tbody"></tbody>
-      </table>
+    <div class="fr" style="flex-wrap:wrap;gap:8px;margin:.75rem 0">
+      <input type="text" id="cari-rap-ara" oninput="renderCariHesap()" placeholder="🔍 Cari ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px">
+      <select id="cari-rap-bakiye" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
+        <option value="var">Bakiyesi olanlar</option>
+        <option value="">Tümü</option>
+        <option value="borc">Borcumuz olanlar</option>
+        <option value="alacak">Alacağımız olanlar</option>
+        <option value="sifir">Hesabı kapalı olanlar</option>
+      </select>
+      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
+      <input type="date" id="cari-rap-bas" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
+      <input type="date" id="cari-rap-bit" onchange="renderCariHesap()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
+      <span style="font-size:11px;color:var(--yazi3)">(tarihler boşsa tüm hareketler)</span>
     </div>
+    <div id="cari-rap-gruplar"></div>
   </div>
 
-  <!-- PERSONEL -->
-  <div id="rt-personel" class="tab-panel">
-    <div class="fr">
-      <label style="font-size:12px;color:var(--yazi2)">Başlangıç:</label>
-      <input type="date" id="per-bas" onchange="renderPersonelRapor()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-      <label style="font-size:12px;color:var(--yazi2)">Bitiş:</label>
-      <input type="date" id="per-bit" onchange="renderPersonelRapor()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px">
-      <select id="per-personel" onchange="renderPersonelRapor()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="">Tüm personel</option>
-      </select>
-    </div>
-    <div class="mg" id="per-met"></div>
-    <div id="per-kartlar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:1rem"></div>
-    <div class="card"><div class="card-title">Personel işlem detayı</div>
-      <div class="tw"><table><thead><tr><th>Tarih</th><th>Personel</th><th>İş / Kalem</th><th>Birim</th><th>Miktar</th><th>Tutar</th><th>Not</th></tr></thead><tbody id="per-tb"></tbody></table></div>
-    </div>
-  </div>
 </div>
 <div id="cari" class="page">
   <div class="card">
