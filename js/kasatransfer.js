@@ -21,7 +21,7 @@ window.ktGorunumListe = function () {
 window.ktListeYenile = async function (bitisDegisti) {
   const tb = document.getElementById('kt-liste-tb'); if (!tb || !aktifIsyeri?.id) return;
   const basEl = document.getElementById('kt-liste-tarih'), bitEl = document.getElementById('kt-liste-bit');
-  if (!basEl.dataset.ilk) { basEl.dataset.ilk = '1'; basEl.value = _ktYerel().slice(0, 8) + '01'; bitEl.value = _ktYerel(); } // varsayılan: ayın 1'i – bugün
+  if (!basEl.dataset.ilk) { basEl.dataset.ilk = '1'; basEl.value = _ktYerel().slice(0, 4) + '-01-01'; bitEl.value = _ktYerel(); } // varsayılan: ayın 1'i – bugün
   if (!basEl.value) basEl.value = _ktYerel();
   if (bitEl.value && bitEl.value < basEl.value) { if (bitisDegisti) basEl.value = bitEl.value; else bitEl.value = basEl.value; }
   const bas = basEl.value, bit = bitEl.value || bas;
