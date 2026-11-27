@@ -75,10 +75,11 @@ window.sbSayfali=async function(kur,sayfa){
 };
 const _aktifIslemSorgusu=()=>sb.from('islemler').select('*').eq('isyeri_id',aktifIsyeri?.id).or('silindi.is.null,silindi.eq.false');
 // Tarih aralığındaki hareketler (Panel)
-window.islemlerAralik=async function(bas,bit){
+window.islemlerAralik=async function(bas,bit,isyeriId){
+  const iy=isyeriId||aktifIsyeri?.id;
   const [liste,isc]=await Promise.all([
-    sbSayfali(()=>_aktifIslemSorgusu().gte('tarih',bas).lte('tarih',bit).order('ts',{ascending:false}).order('id')),
-    sbSayfali(()=>sb.from('isci_belge_satirlari').select('id,tarih,tutar,kalem_ad,kisi_ad,gider_kalem_id').eq('isyeri_id',aktifIsyeri?.id).gte('tarih',bas).lte('tarih',bit).order('id'))
+    sbSayfali(()=>sb.from('islemler').select('*').eq('isyeri_id',iy).or('silindi.is.null,silindi.eq.false').gte('tarih',bas).lte('tarih',bit).order('ts',{ascending:false}).order('id')),
+    sbSayfali(()=>sb.from('isci_belge_satirlari').select('id,tarih,tutar,kalem_ad,kisi_ad,gider_kalem_id').eq('isyeri_id',iy).gte('tarih',bas).lte('tarih',bit).order('id'))
       .catch(e=>{console.warn('İşçilik satırları okunamadı:',e.message);return [];})
   ]);
   // İşçilik kayıtları Panel'de gider sayılır (islemler tablosunda gider satırı yoktur; çift sayım olmaz)
@@ -161,16 +162,16 @@ window.faturaSilDb=async function(id){
 
 // ===== KASA FİŞLERİ =====
 // Kasa günlük listesi: işaret>0 → Tahsil (kasaya giriş), işaret<0 → Tediye (kasadan çıkış)
-window.islemlerKasa=function(bas,bit,isaret){
+window.islemlerKasa=function(tarih,isaret){
   return sbSayfali(()=>{
-    let q=_aktifIslemSorgusu().eq('tur','kasa').gte('tarih',bas).lte('tarih',bit);
+    let q=_aktifIslemSorgusu().eq('tur','kasa').eq('tarih',tarih);
     q=q.or('alt_tur.is.null,alt_tur.neq.kasa_transfer'); // kasa transferleri kendi sekmesinde
     q=isaret>0?q.gt('kasa_etkisi',0):q.lt('kasa_etkisi',0);
-    return q.order('tarih',{ascending:false}).order('ts',{ascending:false}).order('id');
+    return q.order('ts',{ascending:false}).order('id');
   });
 };
-window.kasaBakiyelerDb=async function(){
-  const {data,error}=await sb.rpc('kasa_bakiyeler',{p_isyeri:aktifIsyeri?.id||null});
+window.kasaBakiyelerDb=async function(isyeriId){
+  const {data,error}=await sb.rpc('kasa_bakiyeler',{p_isyeri:isyeriId||aktifIsyeri?.id||null});
   if(error)throw error;
   return data||{};
 };
