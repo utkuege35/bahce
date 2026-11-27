@@ -297,8 +297,24 @@ window.renderCariHesap=async function(){
     </details>`;}).join('');
 };
 
+// Ekstredeki açıklama: faturaya / işçilik kaydına yazılan açıklama (belge_id ile bulunur)
+let _cariBelgeAcik={};
+async function _cariBelgeAciklamaYukle(cariId){
+  const hs=cariHareketler.filter(h=>h.cari_id===cariId&&h.belge_id);
+  const fat=[...new Set(hs.filter(h=>h.kaynak==='fatura'||h.kaynak==='fatura_odeme').map(h=>String(h.belge_id)))];
+  const isc=[...new Set(hs.filter(h=>h.kaynak==='iscilik'||h.kaynak==='iscilik_odeme').map(h=>String(h.belge_id)))];
+  const oku=async(tablo,ids)=>{
+    for(let i=0;i<ids.length;i+=100){
+      const {data}=await sb.from(tablo).select('id,aciklama').in('id',ids.slice(i,i+100));
+      (data||[]).forEach(x=>{if(x.aciklama)_cariBelgeAcik[String(x.id)]=x.aciklama;});
+    }
+  };
+  try{await Promise.all([oku('faturalar',fat),oku('isci_belgeleri',isc)]);}
+  catch(e){console.warn('Belge açıklamaları okunamadı:',e.message);}
+}
 window.cariDetayAc=async function(cariId){
-  if(!cariHareketler.length)await cariHareketYukle();
+  if(!cariHareketler.length||_cariHareketIsyeri!==raporIsyeri())await cariHareketYukle();
+  await _cariBelgeAciklamaYukle(cariId);
   const c=cariListesi.find(x=>x.id===cariId);if(!c)return;
   document.getElementById('cd-title').textContent=c.ad;
   document.getElementById('cd-ozet').textContent=`${c.kod} · ${c.tip==='alici'?'Alıcı':c.tip==='satici'?'Satıcı':'Personel'}${c.telefon?' · '+c.telefon:''}`;
@@ -331,7 +347,7 @@ function _cariDetayRender(cariId){
     return `<tr>
       <td style="white-space:nowrap">${h.tarih}</td>
       <td style="font-size:11px">${_logEsc(belgeAd(h))}</td>
-      <td style="font-size:11px;color:var(--yazi3)">${_logEsc(h.aciklama||'')}</td>
+      <td style="font-size:11px;color:var(--yazi2)">${_logEsc((h.belge_id&&_cariBelgeAcik[String(h.belge_id)])||h.aciklama||'')}</td>
       <td style="text-align:right;font-weight:500">${borc?para(borc):''}</td>
       <td style="text-align:right;font-weight:500">${alacak?para(alacak):''}</td>
       <td style="text-align:right;font-weight:600;color:${bakiyeRenk};white-space:nowrap">${para(Math.abs(bakiye))} ${Math.abs(bakiye)<0.005?'':(bakiye>0?(alici?'B':'A'):(alici?'A':'B'))}</td>
