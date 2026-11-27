@@ -1,4 +1,4 @@
-const CACHE='sever-bahce-v17';
+const CACHE='sever-bahce-v18';
 const ASSETS=['/bahce/','/bahce/index.html','/bahce/css/style.css',
   '/bahce/js/config.js','/bahce/js/auth.js','/bahce/js/app.js',
   '/bahce/js/stoklar.js','/bahce/js/urunler.js','/bahce/js/islemler.js',
