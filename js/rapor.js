@@ -10,7 +10,6 @@ window.raporTab=function(id,btn){
   if(id==='genel')renderRaporGenel();
   if(id==='kasa')renderKasa();
   if(id==='cari')renderCariHesap();
-  if(id==='personel')renderPersonelRapor();
 };
 
 function renderRapor(){renderRaporGenel();}
@@ -184,98 +183,80 @@ window.renderKasa=async function(){
 // ===== CARİ HESAP =====
 let cariHareketler=[];
 async function cariHareketYukle(){
-  const {data}=await sb.from('cari_hareketler').select('*').order('tarih',{ascending:true});
-  if(data)cariHareketler=data;
+  try{cariHareketler=await sbSayfali(()=>sb.from('cari_hareketler').select('*').order('tarih',{ascending:true}).order('id'));}
+  catch(e){console.warn('Cari hareketler okunamadı:',e.message);}
 }
 window.renderCariHesap=async function(){
   if(!cariHareketler.length)await cariHareketYukle();
-  const ara=(document.getElementById('cari-rap-ara')?.value||'').toLowerCase();
-  const tipFil=document.getElementById('cari-rap-tip')?.value||'';
-  const bakiyeFil=document.getElementById('cari-rap-bakiye')?.value||'';
+  const ara=(document.getElementById('cari-rap-ara')?.value||'').toLocaleLowerCase('tr-TR');
+  const bakiyeFil=document.getElementById('cari-rap-bakiye')?.value??'var';
   const bas=document.getElementById('cari-rap-bas')?.value||'';
   const bit=document.getElementById('cari-rap-bit')?.value||'';
-
-  // Her cari için bakiye hesapla
-  const cariMap={};
+  // Muavin düzeni (ekstre ile aynı): kayıtlı 'alacak' → BORÇ sütunu, kayıtlı 'borc' → ALACAK sütunu.
+  // Bakiye: alıcıda Borç−Alacak (+ = bize borçlu), satıcı/personelde Alacak−Borç (+ = borcumuz).
+  const m={};
   cariHareketler.forEach(h=>{
-    if(bas&&h.tarih<bas)return;
-    if(bit&&h.tarih>bit)return;
-    if(!cariMap[h.cari_id])cariMap[h.cari_id]={borc:0,alacak:0,hareketSayisi:0};
-    if(h.tip==='borc')cariMap[h.cari_id].borc+=parseFloat(h.tutar||0);
-    else cariMap[h.cari_id].alacak+=parseFloat(h.tutar||0);
-    cariMap[h.cari_id].hareketSayisi++;
+    if(bas&&h.tarih<bas)return;if(bit&&h.tarih>bit)return;
+    const v=m[h.cari_id]||(m[h.cari_id]={borc:0,alacak:0,say:0});
+    const t=parseFloat(h.tutar||0);
+    if(h.tip==='alacak')v.borc+=t;else v.alacak+=t;
+    v.say++;
   });
-
-  // Filtrele
-  let liste=cariListesi.filter(c=>c.aktif!==false);
-  if(tipFil)liste=liste.filter(c=>c.tip===tipFil);
-  if(ara)liste=liste.filter(c=>c.ad.toLowerCase().includes(ara)||c.kod.toLowerCase().includes(ara));
-  if(bakiyeFil){
-    liste=liste.filter(c=>{
-      const v=cariMap[c.id]||{borc:0,alacak:0};
-      const bak=v.alacak-v.borc;
-      if(bakiyeFil==='borc')return bak<0;
-      if(bakiyeFil==='alacak')return bak>0;
-      if(bakiyeFil==='sifir')return bak===0&&v.hareketSayisi>0;
-      return true;
-    });
-  }
-
-  // Metrikler
-  let topBorc=0,topAlacak=0,borcluSayisi=0,alacakliSayisi=0;
-  liste.forEach(c=>{
-    const v=cariMap[c.id]||{borc:0,alacak:0};
-    const bak=v.alacak-v.borc;
-    if(bak<0){topBorc+=Math.abs(bak);borcluSayisi++;}
-    else if(bak>0){topAlacak+=bak;alacakliSayisi++;}
-  });
+  const GRUP=[
+    {tip:'alici',ad:'Alıcılar',ikon:'🛒',renk:'var(--yesil)',pozAd:'alacağımız',negAd:'fazla tahsilat',pozRenk:'var(--yesil)'},
+    {tip:'satici',ad:'Satıcılar',ikon:'🚚',renk:'var(--mavi)',pozAd:'borcumuz',negAd:'fazla ödeme',pozRenk:'#c62828'},
+    {tip:'personel',ad:'Personel',ikon:'👷',renk:'var(--mor)',pozAd:'borcumuz',negAd:'fazla ödeme',pozRenk:'#c62828'}
+  ];
+  const bak=c=>{const v=m[c.id]||{borc:0,alacak:0};return c.tip==='alici'?v.borc-v.alacak:v.alacak-v.borc;};
+  const bakGoster=(b,g)=>Math.abs(b)<0.005
+    ?'<span style="font-size:11px;color:var(--yazi3)">Kapalı</span>'
+    :`<span style="font-weight:600;color:${b>0?g.pozRenk:'var(--yazi3)'}">${para(Math.abs(b))}</span> <span style="font-size:10px;color:${b>0?g.pozRenk:'var(--yazi3)'}">${b>0?g.pozAd:g.negAd}</span>`;
+  const tum=cariListesi.filter(c=>c.aktif!==false);
+  const gorunur=c=>{
+    if(ara&&!((c.ad||'').toLocaleLowerCase('tr-TR').includes(ara)||(c.kod||'').toLocaleLowerCase('tr-TR').includes(ara)))return false;
+    const b=bak(c),v=m[c.id];
+    if(bakiyeFil==='var')return Math.abs(b)>=0.005;
+    if(bakiyeFil==='borc')return c.tip==='alici'?b<-0.005:b>0.005;
+    if(bakiyeFil==='alacak')return c.tip==='alici'?b>0.005:b<-0.005;
+    if(bakiyeFil==='sifir')return Math.abs(b)<0.005&&v&&v.say>0;
+    return true;
+  };
+  // Üst özet (arama/bakiye filtresinden bağımsız, tüm aktif cariler)
+  const topla=tp=>tum.filter(c=>(tp==='alici')===(c.tip==='alici')).reduce((s,c)=>s+Math.max(0,bak(c)),0);
+  const alacagimiz=topla('alici'),borcumuz=topla('diger');
   document.getElementById('cari-rap-met').innerHTML=`
-    <div class="met"><div class="ml">Toplam Borcumuz</div><div class="mv z">${para(topBorc)}</div></div>
-    <div class="met"><div class="ml">Toplam Alacağımız</div><div class="mv g">${para(topAlacak)}</div></div>
-    <div class="met"><div class="ml">Net</div><div class="mv ${topAlacak-topBorc>=0?'k':'z'}">${para(topAlacak-topBorc)}</div></div>
-    <div class="met"><div class="ml">Borçlu / Alacaklı</div><div class="mv k">${borcluSayisi} / ${alacakliSayisi}</div></div>`;
-
-  // Tablo satırları
-  const sirali=liste.sort((a,b)=>{
-    const bA=Math.abs((cariMap[a.id]?.alacak||0)-(cariMap[a.id]?.borc||0));
-    const bB=Math.abs((cariMap[b.id]?.alacak||0)-(cariMap[b.id]?.borc||0));
-    return bB-bA; // Bakiyesi büyük önce
-  });
-
-  const rows=sirali.map(c=>{
-    const v=cariMap[c.id]||{borc:0,alacak:0,hareketSayisi:0};
-    const bakiye=v.alacak-v.borc;
-    const tipRenk=c.tip==='alici'?'var(--yesil)':'var(--mavi)';
-    const tipBg=c.tip==='alici'?'var(--yesil-cok-ac)':'var(--mavi-ac)';
-    const tipAd=c.tip==='alici'?'Alıcı':'Satıcı';
-    const toplamIslem=v.borc+v.alacak;
-    const odenen=c.tip==='satici'?v.alacak:v.borc; // satıcıya ödediğimiz / alıcıdan tahsil
-    const bakiyeRenk=bakiye>0?'var(--yesil)':bakiye<0?'#c62828':'var(--yazi3)';
-    const bakiyeAd=c.tip==='alici'?(bakiye>0?'alacak':bakiye<0?'borç':''):(bakiye<0?'borç':bakiye>0?'alacak':'');
-    return `<tr style="cursor:pointer" onclick="cariDetayAc('${c.id}')" title="Detay için tıklayın">
-      <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:30px;height:30px;border-radius:50%;background:${tipRenk};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${(c.ad||'?')[0].toUpperCase()}</div>
-          <div>
-            <div style="font-size:13px;font-weight:500">${c.ad}</div>
-            <div style="font-size:10px;color:var(--yazi3)">${c.kod}${c.telefon?` · ${c.telefon}`:''}</div>
-          </div>
-        </div>
-      </td>
-      <td><span style="font-size:10px;color:${tipRenk};background:${tipBg};padding:2px 8px;border-radius:10px;font-weight:500">${tipAd}</span></td>
-      <td style="text-align:right;font-size:13px">${toplamIslem?para(toplamIslem):'<span style="color:var(--yazi3)">—</span>'}</td>
-      <td style="text-align:right;font-size:13px;color:var(--yesil)">${odenen?para(odenen):'<span style="color:var(--yazi3)">—</span>'}</td>
-      <td style="text-align:right">
-        ${Math.abs(bakiye)>0.009
-          ?`<span style="font-size:13px;font-weight:600;color:${bakiyeRenk}">${para(Math.abs(bakiye))}</span>
-             <span style="font-size:10px;color:${bakiyeRenk};margin-left:3px">${bakiyeAd}</span>`
-          :`<span style="font-size:11px;color:var(--yazi3)">Kapalı</span>`}
-      </td>
-      <td><button class="btn sm" onclick="event.stopPropagation();cariDetayAc('${c.id}')">Detay →</button></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('cari-rap-tbody').innerHTML=rows||
-    '<tr><td colspan="6" class="bos">Cari bulunamadı</td></tr>';
+    <div class="met"><div class="ml">Toplam Alacağımız</div><div class="mv g">${para(alacagimiz)}</div><div style="font-size:10.5px;color:var(--yazi3);margin-top:2px">alıcılardan</div></div>
+    <div class="met"><div class="ml">Toplam Borcumuz</div><div class="mv z">${para(borcumuz)}</div><div style="font-size:10.5px;color:var(--yazi3);margin-top:2px">satıcı ve personele</div></div>
+    <div class="met"><div class="ml">Net Bakiye</div><div class="mv ${alacagimiz-borcumuz>=0?'k':'z'}">${para(Math.abs(alacagimiz-borcumuz))}</div><div style="font-size:10.5px;color:var(--yazi3);margin-top:2px">${Math.abs(alacagimiz-borcumuz)<0.005?'denk':alacagimiz>borcumuz?'net alacağımız':'net borcumuz'}</div></div>`;
+  document.getElementById('cari-rap-gruplar').innerHTML=GRUP.map(g=>{
+    const grupTum=tum.filter(c=>c.tip===g.tip);
+    const liste=grupTum.filter(gorunur).sort((a,b)=>Math.abs(bak(b))-Math.abs(bak(a)));
+    let tB=0,tA=0,tBak=0;
+    grupTum.forEach(c=>{const v=m[c.id]||{borc:0,alacak:0};tB+=v.borc;tA+=v.alacak;tBak+=bak(c);});
+    const satirlar=liste.map(c=>{
+      const v=m[c.id]||{borc:0,alacak:0},b=bak(c);
+      return `<tr style="cursor:pointer" onclick="cariDetayAc('${c.id}')" title="Ekstre için tıklayın">
+        <td><div style="font-size:13px;font-weight:500">${_logEsc(c.ad)}</div><div style="font-size:10px;color:var(--yazi3)">${_logEsc(c.kod||'')}${c.telefon?' · '+_logEsc(c.telefon):''}</div></td>
+        <td style="text-align:right;font-size:13px">${v.borc?para(v.borc):'<span style="color:var(--yazi3)">—</span>'}</td>
+        <td style="text-align:right;font-size:13px">${v.alacak?para(v.alacak):'<span style="color:var(--yazi3)">—</span>'}</td>
+        <td style="text-align:right;white-space:nowrap">${bakGoster(b,g)}</td>
+        <td style="width:90px"><button class="btn sm" style="white-space:nowrap" onclick="event.stopPropagation();cariDetayAc('${c.id}')">Ekstre →</button></td>
+      </tr>`;}).join('');
+    return `<details open style="margin-bottom:12px;border:1px solid var(--border);border-radius:12px;background:var(--beyaz);overflow:hidden">
+      <summary style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-left:5px solid ${g.renk};background:var(--krem)">
+        <span style="font-size:15px;font-weight:600;color:var(--yazi)">${g.ikon} ${g.ad}</span>
+        <span style="font-size:11px;color:var(--yazi3)">${grupTum.length} kart</span>
+        <span style="margin-left:auto;display:flex;gap:16px;flex-wrap:wrap;font-size:12px">
+          <span><span style="color:var(--yazi3)">Borç</span> <b>${para(tB)}</b></span>
+          <span><span style="color:var(--yazi3)">Alacak</span> <b>${para(tA)}</b></span>
+          <span><span style="color:var(--yazi3)">Bakiye</span> ${bakGoster(tBak,g)}</span>
+        </span>
+      </summary>
+      <div class="tw"><table>
+        <thead><tr><th style="min-width:180px">Cari</th><th style="text-align:right">Borç</th><th style="text-align:right">Alacak</th><th style="text-align:right">Bakiye</th><th></th></tr></thead>
+        <tbody>${satirlar||'<tr><td colspan="5" class="bos">Bu filtreyle kayıt yok</td></tr>'}</tbody>
+      </table></div>
+    </details>`;}).join('');
 };
 
 window.cariDetayAc=async function(cariId){
