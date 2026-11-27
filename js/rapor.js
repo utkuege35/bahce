@@ -57,6 +57,33 @@ function renderRapor(){
   if(h==='kasa')renderKasa();else if(h==='cari')renderCariHesap();else renderRaporGenel();
 }
 
+// ===== GRAFİK YARDIMCILARI (modern görünüm; açık/koyu temaya uyar) =====
+const _rpRenk=['#14b8a6','#3b82f6','#8b5cf6','#f59e0b','#ec4899','#ef4444','#84cc16','#94a3b8'];
+function _rpTema(){const cs=getComputedStyle(document.body);const v=n=>cs.getPropertyValue(n).trim();
+  return {yazi:v('--yazi2')||'#667085',yazi3:v('--yazi3')||'#98a2b3',grid:v('--border')||'#e5e7eb',zemin:v('--beyaz')||'#fff',ana:v('--yazi')||'#111'};}
+const _rpTL=v=>Math.round(v).toLocaleString('tr-TR');
+function _rpSecenek(T,o){o=o||{};
+  return {responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:!!o.legend,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8,color:T.yazi,font:{size:12}}},
+      tooltip:{padding:10,cornerRadius:8,callbacks:{label:c=>` ${c.dataset.label}: ${_rpTL(c.raw)} ₺`}}},
+    scales:{x:{grid:{display:false},border:{display:false},ticks:{autoSkip:true,maxTicksLimit:14,color:T.yazi3,font:{size:11}}},
+      y:{grid:{color:T.grid,drawTicks:false},border:{display:false},ticks:{padding:8,color:T.yazi3,font:{size:11},callback:v=>v.toLocaleString('tr-TR')}}}};}
+function _rpDonut(canvasId,listId,map,eski,T){
+  if(eski)eski.destroy();
+  const ent=Object.entries(map).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(ent.length>7){const dig=ent.splice(6).reduce((s,[,v])=>s+v,0);ent.push(['Diğer',dig]);}
+  const top=ent.reduce((s,[,v])=>s+v,0);
+  const liste=document.getElementById(listId);
+  if(!top){if(liste)liste.innerHTML='<div class="rp-bos">Bu dönemde kayıt yok</div>';return null;}
+  if(liste)liste.innerHTML=ent.map(([k,v],i)=>{const y=v/top*100;
+    return `<div class="rp-s"><div class="rp-s1"><i style="background:${_rpRenk[i%_rpRenk.length]}"></i><span class="ad" title="${_logEsc(k)}">${_logEsc(k)}</span><span class="tt">${_rpTL(v)} ₺</span><b>${y<1?'<%1':'%'+Math.round(y)}</b></div><div class="rp-cubuk"><div style="width:${Math.max(2,y)}%;background:${_rpRenk[i%_rpRenk.length]}"></div></div></div>`;}).join('');
+  return new Chart(document.getElementById(canvasId),{type:'doughnut',
+    data:{labels:ent.map(([k])=>k),datasets:[{data:ent.map(([,v])=>Math.round(v)),backgroundColor:_rpRenk,borderColor:T.zemin,borderWidth:3,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{padding:10,cornerRadius:8,callbacks:{label:c=>` ${c.label}: ${_rpTL(c.raw)} ₺ (%${Math.round(c.raw/top*100)})`}}}},
+    plugins:[{id:'orta',afterDraw(ch){const m=ch.getDatasetMeta(0).data[0];if(!m)return;const c=ch.ctx;c.save();c.textAlign='center';
+      c.fillStyle=T.yazi3;c.font='11px sans-serif';c.fillText('Toplam',m.x,m.y-9);c.fillStyle=T.ana;c.font='bold 16px sans-serif';c.fillText(_rpTL(top),m.x,m.y+11);c.restore();}}]});
+}
+
 // ===== GENEL =====
 let _gelirFiltre='ay';
 window.gelirFiltre=function(tip,btn){
@@ -103,27 +130,25 @@ async function renderRaporGenel(){
     else if(['gider','giris'].includes(i.tur))veriMap[key].d+=hrkTutar(i);
   });
   const labels=Object.keys(veriMap).sort();
+  const T=_rpTema();
   if(aylikC)aylikC.destroy();
   aylikC=new Chart(document.getElementById('aylik-chart'),{type:'bar',
-    data:{labels,datasets:[
-      {label:'Gelir',data:labels.map(k=>Math.round(veriMap[k].g)),backgroundColor:'rgba(53,95,130,.75)',borderRadius:3},
-      {label:'Gider',data:labels.map(k=>Math.round(veriMap[k].d)),backgroundColor:'rgba(244,162,97,.75)',borderRadius:3}
+    data:{labels:labels.map(k=>gunlukMu?k.substring(8,10)+'.'+k.substring(5,7):k),datasets:[
+      {label:'Gelir',data:labels.map(k=>Math.round(veriMap[k].g)),backgroundColor:'#14b8a6',borderRadius:6,borderSkipped:false,maxBarThickness:28,order:2},
+      {label:'Gider',data:labels.map(k=>Math.round(veriMap[k].d)),backgroundColor:'#f59e0b',borderRadius:6,borderSkipped:false,maxBarThickness:28,order:2},
+      {label:'Net',type:'line',data:labels.map(k=>Math.round(veriMap[k].g-veriMap[k].d)),borderColor:'#6366f1',backgroundColor:'#6366f1',borderWidth:2.5,tension:.35,pointRadius:3,pointHoverRadius:5,order:1}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
-      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:14,font:{size:10}}},y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:10}}}}}});
+    options:_rpSecenek(T,{legend:true})});
 
-  // Pasta grafikler
+  // Dağılım grafikleri (halka + yüzdeli sıralı liste)
   const gelirKat={},giderKat={};
   yv.forEach(i=>{
     if(i.tur==='satis')gelirKat[i.kat||'Diğer']=(gelirKat[i.kat||'Diğer']||0)+hrkTutar(i);
     else if(i.tur==='gider')giderKat[i.kat||'Diğer']=(giderKat[i.kat||'Diğer']||0)+hrkTutar(i);
     else if(i.tur==='giris')giderKat['Hammadde']=(giderKat['Hammadde']||0)+hrkTutar(i);
   });
-  if(gelirP)gelirP.destroy();
-  gelirP=new Chart(document.getElementById('gelir-pie'),{type:'doughnut',data:{labels:Object.keys(gelirKat),datasets:[{data:Object.values(gelirKat).map(v=>Math.round(v)),backgroundColor:['#284a65','#355f82','#a9c8e0','#cce0ef','#eaf2f8']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:8,padding:6}}}}});
-  if(giderP)giderP.destroy();
-  giderP=new Chart(document.getElementById('gider-pie'),{type:'doughnut',data:{labels:Object.keys(giderKat),datasets:[{data:Object.values(giderKat).map(v=>Math.round(v)),backgroundColor:['#bc4a0e','#f4a261','#355f82','#a8dadc','#6f3fa0','#856404']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:8,padding:6}}}}});
+  gelirP=_rpDonut('gelir-pie','gelir-liste',gelirKat,gelirP,T);
+  giderP=_rpDonut('gider-pie','gider-liste',giderKat,giderP,T);
 
   // Dönem detayları
   let html='';
@@ -150,7 +175,7 @@ window.renderKasa=async function(){
   const iy=raporIsyeri();
   const yerel=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
   const basEl=document.getElementById('kasa-bas'),bitEl=document.getElementById('kasa-bit');
-  if(!basEl.value)basEl.value=yerel().slice(0,8)+'01';
+  if(!basEl.value)basEl.value=yerel().slice(0,4)+'-01-01';
   if(!bitEl.value)bitEl.value=yerel();
   if(bitEl.value<basEl.value)bitEl.value=basEl.value;
   const bas=basEl.value,bit=bitEl.value;
@@ -211,20 +236,18 @@ window.renderKasa=async function(){
   if(!gunler.length)return;
   // Günlük giriş/çıkış sütunları + gün sonu bakiye çizgisi (boş günlerde bakiye taşınır)
   let son=acilis;const bakList=gunler.map(g=>{son=gunMap[g].bak;return Math.round(son);});
+  const T=_rpTema();
+  const kcv=document.getElementById('kasa-chart').getContext('2d');
+  const grad=kcv.createLinearGradient(0,0,0,280);grad.addColorStop(0,'rgba(99,102,241,.35)');grad.addColorStop(1,'rgba(99,102,241,0)');
+  const sec=_rpSecenek(T,{legend:true});
   kasaC=new Chart(document.getElementById('kasa-chart'),{
     type:'bar',
     data:{labels:gunler.map(g=>g.substring(8,10)+'.'+g.substring(5,7)),datasets:[
-      {label:'Giriş',data:gunler.map(g=>Math.round(gunMap[g].gir)),backgroundColor:'rgba(82,183,136,.75)',borderRadius:3,order:2},
-      {label:'Çıkış',data:gunler.map(g=>Math.round(gunMap[g].cik)),backgroundColor:'rgba(244,162,97,.75)',borderRadius:3,order:2},
-      {label:'Bakiye',data:bakList,type:'line',borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:3,fill:true,order:1,yAxisID:'y1'}
+      {label:'Giriş',data:gunler.map(g=>Math.round(gunMap[g].gir)),backgroundColor:'#14b8a6',borderRadius:6,borderSkipped:false,maxBarThickness:24,order:2},
+      {label:'Çıkış',data:gunler.map(g=>Math.round(gunMap[g].cik)),backgroundColor:'#f59e0b',borderRadius:6,borderSkipped:false,maxBarThickness:24,order:2},
+      {label:'Bakiye',data:bakList,type:'line',borderColor:'#6366f1',backgroundColor:grad,borderWidth:2.5,tension:.35,pointRadius:2,pointHoverRadius:5,fill:true,order:1}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
-      scales:{
-        x:{ticks:{autoSkip:true,maxTicksLimit:15,font:{size:10}}},
-        y:{ticks:{callback:v=>v.toLocaleString('tr-TR'),font:{size:10}},position:'left'},
-        y1:{ticks:{callback:v=>v.toLocaleString('tr-TR'),font:{size:10}},position:'right',grid:{drawOnChartArea:false}}
-      }}
-  });
+    options:sec});
 };
 
 // ===== CARİ HESAP =====
