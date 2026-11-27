@@ -90,6 +90,7 @@ body.dark .nav-ara{background:#131e2c}
 #nav-ara-sonuc .bos{padding:.8rem .5rem;font-size:12px;color:var(--yazi3);text-align:center}
 </style>
 <style id="genis-css">
+#rapor>.tabs{display:none}
 /* Tüm ekranlar: geniş alan + tablo satırları tek satır (uzun metin ... ile kısalır, üzerine gelince tamamı görünür) */
 .page:not(#panel){max-width:none;margin-right:0;padding-left:1.75rem;padding-right:1.5rem}
 @media(max-width:768px){.page:not(#panel){padding-left:.85rem;padding-right:.85rem}}
@@ -235,7 +236,9 @@ body.dark .nav-ara{background:#131e2c}
     <div class="nav-grup">
     <button class="nav-grup-baslik" onclick="navGrupToggle(this)">Raporlar ▾</button>
     <div class="nav-grup-icerik">
-      <button onclick="gp('rapor')">Finans Raporları</button>
+      <button onclick="raporGit('genel')" data-rapor="genel">Gelir / Gider Raporu</button>
+      <button onclick="raporGit('kasa')" data-rapor="kasa">Kasa Raporu</button>
+      <button onclick="raporGit('cari')" data-rapor="cari">Cari Hesap Raporu</button>
       <button onclick="gp('iscilik-raporu')">İşçilik Raporu</button>
       <button onclick="gp('islem-liste')">İşlem Listesi</button>
       <div class="nav-grup">
@@ -2067,8 +2070,8 @@ body.dark .nav-ara{background:#131e2c}
     <div class="fr" style="flex-wrap:wrap;gap:8px;margin:.75rem 0">
       <input type="text" id="cari-rap-ara" oninput="renderCariHesap()" placeholder="🔍 Cari ara..." style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;min-width:160px">
       <select id="cari-rap-bakiye" onchange="renderCariHesap()" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--beyaz)">
-        <option value="var">Bakiyesi olanlar</option>
         <option value="">Tümü</option>
+        <option value="var">Bakiyesi olanlar</option>
         <option value="borc">Borcumuz olanlar</option>
         <option value="alacak">Alacağımız olanlar</option>
         <option value="sifir">Hesabı kapalı olanlar</option>
