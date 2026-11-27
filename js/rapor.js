@@ -35,9 +35,12 @@ function _gelirAralik(){
   if(_gelirFiltre==='ozel')return{bas:document.getElementById('gf-bas')?.value||b(bugun),bit:document.getElementById('gf-bit')?.value||b(bugun)};
   return{bas:bugun.getFullYear()+'-'+String(bugun.getMonth()+1).padStart(2,'0')+'-01',bit:b(bugun)};
 }
-function renderRaporGenel(){
+async function renderRaporGenel(){
   const {bas,bit}=_gelirAralik();
-  const yv=islemler.filter(i=>i.tarih>=bas&&i.tarih<=bit);
+  // Panel ile aynı kaynak: seçili aralıktaki hareketler + işçilik kayıtları (veritabanından)
+  let yv;
+  try{yv=await islemlerAralik(bas,bit);}
+  catch(e){const m=document.getElementById('rapor-met');if(m)m.innerHTML=`<div class="bos">Rapor verisi okunamadı: ${e.message}</div>`;return;}
   const gelirT=yv.filter(i=>i.tur==='satis').reduce((s,i)=>s+hrkTutar(i),0);
   const giderT=yv.filter(i=>['gider','giris'].includes(i.tur)).reduce((s,i)=>s+hrkTutar(i),0);
   const karT=gelirT-giderT;
@@ -94,82 +97,86 @@ function renderRaporGenel(){
 }
 
 // ===== KASA =====
-window.renderKasa=function(){
-  const basEl=document.getElementById('kasa-bas');
-  const bitEl=document.getElementById('kasa-bit');
-  if(!basEl.value){const bugun=new Date();basEl.value=bugun.getFullYear()+'-'+String(bugun.getMonth()+1).padStart(2,'0')+'-01';}
-  if(!bitEl.value){bitEl.value=new Date().toISOString().split('T')[0];}
-  const bas=basEl.value;const bit=bitEl.value;
-  const kasaFiltreId=document.getElementById('kasa-filtre-id')?.value||'';
-
-  // Kasa select'i doldur
-  const kasaSel=document.getElementById('kasa-filtre-id');
-  if(kasaSel&&kasaSel.options.length<=1&&typeof kasalar_list!=='undefined'){
-    kasaSel.innerHTML='<option value="">🏦 Tüm Kasalar (Birleşik)</option>'+
-      kasalar_list.filter(k=>k.aktif!==false).map(k=>`<option value="${k.id}"${k.id===kasaFiltreId?' selected':''}>${{nakit:'💵',banka:'🏦',pos:'💳'}[k.tip]||'💵'} ${k.ad}</option>`).join('');
-    if(kasaFiltreId)kasaSel.value=kasaFiltreId;
-  }
-
-  let aralik=islemler.filter(i=>i.tarih>=bas&&i.tarih<=bit);
-  if(kasaFiltreId) aralik=aralik.filter(i=>i.kasa_id===kasaFiltreId);
-
-  // Başlangıç bakiyesi (seçili kasa için)
-  let baslangicBakiye=0;
-  if(kasaFiltreId&&typeof kasalar_list!=='undefined'){
-    const k=kasalar_list.find(x=>x.id===kasaFiltreId);
-    baslangicBakiye=parseFloat(k?.baslangic_bakiye||0);
-  }
-
+// Üstte her kasanın güncel bakiyesi (kart); karta tıklayınca o kasanın hareketleri ve grafiği açılır.
+let _kasaSecId=null;
+const _KASA_IKON={nakit:'💵',banka:'🏦',pos:'💳'};
+const _KASA_TUR_AD={alici_tahsilat:'Alıcı Tahsilatı',diger_giris:'Diğer Giriş',satici_odeme:'Satıcı Ödemesi',diger_cikis:'Diğer Çıkış',kasa_transfer:'Kasa Transferi'};
+window.kasaSec=function(id){_kasaSecId=(_kasaSecId===id)?null:id;renderKasa();};
+window.renderKasa=async function(){
+  const yerel=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+  const basEl=document.getElementById('kasa-bas'),bitEl=document.getElementById('kasa-bit');
+  if(!basEl.value)basEl.value=yerel().slice(0,8)+'01';
+  if(!bitEl.value)bitEl.value=yerel();
+  if(bitEl.value<basEl.value)bitEl.value=basEl.value;
+  const bas=basEl.value,bit=bitEl.value;
+  const kartlarEl=document.getElementById('kasa-kartlar'),detayEl=document.getElementById('kasa-detay');
+  const liste=(typeof kasalar_list!=='undefined'?kasalar_list:[]).filter(k=>k.aktif!==false);
+  if(!liste.length){kartlarEl.innerHTML='<div class="bos">Bu işyerinde tanımlı kasa yok.</div>';detayEl.style.display='none';return;}
+  let bak={};
+  try{bak=await kasaBakiyelerDb();}catch(e){kartlarEl.innerHTML=`<div class="bos">Bakiyeler okunamadı: ${_logEsc(e.message)}</div>`;return;}
+  const bakiyeOf=k=>(parseFloat(k.baslangic_bakiye)||0)+(parseFloat(bak[k.id])||0);
+  if(_kasaSecId&&!liste.some(k=>k.id===_kasaSecId))_kasaSecId=null;
+  kartlarEl.innerHTML=liste.map(k=>{
+    const b=bakiyeOf(k),sec=k.id===_kasaSecId;
+    return `<div onclick="kasaSec('${k.id}')" style="cursor:pointer;border:2px solid ${sec?'var(--yesil)':'var(--border)'};background:${sec?'var(--yesil-cok-ac)':'var(--beyaz)'};border-radius:12px;padding:12px 14px;transition:.15s">
+      <div style="font-size:12px;color:var(--yazi2);display:flex;align-items:center;gap:6px"><span style="font-size:15px">${_KASA_IKON[k.tip]||'💵'}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_logEsc(k.ad)}</span></div>
+      <div style="font-size:calc(22px*var(--yazi-olcek,1));font-weight:600;margin-top:6px;font-family:'Lora',serif;color:${b>=0?'var(--mavi)':'#c62828'}">${para(b)}</div>
+      <div style="font-size:10.5px;color:var(--yazi3);margin-top:2px">${sec?'▲ detay açık':'▼ detay için tıklayın'}</div>
+    </div>`;}).join('');
+  if(!_kasaSecId){detayEl.style.display='none';if(kasaC){kasaC.destroy();kasaC=null;}return;}
+  detayEl.style.display='';
+  const kasa=liste.find(k=>k.id===_kasaSecId);
+  const tb=document.getElementById('kasa-tb');tb.innerHTML='<tr><td colspan="7" class="bos">Yükleniyor...</td></tr>';
+  document.getElementById('kasa-detay-baslik').textContent=`${kasa.ad} — hareketler`;
+  let hareket,onceki;
+  try{
+    [hareket,onceki]=await Promise.all([
+      sbSayfali(()=>_aktifIslemSorgusu().eq('kasa_id',_kasaSecId).gte('tarih',bas).lte('tarih',bit).order('tarih').order('ts').order('id')),
+      sbSayfali(()=>sb.from('islemler').select('kasa_etkisi').eq('isyeri_id',aktifIsyeri?.id).eq('kasa_id',_kasaSecId).or('silindi.is.null,silindi.eq.false').lt('tarih',bas).order('id'))
+    ]);
+  }catch(e){tb.innerHTML=`<tr><td colspan="7" class="bos">Okunamadı: ${_logEsc(e.message)}</td></tr>`;return;}
+  if(_kasaSecId!==kasa.id)return; // bu arada başka kasa seçildi
+  const acilis=(parseFloat(kasa.baslangic_bakiye)||0)+onceki.reduce((s,r)=>s+(parseFloat(r.kasa_etkisi)||0),0);
+  let bakiye=acilis,topG=0,topC=0;
   const gunMap={};
-  aralik.forEach(i=>{
-    const t=i.tarih;if(!t)return;
-    if(!gunMap[t])gunMap[t]={gelir:0,gider:0,kasaAdi:''};
-    const etki=parseFloat(i.kasa_etkisi||0);
-    if(etki>0)gunMap[t].gelir+=etki;
-    else if(etki<0)gunMap[t].gider+=Math.abs(etki);
-    if(!kasaFiltreId&&i.kasa_id){
-      const k=typeof kasalar_list!=='undefined'?kasalar_list.find(x=>x.id===i.kasa_id):null;
-      gunMap[t].kasaAdi=k?.ad||'';
-    }
-  });
-  const gunler=Object.keys(gunMap).sort();
-  let bakiye=baslangicBakiye;
-  const bakiyeList=[],gelirList=[],giderList=[];
-  const rows=gunler.map(g=>{
-    const {gelir,gider,kasaAdi}=gunMap[g];const net=gelir-gider;bakiye+=net;
-    gelirList.push(Math.round(gelir));giderList.push(Math.round(gider));bakiyeList.push(Math.round(bakiye));
+  const satirlar=hareket.map(h=>{
+    const e=parseFloat(h.kasa_etkisi)||0;bakiye+=e;
+    if(e>0)topG+=e;else topC+=-e;
+    const g=h.tarih;(gunMap[g]=gunMap[g]||{gir:0,cik:0,bak:0});
+    if(e>0)gunMap[g].gir+=e;else gunMap[g].cik+=-e;gunMap[g].bak=bakiye;
+    const cari=typeof cariListesi!=='undefined'?cariListesi.find(c=>c.id===h.cari_id):null;
     return `<tr>
-      <td>${g}</td>
-      <td style="font-size:11px;color:var(--yazi3)">${kasaAdi||''}</td>
-      <td style="color:var(--yesil);font-weight:500">${gelir?para(gelir):''}</td>
-      <td style="color:var(--turuncu);font-weight:500">${gider?para(gider):''}</td>
-      <td style="color:${net>=0?'var(--yesil)':'#c62828'};font-weight:500">${para(net)}</td>
-      <td style="color:${bakiye>=0?'var(--mavi)':'#c62828'};font-weight:600">${para(bakiye)}</td>
-    </tr>`;
-  }).join('');
-  document.getElementById('kasa-tb').innerHTML=rows||'<tr><td colspan="6" class="bos">Bu aralıkta işlem yok</td></tr>';
-  const topGelir=gelirList.reduce((s,v)=>s+v,0);
-  const topGider=giderList.reduce((s,v)=>s+v,0);
+      <td style="white-space:nowrap">${h.tarih}</td>
+      <td style="font-size:12px">${_KASA_TUR_AD[h.alt_tur]||'Kasa hareketi'}</td>
+      <td style="font-size:12px">${_logEsc(cari?cari.ad:'')}</td>
+      <td style="font-size:11px;color:var(--yazi2)">${_logEsc(h.aciklama||'')}${h.belge_no?` <span style="color:var(--yazi3)">· ${_logEsc(h.belge_no)}</span>`:''}</td>
+      <td style="text-align:right;color:var(--yesil);font-weight:500">${e>0?para(e):''}</td>
+      <td style="text-align:right;color:var(--turuncu);font-weight:500">${e<0?para(-e):''}</td>
+      <td style="text-align:right;font-weight:600;color:${bakiye>=0?'var(--mavi)':'#c62828'}">${para(bakiye)}</td>
+    </tr>`;}).join('');
+  tb.innerHTML=(acilis||hareket.length?`<tr style="background:var(--krem)"><td>${bas}</td><td colspan="5" style="font-size:12px;color:var(--yazi2)">Açılış bakiyesi</td><td style="text-align:right;font-weight:600">${para(acilis)}</td></tr>`:'')+(satirlar||'<tr><td colspan="7" class="bos">Bu aralıkta işlem yok</td></tr>');
   document.getElementById('kasa-met').innerHTML=`
-    <div class="met"><div class="ml">Toplam Giriş</div><div class="mv g">${para(topGelir)}</div></div>
-    <div class="met"><div class="ml">Toplam Çıkış</div><div class="mv d">${para(topGider)}</div></div>
-    <div class="met"><div class="ml">Dönem Net</div><div class="mv ${topGelir-topGider>=0?'k':'z'}">${para(topGelir-topGider)}</div></div>
-    <div class="met"><div class="ml">Kasa Bakiyesi</div><div class="mv ${bakiye>=0?'k':'z'}">${para(bakiye)}</div></div>`;
-  if(kasaC)kasaC.destroy();
+    <div class="met"><div class="ml">Açılış</div><div class="mv">${para(acilis)}</div></div>
+    <div class="met"><div class="ml">Toplam Giriş</div><div class="mv g">${para(topG)}</div></div>
+    <div class="met"><div class="ml">Toplam Çıkış</div><div class="mv d">${para(topC)}</div></div>
+    <div class="met"><div class="ml">Kapanış Bakiyesi</div><div class="mv ${bakiye>=0?'k':'z'}">${para(bakiye)}</div></div>`;
+  if(kasaC){kasaC.destroy();kasaC=null;}
+  const gunler=Object.keys(gunMap).sort();
   if(!gunler.length)return;
-  const labels=gunler.map(g=>g.substring(5));
+  // Günlük giriş/çıkış sütunları + gün sonu bakiye çizgisi (boş günlerde bakiye taşınır)
+  let son=acilis;const bakList=gunler.map(g=>{son=gunMap[g].bak;return Math.round(son);});
   kasaC=new Chart(document.getElementById('kasa-chart'),{
     type:'bar',
-    data:{labels,datasets:[
-      {label:'Giriş',data:gelirList,backgroundColor:'rgba(82,183,136,.7)',borderRadius:3,order:2},
-      {label:'Çıkış',data:giderList,backgroundColor:'rgba(244,162,97,.7)',borderRadius:3,order:2},
-      {label:'Bakiye',data:bakiyeList,type:'line',borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:3,fill:true,order:1,yAxisID:'y1'}
+    data:{labels:gunler.map(g=>g.substring(8,10)+'.'+g.substring(5,7)),datasets:[
+      {label:'Giriş',data:gunler.map(g=>Math.round(gunMap[g].gir)),backgroundColor:'rgba(82,183,136,.75)',borderRadius:3,order:2},
+      {label:'Çıkış',data:gunler.map(g=>Math.round(gunMap[g].cik)),backgroundColor:'rgba(244,162,97,.75)',borderRadius:3,order:2},
+      {label:'Bakiye',data:bakList,type:'line',borderColor:'#1d4e89',backgroundColor:'rgba(29,78,137,.1)',borderWidth:2,pointRadius:3,fill:true,order:1,yAxisID:'y1'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
       scales:{
         x:{ticks:{autoSkip:true,maxTicksLimit:15,font:{size:10}}},
-        y:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:10}},position:'left'},
-        y1:{ticks:{callback:v=>'₺'+v.toLocaleString('tr-TR'),font:{size:10}},position:'right',grid:{drawOnChartArea:false}}
+        y:{ticks:{callback:v=>v.toLocaleString('tr-TR'),font:{size:10}},position:'left'},
+        y1:{ticks:{callback:v=>v.toLocaleString('tr-TR'),font:{size:10}},position:'right',grid:{drawOnChartArea:false}}
       }}
   });
 };
